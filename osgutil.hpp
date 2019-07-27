@@ -15,13 +15,6 @@ extern MatrixTransformPtr createMatrixTransform();
 extern NodePtr createFloor();
 inline double worldRotation() { return M_PI/2; }
 
-extern void
-  addSphereTo(
-    MatrixTransformPtr top_group_ptr,
-    const osg::Vec3f &color,
-    const osg::Matrix &transform
-  );
-
 extern CameraManipulatorPtr createCameraManipulator(ViewType view_type);
 
 
