@@ -13,11 +13,11 @@ class OSGSceneManager {
     OSGSceneManager();
     GraphicsWindowPtr createGraphicsWindow(ViewType view_type);
     OSGScene scene;
+    OSGSelectionHandler selection_handler;
 
   private:
     struct Impl;
 
-    OSGSelectionHandler selection_handler;
     osgViewer::CompositeViewer composite_viewer;
     QtTimer timer;
 };

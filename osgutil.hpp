@@ -35,6 +35,7 @@ struct OSGSelectionHandler {
 
   osg::Node *selected_node_ptr;
   osg::Vec4 old_color;
+  bool use_screen_relative_dragger = false;
 };
 
 

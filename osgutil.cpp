@@ -193,8 +193,8 @@ bool isDragger(osg::Node *node_ptr)
   return isDragger(node_ptr->getParent(0));
 }
 
-#if 1
-static NodePtr createDragger(MatrixTransformPtr transform_ptr)
+// Dragger that changes size based on the transform it is modifying.
+static NodePtr createObjectRelativeDragger(MatrixTransformPtr transform_ptr)
 {
   TranslateAxisDraggerPtr dragger_ptr =
     new osgManipulator::TranslateAxisDragger();
@@ -210,11 +210,13 @@ static NodePtr createDragger(MatrixTransformPtr transform_ptr)
   dragger_ptr->setMatrix(osg::Matrix::scale(2,2,2)*transform_ptr->getMatrix());
   return dragger_ptr;
 }
-#else
+
+
 // Dragger that maintains its size relative to the screen
-static NodePtr createDragger(MatrixTransformPtr transform_ptr)
+static NodePtr createScreenRelativeDragger(MatrixTransformPtr transform_ptr)
 {
-  osg::ref_ptr<MyDragger> my_dragger_ptr(new MyDragger);
+  using TranslateAxisDragger = osgManipulator::TranslateAxisDragger;
+  osg::ref_ptr<TranslateAxisDragger> my_dragger_ptr(new TranslateAxisDragger);
   TranslateAxisDraggerPtr dragger_ptr =
     new osgManipulator::TranslateAxisDragger();
   dragger_ptr->setParentDragger(my_dragger_ptr);
@@ -242,7 +244,19 @@ static NodePtr createDragger(MatrixTransformPtr transform_ptr)
   dragger_ptr->setMatrix(osg::Matrix::scale(100,100,100));
   return my_dragger_ptr;
 }
-#endif
+
+
+static NodePtr
+  createDragger(MatrixTransformPtr transform_ptr,bool screen_relative)
+{
+  if (screen_relative) {
+    return createScreenRelativeDragger(transform_ptr);
+  }
+  else {
+    return createObjectRelativeDragger(transform_ptr);
+  }
+}
+
 
 static osg::ref_ptr<osg::Group> createGroup()
 {
@@ -250,13 +264,13 @@ static osg::ref_ptr<osg::Group> createGroup()
 }
 
 
-static void addDraggerTo(MatrixTransformPtr transform_ptr)
+static void addDraggerTo(MatrixTransformPtr transform_ptr,bool screen_relative)
 {
   osg::Group *parent_ptr = transform_ptr->getParent(0);
   parent_ptr->removeChild(transform_ptr);
   GroupPtr group_ptr = createGroup();
   parent_ptr->addChild(group_ptr);
-  NodePtr dragger_ptr = createDragger(transform_ptr);
+  NodePtr dragger_ptr = createDragger(transform_ptr,screen_relative);
   group_ptr->addChild(transform_ptr);
   group_ptr->addChild(dragger_ptr);
 }
@@ -327,7 +341,10 @@ void OSGSelectionHandler::nodeSelected(osg::Node *new_selected_node_ptr)
       shape_drawable_ptr->setColor(selection_color);
     }
 
-    addDraggerTo(transformParentOf(selected_node_ptr));
+    addDraggerTo(
+      transformParentOf(selected_node_ptr),
+      use_screen_relative_dragger
+    );
   }
 }
 
