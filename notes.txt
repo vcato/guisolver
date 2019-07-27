@@ -1,0 +1,186 @@
+I'm thinking about an application that lets you
+solve some 3D body fitting problems.
+
+Example:
+* You have a single rigid body.
+* You have three local points on that body.
+* You have three other global points.
+* You know certain distances between these points.
+* Solve for the body pose.
+
+Test:
+* Start the application.
+* Add a body.
+* Add a body to the body.
+* Add three points to the body.
+* Add three global points.
+* Add distances between some of the points.
+* Add errors.
+
+Discussion:
+We are ultimately optimizing the parameters of a function.
+p = solve(f)
+but we want a good way to visualize the results.
+It seems natural to define a set of variables, and then have a way to
+choose which ones we are solving for.
+
+scene(tx,ty,tz,rx,ry,rz) = 
+  object(
+    body = transform(translation=[tx,ty,tz],rotation=[rx,ry,rz]),
+    locals = [
+      [0,0,0],
+      [0,0,0],
+      [0,0,0],
+    ]
+    globals = [
+      [0,0,0],
+      [0,0,0],
+      [0,0,0],
+    ]
+    predicteds = [body*l] for l in locals
+    errors = [
+      [predicted=p,global=g] for p,g in zip(predicteds,globals)
+    ]
+    error = sum(mag2(e.predicted-e.global) for e in errors)
+  )
+
+s = scene[tx,ty,tz,rx,ry,rz]
+
+let point(p) = group(
+  translate(p),
+  circle(radius=1)
+),
+group(
+  transform(s.body),
+  square()
+),
+point(p) for p in s.predicteds,
+point(g) for g in s.globals,
+line(e.predicted,e.global) for e in s.errors
+---
+l1 = [1,2,3]
+l2 = [3,4,5]
+l3 = [6,7,8]
+g1 = [...]
+g2 = [...]
+g3 = [...]
+obj = object(tx=10, ty=20, tz=30, rx=10, ry=20, rz=30)
+body1 = transform(*obj)
+pred1 = body1*l1
+pred2 = body1*l2
+pred3 = body1*l3
+window(width=640, height=480) {
+  scene3d() {
+    group() {
+      translate(obj.tx,obj.ty,obj.tz)
+      rotate(obj.rx, obj.ry, obj.rz)
+      square(width=20, height=30)
+      sphere(radius=1, position=pred1)
+      sphere(radius=1, position=pred2)
+      sphere(radius=1, position=pred3)
+    },
+    handle(position=&g1),
+    handle(position=&g2),
+    handle(position=&g3),
+    sphere(radius=1, position=g1)
+    sphere(radius=1, position=g2)
+    sphere(radius=1, position=g3)
+    line(g1, pred1)
+    line(g2, pred2)
+    line(g3, pred3)
+  }
+}
+errors = [
+  mag2(pred1-g1),
+  mag2(pred2-g2),
+  mag2(pred3-g3)
+]
+minimizer(function={sum(errors)}, vars=[&obj])
+---
+l1 = (1,2,3)
+l2 = (3,4,5)
+l3 = (6,7,8)
+g1 = (7,8,9)
+g2 = (10,11,12)
+g3 = (1.1,1.2,1.3)
+[solve] obj = Object(tx=10,ty=2,tz=30,rx=10,ry=20,rz=30)
+body1 = transform(*obj)
+pred1 = body1*l1
+pred2 = body2*l2
+pred3 = body3*l3
+[error] mag2(pred1-g1)
+[error] mag2(pred2-g2)
+[error] mag2(pred3-g3)
+w = Window(width=640,height=480,contents=[
+  Scene3D(contents=[
+    Group(contents=[
+      Translate([obj.tx,obj.ty.obj.tz]),
+      Rotate([obj.rx,obj.ry,obj.rz]),
+      Square(width=20,height-30),
+      Sphere(radius=1,position=pred1),
+      Sphere(radius=1,position=pred2),
+      Sphere(radius=1,position=pred3)
+    ]),
+    Handle(position=g1),
+    Handle(position=g2),
+    Handle(position=g3),
+    Sphere(radius=1,position=g1),
+    Sphere(radius=1,position=g2),
+    Sphere(radius=1,position=g3),
+    Line(g1, pred1),
+    Line(g2, pred2),
+    Line(g3, pred3),
+  ])
+])
+code = { minimize(function=sum(find("errors")),vars=find("solve")) }
+interact(w,code)
+---
+I want to think of the system as continually recreating a world.  We start
+with a world, have some input, and it generates the changes that we want
+to see in the variables.  The world is then recreated with those variables.
+In our example, the user moves a handle, which causes some variables to change.
+The minimizer then takes those new values and causes a change to other
+variables.  Those variable changes are then fed back to the window.
+
+I'm not sure how time factors into this.  For example, if we are moving
+a handle, we could think of this as individual x,y,z changes, or a simultaneous
+changes.
+Also, in the case of a handle, we would like to have a base state, such that
+any changes we make are considered changes to that base state as long
+as we are dragging, and then when we release the mouse, this becomes
+the new base state.
+---
+Maybe we tag certain variables and expressions such that they can be
+reflected.
+f = {
+[solve] x = 5
+[solve] y = 7
+[error] x^2*y^2
+}
+
+vars = find("solve",f)
+errors = find("error",f);
+minimize(sum(errors),vars)
+
+Does this create a new environment where the variables have been modified
+to their optimum values?
+
+We can treat it as though the entire system is a big set of nodes, and we've
+tagged some of those nodes to make them easier to find.
+
+Are functions just nodes also?  Instead of having a number as their value,
+they have a function as their value.
+
+Seems like what we want to is a way to manipulate environments.  So we can
+get references to entities within an environment and create new environments
+based on changes.
+
+env = {
+  x = 5
+  y = 7
+}
+env["x"] = 3
+return exec({x+y},env)
+
+We can then solve variabes and update the environment with the variable values.
+
