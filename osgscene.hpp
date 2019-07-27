@@ -11,6 +11,7 @@ class OSGScene : public Scene {
     void createDefaultObjects();
     TransformHandle top() override;
 
+    using Scene::createSphere;
     TransformHandle createSphere(TransformHandle parent) override;
     TransformHandle createBox(TransformHandle parent);
     void setScale(TransformHandle handle,float x,float y,float z) override;
