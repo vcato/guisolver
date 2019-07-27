@@ -6,8 +6,10 @@
 #include "osgutil.hpp"
 
 struct OSGScene : Scene {
-  void create();
+  OSGScene();
+  void createDefaultObjects();
   virtual void createSphere();
+  void createBox();
 
   MatrixTransformPtr top_node_ptr;
 };

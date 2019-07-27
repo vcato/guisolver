@@ -99,7 +99,7 @@ struct Manipulator : ManipulatorBase
 
 static HomePosition homePosition(ViewType view_type)
 {
-  osg::Quat orient(worldRotation(),osg::Vec3d(1,0,0));
+  osg::Quat orient = worldRotation();
 
   switch (view_type) {
     case ViewType::front:

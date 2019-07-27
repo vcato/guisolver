@@ -13,7 +13,14 @@ typedef osg::ref_ptr<osg::MatrixTransform> MatrixTransformPtr;
 
 extern MatrixTransformPtr createMatrixTransform();
 extern NodePtr createFloor();
-inline double worldRotation() { return M_PI/2; }
+inline double worldRotationAngle() { return M_PI/2; }
+inline osg::Vec3d worldRotationAxis() { return osg::Vec3d(1,0,0); }
+
+
+inline osg::Quat worldRotation()
+{
+  return osg::Quat(worldRotationAngle(),worldRotationAxis());
+}
 
 extern CameraManipulatorPtr createCameraManipulator(ViewType view_type);
 
