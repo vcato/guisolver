@@ -41,4 +41,14 @@ struct OSGSelectionHandler {
 extern bool isDragger(osg::Node *node_ptr);
 
 
+extern osg::Matrix
+  compose(
+    osg::Vec3f translation,
+    osg::Quat rotation,
+    osg::Vec3f scale,
+    osg::Quat so
+  );
+
+extern void setScale(osg::Matrix &m,const osg::Vec3f &new_scale);
+
 #endif /* SCENEUTIL_HPP_ */

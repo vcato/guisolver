@@ -329,3 +329,30 @@ void OSGSelectionHandler::nodeSelected(osg::Node *new_selected_node_ptr)
 }
 
 
+osg::Matrix
+  compose(
+    osg::Vec3f translation,
+    osg::Quat rotation,
+    osg::Vec3f scale,
+    osg::Quat so
+  )
+{
+  osg::Matrix result = osg::Matrix::identity();
+  result.setTrans(translation);
+  result.setRotate(rotation);
+  result.preMultRotate(so);
+  result.preMultScale(scale);
+  result.preMultRotate(so.conj());
+  return result;
+}
+
+
+void setScale(osg::Matrix &m,const osg::Vec3f &new_scale)
+{
+  osg::Vec3f translation;
+  osg::Quat rotation;
+  osg::Vec3f scale;
+  osg::Quat so;
+  m.decompose(translation, rotation, scale, so);
+  m = compose(translation,rotation,new_scale,so);
+}
