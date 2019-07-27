@@ -71,6 +71,8 @@ MatrixTransformPtr createMatrixTransform()
 
 typedef osgGA::TrackballManipulator ManipulatorBase;
 
+
+namespace {
 struct Manipulator : ManipulatorBase
 {
   bool disable_rotate;
@@ -95,6 +97,7 @@ struct Manipulator : ManipulatorBase
     return ManipulatorBase::handle(ea,us);
   }
 };
+}
 
 
 static HomePosition homePosition(ViewType view_type)

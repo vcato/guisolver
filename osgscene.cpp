@@ -20,6 +20,19 @@ static void setColor(osg::Geode &geode,const osg::Vec3f &vec)
 }
 
 
+static void setColor(osg::MatrixTransform &node,const osg::Vec3f &vec)
+{
+  assert(node.getNumChildren() == 1);
+  osg::Node *child_ptr = node.getChild(0);
+  assert(child_ptr);
+  osg::Geode *geode_ptr = child_ptr->asGeode();
+
+  if (geode_ptr) {
+    setColor(*geode_ptr,vec);
+  }
+}
+
+
 static void addSphereTo(osg::Geode &geode)
 {
   osg::ref_ptr<osg::Sphere> sphere_ptr = new osg::Sphere;
@@ -69,11 +82,11 @@ static GeodePtr createGeode()
 
 
 static osg::MatrixTransform &
-  addTransformTo(MatrixTransformPtr top_group_ptr)
+  addTransformTo(osg::MatrixTransform &parent)
 {
   MatrixTransformPtr transform_ptr = createMatrixTransform();
   osg::MatrixTransform &matrix_transform = *transform_ptr;
-  top_group_ptr->addChild(transform_ptr);
+  parent.addChild(transform_ptr);
   return matrix_transform;
 }
 
@@ -122,6 +135,15 @@ static void
 }
 
 
+static void
+  setScale(osg::MatrixTransform &transform,float x,float y,float z)
+{
+  auto m = transform.getMatrix();
+  setScale(m,osg::Vec3f(x,y,z));
+  transform.setMatrix(m);
+}
+
+
 static void addFloorTo(osg::MatrixTransform &matrix_transform)
 {
   matrix_transform.addChild(createFloor());
@@ -129,41 +151,112 @@ static void addFloorTo(osg::MatrixTransform &matrix_transform)
 
 
 OSGScene::OSGScene()
+: top_node_ptr(createMatrixTransform()),
+  top_handle(makeHandle(*top_node_ptr))
 {
-  top_node_ptr = createMatrixTransform();
-  addFloorTo(*top_node_ptr);
-  setRotatation(*top_node_ptr,worldRotation());
+  osg::MatrixTransform &node = *top_node_ptr;
+  addFloorTo(node);
+  setRotatation(node,worldRotation());
+  node.getOrCreateStateSet()->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
 }
 
 
 void OSGScene::createDefaultObjects()
 {
   {
-    osg::MatrixTransform &transform_node = addTransformTo(top_node_ptr);
-    setTranslation(transform_node,1,1,0);
+    osg::MatrixTransform &transform_node = addTransformTo(*top_node_ptr);
+    ::setTranslation(transform_node,1,1,0);
     osg::Geode &sphere = addSphereTo(transform_node);
-    setColor(sphere,osg::Vec3f(1,0,0));
+    ::setColor(sphere,osg::Vec3f(1,0,0));
   }
   {
-    osg::MatrixTransform &transform_node = addTransformTo(top_node_ptr);
-    setTranslation(transform_node,-1,1,0);
+    osg::MatrixTransform &transform_node = addTransformTo(*top_node_ptr);
+    ::setTranslation(transform_node,-1,1,0);
     osg::Geode &sphere = addSphereTo(transform_node);
-    setColor(sphere,osg::Vec3f(0,1,0));
+    ::setColor(sphere,osg::Vec3f(0,1,0));
   }
 }
 
 
-void OSGScene::createSphere()
+auto OSGScene::createSphere(TransformHandle parent) -> TransformHandle
 {
-  osg::MatrixTransform &matrix_transform = addTransformTo(top_node_ptr);
-  setTranslation(matrix_transform,3,1,0);
-  osg::Geode &sphere = addSphereTo(matrix_transform);
-  setColor(sphere,osg::Vec3f(0,0,1));
+  osg::MatrixTransform &matrix_transform = addTransformTo(transform(parent));
+  addSphereTo(matrix_transform);
+  return makeHandle(matrix_transform);
 }
 
 
-void OSGScene::createBox()
+osg::MatrixTransform& OSGScene::transform(TransformHandle handle)
 {
-  osg::MatrixTransform &matrix_transform = addTransformTo(top_node_ptr);
+  assert(transform_ptrs[handle.index]);
+  return *transform_ptrs[handle.index];
+}
+
+
+void OSGScene::setScale(TransformHandle handle,float x,float y,float z)
+{
+  ::setScale(transform(handle),x,y,z);
+}
+
+
+void OSGScene::setTranslation(TransformHandle handle,float x,float y,float z)
+{
+  ::setTranslation(transform(handle),x,y,z);
+}
+
+
+void OSGScene::setColor(TransformHandle handle,float r,float g,float b)
+{
+  ::setColor(transform(handle),osg::Vec3f(r,g,b));
+}
+
+
+auto OSGScene::createBox(TransformHandle parent) -> TransformHandle
+{
+  osg::MatrixTransform &matrix_transform = addTransformTo(transform(parent));
   addBoxTo(matrix_transform);
+  return makeHandle(matrix_transform);
+}
+
+
+template <typename A,typename B>
+static size_t findIndex(const std::vector<A> &v,B p)
+{
+  return std::find(v.begin(),v.end(),p) - v.begin();
+}
+
+
+template <typename T>
+static bool contains(const std::vector<T*> &v,T* p)
+{
+  return findIndex(v,p) != v.size();
+}
+
+
+template <typename T>
+static size_t findNull(const std::vector<T*> &v)
+{
+  return findIndex(v,nullptr);
+}
+
+
+auto OSGScene::makeHandle(osg::MatrixTransform &transform) -> TransformHandle
+{
+  assert(!contains(transform_ptrs,&transform));
+  size_t index = findNull(transform_ptrs);
+
+  if (index == transform_ptrs.size()) {
+    transform_ptrs.push_back(&transform);
+  }
+  else {
+    transform_ptrs[index] = &transform;
+  }
+
+  return TransformHandle{index};
+}
+
+
+auto OSGScene::top() -> TransformHandle
+{
+  return top_handle;
 }

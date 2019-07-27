@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QMainWindow>
 #include "osgscenemanager.hpp"
+#include "setupscene.hpp"
 
 
 int main(int argc,char** argv)
@@ -10,7 +11,8 @@ int main(int argc,char** argv)
   main_window.resize(640,480);
   main_window.show();
   OSGSceneManager scene_manager;
-  scene_manager.scene.createBox();
+
+  setupScene(scene_manager.scene);
 
   GraphicsWindowPtr graphics_window_ptr =
     scene_manager.createGraphicsWindow(ViewType::free);

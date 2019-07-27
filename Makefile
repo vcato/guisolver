@@ -20,7 +20,7 @@ osgutil_test.pass: osgutil_test
 	./osgutil_test
 
 guisolver: main.o osgscenemanager.o osgscene.o qttimer.o qttimer_moc.o \
-  osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o
+  osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o setupscene.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 osgutil_test: osgutil_test.o osgutil.o

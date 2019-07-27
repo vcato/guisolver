@@ -105,7 +105,7 @@ GraphicsWindowPtr OSGSceneManager::createGraphicsWindow(ViewType view_type)
   {
     osgViewer::GraphicsWindow::Views views;
     window_ptr->getViews(views);
-    views.front()->setSceneData(scene.top_node_ptr);
+    views.front()->setSceneData(&scene.topNode());
   }
   return window_ptr;
 }
