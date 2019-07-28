@@ -116,11 +116,10 @@ GraphicsWindowPtr OSGScene::createGraphicsWindow(ViewType view_type)
 {
   GraphicsWindowPtr window_ptr = createGraphicsWindowWithoutView();
   Impl::setupViewInGraphicsWindow(window_ptr,view_type,*this);
-  {
-    osgViewer::GraphicsWindow::Views views;
-    window_ptr->getViews(views);
-    views.front()->setSceneData(&topNode());
-  }
+  osgViewer::GraphicsWindow::Views views;
+  window_ptr->getViews(views);
+  assert(top_node_ptr);
+  views.front()->setSceneData(&*top_node_ptr);
   return window_ptr;
 }
 
@@ -364,7 +363,7 @@ static osg::ref_ptr<osg::ShapeDrawable> createBoxDrawable()
 
 
 static osg::MatrixTransform &
-  addTransformTo(osg::MatrixTransform &parent)
+  addTransformTo(osg::Group &parent)
 {
   MatrixTransformPtr transform_ptr = createMatrixTransform();
   osg::MatrixTransform &matrix_transform = *transform_ptr;
@@ -432,10 +431,11 @@ static void addFloorTo(osg::MatrixTransform &matrix_transform)
 
 OSGScene::OSGScene()
 : top_node_ptr(createMatrixTransform()),
-  top_handle(makeHandle(*top_node_ptr))
+top_handle(makeHandle(addTransformTo(*top_node_ptr)))
 {
   osg::MatrixTransform &node = *top_node_ptr;
-  addFloorTo(node);
+  osg::MatrixTransform &geometry_transform = transform(top_handle);
+  addFloorTo(geometry_transform);
   setRotatation(node,worldRotation());
   node.getOrCreateStateSet()->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
 
@@ -476,9 +476,11 @@ auto
   ) -> TransformHandle
 {
   osg::MatrixTransform &matrix_transform =
-    addTransformTo(scene.transform(parent));
+    addTransformTo(parentOf(scene.transform(parent)));
+
   osg::MatrixTransform &geometry_transform =
     addTransformTo(matrix_transform);
+
   osg::Geode &geode = createGeode(geometry_transform);
   geode.setName(shape_params.geode_name);
   geode.addDrawable(shape_params.createDrawable());

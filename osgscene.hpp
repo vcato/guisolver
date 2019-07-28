@@ -11,7 +11,6 @@
 #include "qttimer.hpp"
 #include "scene.hpp"
 
-
 using GraphicsWindowPtr = osg::ref_ptr<osgQt::GraphicsWindowQt>;
 
 
@@ -26,12 +25,6 @@ class OSGScene : public Scene {
     void setScale(TransformHandle handle,float x,float y,float z) override;
     void setTranslation(TransformHandle handle,float x,float y,float z) override;
     void setColor(TransformHandle handle,float r,float g,float b) override;
-
-    osg::Node &topNode() const
-    {
-      assert(top_node_ptr);
-      return *top_node_ptr.get();
-    }
 
     GraphicsWindowPtr createGraphicsWindow(ViewType view_type);
 
