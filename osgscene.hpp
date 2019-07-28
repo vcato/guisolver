@@ -17,16 +17,23 @@ using GraphicsWindowPtr = osg::ref_ptr<osgQt::GraphicsWindowQt>;
 class OSGScene : public Scene {
   public:
     OSGScene();
-    TransformHandle top() override;
+    TransformHandle top() const override;
 
     using Scene::createSphere;
     TransformHandle createSphere(TransformHandle parent) override;
-    TransformHandle createBox(TransformHandle parent);
+    TransformHandle createBox(TransformHandle parent) override;
+    LineHandle createLine(TransformHandle parent) override;
     void setScale(TransformHandle handle,float x,float y,float z) override;
-    void setTranslation(TransformHandle handle,float x,float y,float z) override;
+    void setTranslation(TransformHandle handle,Point) override;
     void setColor(TransformHandle handle,float r,float g,float b) override;
+    void setStartPoint(LineHandle,Point) override;
+    void setEndPoint(LineHandle,Point) override;
+    Point worldPoint(Point p,TransformHandle t) const override;
 
     GraphicsWindowPtr createGraphicsWindow(ViewType view_type);
+
+  private:
+    struct Impl;
 
     struct SelectionHandler : OSGSelectionHandler {
       osg::Node *selected_node_ptr = nullptr;
@@ -35,20 +42,12 @@ class OSGScene : public Scene {
       void nodeSelected(osg::Node *new_selected_node_ptr) override;
     };
 
-    SelectionHandler selection_handler;
-
-  protected:
-    osgViewer::CompositeViewer composite_viewer;
-    QtTimer timer;
-
-  private:
-    struct Impl;
     std::vector<osg::MatrixTransform *> transform_ptrs;
     const MatrixTransformPtr top_node_ptr;
     const TransformHandle top_handle;
-
-    osg::MatrixTransform &transform(TransformHandle handle);
-    TransformHandle makeHandle(osg::MatrixTransform &);
+    osgViewer::CompositeViewer composite_viewer;
+    QtTimer timer;
+    SelectionHandler selection_handler;
 };
 
 

@@ -3,11 +3,13 @@
 #include <cassert>
 #include <iostream>
 #include <osg/AutoTransform>
+#include <osg/Geometry>
 #include <osg/ShapeDrawable>
 #include <osg/Material>
 #include <osgManipulator/TranslateAxisDragger>
 #include <osgViewer/View>
 #include <osgViewer/ViewerEventHandlers>
+#include <osg/io_utils>
 #include "osgutil.hpp"
 #include "osgpickhandler.hpp"
 
@@ -26,7 +28,48 @@ namespace {
 struct ShapeParams {
   const string geode_name;
   ShapeParams(string geode_name_arg) : geode_name(std::move(geode_name_arg)) {}
-  virtual osg::ref_ptr<osg::ShapeDrawable> createDrawable() const = 0;
+  virtual osg::ref_ptr<osg::Drawable> createDrawable() const = 0;
+
+  virtual osg::Material::ColorMode colorMode() const
+  {
+    return osg::Material::DIFFUSE;
+  }
+};
+}
+
+
+static void removeAllPrimativeSets(osg::Geometry &geometry)
+{
+  unsigned int n = geometry.getNumPrimitiveSets();
+
+  for (unsigned int i = n; i!=0;) {
+    --i;
+    geometry.removePrimitiveSet(i);
+  }
+}
+
+
+namespace {
+struct LineDrawable : osg::Geometry {
+  osg::Vec3f color = osg::Vec3(1,1,1);
+  osg::Vec3 start_point = osg::Vec3f(0,0,0);
+  osg::Vec3 end_point = osg::Vec3(1,1,1);
+
+  void setup()
+  {
+    LineDrawable &line_geometry = *this;
+    osg::ref_ptr<osg::Vec3Array> points = new osg::Vec3Array;
+    points->push_back(start_point);
+    points->push_back(end_point);
+    osg::ref_ptr<osg::Vec4Array> color_array = new osg::Vec4Array;
+    color_array->push_back(osg::Vec4(color, 1.0));
+
+    removeAllPrimativeSets(line_geometry);
+    line_geometry.setVertexArray(points.get());
+    line_geometry.setColorArray(color_array.get());
+    line_geometry.setColorBinding(osg::Geometry::BIND_PER_PRIMITIVE_SET);
+    line_geometry.addPrimitiveSet(new osg::DrawArrays(GL_LINES,0,2));
+  }
 };
 }
 
@@ -35,12 +78,26 @@ struct OSGScene::Impl {
   static TransformHandle
     create(OSGScene &,TransformHandle parent,const ShapeParams &shape_params);
 
+  static osg::MatrixTransform &
+    createGeometryTransform(
+      OSGScene &,
+      TransformHandle parent,
+      const ShapeParams &shape_params
+    );
+
   static ViewPtr
     setupViewInGraphicsWindow(
       GraphicsWindowPtr graphics_window_ptr,
       ViewType view_type,
       OSGScene &
     );
+
+  static size_t getHandleIndex(OSGScene &scene,osg::MatrixTransform &);
+  static osg::MatrixTransform &transform(OSGScene &,TransformHandle);
+  static const osg::MatrixTransform &transform(const OSGScene &,TransformHandle);
+  static TransformHandle makeHandle(OSGScene &,osg::MatrixTransform &);
+  static LineDrawable& lineDrawable(OSGScene &,LineHandle);
+  static LineHandle makeLineHandle(OSGScene &,osg::MatrixTransform &);
 };
 
 
@@ -314,8 +371,19 @@ static void setColor(osg::Geode &geode,const osg::Vec3f &vec)
   assert(drawable_ptr);
   osg::ShapeDrawable *shape_drawable_ptr =
     dynamic_cast<osg::ShapeDrawable*>(drawable_ptr);
-  assert(shape_drawable_ptr);
-  shape_drawable_ptr->setColor(osg::Vec4f(vec.x(),vec.y(),vec.z(),1));
+
+  if (shape_drawable_ptr) {
+    shape_drawable_ptr->setColor(osg::Vec4f(vec.x(),vec.y(),vec.z(),1));
+    return;
+  }
+
+  LineDrawable *geometry_ptr =
+    dynamic_cast<LineDrawable*>(drawable_ptr);
+
+  if (geometry_ptr) {
+    geometry_ptr->color = vec;
+    geometry_ptr->setup();
+  }
 }
 
 
@@ -344,6 +412,14 @@ static osg::ref_ptr<osg::ShapeDrawable> createSphereDrawable()
     new osg::ShapeDrawable(sphere_ptr,tesselation_hints_ptr);
 
   return drawable_ptr;
+}
+
+
+static osg::ref_ptr<LineDrawable> createLineDrawable()
+{
+  osg::ref_ptr<LineDrawable> beam_ptr(new LineDrawable);
+  beam_ptr->setup();
+  return beam_ptr;
 }
 
 
@@ -376,7 +452,7 @@ namespace {
 struct SphereShapeParams : ShapeParams {
   SphereShapeParams() : ShapeParams{"Sphere Geode"} {}
 
-  osg::ref_ptr<osg::ShapeDrawable> createDrawable() const override
+  osg::ref_ptr<osg::Drawable> createDrawable() const override
   {
     return createSphereDrawable();
   }
@@ -388,9 +464,26 @@ namespace {
 struct BoxShapeParams : ShapeParams {
   BoxShapeParams() : ShapeParams{"Box Geode"} {}
 
-  osg::ref_ptr<osg::ShapeDrawable> createDrawable() const override
+  osg::ref_ptr<osg::Drawable> createDrawable() const override
   {
     return createBoxDrawable();
+  }
+};
+}
+
+
+namespace {
+struct LineShapeParams : ShapeParams {
+  LineShapeParams() : ShapeParams{"Line Geode"} {}
+
+  osg::ref_ptr<osg::Drawable> createDrawable() const override
+  {
+    return createLineDrawable();
+  }
+
+  osg::Material::ColorMode colorMode() const override
+  {
+    return osg::Material::EMISSION;
   }
 };
 }
@@ -431,10 +524,10 @@ static void addFloorTo(osg::MatrixTransform &matrix_transform)
 
 OSGScene::OSGScene()
 : top_node_ptr(createMatrixTransform()),
-top_handle(makeHandle(addTransformTo(*top_node_ptr)))
+  top_handle(Impl::makeHandle(*this,addTransformTo(*top_node_ptr)))
 {
   osg::MatrixTransform &node = *top_node_ptr;
-  osg::MatrixTransform &geometry_transform = transform(top_handle);
+  osg::MatrixTransform &geometry_transform = Impl::transform(*this,top_handle);
   addFloorTo(geometry_transform);
   setRotatation(node,worldRotation());
   node.getOrCreateStateSet()->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
@@ -450,15 +543,25 @@ top_handle(makeHandle(addTransformTo(*top_node_ptr)))
 }
 
 
-static osg::Geode& createGeode(osg::MatrixTransform &matrix_transform)
+static osg::Geode&
+  createGeode(
+    osg::MatrixTransform &matrix_transform,
+    osg::Material::ColorMode color_mode
+  )
 {
   GeodePtr geode_ptr = new osg::Geode;
   osg::Geode &geode = *geode_ptr;
   osg::ref_ptr<osg::Material> material = new osg::Material;
-  material->setColorMode(osg::Material::DIFFUSE);
-  material->setAmbient(osg::Material::FRONT_AND_BACK, osg::Vec4(0, 0, 0, 1));
-  material->setSpecular(osg::Material::FRONT_AND_BACK, osg::Vec4(1, 1, 1, 1));
-  material->setShininess(osg::Material::FRONT_AND_BACK, 64.0f);
+  material->setColorMode(color_mode);
+
+  if (color_mode == osg::Material::DIFFUSE) {
+    material->setAmbient(osg::Material::FRONT_AND_BACK, osg::Vec4(0, 0, 0, 1));
+    material->setSpecular(osg::Material::FRONT_AND_BACK, osg::Vec4(1, 1, 1, 1));
+    material->setShininess(osg::Material::FRONT_AND_BACK, 64.0f);
+  }
+  else {
+    material->setDiffuse(osg::Material::FRONT_AND_BACK, osg::Vec4(0, 0, 0, 1));
+  }
 
   geode.getOrCreateStateSet()->setAttributeAndModes(
     material, osg::StateAttribute::ON
@@ -469,22 +572,36 @@ static osg::Geode& createGeode(osg::MatrixTransform &matrix_transform)
 
 
 auto
+  OSGScene::Impl::createGeometryTransform(
+    OSGScene &scene,
+    TransformHandle parent,
+    const ShapeParams &shape_params
+  ) -> osg::MatrixTransform &
+{
+  osg::MatrixTransform &matrix_transform =
+    addTransformTo(parentOf(Impl::transform(scene,parent)));
+
+  osg::MatrixTransform &geometry_transform =
+    addTransformTo(matrix_transform);
+
+  osg::Geode &geode = createGeode(geometry_transform, shape_params.colorMode());
+  geode.setName(shape_params.geode_name);
+  geode.addDrawable(shape_params.createDrawable());
+  return geometry_transform;
+}
+
+
+auto
   OSGScene::Impl::create(
     OSGScene &scene,
     TransformHandle parent,
     const ShapeParams &shape_params
   ) -> TransformHandle
 {
-  osg::MatrixTransform &matrix_transform =
-    addTransformTo(parentOf(scene.transform(parent)));
-
   osg::MatrixTransform &geometry_transform =
-    addTransformTo(matrix_transform);
+    createGeometryTransform(scene,parent,shape_params);
 
-  osg::Geode &geode = createGeode(geometry_transform);
-  geode.setName(shape_params.geode_name);
-  geode.addDrawable(shape_params.createDrawable());
-  return scene.makeHandle(geometry_transform);
+  return makeHandle(scene,geometry_transform);
 }
 
 
@@ -500,28 +617,77 @@ auto OSGScene::createBox(TransformHandle parent) -> TransformHandle
 }
 
 
-osg::MatrixTransform& OSGScene::transform(TransformHandle handle)
+auto OSGScene::createLine(TransformHandle parent) -> LineHandle
 {
-  assert(transform_ptrs[handle.index]);
-  return *transform_ptrs[handle.index];
+  osg::MatrixTransform &geometry_transform =
+    Impl::createGeometryTransform(*this,parent,LineShapeParams());
+
+  return Impl::makeLineHandle(*this,geometry_transform);
+}
+
+
+osg::MatrixTransform&
+  OSGScene::Impl::transform(OSGScene &scene,TransformHandle handle)
+{
+  assert(scene.transform_ptrs[handle.index]);
+  return *scene.transform_ptrs[handle.index];
+}
+
+
+const osg::MatrixTransform&
+  OSGScene::Impl::transform(const OSGScene &scene,TransformHandle handle)
+{
+  assert(scene.transform_ptrs[handle.index]);
+  return *scene.transform_ptrs[handle.index];
+}
+
+
+LineDrawable& OSGScene::Impl::lineDrawable(OSGScene &scene,LineHandle handle)
+{
+  osg::MatrixTransform &transform = Impl::transform(scene,handle);
+  osg::Node *child_ptr = transform.getChild(0);
+  assert(child_ptr);
+  osg::Geode *geode_ptr = child_ptr->asGeode();
+  assert(geode_ptr);
+  osg::Drawable *drawable_ptr = geode_ptr->getDrawable(0);
+  assert(drawable_ptr);
+  LineDrawable *line_drawable_ptr = dynamic_cast<LineDrawable *>(drawable_ptr);
+  assert(line_drawable_ptr);
+  return *line_drawable_ptr;
 }
 
 
 void OSGScene::setScale(TransformHandle handle,float x,float y,float z)
 {
-  ::setScale(transform(handle),x,y,z);
+  ::setScale(Impl::transform(*this,handle),x,y,z);
 }
 
 
-void OSGScene::setTranslation(TransformHandle handle,float x,float y,float z)
+void OSGScene::setTranslation(TransformHandle handle,Point p)
 {
-  ::setTranslation(parentTransform(transform(handle)),x,y,z);
+  ::setTranslation(parentTransform(Impl::transform(*this,handle)),p.x,p.y,p.z);
 }
 
 
 void OSGScene::setColor(TransformHandle handle,float r,float g,float b)
 {
-  ::setColor(transform(handle),osg::Vec3f(r,g,b));
+  ::setColor(Impl::transform(*this,handle),osg::Vec3f(r,g,b));
+}
+
+
+void OSGScene::setStartPoint(LineHandle handle,Point p)
+{
+  LineDrawable &line_drawable = Impl::lineDrawable(*this,handle);
+  line_drawable.start_point = osg::Vec3f(p.x,p.y,p.z);
+  line_drawable.setup();
+}
+
+
+void OSGScene::setEndPoint(LineHandle handle,Point p)
+{
+  LineDrawable &line_drawable = Impl::lineDrawable(*this,handle);
+  line_drawable.end_point = osg::Vec3f(p.x,p.y,p.z);
+  line_drawable.setup();
 }
 
 
@@ -546,23 +712,72 @@ static size_t findNull(const std::vector<T*> &v)
 }
 
 
-auto OSGScene::makeHandle(osg::MatrixTransform &transform) -> TransformHandle
+size_t
+  OSGScene::Impl::getHandleIndex(OSGScene &scene,osg::MatrixTransform &transform)
 {
-  assert(!contains(transform_ptrs,&transform));
-  size_t index = findNull(transform_ptrs);
+  // Need to refactor this with makeLineHandle
+  assert(!contains(scene.transform_ptrs,&transform));
+  size_t index = findNull(scene.transform_ptrs);
 
-  if (index == transform_ptrs.size()) {
-    transform_ptrs.push_back(&transform);
+  if (index == scene.transform_ptrs.size()) {
+    scene.transform_ptrs.push_back(&transform);
   }
   else {
-    transform_ptrs[index] = &transform;
+    scene.transform_ptrs[index] = &transform;
   }
 
-  return TransformHandle{index};
+  return index;
 }
 
 
-auto OSGScene::top() -> TransformHandle
+static osg::Vec3f worldPoint(const osg::Node &node,const osg::Vec3f &local)
+{
+  osg::MatrixList matrices = node.getWorldMatrices();
+  assert(matrices.size() == 1);
+  const osg::Matrixd &matrix = matrices[0];
+  return local*matrix;
+}
+
+
+static osg::Vec3f localPoint(const osg::Node &node,const osg::Vec3f &world_point)
+{
+  osg::MatrixList matrices = node.getWorldMatrices();
+  assert(matrices.size() == 1);
+  osg::Matrixd matrix;
+  matrix.invert(matrices[0]);
+  return world_point*matrix;
+}
+
+
+auto
+  OSGScene::Impl::makeHandle(
+    OSGScene &scene,osg::MatrixTransform &transform
+  ) -> TransformHandle
+{
+  return TransformHandle{getHandleIndex(scene,transform)};
+}
+
+
+auto
+  OSGScene::Impl::makeLineHandle(
+    OSGScene &scene,osg::MatrixTransform &transform
+  ) -> LineHandle
+{
+  return LineHandle{getHandleIndex(scene,transform)};
+}
+
+
+auto OSGScene::top() const -> TransformHandle
 {
   return top_handle;
+}
+
+
+auto OSGScene::worldPoint(Point p,TransformHandle t) const -> Point
+{
+  osg::Vec3f v1 =
+    ::worldPoint(parentTransform(Impl::transform(*this,t)),{p.x,p.y,p.z});
+
+  osg::Vec3f v2 = ::localPoint(*top_node_ptr,v1);
+  return {v2.x(),v2.y(),v2.z()};
 }

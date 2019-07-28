@@ -11,7 +11,6 @@ int main(int argc,char** argv)
   main_window.resize(640,480);
   main_window.show();
   OSGScene scene;
-  scene.selection_handler.use_screen_relative_dragger = false;
 
   setupScene(scene);
 

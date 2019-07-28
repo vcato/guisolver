@@ -184,11 +184,19 @@ bool isDragger(osg::Node *node_ptr)
 
 osg::MatrixTransform &parentTransform(osg::MatrixTransform &t)
 {
-  osg::Node *parent2_ptr = t.getParent(0);
+  const osg::MatrixTransform &const_t = t;
+  const osg::MatrixTransform &const_result = parentTransform(const_t);
+  return const_cast<osg::MatrixTransform&>(const_result);
+}
+
+
+const osg::MatrixTransform &parentTransform(const osg::MatrixTransform &t)
+{
+  const osg::Node *parent2_ptr = t.getParent(0);
   assert(parent2_ptr);
-  osg::Transform *transform2_ptr = parent2_ptr->asTransform();
+  const osg::Transform *transform2_ptr = parent2_ptr->asTransform();
   assert(transform2_ptr);
-  osg::MatrixTransform *matrix2_transform_ptr =
+  const osg::MatrixTransform *matrix2_transform_ptr =
     transform2_ptr->asMatrixTransform();
   assert(matrix2_transform_ptr);
   return *matrix2_transform_ptr;

@@ -183,3 +183,5 @@ env["x"] = 3
 return exec({x+y},env)
 
 We can then solve variabes and update the environment with the variable values.
+---
+I want to test moving a global and having the box update.
