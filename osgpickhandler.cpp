@@ -1,11 +1,14 @@
 #include "osgpickhandler.hpp"
 
+#include <cassert>
+
 
 OSGPickHandler::OSGPickHandler(
   osgViewer::View *view_ptr,
   OSGSelectionHandler *selection_handler_ptr
 )
-: view_ptr(view_ptr), selection_handler_ptr(selection_handler_ptr)
+: view_ptr(view_ptr),
+  selection_handler_ptr(selection_handler_ptr)
 {
   assert(view_ptr);
   assert(selection_handler_ptr);
@@ -25,8 +28,10 @@ bool
   typedef LineSegmentIntersector::Intersections Intersections;
   Intersections intersections;
   osg::Node *new_selected_node_ptr = 0;
+
   if (view_ptr->computeIntersections(ea,intersections)) {
     Intersections::const_iterator iter = intersections.begin();
+
     for (;iter!=intersections.end(); ++iter) {
       const LineSegmentIntersector::Intersection &intersection = *iter;
       osg::NodePath node_path = intersection.nodePath;
@@ -36,8 +41,10 @@ bool
       break;
     }
   }
+
   if (!new_selected_node_ptr || !isDragger(new_selected_node_ptr)) {
     selection_handler_ptr->nodeSelected(new_selected_node_ptr);
   }
+
   return true;
 }

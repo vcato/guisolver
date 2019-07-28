@@ -1,9 +1,19 @@
-#ifndef OSGSCENE_HPP_
-#define OSGSCENE_HPP_
+#ifndef OSGSCENEMANAGER_HPP_
+#define OSGSCENEMANAGER_HPP_
 
+
+#include <cassert>
 #include <osg/MatrixTransform>
-#include "scene.hpp"
+#include <osgViewer/CompositeViewer>
 #include "osgutil.hpp"
+#include "osgQtGraphicsWindowQt.hpp"
+#include "osgselectionhandler.hpp"
+#include "qttimer.hpp"
+#include "scene.hpp"
+
+
+using GraphicsWindowPtr = osg::ref_ptr<osgQt::GraphicsWindowQt>;
+
 
 class OSGScene : public Scene {
   public:
@@ -23,6 +33,21 @@ class OSGScene : public Scene {
       return *top_node_ptr.get();
     }
 
+    GraphicsWindowPtr createGraphicsWindow(ViewType view_type);
+
+    struct SelectionHandler : OSGSelectionHandler {
+      osg::Node *selected_node_ptr = nullptr;
+      osg::Vec4 old_color;
+      bool use_screen_relative_dragger = false;
+      void nodeSelected(osg::Node *new_selected_node_ptr) override;
+    };
+
+    SelectionHandler selection_handler;
+
+  protected:
+    osgViewer::CompositeViewer composite_viewer;
+    QtTimer timer;
+
   private:
     struct Impl;
     std::vector<osg::MatrixTransform *> transform_ptrs;
@@ -33,4 +58,5 @@ class OSGScene : public Scene {
     TransformHandle makeHandle(osg::MatrixTransform &);
 };
 
-#endif /* OSGSCENE_HPP_ */
+
+#endif /* OSGSCENEMANAGER_HPP_ */

@@ -1,9 +1,7 @@
 #ifndef SCENEUTIL_HPP_
 #define SCENEUTIL_HPP_
 
-#include <cassert>
 #include <osg/Node>
-#include <osgViewer/View>
 #include <osgGA/CameraManipulator>
 #include "viewtype.hpp"
 
@@ -23,20 +21,7 @@ inline osg::Quat worldRotation()
 }
 
 extern CameraManipulatorPtr createCameraManipulator(ViewType view_type);
-
-
-struct OSGSelectionHandler {
-  OSGSelectionHandler()
-  : selected_node_ptr(0)
-  {
-  }
-
-  void nodeSelected(osg::Node *new_selected_node_ptr);
-
-  osg::Node *selected_node_ptr;
-  osg::Vec4 old_color;
-  bool use_screen_relative_dragger = false;
-};
+extern osg::MatrixTransform &parentTransform(osg::MatrixTransform &t);
 
 
 extern bool isDragger(osg::Node *node_ptr);

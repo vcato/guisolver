@@ -1,6 +1,6 @@
 #include <QApplication>
 #include <QMainWindow>
-#include "osgscenemanager.hpp"
+#include "osgscene.hpp"
 #include "setupscene.hpp"
 
 
@@ -10,13 +10,13 @@ int main(int argc,char** argv)
   QMainWindow main_window;
   main_window.resize(640,480);
   main_window.show();
-  OSGSceneManager scene_manager;
-  scene_manager.selection_handler.use_screen_relative_dragger = true;
+  OSGScene scene;
+  scene.selection_handler.use_screen_relative_dragger = false;
 
-  setupScene(scene_manager.scene);
+  setupScene(scene);
 
   GraphicsWindowPtr graphics_window_ptr =
-    scene_manager.createGraphicsWindow(ViewType::free);
+    scene.createGraphicsWindow(ViewType::free);
 
   main_window.setCentralWidget(graphics_window_ptr->getGLWidget());
   app.exec();

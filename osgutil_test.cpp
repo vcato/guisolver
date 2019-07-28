@@ -1,5 +1,6 @@
 #include "osgutil.hpp"
 
+#include <cassert>
 #include <random>
 #include <iostream>
 #include <osg/io_utils>

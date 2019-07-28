@@ -1,7 +1,12 @@
 #include <osgGA/GUIEventHandler>
 #include <osgViewer/View>
 #include "osgutil.hpp"
+#include "osgselectionhandler.hpp"
 
+
+// A pick handler is created for each view.  It handles mouse events and
+// detects clicks on objects.  When a click is detected, it notifies the
+// selection handler.
 struct OSGPickHandler : osgGA::GUIEventHandler {
   OSGPickHandler(
     osgViewer::View *view_ptr,

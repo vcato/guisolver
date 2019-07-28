@@ -1,20 +1,15 @@
 #include "osgutil.hpp"
 
 #include <cassert>
-#include <osg/AutoTransform>
 #include <osg/Geometry>
 #include <osg/Geode>
 #include <osg/Material>
-#include <osg/ShapeDrawable>
+#include <osg/MatrixTransform>
+#include <osgManipulator/Dragger>
 #include <osgGA/TrackballManipulator>
-#include <osgManipulator/TranslateAxisDragger>
+#include "osgselectionhandler.hpp"
 
 typedef osg::ref_ptr<osg::Geode> GeodePtr;
-typedef osg::ref_ptr<osgManipulator::TranslateAxisDragger>
-  TranslateAxisDraggerPtr;
-typedef osg::ref_ptr<osgManipulator::Dragger> DraggerPtr;
-typedef osg::ref_ptr<osg::Group> GroupPtr;
-typedef osg::ref_ptr<osg::AutoTransform> AutoTransformPtr;
 
 namespace {
 struct HomePosition {
@@ -177,12 +172,6 @@ CameraManipulatorPtr createCameraManipulator(ViewType view_type)
 }
 
 
-static void scaleAxisXY(osg::Node *x_axis_node,float scale_factor)
-{
-  osg::MatrixTransform *x_axis_transform = x_axis_node->asTransform()->asMatrixTransform();
-  x_axis_transform->setMatrix(osg::Matrix::scale(scale_factor,scale_factor,1)*x_axis_transform->getMatrix());
-}
-
 bool isDragger(osg::Node *node_ptr)
 {
   assert(node_ptr);
@@ -193,159 +182,16 @@ bool isDragger(osg::Node *node_ptr)
   return isDragger(node_ptr->getParent(0));
 }
 
-// Dragger that changes size based on the transform it is modifying.
-static NodePtr createObjectRelativeDragger(MatrixTransformPtr transform_ptr)
+osg::MatrixTransform &parentTransform(osg::MatrixTransform &t)
 {
-  TranslateAxisDraggerPtr dragger_ptr =
-    new osgManipulator::TranslateAxisDragger();
-  dragger_ptr->setupDefaultGeometry();
-  assert(dragger_ptr->getNumChildren()==3);
-  float thickness = 4;
-  scaleAxisXY(dragger_ptr->getChild(0),thickness);
-  scaleAxisXY(dragger_ptr->getChild(1),thickness);
-  scaleAxisXY(dragger_ptr->getChild(2),thickness);
-  dragger_ptr->setHandleEvents(true);
-  assert(isDragger(dragger_ptr));
-  dragger_ptr->addTransformUpdating(transform_ptr);
-  dragger_ptr->setMatrix(osg::Matrix::scale(2,2,2)*transform_ptr->getMatrix());
-  return dragger_ptr;
-}
-
-
-// Dragger that maintains its size relative to the screen
-static NodePtr createScreenRelativeDragger(MatrixTransformPtr transform_ptr)
-{
-  using TranslateAxisDragger = osgManipulator::TranslateAxisDragger;
-  osg::ref_ptr<TranslateAxisDragger> my_dragger_ptr(new TranslateAxisDragger);
-  TranslateAxisDraggerPtr dragger_ptr =
-    new osgManipulator::TranslateAxisDragger();
-  dragger_ptr->setParentDragger(my_dragger_ptr);
-  dragger_ptr->setupDefaultGeometry();
-  assert(dragger_ptr->getNumChildren()==3);
-  float thickness = 4;
-  scaleAxisXY(dragger_ptr->getChild(0),thickness);
-  scaleAxisXY(dragger_ptr->getChild(1),thickness);
-  scaleAxisXY(dragger_ptr->getChild(2),thickness);
-  dragger_ptr->setHandleEvents(true);
-  assert(isDragger(dragger_ptr));
-  dragger_ptr->setParentDragger(my_dragger_ptr);
-  //dragger_ptr->addTransformUpdating(transform_ptr);
-  AutoTransformPtr mid_transform_ptr(new osg::AutoTransform);
-  mid_transform_ptr->setAutoScaleToScreen(true);
-  osg::Vec3d translation;
-  osg::Quat rotation;
-  osg::Vec3d scale;
-  osg::Quat scale_orient;
-  transform_ptr->getMatrix().decompose(translation,rotation,scale,scale_orient);
-  mid_transform_ptr->setPosition(translation);
-  my_dragger_ptr->addChild(mid_transform_ptr);
-  mid_transform_ptr->addChild(dragger_ptr);
-  my_dragger_ptr->addTransformUpdating(transform_ptr);
-  dragger_ptr->setMatrix(osg::Matrix::scale(100,100,100));
-  return my_dragger_ptr;
-}
-
-
-static NodePtr
-  createDragger(MatrixTransformPtr transform_ptr,bool screen_relative)
-{
-  if (screen_relative) {
-    return createScreenRelativeDragger(transform_ptr);
-  }
-  else {
-    return createObjectRelativeDragger(transform_ptr);
-  }
-}
-
-
-static osg::ref_ptr<osg::Group> createGroup()
-{
-  return new osg::Group();
-}
-
-
-static void addDraggerTo(MatrixTransformPtr transform_ptr,bool screen_relative)
-{
-  osg::Group *parent_ptr = transform_ptr->getParent(0);
-  parent_ptr->removeChild(transform_ptr);
-  GroupPtr group_ptr = createGroup();
-  parent_ptr->addChild(group_ptr);
-  NodePtr dragger_ptr = createDragger(transform_ptr,screen_relative);
-  group_ptr->addChild(transform_ptr);
-  group_ptr->addChild(dragger_ptr);
-}
-
-static void removeDraggerFrom(MatrixTransformPtr transform_ptr)
-{
-  osg::Group *group_ptr = transform_ptr->getParent(0);
-  assert(group_ptr);
-  osg::Group *parent_ptr = group_ptr->getParent(0);
-  assert(group_ptr->getNumChildren()==2);
-  group_ptr->removeChild(0,2);
-  assert(parent_ptr);
-  parent_ptr->removeChild(group_ptr);
-  parent_ptr->addChild(transform_ptr);
-}
-
-static osg::ShapeDrawable *findShapeDrawable(osg::Node *node_ptr)
-{
-  osg::Geode *geode_ptr = node_ptr->asGeode();
-  if (geode_ptr) {
-    osg::Drawable *drawable_ptr = geode_ptr->getDrawable(0);
-    if (drawable_ptr) {
-      osg::ShapeDrawable *shape_drawable_ptr =
-        dynamic_cast<osg::ShapeDrawable*>(drawable_ptr);
-      return shape_drawable_ptr;
-    }
-  }
-
-  return 0;
-}
-
-static osg::MatrixTransform *transformParentOf(osg::Node *node_ptr)
-{
-  assert(node_ptr);
-  osg::Node *parent_ptr = node_ptr->getParent(0);
-  osg::Transform *transform_ptr = parent_ptr->asTransform();
-  assert(transform_ptr);
-  osg::MatrixTransform *matrix_transform_ptr =
-    transform_ptr->asMatrixTransform();
-  assert(matrix_transform_ptr);
-  return matrix_transform_ptr;
-}
-
-
-void OSGSelectionHandler::nodeSelected(osg::Node *new_selected_node_ptr)
-{
-  if (selected_node_ptr) {
-    osg::ShapeDrawable *shape_drawable_ptr =
-      findShapeDrawable(selected_node_ptr);
-
-    if (shape_drawable_ptr) {
-      shape_drawable_ptr->setColor(old_color);
-    }
-
-    removeDraggerFrom(transformParentOf(selected_node_ptr));
-    selected_node_ptr = 0;
-  }
-
-  selected_node_ptr = new_selected_node_ptr;
-
-  if (selected_node_ptr) {
-    osg::ShapeDrawable *shape_drawable_ptr =
-      findShapeDrawable(selected_node_ptr);
-
-    if (shape_drawable_ptr) {
-      old_color = shape_drawable_ptr->getColor();
-      osg::Vec4 selection_color(1,1,0,1);
-      shape_drawable_ptr->setColor(selection_color);
-    }
-
-    addDraggerTo(
-      transformParentOf(selected_node_ptr),
-      use_screen_relative_dragger
-    );
-  }
+  osg::Node *parent2_ptr = t.getParent(0);
+  assert(parent2_ptr);
+  osg::Transform *transform2_ptr = parent2_ptr->asTransform();
+  assert(transform2_ptr);
+  osg::MatrixTransform *matrix2_transform_ptr =
+    transform2_ptr->asMatrixTransform();
+  assert(matrix2_transform_ptr);
+  return *matrix2_transform_ptr;
 }
 
 
