@@ -2,6 +2,7 @@
 #define SCENE_HPP_
 
 #include <cstdlib>
+#include <functional>
 
 
 struct Scene {
@@ -36,6 +37,9 @@ struct Scene {
   virtual void setStartPoint(LineHandle,Point) = 0;
   virtual void setEndPoint(LineHandle,Point) = 0;
   virtual Point worldPoint(Point local,TransformHandle) const = 0;
+
+  std::function<void()> changing_callback;
+  std::function<void()> changed_callback;
 };
 
 #endif /* SCENE_HPP_ */

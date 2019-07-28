@@ -75,6 +75,8 @@ struct LineDrawable : osg::Geometry {
 
 
 struct OSGScene::Impl {
+  struct DraggerCallback;
+
   static TransformHandle
     create(OSGScene &,TransformHandle parent,const ShapeParams &shape_params);
 
@@ -98,6 +100,20 @@ struct OSGScene::Impl {
   static TransformHandle makeHandle(OSGScene &,osg::MatrixTransform &);
   static LineDrawable& lineDrawable(OSGScene &,LineHandle);
   static LineHandle makeLineHandle(OSGScene &,osg::MatrixTransform &);
+
+  static void handleDragFinish(OSGScene &scene)
+  {
+    if (scene.changed_callback) {
+      scene.changed_callback();
+    }
+  }
+
+  static void handleDragging(OSGScene &scene)
+  {
+    if (scene.changing_callback) {
+      scene.changing_callback();
+    }
+  }
 };
 
 
@@ -247,14 +263,62 @@ static void scaleAxisXY(osg::Node *x_axis_node,float scale_factor)
 }
 
 
+#if 0
+static string stageName(osgManipulator::MotionCommand::Stage stage)
+{
+  switch (stage) {
+    case osgManipulator::MotionCommand::NONE:
+      return "NONE";
+    case osgManipulator::MotionCommand::START:
+      return "START";
+    case osgManipulator::MotionCommand::MOVE:
+      return "MOVE";
+    case osgManipulator::MotionCommand::FINISH:
+      return "FINISH";
+  }
+
+  return "";
+}
+#endif
+
+
+struct OSGScene::Impl::DraggerCallback : osgManipulator::DraggerCallback {
+  OSGScene &scene;
+
+  DraggerCallback(OSGScene &scene_arg)
+  : scene(scene_arg)
+  {
+  }
+
+  bool receive(const osgManipulator::MotionCommand& command) override
+  {
+    osgManipulator::MotionCommand::Stage stage = command.getStage();
+
+    if (stage == osgManipulator::MotionCommand::FINISH) {
+      Impl::handleDragFinish(scene);
+    }
+
+    if (stage == osgManipulator::MotionCommand::MOVE) {
+      Impl::handleDragging(scene);
+    }
+
+    return false;
+  }
+};
+
+
 // Dragger that maintains its size relative to the screen
-static NodePtr createScreenRelativeDragger(MatrixTransformPtr transform_ptr)
+static NodePtr
+  createScreenRelativeDragger(
+    MatrixTransformPtr transform_ptr,
+    osgManipulator::DraggerCallback &
+  )
 {
   using TranslateAxisDragger = osgManipulator::TranslateAxisDragger;
-  osg::ref_ptr<TranslateAxisDragger> my_dragger_ptr(new TranslateAxisDragger);
+  TranslateAxisDraggerPtr parent_dragger_ptr(new TranslateAxisDragger);
   TranslateAxisDraggerPtr dragger_ptr =
     new osgManipulator::TranslateAxisDragger();
-  dragger_ptr->setParentDragger(my_dragger_ptr);
+  dragger_ptr->setParentDragger(parent_dragger_ptr);
   dragger_ptr->setupDefaultGeometry();
   assert(dragger_ptr->getNumChildren()==3);
   float thickness = 4;
@@ -263,8 +327,7 @@ static NodePtr createScreenRelativeDragger(MatrixTransformPtr transform_ptr)
   scaleAxisXY(dragger_ptr->getChild(2),thickness);
   dragger_ptr->setHandleEvents(true);
   assert(isDragger(dragger_ptr));
-  dragger_ptr->setParentDragger(my_dragger_ptr);
-  //dragger_ptr->addTransformUpdating(transform_ptr);
+  dragger_ptr->setParentDragger(parent_dragger_ptr);
   AutoTransformPtr mid_transform_ptr(new osg::AutoTransform);
   mid_transform_ptr->setAutoScaleToScreen(true);
   osg::Vec3d translation;
@@ -273,16 +336,20 @@ static NodePtr createScreenRelativeDragger(MatrixTransformPtr transform_ptr)
   osg::Quat scale_orient;
   transform_ptr->getMatrix().decompose(translation,rotation,scale,scale_orient);
   mid_transform_ptr->setPosition(translation);
-  my_dragger_ptr->addChild(mid_transform_ptr);
+  parent_dragger_ptr->addChild(mid_transform_ptr);
   mid_transform_ptr->addChild(dragger_ptr);
-  my_dragger_ptr->addTransformUpdating(transform_ptr);
+  parent_dragger_ptr->addTransformUpdating(transform_ptr);
   dragger_ptr->setMatrix(osg::Matrix::scale(100,100,100));
-  return my_dragger_ptr;
+  return parent_dragger_ptr;
 }
 
 
 // Dragger that changes size based on the transform it is modifying.
-static NodePtr createObjectRelativeDragger(MatrixTransformPtr transform_ptr)
+static NodePtr
+  createObjectRelativeDragger(
+    MatrixTransformPtr transform_ptr,
+    osgManipulator::DraggerCallback &dragger_callback
+  )
 {
   TranslateAxisDraggerPtr dragger_ptr =
     new osgManipulator::TranslateAxisDragger();
@@ -296,23 +363,33 @@ static NodePtr createObjectRelativeDragger(MatrixTransformPtr transform_ptr)
   assert(isDragger(dragger_ptr));
   dragger_ptr->addTransformUpdating(transform_ptr);
   dragger_ptr->setMatrix(osg::Matrix::scale(2,2,2)*transform_ptr->getMatrix());
+  dragger_ptr->addDraggerCallback(&dragger_callback);
   return dragger_ptr;
 }
 
 
 static NodePtr
-  createDragger(MatrixTransformPtr transform_ptr,bool screen_relative)
+  createDragger(
+    MatrixTransformPtr transform_ptr,
+    bool screen_relative,
+    osgManipulator::DraggerCallback &dragger_callback
+  )
 {
   if (screen_relative) {
-    return createScreenRelativeDragger(transform_ptr);
+    return createScreenRelativeDragger(transform_ptr,dragger_callback);
   }
   else {
-    return createObjectRelativeDragger(transform_ptr);
+    return createObjectRelativeDragger(transform_ptr,dragger_callback);
   }
 }
 
 
-static void addDraggerTo(MatrixTransformPtr transform_ptr,bool screen_relative)
+static void
+  addDraggerTo(
+    MatrixTransformPtr transform_ptr,
+    bool screen_relative,
+    osgManipulator::DraggerCallback &dragger_callback
+  )
 {
   // * parent             * parent
   //   * transform   ->     * group
@@ -322,9 +399,18 @@ static void addDraggerTo(MatrixTransformPtr transform_ptr,bool screen_relative)
   parent.removeChild(transform_ptr);
   GroupPtr group_ptr = createGroup();
   parent.addChild(group_ptr);
-  NodePtr dragger_ptr = createDragger(transform_ptr,screen_relative);
+
+  NodePtr dragger_ptr =
+    createDragger(transform_ptr,screen_relative,dragger_callback);
+
   group_ptr->addChild(transform_ptr);
   group_ptr->addChild(dragger_ptr);
+}
+
+
+OSGScene::SelectionHandler::SelectionHandler(OSGScene &scene_arg)
+: scene(scene_arg)
+{
 }
 
 
@@ -357,9 +443,13 @@ void
       shape_drawable_ptr->setColor(selection_color);
     }
 
+    osg::ref_ptr<osgManipulator::DraggerCallback> dc =
+      new Impl::DraggerCallback(scene);
+
     addDraggerTo(
       &transformParentOf(selected_node_ptr),
-      use_screen_relative_dragger
+      use_screen_relative_dragger,
+      *dc
     );
   }
 }
@@ -524,7 +614,8 @@ static void addFloorTo(osg::MatrixTransform &matrix_transform)
 
 OSGScene::OSGScene()
 : top_node_ptr(createMatrixTransform()),
-  top_handle(Impl::makeHandle(*this,addTransformTo(*top_node_ptr)))
+  top_handle(Impl::makeHandle(*this,addTransformTo(*top_node_ptr))),
+  selection_handler(*this)
 {
   osg::MatrixTransform &node = *top_node_ptr;
   osg::MatrixTransform &geometry_transform = Impl::transform(*this,top_handle);

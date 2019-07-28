@@ -39,6 +39,9 @@ class OSGScene : public Scene {
       osg::Node *selected_node_ptr = nullptr;
       osg::Vec4 old_color;
       bool use_screen_relative_dragger = false;
+      OSGScene &scene;
+
+      SelectionHandler(OSGScene &scene_arg);
       void nodeSelected(osg::Node *new_selected_node_ptr) override;
     };
 
