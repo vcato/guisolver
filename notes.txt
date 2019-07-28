@@ -183,19 +183,3 @@ env["x"] = 3
 return exec({x+y},env)
 
 We can then solve variabes and update the environment with the variable values.
----
-It's intuitive to have spheres be children of boxes, but since we need to
-change the scale of the boxes, we need two levels of transforms.
-
-* transform A
-  * transform B
-    * box
-  * transform C
-    * sphere
-
-If we move the box, we want it to move transform A instead of transform B.
-
-We have transformParentOf(), so maybe we could make this smarter.
-We could add another transform node to an object which serves as
-the geometry transform.  We could then have Scene::setGeometryScale() which
-is independent of Scene::setScale().
