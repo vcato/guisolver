@@ -6,7 +6,23 @@
 #include "osgutil.hpp"
 
 using std::cerr;
+using std::string;
 typedef osg::ref_ptr<osg::Geode> GeodePtr;
+
+
+namespace {
+struct ShapeParams {
+  const string geode_name;
+  ShapeParams(string geode_name_arg) : geode_name(std::move(geode_name_arg)) {}
+  virtual osg::ref_ptr<osg::ShapeDrawable> createDrawable() const = 0;
+};
+}
+
+
+struct OSGScene::Impl {
+  static TransformHandle
+    create(OSGScene &,TransformHandle parent,const ShapeParams &shape_params);
+};
 
 
 static void setColor(osg::Geode &geode,const osg::Vec3f &vec)
@@ -33,33 +49,33 @@ static void setColor(osg::MatrixTransform &node,const osg::Vec3f &vec)
 }
 
 
-static void addSphereTo(osg::Geode &geode)
+static osg::ref_ptr<osg::ShapeDrawable> createSphereDrawable()
 {
   osg::ref_ptr<osg::Sphere> sphere_ptr = new osg::Sphere;
 
-  osg::ref_ptr<osg::TessellationHints> sphere_tesselation_hints_ptr =
+  osg::ref_ptr<osg::TessellationHints> tesselation_hints_ptr =
     new osg::TessellationHints;
-  sphere_tesselation_hints_ptr->setDetailRatio(1.0);
+  tesselation_hints_ptr->setDetailRatio(1.0);
 
-  osg::ref_ptr<osg::ShapeDrawable> sphere_drawable_ptr =
-    new osg::ShapeDrawable(sphere_ptr,sphere_tesselation_hints_ptr);
+  osg::ref_ptr<osg::ShapeDrawable> drawable_ptr =
+    new osg::ShapeDrawable(sphere_ptr,tesselation_hints_ptr);
 
-  geode.addDrawable(sphere_drawable_ptr);
+  return drawable_ptr;
 }
 
 
-static void addBoxTo(osg::Geode &geode)
+static osg::ref_ptr<osg::ShapeDrawable> createBoxDrawable()
 {
-  osg::ref_ptr<osg::Box> sphere_ptr = new osg::Box;
+  osg::ref_ptr<osg::Box> shape_ptr = new osg::Box;
 
-  osg::ref_ptr<osg::TessellationHints> sphere_tesselation_hints_ptr =
+  osg::ref_ptr<osg::TessellationHints> tesselation_hints_ptr =
     new osg::TessellationHints;
-  sphere_tesselation_hints_ptr->setDetailRatio(1.0);
+  tesselation_hints_ptr->setDetailRatio(1.0);
 
-  osg::ref_ptr<osg::ShapeDrawable> sphere_drawable_ptr =
-    new osg::ShapeDrawable(sphere_ptr,sphere_tesselation_hints_ptr);
+  osg::ref_ptr<osg::ShapeDrawable> drawable_ptr =
+    new osg::ShapeDrawable(shape_ptr,tesselation_hints_ptr);
 
-  geode.addDrawable(sphere_drawable_ptr);
+  return drawable_ptr;
 }
 
 
@@ -99,20 +115,39 @@ static osg::Geode &addGeodeTo(osg::MatrixTransform &matrix_transform)
 }
 
 
-static osg::Geode &addSphereTo(osg::MatrixTransform & matrix_transform)
-{
-  osg::Geode &geode = addGeodeTo(matrix_transform);
-  geode.setName("Sphere Geode");
-  addSphereTo(geode);
-  return geode;
+namespace {
+struct SphereShapeParams : ShapeParams {
+  SphereShapeParams() : ShapeParams{"Sphere Geode"} {}
+
+  osg::ref_ptr<osg::ShapeDrawable> createDrawable() const override
+  {
+    return createSphereDrawable();
+  }
+};
 }
 
 
-static osg::Geode &addBoxTo(osg::MatrixTransform & matrix_transform)
+namespace {
+struct BoxShapeParams : ShapeParams {
+  BoxShapeParams() : ShapeParams{"Box Geode"} {}
+
+  osg::ref_ptr<osg::ShapeDrawable> createDrawable() const override
+  {
+    return createBoxDrawable();
+  }
+};
+}
+
+
+static osg::Geode &
+  addGeodeTo(
+    osg::MatrixTransform & matrix_transform,
+    const ShapeParams &shape_params
+  )
 {
   osg::Geode &geode = addGeodeTo(matrix_transform);
-  geode.setName("Box Geode");
-  addBoxTo(geode);
+  geode.setName(shape_params.geode_name);
+  geode.addDrawable(shape_params.createDrawable());
   return geode;
 }
 
@@ -161,28 +196,30 @@ OSGScene::OSGScene()
 }
 
 
-void OSGScene::createDefaultObjects()
+auto
+  OSGScene::Impl::create(
+    OSGScene &scene,
+    TransformHandle parent,
+    const ShapeParams &shape_params
+  )
+    -> TransformHandle
 {
-  {
-    osg::MatrixTransform &transform_node = addTransformTo(*top_node_ptr);
-    ::setTranslation(transform_node,1,1,0);
-    osg::Geode &sphere = addSphereTo(transform_node);
-    ::setColor(sphere,osg::Vec3f(1,0,0));
-  }
-  {
-    osg::MatrixTransform &transform_node = addTransformTo(*top_node_ptr);
-    ::setTranslation(transform_node,-1,1,0);
-    osg::Geode &sphere = addSphereTo(transform_node);
-    ::setColor(sphere,osg::Vec3f(0,1,0));
-  }
+  osg::MatrixTransform &matrix_transform =
+    addTransformTo(scene.transform(parent));
+  addGeodeTo(matrix_transform,shape_params);
+  return scene.makeHandle(matrix_transform);
 }
 
 
 auto OSGScene::createSphere(TransformHandle parent) -> TransformHandle
 {
-  osg::MatrixTransform &matrix_transform = addTransformTo(transform(parent));
-  addSphereTo(matrix_transform);
-  return makeHandle(matrix_transform);
+  return Impl::create(*this,parent,SphereShapeParams());
+}
+
+
+auto OSGScene::createBox(TransformHandle parent) -> TransformHandle
+{
+  return Impl::create(*this,parent,BoxShapeParams());
 }
 
 
@@ -208,14 +245,6 @@ void OSGScene::setTranslation(TransformHandle handle,float x,float y,float z)
 void OSGScene::setColor(TransformHandle handle,float r,float g,float b)
 {
   ::setColor(transform(handle),osg::Vec3f(r,g,b));
-}
-
-
-auto OSGScene::createBox(TransformHandle parent) -> TransformHandle
-{
-  osg::MatrixTransform &matrix_transform = addTransformTo(transform(parent));
-  addBoxTo(matrix_transform);
-  return makeHandle(matrix_transform);
 }
 
 

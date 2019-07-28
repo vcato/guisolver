@@ -8,7 +8,6 @@
 class OSGScene : public Scene {
   public:
     OSGScene();
-    void createDefaultObjects();
     TransformHandle top() override;
 
     using Scene::createSphere;
@@ -25,6 +24,7 @@ class OSGScene : public Scene {
     }
 
   private:
+    struct Impl;
     std::vector<osg::MatrixTransform *> transform_ptrs;
     const MatrixTransformPtr top_node_ptr;
     const TransformHandle top_handle;
