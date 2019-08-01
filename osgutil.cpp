@@ -230,3 +230,23 @@ void setScale(osg::Matrix &m,const osg::Vec3f &new_scale)
   m.decompose(translation, rotation, scale, so);
   m = compose(translation,rotation,new_scale,so);
 }
+
+
+void
+  setCoordinateAxes(
+    osg::Matrix &m,
+    const osg::Vec3f &x,
+    const osg::Vec3f &y,
+    const osg::Vec3f &z
+  )
+{
+  m(0,0) = x.x();
+  m(0,1) = x.y();
+  m(0,2) = x.z();
+  m(1,0) = y.x();
+  m(1,1) = y.y();
+  m(1,2) = y.z();
+  m(2,0) = z.x();
+  m(2,1) = z.y();
+  m(2,2) = z.z();
+}

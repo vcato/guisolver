@@ -14,6 +14,15 @@ struct Scene {
     LineHandle(size_t index) : TransformHandle{index} {}
   };
 
+  struct Vector {
+    float x=0, y=0, z=0;
+
+    Vector(float x_arg,float y_arg,float z_arg)
+    : x(x_arg), y(y_arg), z(z_arg)
+    {
+    }
+  };
+
   struct Point {
     float x=0, y=0, z=0;
 
@@ -31,7 +40,9 @@ struct Scene {
   TransformHandle createSphere() { return createSphere(top()); }
   TransformHandle createBox() { return createBox(top()); }
 
-  virtual void setScale(TransformHandle,float x,float y,float z) = 0;
+  virtual void setGeometryScale(TransformHandle,float x,float y,float z) = 0;
+
+  virtual void setCoordinateAxes(TransformHandle,Vector x,Vector y,Vector z) = 0;
   virtual void setTranslation(TransformHandle,Point) = 0;
   virtual void setColor(TransformHandle,float r,float g,float b) = 0;
   virtual void setStartPoint(LineHandle,Point) = 0;

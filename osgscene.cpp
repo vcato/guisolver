@@ -95,8 +95,13 @@ struct OSGScene::Impl {
     );
 
   static size_t getHandleIndex(OSGScene &scene,osg::MatrixTransform &);
-  static osg::MatrixTransform &transform(OSGScene &,TransformHandle);
-  static const osg::MatrixTransform &transform(const OSGScene &,TransformHandle);
+
+  static osg::MatrixTransform &
+    geometryTransform(OSGScene &,TransformHandle);
+
+  static const osg::MatrixTransform &
+    geometryTransform(const OSGScene &,TransformHandle);
+
   static TransformHandle makeHandle(OSGScene &,osg::MatrixTransform &);
   static LineDrawable& lineDrawable(OSGScene &,LineHandle);
   static LineHandle makeLineHandle(OSGScene &,osg::MatrixTransform &);
@@ -113,6 +118,18 @@ struct OSGScene::Impl {
     if (scene.changing_callback) {
       scene.changing_callback();
     }
+  }
+
+  static const osg::MatrixTransform &
+    transform(const OSGScene &scene,TransformHandle t)
+  {
+    return parentTransform(geometryTransform(scene,t));
+  }
+
+  static osg::MatrixTransform &
+    transform(OSGScene &scene,TransformHandle t)
+  {
+    return parentTransform(geometryTransform(scene,t));
   }
 };
 
@@ -606,6 +623,20 @@ static void
 }
 
 
+static void
+  setCoordinateAxes(
+    osg::MatrixTransform &transform,
+    const osg::Vec3f &x,
+    const osg::Vec3f &y,
+    const osg::Vec3f &z
+  )
+{
+  auto m = transform.getMatrix();
+  setCoordinateAxes(m,x,y,z);
+  transform.setMatrix(m);
+}
+
+
 static void addFloorTo(osg::MatrixTransform &matrix_transform)
 {
   matrix_transform.addChild(createFloor());
@@ -618,7 +649,10 @@ OSGScene::OSGScene()
   selection_handler(*this)
 {
   osg::MatrixTransform &node = *top_node_ptr;
-  osg::MatrixTransform &geometry_transform = Impl::transform(*this,top_handle);
+
+  osg::MatrixTransform &geometry_transform =
+    Impl::geometryTransform(*this,top_handle);
+
   addFloorTo(geometry_transform);
   setRotatation(node,worldRotation());
   node.getOrCreateStateSet()->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
@@ -670,7 +704,7 @@ auto
   ) -> osg::MatrixTransform &
 {
   osg::MatrixTransform &matrix_transform =
-    addTransformTo(parentOf(Impl::transform(scene,parent)));
+    addTransformTo(parentOf(Impl::geometryTransform(scene,parent)));
 
   osg::MatrixTransform &geometry_transform =
     addTransformTo(matrix_transform);
@@ -718,7 +752,7 @@ auto OSGScene::createLine(TransformHandle parent) -> LineHandle
 
 
 osg::MatrixTransform&
-  OSGScene::Impl::transform(OSGScene &scene,TransformHandle handle)
+  OSGScene::Impl::geometryTransform(OSGScene &scene,TransformHandle handle)
 {
   assert(scene.transform_ptrs[handle.index]);
   return *scene.transform_ptrs[handle.index];
@@ -726,7 +760,7 @@ osg::MatrixTransform&
 
 
 const osg::MatrixTransform&
-  OSGScene::Impl::transform(const OSGScene &scene,TransformHandle handle)
+  OSGScene::Impl::geometryTransform(const OSGScene &scene,TransformHandle handle)
 {
   assert(scene.transform_ptrs[handle.index]);
   return *scene.transform_ptrs[handle.index];
@@ -735,7 +769,7 @@ const osg::MatrixTransform&
 
 LineDrawable& OSGScene::Impl::lineDrawable(OSGScene &scene,LineHandle handle)
 {
-  osg::MatrixTransform &transform = Impl::transform(scene,handle);
+  osg::MatrixTransform &transform = Impl::geometryTransform(scene,handle);
   osg::Node *child_ptr = transform.getChild(0);
   assert(child_ptr);
   osg::Geode *geode_ptr = child_ptr->asGeode();
@@ -748,21 +782,23 @@ LineDrawable& OSGScene::Impl::lineDrawable(OSGScene &scene,LineHandle handle)
 }
 
 
-void OSGScene::setScale(TransformHandle handle,float x,float y,float z)
+void OSGScene::setGeometryScale(TransformHandle handle,float x,float y,float z)
 {
-  ::setScale(Impl::transform(*this,handle),x,y,z);
+  ::setScale(Impl::geometryTransform(*this,handle),x,y,z);
 }
 
 
 void OSGScene::setTranslation(TransformHandle handle,Point p)
 {
-  ::setTranslation(parentTransform(Impl::transform(*this,handle)),p.x,p.y,p.z);
+  ::setTranslation(
+    parentTransform(Impl::geometryTransform(*this,handle)),p.x,p.y,p.z
+  );
 }
 
 
 void OSGScene::setColor(TransformHandle handle,float r,float g,float b)
 {
-  ::setColor(Impl::transform(*this,handle),osg::Vec3f(r,g,b));
+  ::setColor(Impl::geometryTransform(*this,handle),osg::Vec3f(r,g,b));
 }
 
 
@@ -867,8 +903,23 @@ auto OSGScene::top() const -> TransformHandle
 auto OSGScene::worldPoint(Point p,TransformHandle t) const -> Point
 {
   osg::Vec3f v1 =
-    ::worldPoint(parentTransform(Impl::transform(*this,t)),{p.x,p.y,p.z});
+    ::worldPoint(
+      Impl::transform(*this,t),
+      {p.x,p.y,p.z}
+    );
 
   osg::Vec3f v2 = ::localPoint(*top_node_ptr,v1);
   return {v2.x(),v2.y(),v2.z()};
+}
+
+
+static osg::Vec3f osgVec(const OSGScene::Vector &v)
+{
+  return {v.x,v.y,v.z};
+}
+
+
+void OSGScene::setCoordinateAxes(TransformHandle t,Vector x,Vector y,Vector z)
+{
+  ::setCoordinateAxes(Impl::transform(*this,t),osgVec(x),osgVec(y),osgVec(z));
 }

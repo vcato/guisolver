@@ -116,8 +116,30 @@ static void testSetScale()
 }
 
 
+static void testSetCoordinateAxes()
+{
+  osg::Matrix mat = osg::Matrix::identity();
+  mat.setTrans(osg::Vec3f(1,2,3));
+  auto x_axis = osg::Vec3f(1, 0,0);
+  auto y_axis = osg::Vec3f(0, 0,1);
+  auto z_axis = osg::Vec3f(0,-1,0);
+
+  setCoordinateAxes(mat,x_axis,y_axis,z_axis);
+
+  osg::Vec3f trans = mat.getTrans();
+  assert(trans == osg::Vec3f(1,2,3));
+  osg::Quat rot = mat.getRotate();
+  osg::Quat::value_type angle = 0;
+  osg::Vec3f axis(0,0,0);
+  rot.getRotate(angle,axis);
+  assertNear(angle,M_PI/2,0);
+  assertNear(axis,osg::Vec3f(1,0,0),0);
+}
+
+
 int main()
 {
   testCompose();
   testSetScale();
+  testSetCoordinateAxes();
 }

@@ -7,6 +7,7 @@ struct SceneSetup {
     Scene::TransformHandle end;
   };
 
+  Scene::TransformHandle box;
   std::vector<Line> lines;
 };
 

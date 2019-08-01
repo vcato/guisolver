@@ -23,8 +23,12 @@ class OSGScene : public Scene {
     TransformHandle createSphere(TransformHandle parent) override;
     TransformHandle createBox(TransformHandle parent) override;
     LineHandle createLine(TransformHandle parent) override;
-    void setScale(TransformHandle handle,float x,float y,float z) override;
-    void setTranslation(TransformHandle handle,Point) override;
+
+    void
+      setGeometryScale(TransformHandle handle,float x,float y,float z) override;
+
+    void setTranslation(TransformHandle,Point) override;
+    void setCoordinateAxes(TransformHandle,Vector x,Vector y,Vector z) override;
     void setColor(TransformHandle handle,float r,float g,float b) override;
     void setStartPoint(LineHandle,Point) override;
     void setEndPoint(LineHandle,Point) override;

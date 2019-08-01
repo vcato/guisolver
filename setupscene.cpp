@@ -17,7 +17,7 @@ static TransformHandle
   )
 {
   auto point = scene.createSphere(parent);
-  scene.setScale(point,0.1,0.1,0.1);
+  scene.setGeometryScale(point,0.1,0.1,0.1);
   scene.setColor(point,0,0,1);
   scene.setTranslation(point,position);
   return point;
@@ -31,7 +31,7 @@ static TransformHandle
   )
 {
   auto point = scene.createSphere();
-  scene.setScale(point, 0.1, 0.1, 0.1);
+  scene.setGeometryScale(point, 0.1, 0.1, 0.1);
   scene.setColor(point, 0, 1, 0);
   scene.setTranslation(point,position);
   return point;
@@ -73,8 +73,13 @@ static ostream &operator<<(ostream &stream,const Scene::Point &p)
 SceneSetup setupScene(Scene &scene)
 {
   auto box = scene.createBox();
-  scene.setScale(box,5,.1,10);
+  scene.setGeometryScale(box,5,.1,10);
   scene.setTranslation(box,{0,1,0});
+
+  scene.setCoordinateAxes(
+    box,Scene::Vector(0,0,-1),Scene::Vector(0,1,0),Scene::Vector(1,0,0)
+  );
+
   Scene::Point local1 = {1,1,0};
   Scene::Point local2 = {1,1,1};
   Scene::Point local3 = {0,1,1};
@@ -94,5 +99,5 @@ SceneSetup setupScene(Scene &scene)
   createLine(lines,scene,local2_handle,global2_handle);
   createLine(lines,scene,local3_handle,global3_handle);
 
-  return { lines };
+  return { box, lines };
 }

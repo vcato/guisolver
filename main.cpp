@@ -8,7 +8,7 @@
 using std::cerr;
 
 
-static void changingCallback(Scene &scene,SceneSetup &setup)
+static void updateLines(Scene &scene,SceneSetup &setup)
 {
   for (auto &line : setup.lines) {
     Scene::Point start = scene.worldPoint({0,0,0}, line.start);
@@ -16,6 +16,24 @@ static void changingCallback(Scene &scene,SceneSetup &setup)
     scene.setStartPoint(line.handle,start);
     scene.setEndPoint(line.handle,end);
   }
+}
+
+
+static void changingCallback(Scene &scene,SceneSetup &setup)
+{
+  // When we are changing the scene, we update the predicted positions
+  // When we are finished changing the scene, we update the box position.
+  updateLines(scene,setup);
+}
+
+
+static void changedCallback(Scene &scene,SceneSetup &setup)
+{
+  Scene::Vector x(1,0,0);
+  Scene::Vector y(0,1,0);
+  Scene::Vector z(0,0,1);
+  scene.setCoordinateAxes(setup.box,x,y,z);
+  updateLines(scene,setup);
 }
 
 
@@ -28,7 +46,7 @@ int main(int argc,char** argv)
   OSGScene scene;
 
   SceneSetup scene_setup = setupScene(scene);
-  // scene.change_callback = [&]{ changedCallback(scene,scene_setup); };
+  scene.changed_callback = [&]{ changedCallback(scene,scene_setup); };
   scene.changing_callback = [&]{ changingCallback(scene,scene_setup); };
 
   GraphicsWindowPtr graphics_window_ptr =

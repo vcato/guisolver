@@ -40,4 +40,12 @@ extern osg::Matrix
 
 extern void setScale(osg::Matrix &m,const osg::Vec3f &new_scale);
 
+extern void
+  setCoordinateAxes(
+    osg::Matrix &m,
+    const osg::Vec3f &x,
+    const osg::Vec3f &y,
+    const osg::Vec3f &z
+  );
+
 #endif /* SCENEUTIL_HPP_ */
