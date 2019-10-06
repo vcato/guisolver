@@ -124,7 +124,7 @@ static void testSetCoordinateAxes()
   auto y_axis = osg::Vec3f(0, 0,1);
   auto z_axis = osg::Vec3f(0,-1,0);
 
-  setCoordinateAxes(mat,x_axis,y_axis,z_axis);
+  setCoordinateAxesOf(mat, x_axis, y_axis, z_axis);
 
   osg::Vec3f trans = mat.getTrans();
   assert(trans == osg::Vec3f(1,2,3));

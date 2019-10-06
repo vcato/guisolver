@@ -41,7 +41,7 @@ extern osg::Matrix
 extern void setScale(osg::Matrix &m,const osg::Vec3f &new_scale);
 
 extern void
-  setCoordinateAxes(
+  setCoordinateAxesOf(
     osg::Matrix &m,
     const osg::Vec3f &x,
     const osg::Vec3f &y,

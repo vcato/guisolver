@@ -632,7 +632,7 @@ static void
   )
 {
   auto m = transform.getMatrix();
-  setCoordinateAxes(m,x,y,z);
+  setCoordinateAxesOf(m,x,y,z);
   transform.setMatrix(m);
 }
 

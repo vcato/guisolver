@@ -32,7 +32,7 @@ static void changedCallback(Scene &scene,SceneSetup &setup)
   Scene::Vector x(1,0,0);
   Scene::Vector y(0,1,0);
   Scene::Vector z(0,0,1);
-  scene.setCoordinateAxes(setup.box,x,y,z);
+  scene.setCoordinateAxes(setup.box, x, y, z);
   updateLines(scene,setup);
 }
 

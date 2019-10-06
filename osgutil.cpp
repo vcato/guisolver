@@ -233,7 +233,7 @@ void setScale(osg::Matrix &m,const osg::Vec3f &new_scale)
 
 
 void
-  setCoordinateAxes(
+  setCoordinateAxesOf(
     osg::Matrix &m,
     const osg::Vec3f &x,
     const osg::Vec3f &y,
