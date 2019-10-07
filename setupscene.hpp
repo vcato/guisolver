@@ -1,4 +1,8 @@
+#ifndef SETUPSCENE_HPP_
+#define SETUPSCENE_HPP_
+
 #include "scene.hpp"
+
 
 struct SceneSetup {
   struct Line {
@@ -13,3 +17,5 @@ struct SceneSetup {
 
 
 extern SceneSetup setupScene(Scene &scene);
+
+#endif /* SETUPSCENE_HPP_ */

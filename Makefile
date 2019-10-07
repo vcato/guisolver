@@ -1,4 +1,4 @@
-PACKAGES=openscenegraph QtGui QtOpenGL
+PACKAGES=openscenegraph QtGui QtOpenGL eigen3
 MOC=moc-qt4
 
 CXXFLAGS=-W -Wall -Wundef -pedantic -std=c++17 -MD -MP -g \
@@ -20,7 +20,8 @@ osgutil_test.pass: osgutil_test
 	./osgutil_test
 
 guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
-  osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o setupscene.o
+  osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o setupscene.o \
+  sceneerror.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 osgutil_test: osgutil_test.o osgutil.o
