@@ -599,9 +599,19 @@ struct LineShapeParams : ShapeParams {
 static void
   setTranslation(osg::MatrixTransform &transform,float x,float y,float z)
 {
-  auto m = transform.getMatrix();
+  osg::Matrix m = transform.getMatrix();
   m.setTrans(x,y,z);
   transform.setMatrix(m);
+}
+
+
+static Point translation(const osg::MatrixTransform &transform)
+{
+  osg::Vec3d t = transform.getMatrix().getTrans();
+  float x = t.x();
+  float y = t.y();
+  float z = t.z();
+  return Point{x,y,z};
 }
 
 
@@ -634,6 +644,14 @@ static void
   auto m = transform.getMatrix();
   setCoordinateAxesOf(m,x,y,z);
   transform.setMatrix(m);
+}
+
+
+static OSGCoordinateAxes
+  coordinateAxes(const osg::MatrixTransform &transform)
+{
+  auto m = transform.getMatrix();
+  return coordinateAxesOf(m);
 }
 
 
@@ -791,8 +809,14 @@ void OSGScene::setGeometryScale(TransformHandle handle,float x,float y,float z)
 void OSGScene::setTranslation(TransformHandle handle,Point p)
 {
   ::setTranslation(
-    parentTransform(Impl::geometryTransform(*this,handle)),p.x,p.y,p.z
+    parentTransform(Impl::geometryTransform(*this,handle)),p.x(),p.y(),p.z()
   );
+}
+
+
+OSGScene::Point OSGScene::translation(TransformHandle handle) const
+{
+  return ::translation(parentTransform(Impl::geometryTransform(*this,handle)));
 }
 
 
@@ -805,7 +829,7 @@ void OSGScene::setColor(TransformHandle handle,float r,float g,float b)
 void OSGScene::setStartPoint(LineHandle handle,Point p)
 {
   LineDrawable &line_drawable = Impl::lineDrawable(*this,handle);
-  line_drawable.start_point = osg::Vec3f(p.x,p.y,p.z);
+  line_drawable.start_point = osg::Vec3f(p.x(),p.y(),p.z());
   line_drawable.setup();
 }
 
@@ -813,7 +837,7 @@ void OSGScene::setStartPoint(LineHandle handle,Point p)
 void OSGScene::setEndPoint(LineHandle handle,Point p)
 {
   LineDrawable &line_drawable = Impl::lineDrawable(*this,handle);
-  line_drawable.end_point = osg::Vec3f(p.x,p.y,p.z);
+  line_drawable.end_point = osg::Vec3f(p.x(),p.y(),p.z());
   line_drawable.setup();
 }
 
@@ -905,7 +929,7 @@ auto OSGScene::worldPoint(Point p,TransformHandle t) const -> Point
   osg::Vec3f v1 =
     ::worldPoint(
       Impl::transform(*this,t),
-      {p.x,p.y,p.z}
+      {p.x(),p.y(),p.z()}
     );
 
   osg::Vec3f v2 = ::localPoint(*top_node_ptr,v1);
@@ -919,7 +943,23 @@ static osg::Vec3f osgVec(const OSGScene::Vector &v)
 }
 
 
+static Scene::Vector vec(const osg::Vec3f &v)
+{
+  return {v.x(),v.y(),v.z()};
+}
+
+
 void OSGScene::setCoordinateAxes(TransformHandle t,Vector x,Vector y,Vector z)
 {
   ::setCoordinateAxes(Impl::transform(*this,t),osgVec(x),osgVec(y),osgVec(z));
+}
+
+
+CoordinateAxes OSGScene::coordinateAxes(TransformHandle t) const
+{
+  OSGCoordinateAxes osg_ca = ::coordinateAxes(Impl::transform(*this,t));
+  Scene::Vector x = vec(osg_ca.x);
+  Scene::Vector y = vec(osg_ca.y);
+  Scene::Vector z = vec(osg_ca.z);
+  return {x,y,z};
 }

@@ -4,6 +4,7 @@
 #include "osgscene.hpp"
 #include "setupscene.hpp"
 #include "sceneerror.hpp"
+#include "maketransform.hpp"
 
 #define USE_SOLVER 0
 
@@ -21,28 +22,43 @@ static void updateLines(Scene &scene,SceneSetup &setup)
 }
 
 
-#if 0
-static float constraintError(const Constraint &constraint)
+static Point
+  localTranslation(Scene::TransformHandle transform_id,const Scene &scene)
 {
-  float distance = distanceBetween(predicted,global);
-  float error = distance - desired_distance;
-  return error*error;
+  return scene.translation(transform_id);
 }
-#endif
 
 
-#if 0
-static float error()
+static SceneState::Line
+  makeStateLine(const SceneSetup::Line &setup_line, const Scene &scene)
 {
-  float error = 0;
+  Point start = localTranslation(setup_line.start, scene);
+  Point end = localTranslation(setup_line.end, scene);
+  return {start,end};
+}
 
-  for (auto &constraint : problem.constraints) {
-    error += constraintError(constraint);
+
+static Transform
+  globalTransform(const Scene &scene,Scene::TransformHandle transform_id)
+{
+  Point translation = scene.translation(transform_id);
+  CoordinateAxes coordinate_axes = scene.coordinateAxes(transform_id);
+  return makeTransform(coordinate_axes,translation);
+}
+
+
+static SceneState sceneState(const Scene &scene,const SceneSetup &setup)
+{
+  SceneState result;
+
+  for (const auto &setup_line : setup.lines) {
+    result.lines.push_back(makeStateLine(setup_line,scene));
   }
 
-  return error;
+  result.box_global = globalTransform(scene,setup.box);
+
+  return result;
 }
-#endif
 
 
 static void changingCallback(Scene &scene,SceneSetup &setup)
@@ -53,9 +69,7 @@ static void changingCallback(Scene &scene,SceneSetup &setup)
   // until the change is complete.
 
   updateLines(scene,setup);
-#if 0
-  printError();
-#endif
+  cerr << sceneError(sceneState(scene,setup)) << "\n";
 }
 
 

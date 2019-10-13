@@ -3,33 +3,20 @@
 
 #include <cstdlib>
 #include <functional>
+#include "point.hpp"
+#include "coordinateaxes.hpp"
 
 
 struct Scene {
+  using Point = ::Point;
+  using Vector = Vec3;
+
   struct TransformHandle {
     const size_t index;
   };
 
   struct LineHandle : TransformHandle {
     LineHandle(size_t index) : TransformHandle{index} {}
-  };
-
-  struct Vector {
-    float x=0, y=0, z=0;
-
-    Vector(float x_arg,float y_arg,float z_arg)
-    : x(x_arg), y(y_arg), z(z_arg)
-    {
-    }
-  };
-
-  struct Point {
-    float x=0, y=0, z=0;
-
-    Point(float x_arg,float y_arg,float z_arg)
-    : x(x_arg), y(y_arg), z(z_arg)
-    {
-    }
   };
 
   virtual TransformHandle top() const = 0;
@@ -41,9 +28,10 @@ struct Scene {
   TransformHandle createBox() { return createBox(top()); }
 
   virtual void setGeometryScale(TransformHandle,float x,float y,float z) = 0;
-
   virtual void setCoordinateAxes(TransformHandle,Vector x,Vector y,Vector z) = 0;
+  virtual CoordinateAxes coordinateAxes(TransformHandle) const = 0;
   virtual void setTranslation(TransformHandle,Point) = 0;
+  virtual Point translation(TransformHandle) const = 0;
   virtual void setColor(TransformHandle,float r,float g,float b) = 0;
   virtual void setStartPoint(LineHandle,Point) = 0;
   virtual void setEndPoint(LineHandle,Point) = 0;

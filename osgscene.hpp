@@ -28,7 +28,9 @@ class OSGScene : public Scene {
       setGeometryScale(TransformHandle handle,float x,float y,float z) override;
 
     void setTranslation(TransformHandle,Point) override;
+    Point translation(TransformHandle) const override;
     void setCoordinateAxes(TransformHandle,Vector x,Vector y,Vector z) override;
+    CoordinateAxes coordinateAxes(TransformHandle) const override;
     void setColor(TransformHandle handle,float r,float g,float b) override;
     void setStartPoint(LineHandle,Point) override;
     void setEndPoint(LineHandle,Point) override;

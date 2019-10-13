@@ -250,3 +250,21 @@ void
   m(2,1) = z.y();
   m(2,2) = z.z();
 }
+
+
+OSGCoordinateAxes coordinateAxesOf(const osg::Matrix &m)
+{
+  float xx = m(0,0);
+  float xy = m(0,1);
+  float xz = m(0,2);
+  float yx = m(1,0);
+  float yy = m(1,1);
+  float yz = m(1,2);
+  float zx = m(2,0);
+  float zy = m(2,1);
+  float zz = m(2,2);
+  osg::Vec3f x = {xx,xy,xz};
+  osg::Vec3f y = {yx,yy,yz};
+  osg::Vec3f z = {zx,zy,zz};
+  return {x,y,z};
+}

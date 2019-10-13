@@ -1,5 +1,7 @@
 #include "sceneerror.hpp"
 
+#include "scenestate.hpp"
+
 
 using Vector3f = Eigen::Vector3f;
 
@@ -15,37 +17,15 @@ struct RotationValues {
 }
 
 
-namespace {
-
-struct SceneState {
-  struct Line {
-    Point start;
-    Point end;
-  };
-
-  std::vector<Line> lines;
-  Transform box_global;
-};
-
-}
-
-
-#if ADD_BOX_POSITION_ERROR
 static float dot(Vector3f a,Vector3f b)
 {
   return a.dot(b);
 }
-#endif
 
 
-#if ADD_BOX_POSITION_ERROR
-float
-  boxPositionError(
-    const SceneState &scene_state
-  )
+float sceneError(const SceneState &scene_state)
 {
   using Scalar = float;
-
   Scalar error = 0;
 
   // Add an error for each line
@@ -58,7 +38,6 @@ float
 
   return error;
 }
-#endif
 
 
 #if USE_SOLVER

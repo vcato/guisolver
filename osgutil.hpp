@@ -48,4 +48,10 @@ extern void
     const osg::Vec3f &z
   );
 
+struct OSGCoordinateAxes {
+  osg::Vec3f x,y,z;
+};
+
+extern OSGCoordinateAxes coordinateAxesOf(const osg::Matrix &m);
+
 #endif /* SCENEUTIL_HPP_ */

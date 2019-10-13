@@ -8,7 +8,7 @@ all:
 	$(MAKE) run_unit_tests
 	$(MAKE) run_guisolver
 
-run_unit_tests: osgutil_test.pass
+run_unit_tests: osgutil_test.pass transform_test.pass
 
 run_guisolver: guisolver
 	./guisolver
@@ -16,15 +16,18 @@ run_guisolver: guisolver
 %_moc.cpp: %.hpp
 	$(MOC) $*.hpp -o $@
 
-osgutil_test.pass: osgutil_test
-	./osgutil_test
+%.pass: %
+	./$*
 
 guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
   osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o setupscene.o \
-  sceneerror.o
+  sceneerror.o maketransform.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 osgutil_test: osgutil_test.o osgutil.o
+	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
+
+transform_test: transform_test.o maketransform.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 clean:
