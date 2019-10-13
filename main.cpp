@@ -5,8 +5,8 @@
 #include "setupscene.hpp"
 #include "sceneerror.hpp"
 #include "maketransform.hpp"
-
-#define USE_SOLVER 0
+#include "scenesolver.hpp"
+#include "eigenconv.hpp"
 
 using std::cerr;
 
@@ -73,18 +73,26 @@ static void changingCallback(Scene &scene,SceneSetup &setup)
 }
 
 
+static void
+  setTransform(
+    Scene::TransformHandle transform_id,
+    const Transform &transform_value,
+    Scene &scene
+  )
+{
+  CoordinateAxes coordinate_axes =
+    coordinateAxes(transform_value.rotation());
+
+  scene.setCoordinateAxes(transform_id, coordinate_axes);
+  scene.setTranslation(transform_id, transform_value.translation());
+}
+
+
 static void changedCallback(Scene &scene,SceneSetup &setup)
 {
-#if !USE_SOLVER
-  // We want to solve the box position at this point.
-  Scene::Vector x(1,0,0);
-  Scene::Vector y(0,1,0);
-  Scene::Vector z(0,0,1);
-  scene.setCoordinateAxes(setup.box, x, y, z);
-#else
-  solveBoxPosition(setup, box_global_transform);
-#endif
-
+  SceneState state = sceneState(scene,setup);
+  solveBoxPosition(state);
+  setTransform(setup.box, state.box_global, scene);
   updateLines(scene,setup);
 }
 

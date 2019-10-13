@@ -29,7 +29,7 @@ class OSGScene : public Scene {
 
     void setTranslation(TransformHandle,Point) override;
     Point translation(TransformHandle) const override;
-    void setCoordinateAxes(TransformHandle,Vector x,Vector y,Vector z) override;
+    void setCoordinateAxes(TransformHandle,const CoordinateAxes &) override;
     CoordinateAxes coordinateAxes(TransformHandle) const override;
     void setColor(TransformHandle handle,float r,float g,float b) override;
     void setStartPoint(LineHandle,Point) override;

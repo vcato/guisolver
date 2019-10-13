@@ -77,7 +77,12 @@ SceneSetup setupScene(Scene &scene)
   scene.setTranslation(box,{0,1,0});
 
   scene.setCoordinateAxes(
-    box,Scene::Vector(0,0,-1),Scene::Vector(0,1,0),Scene::Vector(1,0,0)
+    box,
+    CoordinateAxes{
+      Scene::Vector(0,0,-1),
+      Scene::Vector(0,1,0),
+      Scene::Vector(1,0,0)
+    }
   );
 
   Scene::Point local1 = {1,1,0};

@@ -2,6 +2,9 @@
 *.d
 .*.swp
 *_moc.cpp
+*.pass
 guisolver
 osgutil_test
 transform_test
+optimize_test
+scenesolver_test

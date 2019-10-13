@@ -949,9 +949,12 @@ static Scene::Vector vec(const osg::Vec3f &v)
 }
 
 
-void OSGScene::setCoordinateAxes(TransformHandle t,Vector x,Vector y,Vector z)
+void OSGScene::setCoordinateAxes(TransformHandle t,const CoordinateAxes &axes)
 {
-  ::setCoordinateAxes(Impl::transform(*this,t),osgVec(x),osgVec(y),osgVec(z));
+  osg::Vec3f x = osgVec(axes.x);
+  osg::Vec3f y = osgVec(axes.y);
+  osg::Vec3f z = osgVec(axes.z);
+  ::setCoordinateAxes(Impl::transform(*this,t),x,y,z);
 }
 
 

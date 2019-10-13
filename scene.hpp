@@ -28,7 +28,10 @@ struct Scene {
   TransformHandle createBox() { return createBox(top()); }
 
   virtual void setGeometryScale(TransformHandle,float x,float y,float z) = 0;
-  virtual void setCoordinateAxes(TransformHandle,Vector x,Vector y,Vector z) = 0;
+
+  virtual void
+    setCoordinateAxes(TransformHandle id,const CoordinateAxes &axes) = 0;
+
   virtual CoordinateAxes coordinateAxes(TransformHandle) const = 0;
   virtual void setTranslation(TransformHandle,Point) = 0;
   virtual Point translation(TransformHandle) const = 0;

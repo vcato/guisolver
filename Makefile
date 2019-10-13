@@ -8,7 +8,8 @@ all:
 	$(MAKE) run_unit_tests
 	$(MAKE) run_guisolver
 
-run_unit_tests: osgutil_test.pass transform_test.pass
+run_unit_tests: \
+  osgutil_test.pass transform_test.pass scenesolver_test.pass optimize_test.pass
 
 run_guisolver: guisolver
 	./guisolver
@@ -18,16 +19,24 @@ run_guisolver: guisolver
 
 %.pass: %
 	./$*
+	touch $@
 
 guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
   osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o setupscene.o \
-  sceneerror.o maketransform.o
+  sceneerror.o maketransform.o scenesolver.o optimize.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 osgutil_test: osgutil_test.o osgutil.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 transform_test: transform_test.o maketransform.o
+	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
+
+scenesolver_test: scenesolver_test.o \
+  scenesolver.o maketransform.o sceneerror.o optimize.o
+	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
+
+optimize_test: optimize_test.o optimize.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 clean:
