@@ -23,7 +23,10 @@ run_guisolver: guisolver
 
 guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
   osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o setupscene.o \
-  sceneerror.o maketransform.o scenesolver.o optimize.o
+  sceneerror.o maketransform.o scenesolver.o optimize.o qttreewidget.o \
+  qttreewidgetitem.o qtcombobox.o qtcombobox_moc.o \
+  qtlineedit.o qtlineedit_moc.o qtslider.o qtslider.o \
+  qtslider_moc.o qtspinbox.o qtspinbox_moc.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 osgutil_test: osgutil_test.o osgutil.o

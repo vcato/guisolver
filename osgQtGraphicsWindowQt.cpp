@@ -151,6 +151,7 @@ GLWidget::GLWidget(
 {
 }
 
+
 GLWidget::~GLWidget()
 {
     // close GraphicsWindowQt and remove the reference to us
@@ -161,6 +162,13 @@ GLWidget::~GLWidget()
         _gw = NULL;
     }
 }
+
+
+QSize GLWidget::sizeHint() const
+{
+  return _default_size;
+}
+
 
 void GLWidget::processDeferredEvents()
 {

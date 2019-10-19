@@ -43,28 +43,11 @@ class OSGQT_EXPORT GLWidget : public QGLWidget
 {
     typedef QGLWidget inherited;
 
-public:
+  public:
+    QSize sizeHint() const override;
 
-    GLWidget(
-        QWidget* parent = NULL,
-        const QGLWidget* shareWidget = NULL,
-        Qt::WindowFlags f = 0,
-        bool forwardKeyEvents = false
-    );
-    GLWidget(
-        QGLContext* context,
-        QWidget* parent = NULL,
-        const QGLWidget* shareWidget = NULL,
-        Qt::WindowFlags f = 0,
-        bool forwardKeyEvents = false
-    );
-    GLWidget(
-        const QGLFormat& format,
-        QWidget* parent = NULL,
-        const QGLWidget* shareWidget = NULL,
-        Qt::WindowFlags f = 0,
-        bool forwardKeyEvents = false
-    );
+    void setDefaultSize(QSize arg) { _default_size = arg; }
+
     virtual ~GLWidget();
 
     bool canSwapBuffers() const { return _canSwapBuffers; }
@@ -78,13 +61,13 @@ public:
 
     void setKeyboardModifiers( QInputEvent* event );
 
-    virtual void keyPressEvent( QKeyEvent* event );
-    virtual void keyReleaseEvent( QKeyEvent* event );
-    virtual void mousePressEvent( QMouseEvent* event );
-    virtual void mouseReleaseEvent( QMouseEvent* event );
-    virtual void mouseDoubleClickEvent( QMouseEvent* event );
-    virtual void mouseMoveEvent( QMouseEvent* event );
-    virtual void wheelEvent( QWheelEvent* event );
+    void keyPressEvent( QKeyEvent* event ) override;
+    void keyReleaseEvent( QKeyEvent* event ) override;
+    void mousePressEvent( QMouseEvent* event ) override;
+    void mouseReleaseEvent( QMouseEvent* event ) override;
+    void mouseDoubleClickEvent( QMouseEvent* event ) override;
+    void mouseMoveEvent( QMouseEvent* event ) override;
+    void wheelEvent( QWheelEvent* event ) override;
 
 protected:
 
@@ -120,12 +103,38 @@ protected:
 
     bool _forwardKeyEvents;
     bool _canSwapBuffers;
+    QSize _default_size;
 
     virtual void resizeEvent( QResizeEvent* event );
     virtual void moveEvent( QMoveEvent* event );
     virtual void glDraw();
     virtual bool event( QEvent* event );
+
+  private:
+    GLWidget(
+      QWidget* parent = NULL,
+      const QGLWidget* shareWidget = NULL,
+      Qt::WindowFlags f = 0,
+      bool forwardKeyEvents = false
+    );
+
+    GLWidget(
+      QGLContext* context,
+      QWidget* parent = NULL,
+      const QGLWidget* shareWidget = NULL,
+      Qt::WindowFlags f = 0,
+      bool forwardKeyEvents = false
+    );
+
+    GLWidget(
+      const QGLFormat& format,
+      QWidget* parent = NULL,
+      const QGLWidget* shareWidget = NULL,
+      Qt::WindowFlags f = 0,
+      bool forwardKeyEvents = false
+    );
 };
+
 
 class OSGQT_EXPORT GraphicsWindowQt : public osgViewer::GraphicsWindow
 {
