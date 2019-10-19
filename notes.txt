@@ -184,4 +184,192 @@ return exec({x+y},env)
 
 We can then solve variabes and update the environment with the variable values.
 ---
-Have the box position be optimized after dragging a point.
+How closely do we want to associate the math with the objects in the scene?
+We could have the math be primary, and then have a way of visualizing certain
+parts of the math.  Or we could have the scene objects be primary and
+have certain parts of it be represented with expressions.
+
+There has to be a close relationship, since we have to make sure that
+the position that an object shows up in the scene matches the position
+that we calculate.
+
+This seems to imply that anything we visualize in the scene has to have
+a certain known representation.  We could either be explicit about this
+and require that certain operations are used and only these operations
+will be visible in the scene, or we could use pattern matching to find
+aspects of the graph that are recognizable as scene objects and display
+those.
+
+
+For example, we could have a transform node which takes a parent global
+transform and a local transform and produces a new global transform.
+
+So that's an interesting aspect of this.  The "globalness" of the object
+seems to be what is important.  i.e. if we are going to draw something
+in the scene, we need to know it is in the scene coordinate system.
+This seems to imply some way to tag a coordinate system on an object.
+
+We start with the scene itself, which has the scene coordinate system.
+If we add something like a box to the graph that isn't connected to
+the scene, then it won't be visible.  If we connect the box to the
+scene, then it shows up.
+
+
+* Scene
+  * Transform
+    * Box
+    * Transform
+      * Point
+        * name: "local1"
+      * Sphere
+    * Transform
+      * Point
+        * name: "local2"
+      * Sphere
+    * Transform
+      * Point
+        * name: "local3"
+      * Sphere
+  * Transform
+    * tx: 1
+    * ty: 2
+    * tz: 3
+    * Point
+      * name: "global1"
+    * Sphere
+  * Transform
+    * tx: 1
+    * ty: 2
+    * tz: 3
+    * Point
+      * name: "global2"
+    * Sphere
+  * Transform
+    * tx: 1
+    * ty: 2
+    * tz: 3
+    * Point
+      * name: "global3"
+    * Sphere
+  * Line
+    * start: local1
+    * end: global1
+  * Line
+    * start: local2
+    * end: global2
+  * Line
+    * start: local3
+    * end: global3
+
+For this to be convenient, it seems like we have to automatically convert
+coordinate systems.  We can have a Point object, which can give a name to
+the origin of the current coordinate system.
+
+Names are acting like outputs.
+
+t = Transform(tx=$, ty=$, tz=$, rx=$, ry=$, rz=$)
+t.origin
+
+
+* [Define]
+  * name: "Marker"
+  * [Parameter]
+    * name: "position"
+    * type: Vector
+  * [Parameter]
+    * name: "name"
+    * type: String
+  * [Transform]
+    * tx: position.x
+    * ty: position.y
+    * tz: position.z
+    * rx: 0
+    * ry: 0
+    * rz: 0
+    * [Sphere]
+      * radius: 1
+    * [Define]
+      * name: name
+      * self.origin
+* [Scene]
+  * [Transform]
+    * tx: [Variable]
+      value: 1
+      solve: true
+    * ty: [Variable]
+      value: 2
+      solve: true
+    * tz: [Variable]
+      value: 3
+      solve: true
+    * rx: [Variable]
+      value: 4
+      solve: true
+    * ry: [Variable]
+      value: 5
+      solve: true
+    * rz: [Variable]
+      value: 6
+      solve: true
+    * [Box]
+      * size: []
+        * x: 1
+        * y: 2
+        * z: 3
+    * [Marker]
+      * position: []
+        * x: 1
+        * y: 2
+        * z: 3
+      * name: "local1"
+    * [Marker]
+      * position: []
+        * x: 1
+        * y: 2
+        * z: 3
+      * name: "local2"
+    * [Marker]
+      * position: []
+        * x: 1
+        * y: 2
+        * z: 3
+      * name: "local3"
+  * [Marker]
+    * position: []
+      * x: 1
+      * y: 2
+      * z: 3
+    * name: "global1"
+  * [Marker]
+    * position: []
+      * x: 1
+      * y: 2
+      * z: 3
+    * name: "global2"
+  * [Marker]
+    * position: []
+      * x: 1
+      * y: 2
+      * z: 3
+    * name: "global3"
+  * [Line]
+    * start: local1
+    * end: global1
+  * [Line]
+    * start: local2
+    * end: global2
+  * [Line]
+    * start: local3
+    * end: global3
+  * [Error]
+    * value: [Distance]
+      * start: local1
+      * end: global1
+  * [Error]
+    * value: [Distance]
+      * start: local2
+      * end: global2
+  * [Error]
+    * value: [Distance]
+      * start: local3
+      * end: global3
