@@ -175,5 +175,11 @@ int main(int argc,char** argv)
   scene.changed_callback = [&]{ changedCallback(main_window_data); };
   scene.changing_callback = [&]{ changingCallback(main_window_data); };
 
+  updateTreeValues(
+    tree_widget,
+    main_window_data.tree_paths,
+    sceneState(scene, main_window_data.scene_setup)
+  );
+
   app.exec();
 }
