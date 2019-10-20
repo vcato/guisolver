@@ -11,11 +11,11 @@
 #include "qtlineedit.hpp"
 #include "qttreewidgetitem.hpp"
 #include "streamvector.hpp"
+#include "numericvalue.hpp"
 
 using std::string;
 using std::vector;
 using std::cerr;
-using NumericValue = TreeWidget::NumericValue;
 
 struct QtTreeWidget::Impl {
   struct QtItemWrapperWidget : QWidget {
@@ -185,8 +185,8 @@ static bool
   useSliderForRange(NumericValue minimum_value,NumericValue maximum_value)
 {
   bool value_is_limited_on_both_ends =
-    minimum_value != std::numeric_limits<NumericValue>::min() &&
-    maximum_value != std::numeric_limits<NumericValue>::max();
+    minimum_value != noMinimumNumericValue() &&
+    maximum_value != noMaximumNumericValue();
 
   return value_is_limited_on_both_ends;
 }
@@ -205,7 +205,7 @@ void
   QTreeWidgetItem &parent_item = itemFromPath(parent_path);
   int child_index = new_item_path.back();
 
-  static_assert(std::is_same<NumericValue,int>::value,"");
+  static_assert(std::is_same<NumericValue,float>::value,"");
 
   if (useSliderForRange(minimum_value,maximum_value)) {
     createSliderItem(
@@ -311,18 +311,18 @@ void
     QTreeWidgetItem &parent_item,
     int child_index,
     const LabelProperties &label_properties,
-    int value,
-    int minimum_value,
-    int maximum_value
+    NumericValue value,
+    NumericValue minimum_value,
+    NumericValue maximum_value
   )
 {
   QtTreeWidget &tree_widget = *this;
   QTreeWidgetItem &item = ::insertChildItem(parent_item,child_index);
   QtSpinBox &spin_box =
     tree_widget.createItemWidget<QtSpinBox>(item,label_properties);
-  spin_box.setValue(value);
   spin_box.setMinimum(minimum_value);
   spin_box.setMaximum(maximum_value);
+  spin_box.setValue(value);
   Impl::setupSpinBox(*this,spin_box,item);
 }
 

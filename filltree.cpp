@@ -1,5 +1,7 @@
 #include "filltree.hpp"
 
+#include "numericvalue.hpp"
+
 
 using std::string;
 
@@ -12,9 +14,8 @@ static void
   )
 {
   using LabelProperties = QtTreeWidget::LabelProperties;
-  using NumericValue = QtTreeWidget::NumericValue;
-  NumericValue no_minimum = std::numeric_limits<NumericValue>::min();
-  NumericValue no_maximum = std::numeric_limits<NumericValue>::max();
+  NumericValue no_minimum = noMinimumNumericValue();
+  NumericValue no_maximum = noMaximumNumericValue();
   tree_widget.createVoidItem(path,LabelProperties{"[Marker]"});
 
   tree_widget.createVoidItem(
@@ -40,10 +41,9 @@ static void
 TreePaths fillTree(QtTreeWidget &tree_widget)
 {
   TreePaths tree_paths;
-  using NumericValue = QtTreeWidget::NumericValue;
   using LabelProperties = QtTreeWidget::LabelProperties;
-  NumericValue no_minimum = std::numeric_limits<NumericValue>::min();
-  NumericValue no_maximum = std::numeric_limits<NumericValue>::max();
+  NumericValue no_minimum = noMinimumNumericValue();
+  NumericValue no_maximum = noMaximumNumericValue();
 
   tree_widget.createVoidItem({0},LabelProperties{"[Scene]"});
 

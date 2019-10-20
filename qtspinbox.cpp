@@ -1,6 +1,7 @@
 #include "qtspinbox.hpp"
 
 #include <cassert>
+#include <cmath>
 #include <iostream>
 #include <QWheelEvent>
 
@@ -11,13 +12,13 @@ QtSpinBox::QtSpinBox()
 {
   connect(
     this,
-    SIGNAL(valueChanged(int)),
-    SLOT(valueChangedSlot(int))
+    SIGNAL(valueChanged(double)),
+    SLOT(valueChangedSlot(double))
   );
 }
 
 
-void QtSpinBox::valueChangedSlot(int value)
+void QtSpinBox::valueChangedSlot(double value)
 {
   if (ignore_signals) {
     return;
@@ -40,7 +41,7 @@ void QtSpinBox::wheelEvent(QWheelEvent *event_ptr)
     event_ptr->ignore();
   }
   else {
-    QSpinBox::wheelEvent(event_ptr);
+    QDoubleSpinBox::wheelEvent(event_ptr);
   }
 }
 
@@ -57,10 +58,28 @@ void QtSpinBox::focusOutEvent(QFocusEvent *)
 }
 
 
-void QtSpinBox::setValue(int arg)
+void QtSpinBox::setValue(Value arg)
 {
   assert(!ignore_signals);
   ignore_signals = true;
-  QSpinBox::setValue(arg);
+  QDoubleSpinBox::setValue(arg);
   ignore_signals = false;
+
+  if (std::abs(arg - value()) > .005) {
+    cerr << "arg: " << arg << "\n";
+    cerr << "QtSpinBox::value(): " << value() << "\n";
+    assert(false);
+  }
+}
+
+
+void QtSpinBox::setMinimum(Value arg)
+{
+  QDoubleSpinBox::setMinimum(arg);
+}
+
+
+void QtSpinBox::setMaximum(Value arg)
+{
+  QDoubleSpinBox::setMaximum(arg);
 }

@@ -111,9 +111,9 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
         QTreeWidgetItem &parent_item,
         int child_index,
         const LabelProperties &,
-        int value,
-        int minimum_value,
-        int maximum_value
+        NumericValue value,
+        NumericValue minimum_value,
+        NumericValue maximum_value
       );
 
     void

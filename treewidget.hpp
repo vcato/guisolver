@@ -3,11 +3,10 @@
 
 #include <string>
 #include "treepath.hpp"
+#include "numericvalue.hpp"
 
 
 struct TreeWidget {
-  using NumericValue = int;
-
   struct LabelProperties {
     std::string text;
   };
