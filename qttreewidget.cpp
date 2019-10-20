@@ -558,6 +558,25 @@ void
 
 
 void
+  QtTreeWidget::setItemNumericValue(
+    const TreePath &path,
+    NumericValue value
+  )
+{
+  auto *slider_ptr = itemSliderPtr(path);
+  auto *spin_box_ptr = itemSpinBoxPtr(path);
+
+  if (slider_ptr) {
+    slider_ptr->setValue(value);
+  }
+  else {
+    assert(spin_box_ptr);
+    spin_box_ptr->setValue(value);
+  }
+}
+
+
+void
   QtTreeWidget::setItemLabel(const TreePath &path,const std::string &new_label)
 {
   QLabel *label_widget_ptr = itemLabelPtr(path);

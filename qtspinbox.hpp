@@ -12,6 +12,7 @@ class QtSpinBox : public QSpinBox {
     QtSpinBox();
 
     std::function<void(int)> value_changed_function;
+    void setValue(int);
 
   public slots:
     void valueChangedSlot(int);

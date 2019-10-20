@@ -47,6 +47,12 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
       ) override;
 
     void
+      setItemNumericValue(
+        const TreePath &,
+        NumericValue value
+      );
+
+    void
       setItemLabel(const TreePath &path,const std::string &new_label) override;
 
   public:

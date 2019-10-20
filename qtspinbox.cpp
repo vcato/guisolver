@@ -19,6 +19,10 @@ QtSpinBox::QtSpinBox()
 
 void QtSpinBox::valueChangedSlot(int value)
 {
+  if (ignore_signals) {
+    return;
+  }
+
   if (!value_changed_function) {
     cerr << "value_changed_function is not set.\n";
     return;
@@ -50,4 +54,13 @@ void QtSpinBox::focusInEvent(QFocusEvent *)
 void QtSpinBox::focusOutEvent(QFocusEvent *)
 {
   setFocusPolicy(Qt::StrongFocus);
+}
+
+
+void QtSpinBox::setValue(int arg)
+{
+  assert(!ignore_signals);
+  ignore_signals = true;
+  QSpinBox::setValue(arg);
+  ignore_signals = false;
 }

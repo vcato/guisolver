@@ -13,6 +13,7 @@
 #include "qtlayout.hpp"
 #include "filltree.hpp"
 #include "streamvector.hpp"
+#include "updatetreevalues.hpp"
 
 using std::cerr;
 using std::string;
@@ -95,11 +96,36 @@ static void
 }
 
 
-static void changedCallback(Scene &scene,SceneSetup &setup)
+namespace {
+struct MainWindowData {
+  OSGScene &scene;
+  QtTreeWidget &tree_widget;
+  SceneSetup scene_setup;
+  TreePaths tree_paths;
+
+  MainWindowData(OSGScene &scene_arg,QtTreeWidget &tree_widget_arg)
+  : scene(scene_arg),
+    tree_widget(tree_widget_arg),
+    scene_setup(setupScene(scene)),
+    tree_paths(fillTree(tree_widget))
+  {
+  }
+};
+}
+
+
+static void changedCallback(MainWindowData &main_window_data)
 {
+  SceneSetup &setup = main_window_data.scene_setup;
+  Scene &scene = main_window_data.scene;
   SceneState state = sceneState(scene,setup);
   solveBoxPosition(state);
   setTransform(setup.box, state.box_global, scene);
+
+  TreePaths &tree_paths = main_window_data.tree_paths;
+  QtTreeWidget &tree_widget = main_window_data.tree_widget;
+  updateTreeValues(tree_paths, tree_widget, state);
+
   updateLines(scene,setup);
 }
 
@@ -111,10 +137,6 @@ int main(int argc,char** argv)
   main_window.resize(1024,480);
   main_window.show();
   OSGScene scene;
-
-  SceneSetup scene_setup = setupScene(scene);
-  scene.changed_callback = [&]{ changedCallback(scene,scene_setup); };
-  scene.changing_callback = [&]{ changingCallback(scene,scene_setup); };
 
   GraphicsWindowPtr graphics_window_ptr =
     scene.createGraphicsWindow(ViewType::free);
@@ -131,15 +153,19 @@ int main(int argc,char** argv)
   QtTreeWidget &tree_widget = createWidget<QtTreeWidget>(layout);
 
   tree_widget.spin_box_item_value_changed_function =
-  [](const TreePath &path, int value) {
-    cerr << "Handling spin_box_item_value_changed_function\n";
-    cerr << "  path: " << path << "\n";
-    cerr << "  value: " << value << "\n";
-  };
-
-  fillTree(tree_widget);
-
+    [](const TreePath &path, int value) {
+      cerr << "Handling spin_box_item_value_changed_function\n";
+      cerr << "  path: " << path << "\n";
+      cerr << "  value: " << value << "\n";
+    };
 
   layout.addWidget(graphics_window_ptr->getGLWidget());
+
+  MainWindowData main_window_data{scene,tree_widget};
+  SceneSetup &scene_setup = main_window_data.scene_setup;
+
+  scene.changed_callback = [&]{ changedCallback(main_window_data); };
+  scene.changing_callback = [&]{ changingCallback(scene,scene_setup); };
+
   app.exec();
 }

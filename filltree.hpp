@@ -1,4 +1,5 @@
 #include "qttreewidget.hpp"
+#include "treepaths.hpp"
 
 
-extern void fillTree(QtTreeWidget &tree_widget);
+extern TreePaths fillTree(QtTreeWidget &tree_widget);
