@@ -12,6 +12,7 @@
 #include "qttreewidget.hpp"
 #include "qtlayout.hpp"
 #include "filltree.hpp"
+#include "streamvector.hpp"
 
 using std::cerr;
 using std::string;
@@ -128,6 +129,14 @@ int main(int argc,char** argv)
   QBoxLayout &layout = createLayout<QHBoxLayout>(central_widget);
 
   QtTreeWidget &tree_widget = createWidget<QtTreeWidget>(layout);
+
+  tree_widget.spin_box_item_value_changed_function =
+  [](const TreePath &path, int value) {
+    cerr << "Handling spin_box_item_value_changed_function\n";
+    cerr << "  path: " << path << "\n";
+    cerr << "  value: " << value << "\n";
+  };
+
   fillTree(tree_widget);
 
 

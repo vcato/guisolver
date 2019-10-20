@@ -18,6 +18,10 @@ class QtSpinBox : public QSpinBox {
 
   private:
     bool ignore_signals;
+
+    void wheelEvent(QWheelEvent *) override;
+    void focusInEvent(QFocusEvent *) override;
+    void focusOutEvent(QFocusEvent *) override;
 };
 
 #endif /* QTSPINBOX_HPP_ */

@@ -373,3 +373,10 @@ t.origin
     * value: [Distance]
       * start: local3
       * end: global3
+---
+The next step is to have it update the positions in the tree when we do
+something to the scene.
+We'll have to keep track of the paths to the items in the tree so that we
+know what to update.
+
+  set(paths.scene.box.translation.x, tx);

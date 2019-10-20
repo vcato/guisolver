@@ -40,6 +40,8 @@ struct QtTreeWidget::Impl {
       QTreeWidgetItem &item
     )
   {
+    spin_box.setFocusPolicy(Qt::StrongFocus);
+
     spin_box.value_changed_function =
       [&tree_widget,&item](int value){
         tree_widget.handleSpinBoxItemValueChanged(&item,value);
@@ -424,6 +426,12 @@ void
   )
 {
   assert(item_ptr);
+
+  if (!spin_box_item_value_changed_function) {
+    cerr << "spin_box_item_value_changed_function is not set\n";
+    return;
+  }
+
   spin_box_item_value_changed_function(itemPath(*item_ptr),value);
 }
 

@@ -1,5 +1,11 @@
 #include "qtspinbox.hpp"
 
+#include <cassert>
+#include <iostream>
+#include <QWheelEvent>
+
+using std::cerr;
+
 
 QtSpinBox::QtSpinBox()
 {
@@ -14,8 +20,34 @@ QtSpinBox::QtSpinBox()
 void QtSpinBox::valueChangedSlot(int value)
 {
   if (!value_changed_function) {
+    cerr << "value_changed_function is not set.\n";
     return;
   }
 
   value_changed_function(value);
+}
+
+
+void QtSpinBox::wheelEvent(QWheelEvent *event_ptr)
+{
+  assert(event_ptr);
+
+  if (!hasFocus()) {
+    event_ptr->ignore();
+  }
+  else {
+    QSpinBox::wheelEvent(event_ptr);
+  }
+}
+
+
+void QtSpinBox::focusInEvent(QFocusEvent *)
+{
+  setFocusPolicy(Qt::WheelFocus);
+}
+
+
+void QtSpinBox::focusOutEvent(QFocusEvent *)
+{
+  setFocusPolicy(Qt::StrongFocus);
 }
