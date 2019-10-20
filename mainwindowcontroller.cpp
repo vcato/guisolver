@@ -8,6 +8,8 @@
 #include "updatetreevalues.hpp"
 #include "sceneerror.hpp"
 #include "scenesolver.hpp"
+#include "setupscene.hpp"
+#include "filltree.hpp"
 
 using std::cerr;
 
@@ -114,11 +116,21 @@ static void sceneChangedCallback(MainWindowData &main_window_data)
 }
 
 
-MainWindowController::MainWindowController(MainWindowData &main_window_data_arg)
-: main_window_data(main_window_data_arg)
+MainWindowData::MainWindowData(
+  Scene &scene_arg,
+  TreeWidget &tree_widget_arg
+)
+: scene(scene_arg),
+  tree_widget(tree_widget_arg),
+  scene_setup(setupScene(scene)),
+  tree_paths(fillTree(tree_widget))
 {
-  Scene &scene = main_window_data.scene;
-  TreeWidget &tree_widget = main_window_data.tree_widget;
+}
+
+
+MainWindowController::MainWindowController(Scene &scene,TreeWidget &tree_widget)
+: main_window_data{scene,tree_widget}
+{
   TreePaths &tree_paths = main_window_data.tree_paths;
   SceneSetup &scene_setup = main_window_data.scene_setup;
 

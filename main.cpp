@@ -7,7 +7,6 @@
 #include "qttreewidget.hpp"
 #include "qtlayout.hpp"
 #include "streamvector.hpp"
-#include "mainwindowdata.hpp"
 #include "mainwindowcontroller.hpp"
 
 using std::cerr;
@@ -44,7 +43,6 @@ int main(int argc,char** argv)
     };
 
   layout.addWidget(graphics_window_ptr->getGLWidget());
-  MainWindowData main_window_data{scene,tree_widget};
-  MainWindowController controller(main_window_data);
+  MainWindowController controller(scene,tree_widget);
   app.exec();
 }
