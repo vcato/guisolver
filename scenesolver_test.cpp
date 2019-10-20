@@ -85,10 +85,9 @@ static SceneState exampleSceneState(RandomEngine &engine)
   Point local1 = localizePoint(global1,true_box_global);
   Point local2 = localizePoint(global2,true_box_global);
   Point local3 = localizePoint(global3,true_box_global);
-  using Line = SceneState::Line;
-  result.lines.push_back(Line{local1,global1});
-  result.lines.push_back(Line{local2,global2});
-  result.lines.push_back(Line{local3,global3});
+  result.addLine(local1,global1);
+  result.addLine(local2,global2);
+  result.addLine(local3,global3);
 
   // Then we can set the box global transform to some other random
   // transform.

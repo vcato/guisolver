@@ -5,10 +5,28 @@
 
 
 struct TreePaths {
+  struct Marker;
+  using Markers = std::vector<Marker>;
+
+  TreePaths()
+  : locals(3),
+    globals(3)
+  {
+  }
+
   struct XYZ {
     TreePath x;
     TreePath y;
     TreePath z;
+  };
+
+  struct Position : XYZ {
+    Position() {}
+    explicit Position(const XYZ &xyz_arg) : XYZ(xyz_arg) {}
+  };
+
+  struct Marker {
+    Position position;
   };
 
   struct Translation : XYZ
@@ -29,6 +47,8 @@ struct TreePaths {
   };
 
   Box box;
+  Markers locals;
+  Markers globals;
 };
 
 

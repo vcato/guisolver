@@ -37,12 +37,16 @@ static Point
 }
 
 
-static SceneState::Line
-  makeStateLine(const SceneSetup::Line &setup_line, const Scene &scene)
+static void
+  addStateLine(
+    SceneState &result,
+    const SceneSetup::Line &setup_line,
+    const Scene &scene
+  )
 {
   Point start = localTranslation(setup_line.start, scene);
   Point end = localTranslation(setup_line.end, scene);
-  return {start,end};
+  result.addLine(start,end);
 }
 
 
@@ -60,39 +64,12 @@ static SceneState sceneState(const Scene &scene,const SceneSetup &setup)
   SceneState result;
 
   for (const auto &setup_line : setup.lines) {
-    result.lines.push_back(makeStateLine(setup_line,scene));
+    addStateLine(result, setup_line, scene);
   }
 
   result.box_global = globalTransform(scene,setup.box);
 
   return result;
-}
-
-
-static void changingCallback(Scene &scene,SceneSetup &setup)
-{
-  // The mouse button is down.  The scene is being changed, but we don't
-  // consider this change complete.  We'll update the lines to be drawn
-  // between the new positions.  We'll wait to update the box position
-  // until the change is complete.
-
-  updateLines(scene,setup);
-  cerr << sceneError(sceneState(scene,setup)) << "\n";
-}
-
-
-static void
-  setTransform(
-    Scene::TransformHandle transform_id,
-    const Transform &transform_value,
-    Scene &scene
-  )
-{
-  CoordinateAxes coordinate_axes =
-    coordinateAxes(transform_value.rotation());
-
-  scene.setCoordinateAxes(transform_id, coordinate_axes);
-  scene.setTranslation(transform_id, transform_value.translation());
 }
 
 
@@ -111,6 +88,38 @@ struct MainWindowData {
   {
   }
 };
+}
+
+
+static void changingCallback(MainWindowData &main_window_data)
+{
+  // The mouse button is down.  The scene is being changed, but we don't
+  // consider this change complete.  We'll update the lines to be drawn
+  // between the new positions.  We'll wait to update the box position
+  // until the change is complete.
+
+  Scene &scene = main_window_data.scene;
+  SceneSetup &setup = main_window_data.scene_setup;
+  updateLines(scene,setup);
+  QtTreeWidget &tree_widget = main_window_data.tree_widget;
+  TreePaths &tree_paths = main_window_data.tree_paths;
+  updateTreeValues(tree_widget, tree_paths, sceneState(scene,setup));
+  cerr << sceneError(sceneState(scene,setup)) << "\n";
+}
+
+
+static void
+  setTransform(
+    Scene::TransformHandle transform_id,
+    const Transform &transform_value,
+    Scene &scene
+  )
+{
+  CoordinateAxes coordinate_axes =
+    coordinateAxes(transform_value.rotation());
+
+  scene.setCoordinateAxes(transform_id, coordinate_axes);
+  scene.setTranslation(transform_id, transform_value.translation());
 }
 
 
@@ -162,10 +171,9 @@ int main(int argc,char** argv)
   layout.addWidget(graphics_window_ptr->getGLWidget());
 
   MainWindowData main_window_data{scene,tree_widget};
-  SceneSetup &scene_setup = main_window_data.scene_setup;
 
   scene.changed_callback = [&]{ changedCallback(main_window_data); };
-  scene.changing_callback = [&]{ changingCallback(scene,scene_setup); };
+  scene.changing_callback = [&]{ changingCallback(main_window_data); };
 
   app.exec();
 }

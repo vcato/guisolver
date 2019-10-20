@@ -27,11 +27,14 @@ float sceneError(const SceneState &scene_state)
 {
   using Scalar = float;
   Scalar error = 0;
+  int n_lines = scene_state.lines.size();
 
   // Add an error for each line
-  for (auto &line : scene_state.lines) {
-    Point start_predicted = scene_state.box_global * line.start;
-    Point end_predicted = line.end;
+  for (int i=0; i!=n_lines; ++i) {
+    Point start_predicted =
+      scene_state.box_global * scene_state.lineStartLocal(i);
+
+    Point end_predicted = scene_state.lineEndGlobal(i);
     Point delta = start_predicted - end_predicted;
     error += dot(delta,delta);
   }

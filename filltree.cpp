@@ -7,38 +7,6 @@ using std::string;
 using LabelProperties = QtTreeWidget::LabelProperties;
 
 
-static void
-  createMarker(
-    QtTreeWidget &tree_widget,
-    const TreePath &path,
-    const string &name
-  )
-{
-  using LabelProperties = QtTreeWidget::LabelProperties;
-  const NumericValue no_minimum = noMinimumNumericValue();
-  const NumericValue no_maximum = noMaximumNumericValue();
-  tree_widget.createVoidItem(path,LabelProperties{"[Marker]"});
-
-  tree_widget.createVoidItem(
-    childPath(path,0),LabelProperties{"name: \"" + name + "\""}
-  );
-
-  tree_widget.createVoidItem(childPath(path,1),LabelProperties{"position: []"});
-
-  tree_widget.createNumericItem(
-    childPath(path,1,0),LabelProperties{"x"},0,no_minimum,no_maximum
-  );
-
-  tree_widget.createNumericItem(
-    childPath(path,1,1),LabelProperties{"y"},0,no_minimum,no_maximum
-  );
-
-  tree_widget.createNumericItem(
-    childPath(path,1,2),LabelProperties{"z"},0,no_minimum,no_maximum
-  );
-}
-
-
 static TreePaths::XYZ
   createXYZ(QtTreeWidget &tree_widget, const TreePath &parent_path)
 {
@@ -63,6 +31,26 @@ static TreePaths::XYZ
   );
 
   return xyz_paths;
+}
+
+
+static TreePaths::Position
+  createMarker(
+    QtTreeWidget &tree_widget,
+    const TreePath &path,
+    const string &name
+  )
+{
+  using LabelProperties = QtTreeWidget::LabelProperties;
+  tree_widget.createVoidItem(path,LabelProperties{"[Marker]"});
+
+  tree_widget.createVoidItem(
+    childPath(path,0),LabelProperties{"name: \"" + name + "\""}
+  );
+
+  tree_widget.createVoidItem(childPath(path,1),LabelProperties{"position: []"});
+
+  return TreePaths::Position(createXYZ(tree_widget, childPath(path,1)));
 }
 
 
@@ -97,11 +85,11 @@ TreePaths fillTree(QtTreeWidget &tree_widget)
     {0,0,2},LabelProperties{"[Box]"}
   );
 
-  createMarker(tree_widget,{0,0,3},"local1");
-  createMarker(tree_widget,{0,0,4},"local2");
-  createMarker(tree_widget,{0,0,5},"local3");
-  createMarker(tree_widget,{0,1},"global1");
-  createMarker(tree_widget,{0,2},"global2");
-  createMarker(tree_widget,{0,3},"global3");
+  tree_paths.locals[0].position = createMarker(tree_widget,{0,0,3},"local1");
+  tree_paths.locals[1].position = createMarker(tree_widget,{0,0,4},"local2");
+  tree_paths.locals[2].position = createMarker(tree_widget,{0,0,5},"local3");
+  tree_paths.globals[0].position = createMarker(tree_widget,{0,1},"global1");
+  tree_paths.globals[1].position = createMarker(tree_widget,{0,2},"global2");
+  tree_paths.globals[2].position = createMarker(tree_widget,{0,3},"global3");
   return tree_paths;
 }

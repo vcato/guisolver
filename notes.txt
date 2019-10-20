@@ -374,4 +374,4 @@ t.origin
       * start: local3
       * end: global3
 ---
-Need to be able to set the precision on the spin box.
+Need to update marker positions in the tree when they change.
