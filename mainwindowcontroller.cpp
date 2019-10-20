@@ -1,6 +1,7 @@
 #include "mainwindowcontroller.hpp"
 
 #include <iostream>
+#include "streamvector.hpp"
 #include "transform.hpp"
 #include "eigenconv.hpp"
 #include "maketransform.hpp"
@@ -142,4 +143,11 @@ MainWindowController::MainWindowController(Scene &scene,TreeWidget &tree_widget)
 
   scene.changed_callback = [&]{ sceneChangedCallback(main_window_data); };
   scene.changing_callback = [&]{ sceneChangingCallback(main_window_data); };
+
+  tree_widget.spin_box_item_value_changed_function =
+    [](const TreePath &path, int value) {
+      cerr << "Handling spin_box_item_value_changed_function\n";
+      cerr << "  path: " << path << "\n";
+      cerr << "  value: " << value << "\n";
+    };
 }

@@ -60,9 +60,6 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
       combobox_item_index_changed_function;
 
     std::function<void(const TreePath &,int index)>
-      spin_box_item_value_changed_function;
-
-    std::function<void(const TreePath &,int index)>
       slider_item_value_changed_function;
 
     std::function<void(const TreePath &,const std::string &value)>

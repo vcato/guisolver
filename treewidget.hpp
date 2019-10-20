@@ -2,6 +2,7 @@
 #define TREEWIDGET_HPP_
 
 #include <string>
+#include <functional>
 #include "treepath.hpp"
 #include "numericvalue.hpp"
 
@@ -59,6 +60,9 @@ struct TreeWidget {
     setItemLabel(const TreePath &path,const std::string &new_label) = 0;
 
   virtual void removeItem(const TreePath &path) = 0;
+
+  std::function<void(const TreePath &,int index)>
+    spin_box_item_value_changed_function;
 };
 
 #endif /* TREEWIDGET_HPP_ */
