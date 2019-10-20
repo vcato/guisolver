@@ -16,11 +16,12 @@ static void
   NumericValue no_minimum = std::numeric_limits<NumericValue>::min();
   NumericValue no_maximum = std::numeric_limits<NumericValue>::max();
   tree_widget.createVoidItem(path,LabelProperties{"[Marker]"});
-  tree_widget.createVoidItem(childPath(path,0),LabelProperties{"position: []"});
 
   tree_widget.createVoidItem(
     childPath(path,0),LabelProperties{"name: \"" + name + "\""}
   );
+
+  tree_widget.createVoidItem(childPath(path,1),LabelProperties{"position: []"});
 
   tree_widget.createNumericItem(
     childPath(path,1,0),LabelProperties{"x"},0,no_minimum,no_maximum
