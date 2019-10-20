@@ -41,6 +41,26 @@ static void
 }
 
 
+static void
+  updateMarkers(
+    QtTreeWidget &tree_widget,
+    const TreePaths::Markers &marker_paths,
+    const SceneState::Points &marker_positions
+  )
+{
+  assert(marker_paths.size() == marker_positions.size());
+  int n_markers = marker_paths.size();
+
+  for (int i=0; i!=n_markers; ++i) {
+    updateXYZValues(
+      tree_widget,
+      marker_paths[i].position,
+      vec3(marker_positions[i])
+    );
+  }
+}
+
+
 void
   updateTreeValues(
     QtTreeWidget &tree_widget,
@@ -64,29 +84,6 @@ void
     updateRotationValues(tree_widget, rotation_paths, rotation);
   }
 
-  {
-    assert(tree_paths.locals.size() == state.locals.size());
-    int n_locals = tree_paths.locals.size();
-
-    for (int i=0; i!=n_locals; ++i) {
-      updateXYZValues(
-        tree_widget,
-        tree_paths.locals[i].position,
-        vec3(state.locals[i])
-      );
-    }
-  }
-
-  {
-    assert(tree_paths.globals.size() == state.globals.size());
-    int n_globals = tree_paths.globals.size();
-
-    for (int i=0; i!=n_globals; ++i) {
-      updateXYZValues(
-        tree_widget,
-        tree_paths.globals[i].position,
-        vec3(state.globals[i])
-      );
-    }
-  }
+  updateMarkers(tree_widget, tree_paths.locals, state.locals);
+  updateMarkers(tree_widget, tree_paths.globals, state.globals);
 }
