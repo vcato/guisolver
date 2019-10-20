@@ -4,54 +4,10 @@
 #include "vec3.hpp"
 #include "maketransform.hpp"
 #include "optimize.hpp"
+#include "eigenconv.hpp"
+#include "rotationvector.hpp"
 
 using std::vector;
-
-
-static Vec3 rotationVector(const Eigen::Matrix3f &r)
-{
-  Eigen::AngleAxisf a;
-  a = r;
-  Eigen::Vector3f axis = a.axis();
-  float angle = a.angle();
-  float x = axis.x() * angle;
-  float y = axis.y() * angle;
-  float z = axis.z() * angle;
-  return {x,y,z};
-}
-
-
-static vector<float> extractRotationVariables(const Eigen::Matrix3f &r)
-{
-  Vec3 v = rotationVector(r);
-  float x = v.x;
-  float y = v.y;
-  float z = v.z;
-  return {x,y,z};
-}
-
-
-static Eigen::Vector3f eigenVector3f(const Vec3 &v)
-{
-  float x = v.x;
-  float y = v.y;
-  float z = v.z;
-  return {x,y,z};
-}
-
-
-static Eigen::Matrix3f makeRotation(const Vec3 &rotation_vector)
-{
-  Eigen::Vector3f v = eigenVector3f(rotation_vector);
-  float angle = v.norm();
-
-  if (angle == 0) {
-    return Eigen::Matrix3f::Identity();
-  }
-
-  Eigen::Vector3f axis = v.normalized();
-  return Eigen::AngleAxis(angle,axis).toRotationMatrix();
-}
 
 
 static Eigen::Matrix3f makeRotation(float x,float y,float z)
@@ -74,6 +30,16 @@ static vector<float> concat(const vector<float> &a,const vector<float> &b)
   auto result = a;
   result.insert(result.end(),b.begin(),b.end());
   return result;
+}
+
+
+static vector<float> extractRotationVariables(const Eigen::Matrix3f &r)
+{
+  Vec3 v = rotationVector(r);
+  float x = v.x;
+  float y = v.y;
+  float z = v.z;
+  return {x,y,z};
 }
 
 

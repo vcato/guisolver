@@ -5,7 +5,7 @@
 
 extern void
   updateTreeValues(
-    const TreePaths &tree_paths,
     QtTreeWidget &tree_widget,
+    const TreePaths &tree_paths,
     const SceneState &state
   );

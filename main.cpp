@@ -124,7 +124,7 @@ static void changedCallback(MainWindowData &main_window_data)
 
   TreePaths &tree_paths = main_window_data.tree_paths;
   QtTreeWidget &tree_widget = main_window_data.tree_widget;
-  updateTreeValues(tree_paths, tree_widget, state);
+  updateTreeValues(tree_widget, tree_paths, state);
 
   updateLines(scene,setup);
 }

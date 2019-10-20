@@ -4,6 +4,7 @@
 
 
 using std::string;
+using LabelProperties = QtTreeWidget::LabelProperties;
 
 
 static void
@@ -14,8 +15,8 @@ static void
   )
 {
   using LabelProperties = QtTreeWidget::LabelProperties;
-  NumericValue no_minimum = noMinimumNumericValue();
-  NumericValue no_maximum = noMaximumNumericValue();
+  const NumericValue no_minimum = noMinimumNumericValue();
+  const NumericValue no_maximum = noMaximumNumericValue();
   tree_widget.createVoidItem(path,LabelProperties{"[Marker]"});
 
   tree_widget.createVoidItem(
@@ -38,12 +39,36 @@ static void
 }
 
 
+static TreePaths::XYZ
+  createXYZ(QtTreeWidget &tree_widget, const TreePath &parent_path)
+{
+  const NumericValue no_minimum = noMinimumNumericValue();
+  const NumericValue no_maximum = noMaximumNumericValue();
+
+  TreePaths::XYZ xyz_paths;
+  xyz_paths.x = childPath(parent_path,0);
+  xyz_paths.y = childPath(parent_path,1);
+  xyz_paths.z = childPath(parent_path,2);
+
+  tree_widget.createNumericItem(
+    xyz_paths.x,LabelProperties{"x:"},0,no_minimum, no_maximum
+  );
+
+  tree_widget.createNumericItem(
+    xyz_paths.y,LabelProperties{"y:"},0,no_minimum, no_maximum
+  );
+
+  tree_widget.createNumericItem(
+    xyz_paths.z,LabelProperties{"z:"},0,no_minimum, no_maximum
+  );
+
+  return xyz_paths;
+}
+
+
 TreePaths fillTree(QtTreeWidget &tree_widget)
 {
   TreePaths tree_paths;
-  using LabelProperties = QtTreeWidget::LabelProperties;
-  NumericValue no_minimum = noMinimumNumericValue();
-  NumericValue no_maximum = noMaximumNumericValue();
 
   tree_widget.createVoidItem({0},LabelProperties{"[Scene]"});
 
@@ -51,44 +76,22 @@ TreePaths fillTree(QtTreeWidget &tree_widget)
     {0,0},LabelProperties{"[Transform]"}
   );
 
-  tree_widget.createVoidItem(
-    {0,0,0},LabelProperties{"translation: []"}
-  );
-
-  TreePath box_translation_x_path = {0,0,0,0};
-  TreePath box_translation_y_path = {0,0,0,1};
-  TreePath box_translation_z_path = {0,0,0,2};
-  tree_paths.box.translation.x = box_translation_x_path;
-  tree_paths.box.translation.y = box_translation_y_path;
-  tree_paths.box.translation.z = box_translation_z_path;
-
-  tree_widget.createNumericItem(
-    box_translation_x_path,LabelProperties{"x:"},0,no_minimum, no_maximum
-  );
-
-  tree_widget.createNumericItem(
-    box_translation_y_path,LabelProperties{"y:"},0,no_minimum, no_maximum
-  );
-
-  tree_widget.createNumericItem(
-    box_translation_z_path,LabelProperties{"z:"},0,no_minimum, no_maximum
-  );
+  TreePath box_translation_path = {0,0,0};
+  TreePath box_rotation_path = {0,0,1};
 
   tree_widget.createVoidItem(
-    {0,0,1},LabelProperties{"rotation: []"}
+    box_translation_path,LabelProperties{"translation: []"}
   );
 
-  tree_widget.createNumericItem(
-    {0,0,1,0},LabelProperties{"x:"},0,no_minimum, no_maximum
+  tree_paths.box.translation =
+    TreePaths::Translation(createXYZ(tree_widget, box_translation_path));
+
+  tree_widget.createVoidItem(
+    box_rotation_path,LabelProperties{"rotation: []"}
   );
 
-  tree_widget.createNumericItem(
-    {0,0,1,1},LabelProperties{"y:"},0,no_minimum, no_maximum
-  );
-
-  tree_widget.createNumericItem(
-    {0,0,1,2},LabelProperties{"z:"},0,no_minimum, no_maximum
-  );
+  tree_paths.box.rotation =
+    TreePaths::Rotation(createXYZ(tree_widget, box_rotation_path));
 
   tree_widget.createVoidItem(
     {0,0,2},LabelProperties{"[Box]"}

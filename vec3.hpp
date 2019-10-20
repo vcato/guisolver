@@ -12,4 +12,13 @@ struct Vec3 {
 };
 
 
+inline Vec3 operator*(Vec3 a,float b)
+{
+  a.x *= b;
+  a.y *= b;
+  a.z *= b;
+  return a;
+}
+
+
 #endif /* VEC3_HPP_ */
