@@ -8,10 +8,22 @@ using TreeItemIndex = int;
 using TreePath = std::vector<TreeItemIndex>;
 
 
-inline TreePath childPath(TreePath path,TreeItemIndex child_index)
+inline TreePath childPath(TreePath path)
 {
-  path.push_back(child_index);
   return path;
+}
+
+
+template <typename... Indices>
+inline TreePath
+  childPath(
+    TreePath path,
+    TreeItemIndex child_index1,
+    Indices... rest
+  )
+{
+  path.push_back(child_index1);
+  return childPath(path,rest...);
 }
 
 

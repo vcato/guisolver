@@ -11,8 +11,10 @@
 #include "qtwidget.hpp"
 #include "qttreewidget.hpp"
 #include "qtlayout.hpp"
+#include "filltree.hpp"
 
 using std::cerr;
+using std::string;
 
 
 static void updateLines(Scene &scene,SceneSetup &setup)
@@ -98,70 +100,6 @@ static void changedCallback(Scene &scene,SceneSetup &setup)
   solveBoxPosition(state);
   setTransform(setup.box, state.box_global, scene);
   updateLines(scene,setup);
-}
-
-
-static void fillTree(QtTreeWidget &tree_widget)
-{
-  using NumericValue = QtTreeWidget::NumericValue;
-  using LabelProperties = QtTreeWidget::LabelProperties;
-  NumericValue no_minimum = std::numeric_limits<NumericValue>::min();
-  NumericValue no_maximum = std::numeric_limits<NumericValue>::max();
-
-  tree_widget.createVoidItem({0},LabelProperties{"[Scene]"});
-
-  tree_widget.createVoidItem(
-    {0,0},LabelProperties{"[Transform]"}
-  );
-
-  tree_widget.createVoidItem(
-    {0,0,0},LabelProperties{"translation: []"}
-  );
-
-  tree_widget.createNumericItem(
-    {0,0,0,0},LabelProperties{"x:"},0,no_minimum, no_maximum
-  );
-
-  tree_widget.createNumericItem(
-    {0,0,0,1},LabelProperties{"y:"},0,no_minimum, no_maximum
-  );
-
-  tree_widget.createNumericItem(
-    {0,0,0,2},LabelProperties{"z:"},0,no_minimum, no_maximum
-  );
-
-  tree_widget.createVoidItem(
-    {0,0,1},LabelProperties{"rotation: []"}
-  );
-
-  tree_widget.createNumericItem(
-    {0,0,1,0},LabelProperties{"x:"},0,no_minimum, no_maximum
-  );
-
-  tree_widget.createNumericItem(
-    {0,0,1,1},LabelProperties{"y:"},0,no_minimum, no_maximum
-  );
-
-  tree_widget.createNumericItem(
-    {0,0,1,2},LabelProperties{"z:"},0,no_minimum, no_maximum
-  );
-
-  tree_widget.createVoidItem(
-    {0,0,2},LabelProperties{"[Box]"}
-  );
-
-  tree_widget.createVoidItem({0,0,3},LabelProperties{"[Marker]"});
-  tree_widget.createVoidItem({0,0,3,0},LabelProperties{"name: \"local1\""});
-  tree_widget.createVoidItem({0,0,4},LabelProperties{"[Marker]"});
-  tree_widget.createVoidItem({0,0,4,0},LabelProperties{"name: \"local2\""});
-  tree_widget.createVoidItem({0,0,5},LabelProperties{"[Marker]"});
-  tree_widget.createVoidItem({0,0,5,0},LabelProperties{"name: \"local3\""});
-  tree_widget.createVoidItem({0,1},LabelProperties{"[Marker]"});
-  tree_widget.createVoidItem({0,1,0},LabelProperties{"name: \"global1\""});
-  tree_widget.createVoidItem({0,2},LabelProperties{"[Marker]"});
-  tree_widget.createVoidItem({0,2,0},LabelProperties{"name: \"global2\""});
-  tree_widget.createVoidItem({0,3},LabelProperties{"[Marker]"});
-  tree_widget.createVoidItem({0,3,0},LabelProperties{"name: \"global3\""});
 }
 
 

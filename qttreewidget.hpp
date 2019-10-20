@@ -1,3 +1,6 @@
+#ifndef QTTREEWIDGET_HPP_
+#define QTTREEWIDGET_HPP_
+
 #include <QTreeWidget>
 
 #include "qtslider.hpp"
@@ -162,3 +165,6 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
         const std::string &value
       );
 };
+
+
+#endif /* QTTREEWIDGET_HPP_ */
