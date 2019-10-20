@@ -50,6 +50,12 @@ struct TreeWidget {
     ) = 0;
 
   virtual void
+    setItemNumericValue(
+      const TreePath &,
+      NumericValue value
+    ) = 0;
+
+  virtual void
     setItemLabel(const TreePath &path,const std::string &new_label) = 0;
 
   virtual void removeItem(const TreePath &path) = 0;

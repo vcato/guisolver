@@ -75,7 +75,7 @@ static SceneState sceneState(const Scene &scene,const SceneSetup &setup)
 
 namespace {
 struct MainWindowData {
-  OSGScene &scene;
+  Scene &scene;
   QtTreeWidget &tree_widget;
   SceneSetup scene_setup;
   TreePaths tree_paths;

@@ -6,7 +6,7 @@
 
 static void
   updateXYZValues(
-    QtTreeWidget &tree_widget,
+    TreeWidget &tree_widget,
     const TreePaths::XYZ &paths,
     const Vec3 &value
   )
@@ -19,7 +19,7 @@ static void
 
 static void
   updateTranslationValues(
-    QtTreeWidget &tree_widget,
+    TreeWidget &tree_widget,
     const TreePaths::Translation &translation_paths,
     const Point &translation
   )
@@ -30,7 +30,7 @@ static void
 
 static void
   updateRotationValues(
-    QtTreeWidget &tree_widget,
+    TreeWidget &tree_widget,
     const TreePaths::Rotation &rotation_paths,
     const Eigen::Matrix3f &rotation
   )
@@ -43,7 +43,7 @@ static void
 
 static void
   updateMarkers(
-    QtTreeWidget &tree_widget,
+    TreeWidget &tree_widget,
     const TreePaths::Markers &marker_paths,
     const SceneState::Points &marker_positions
   )
@@ -63,7 +63,7 @@ static void
 
 void
   updateTreeValues(
-    QtTreeWidget &tree_widget,
+    TreeWidget &tree_widget,
     const TreePaths &tree_paths,
     const SceneState &state
   )

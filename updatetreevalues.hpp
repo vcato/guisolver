@@ -1,11 +1,11 @@
 #include "treepaths.hpp"
-#include "qttreewidget.hpp"
+#include "treewidget.hpp"
 #include "scenestate.hpp"
 
 
 extern void
   updateTreeValues(
-    QtTreeWidget &tree_widget,
+    TreeWidget &tree_widget,
     const TreePaths &tree_paths,
     const SceneState &state
   );

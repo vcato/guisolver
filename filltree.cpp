@@ -4,11 +4,11 @@
 
 
 using std::string;
-using LabelProperties = QtTreeWidget::LabelProperties;
+using LabelProperties = TreeWidget::LabelProperties;
 
 
 static TreePaths::XYZ
-  createXYZ(QtTreeWidget &tree_widget, const TreePath &parent_path)
+  createXYZ(TreeWidget &tree_widget, const TreePath &parent_path)
 {
   const NumericValue no_minimum = noMinimumNumericValue();
   const NumericValue no_maximum = noMaximumNumericValue();
@@ -36,12 +36,11 @@ static TreePaths::XYZ
 
 static TreePaths::Position
   createMarker(
-    QtTreeWidget &tree_widget,
+    TreeWidget &tree_widget,
     const TreePath &path,
     const string &name
   )
 {
-  using LabelProperties = QtTreeWidget::LabelProperties;
   tree_widget.createVoidItem(path,LabelProperties{"[Marker]"});
 
   tree_widget.createVoidItem(
@@ -54,7 +53,7 @@ static TreePaths::Position
 }
 
 
-TreePaths fillTree(QtTreeWidget &tree_widget)
+TreePaths fillTree(TreeWidget &tree_widget)
 {
   TreePaths tree_paths;
 
