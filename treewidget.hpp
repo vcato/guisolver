@@ -61,7 +61,7 @@ struct TreeWidget {
 
   virtual void removeItem(const TreePath &path) = 0;
 
-  std::function<void(const TreePath &,int index)>
+  std::function<void(const TreePath &,NumericValue)>
     spin_box_item_value_changed_function;
 };
 

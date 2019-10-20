@@ -145,7 +145,7 @@ MainWindowController::MainWindowController(Scene &scene,TreeWidget &tree_widget)
   scene.changing_callback = [&]{ sceneChangingCallback(main_window_data); };
 
   tree_widget.spin_box_item_value_changed_function =
-    [](const TreePath &path, int value) {
+    [](const TreePath &path, NumericValue value) {
       cerr << "Handling spin_box_item_value_changed_function\n";
       cerr << "  path: " << path << "\n";
       cerr << "  value: " << value << "\n";

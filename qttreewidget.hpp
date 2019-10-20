@@ -159,7 +159,7 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
     void
       handleSpinBoxItemValueChanged(
         QTreeWidgetItem *item_ptr,
-        int value
+        NumericValue
       );
 
     void

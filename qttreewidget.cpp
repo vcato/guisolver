@@ -43,7 +43,7 @@ struct QtTreeWidget::Impl {
     spin_box.setFocusPolicy(Qt::StrongFocus);
 
     spin_box.value_changed_function =
-      [&tree_widget,&item](int value){
+      [&tree_widget,&item](NumericValue value){
         tree_widget.handleSpinBoxItemValueChanged(&item,value);
       };
   }
@@ -422,7 +422,7 @@ void
 void
   QtTreeWidget::handleSpinBoxItemValueChanged(
     QTreeWidgetItem *item_ptr,
-    int value
+    NumericValue value
   )
 {
   assert(item_ptr);
