@@ -91,18 +91,23 @@ SceneSetup setupScene(Scene &scene)
   Scene::Point global1 = {1,0,0};
   Scene::Point global2 = {1,0,1};
   Scene::Point global3 = {0,0,1};
-  TransformHandle local1_handle = createLocal(scene,box,local1);
-  TransformHandle local2_handle = createLocal(scene,box,local2);
-  TransformHandle local3_handle = createLocal(scene,box,local3);
-  TransformHandle global1_handle = createGlobal(scene,global1);
-  TransformHandle global2_handle = createGlobal(scene,global2);
-  TransformHandle global3_handle = createGlobal(scene,global3);
+
+  vector<TransformHandle> locals;
+  locals.push_back(createLocal(scene,box,local1));
+  locals.push_back(createLocal(scene,box,local2));
+  locals.push_back(createLocal(scene,box,local3));
+
+  vector<TransformHandle> globals;
+  globals.push_back(createGlobal(scene,global1));
+  globals.push_back(createGlobal(scene,global2));
+  globals.push_back(createGlobal(scene,global3));
 
   vector<SceneSetup::Line> lines;
+  int n_lines = 3;
 
-  createLine(lines,scene,local1_handle,global1_handle);
-  createLine(lines,scene,local2_handle,global2_handle);
-  createLine(lines,scene,local3_handle,global3_handle);
+  for (int i=0; i!=n_lines; ++i) {
+    createLine(lines,scene,locals[i],globals[i]);
+  }
 
-  return { box, lines };
+  return { box, locals, globals, lines };
 }

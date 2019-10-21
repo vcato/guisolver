@@ -200,6 +200,34 @@ static bool
 
 
 static bool
+  setMarkersValue(
+    Scene &scene,
+    const TreePath &path,
+    NumericValue value,
+    const TreePaths::Markers &markers_paths,
+    const SceneSetup::TransformHandles &markers_handles
+  )
+{
+  assert(markers_paths.size() == markers_handles.size());
+  int n_markers = markers_paths.size();
+
+  for (int i=0; i!=n_markers; ++i) {
+    const TreePaths::Marker &marker_paths = markers_paths[i];
+    Scene::TransformHandle marker_handle = markers_handles[i];
+
+    if (startsWith(path,marker_paths.position.path)) {
+      Scene::Point v = scene.translation(marker_handle);
+      setVectorValue(v, path, value, marker_paths.position);
+      scene.setTranslation(marker_handle, v);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+static bool
   setSceneValue(
     Scene &scene,
     const TreePath &path,
@@ -217,6 +245,28 @@ static bool
 
     if (setTransformValue(box_global, path, value, box_paths)) {
       setTransform(scene_setup.box, box_global, scene);
+      updateLines(scene, scene_setup);
+      showError(scene, scene_setup);
+      return true;
+    }
+  }
+
+  {
+    const TreePaths::Markers &markers_paths = tree_paths.locals;
+    const SceneSetup::TransformHandles &markers_handles = scene_setup.locals;
+
+    if (setMarkersValue(scene, path, value, markers_paths, markers_handles)) {
+      updateLines(scene, scene_setup);
+      showError(scene, scene_setup);
+      return true;
+    }
+  }
+
+  {
+    const TreePaths::Markers &markers_paths = tree_paths.globals;
+    const SceneSetup::TransformHandles &markers_handles = scene_setup.globals;
+
+    if (setMarkersValue(scene, path, value, markers_paths, markers_handles)) {
       updateLines(scene, scene_setup);
       showError(scene, scene_setup);
       return true;

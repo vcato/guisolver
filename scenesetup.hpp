@@ -5,6 +5,8 @@
 
 
 struct SceneSetup {
+  using TransformHandles = std::vector<Scene::TransformHandle>;
+
   struct Line {
     Scene::LineHandle handle;
     Scene::TransformHandle start;
@@ -12,6 +14,8 @@ struct SceneSetup {
   };
 
   Scene::TransformHandle box;
+  TransformHandles locals;
+  TransformHandles globals;
   std::vector<Line> lines;
 };
 
