@@ -61,15 +61,6 @@ static void
 }
 
 
-#if 0
-static ostream &operator<<(ostream &stream,const Scene::Point &p)
-{
-  stream << "(" << p.x << "," << p.y << "," << p.z << ")";
-  return stream;
-}
-#endif
-
-
 SceneSetup setupScene(Scene &scene)
 {
   auto box = scene.createBox();

@@ -245,8 +245,6 @@ static bool
 
     if (setTransformValue(box_global, path, value, box_paths)) {
       setTransform(scene_setup.box, box_global, scene);
-      updateLines(scene, scene_setup);
-      showError(scene, scene_setup);
       return true;
     }
   }
@@ -256,8 +254,6 @@ static bool
     const SceneSetup::TransformHandles &markers_handles = scene_setup.locals;
 
     if (setMarkersValue(scene, path, value, markers_paths, markers_handles)) {
-      updateLines(scene, scene_setup);
-      showError(scene, scene_setup);
       return true;
     }
   }
@@ -267,8 +263,6 @@ static bool
     const SceneSetup::TransformHandles &markers_handles = scene_setup.globals;
 
     if (setMarkersValue(scene, path, value, markers_paths, markers_handles)) {
-      updateLines(scene, scene_setup);
-      showError(scene, scene_setup);
       return true;
     }
   }
@@ -288,7 +282,21 @@ static void
   Scene &scene = main_window_data.scene;
   const SceneSetup &scene_setup = main_window_data.scene_setup;
 
-  if (!setSceneValue(scene, path, value, tree_paths, scene_setup)) {
+  if (setSceneValue(scene, path, value, tree_paths, scene_setup)) {
+    bool is_box_transform_path =
+      startsWith(path, tree_paths.box.translation.path) ||
+      startsWith(path, tree_paths.box.rotation.path);
+
+    if (!is_box_transform_path) {
+      SceneState state = makeSceneState(scene,scene_setup);
+      solveBoxPosition(state);
+      setTransform(scene_setup.box, state.box_global, scene);
+    }
+
+    updateLines(scene, scene_setup);
+    showError(scene, scene_setup);
+  }
+  else {
     cerr << "Handling spin_box_item_value_changed_function\n";
     cerr << "  path: " << path << "\n";
     cerr << "  value: " << value << "\n";
@@ -314,11 +322,12 @@ MainWindowController::MainWindowController(Scene &scene,TreeWidget &tree_widget)
   TreePaths &tree_paths = main_window_data.tree_paths;
   SceneSetup &scene_setup = main_window_data.scene_setup;
 
-  updateTreeValues(
-    tree_widget,
-    tree_paths,
-    makeSceneState(scene, scene_setup)
-  );
+  SceneState state = makeSceneState(scene,scene_setup);
+  solveBoxPosition(state);
+  setTransform(scene_setup.box, state.box_global, scene);
+  updateLines(scene, scene_setup);
+
+  updateTreeValues(tree_widget,tree_paths,state);
 
   scene.changed_callback = [&]{ sceneChangedCallback(main_window_data); };
   scene.changing_callback = [&]{ sceneChangingCallback(main_window_data); };
