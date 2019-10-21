@@ -1,7 +1,7 @@
 PACKAGES=openscenegraph QtGui QtOpenGL eigen3
 MOC=moc-qt4
 
-CXXFLAGS=-W -Wall -Wundef -pedantic -std=c++17 -MD -MP -g \
+CXXFLAGS=-W -Wall -Wundef -pedantic -std=c++14 -MD -MP -g \
   `pkg-config --cflags $(PACKAGES)`
 
 all:

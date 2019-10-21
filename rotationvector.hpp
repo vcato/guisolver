@@ -21,5 +21,5 @@ inline Eigen::Matrix3f makeRotation(const Vec3 &rotation_vector)
   }
 
   Eigen::Vector3f axis = v.normalized();
-  return Eigen::AngleAxis(angle,axis).toRotationMatrix();
+  return Eigen::AngleAxisf(angle,axis).toRotationMatrix();
 }

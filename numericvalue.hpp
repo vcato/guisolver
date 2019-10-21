@@ -1,6 +1,7 @@
 #ifndef NUMERICVALUE_HPP_
 #define NUMERICVALUE_HPP_
 
+#include <limits>
 
 typedef float NumericValue;
 

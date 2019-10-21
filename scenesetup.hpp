@@ -1,6 +1,7 @@
 #ifndef SCENESETUP_HPP_
 #define SCENESETUP_HPP_
 
+#include <vector>
 #include "scene.hpp"
 
 

@@ -1,6 +1,7 @@
 #ifndef SCENESTATE_HPP_
 #define SCENESTATE_HPP_
 
+#include <vector>
 #include "point.hpp"
 #include "transform.hpp"
 
