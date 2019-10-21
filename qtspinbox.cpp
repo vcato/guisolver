@@ -15,6 +15,8 @@ QtSpinBox::QtSpinBox()
     SIGNAL(valueChanged(double)),
     SLOT(valueChangedSlot(double))
   );
+
+  setSingleStep(0.1);
 }
 
 
