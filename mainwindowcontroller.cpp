@@ -11,6 +11,8 @@
 #include "scenesolver.hpp"
 #include "setupscene.hpp"
 #include "filltree.hpp"
+#include "startswith.hpp"
+#include "rotationvector.hpp"
 
 using std::cerr;
 
@@ -73,7 +75,7 @@ static SceneState makeSceneState(const Scene &scene,const SceneSetup &setup)
 }
 
 
-static void updateLines(Scene &scene,SceneSetup &setup)
+static void updateLines(Scene &scene,const SceneSetup &setup)
 {
   for (auto &line : setup.lines) {
     Scene::Point start = scene.worldPoint({0,0,0}, line.start);
@@ -81,6 +83,12 @@ static void updateLines(Scene &scene,SceneSetup &setup)
     scene.setStartPoint(line.handle,start);
     scene.setEndPoint(line.handle,end);
   }
+}
+
+
+static void showError(const Scene &scene, const SceneSetup &setup)
+{
+  cerr << sceneError(makeSceneState(scene,setup)) << "\n";
 }
 
 
@@ -97,7 +105,7 @@ static void sceneChangingCallback(MainWindowData &main_window_data)
   TreeWidget &tree_widget = main_window_data.tree_widget;
   TreePaths &tree_paths = main_window_data.tree_paths;
   updateTreeValues(tree_widget, tree_paths, makeSceneState(scene,setup));
-  cerr << sceneError(makeSceneState(scene,setup)) << "\n";
+  showError(scene, setup);
 }
 
 
@@ -114,6 +122,127 @@ static void sceneChangedCallback(MainWindowData &main_window_data)
   updateTreeValues(tree_widget, tree_paths, state);
 
   updateLines(scene,setup);
+}
+
+
+static void
+  setVectorValue(
+    Eigen::Vector3f &v,
+    const TreePath &path,
+    NumericValue value,
+    const TreePaths::XYZ &xyz_path
+  )
+{
+  if (path == xyz_path.x) {
+    v.x() = value;
+  }
+  else if (path == xyz_path.y) {
+    v.y() = value;
+  }
+  else if (path == xyz_path.z) {
+    v.z() = value;
+  }
+  else {
+    assert(false);
+  }
+}
+
+
+static void
+  setVectorValue(
+    Vec3 &v,
+    const TreePath &path,
+    NumericValue value,
+    const TreePaths::XYZ &xyz_path
+  )
+{
+  if (path == xyz_path.x) {
+    v.x = value;
+  }
+  else if (path == xyz_path.y) {
+    v.y = value;
+  }
+  else if (path == xyz_path.z) {
+    v.z = value;
+  }
+  else {
+    assert(false);
+  }
+}
+
+
+static bool
+  setTransformValue(
+    Transform &box_global,
+    const TreePath &path,
+    NumericValue value,
+    const TreePaths::Box &box_paths
+  )
+{
+  if (startsWith(path,box_paths.translation.path)) {
+    Eigen::Vector3f v = box_global.translation();
+    const TreePaths::XYZ& xyz_path = box_paths.translation;
+    setVectorValue(v, path, value, xyz_path);
+    box_global.translation() = v;
+    return true;
+  }
+
+  if (startsWith(path,box_paths.rotation.path)) {
+    Vec3 v = rotationVector(box_global.rotation());
+    const TreePaths::XYZ& xyz_path = box_paths.rotation;
+    setVectorValue(v, path, value*M_PI/180, xyz_path);
+    box_global.matrix().topLeftCorner<3,3>() = makeRotation(v);
+    return true;
+  }
+
+  return false;
+}
+
+
+static bool
+  setSceneValue(
+    Scene &scene,
+    const TreePath &path,
+    NumericValue value,
+    const TreePaths &tree_paths,
+    const SceneSetup &scene_setup
+  )
+{
+  SceneState scene_state = makeSceneState(scene, scene_setup);
+
+  const TreePaths::Box &box_paths = tree_paths.box;
+
+  if (startsWith(path,box_paths.path)) {
+    Transform box_global = scene_state.box_global;
+
+    if (setTransformValue(box_global, path, value, box_paths)) {
+      setTransform(scene_setup.box, box_global, scene);
+      updateLines(scene, scene_setup);
+      showError(scene, scene_setup);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+static void
+  treeValueChangedCallback(
+    MainWindowData &main_window_data,
+    const TreePath &path,
+    NumericValue value
+  )
+{
+  const TreePaths &tree_paths = main_window_data.tree_paths;
+  Scene &scene = main_window_data.scene;
+  const SceneSetup &scene_setup = main_window_data.scene_setup;
+
+  if (!setSceneValue(scene, path, value, tree_paths, scene_setup)) {
+    cerr << "Handling spin_box_item_value_changed_function\n";
+    cerr << "  path: " << path << "\n";
+    cerr << "  value: " << value << "\n";
+  }
 }
 
 
@@ -145,9 +274,7 @@ MainWindowController::MainWindowController(Scene &scene,TreeWidget &tree_widget)
   scene.changing_callback = [&]{ sceneChangingCallback(main_window_data); };
 
   tree_widget.spin_box_item_value_changed_function =
-    [](const TreePath &path, NumericValue value) {
-      cerr << "Handling spin_box_item_value_changed_function\n";
-      cerr << "  path: " << path << "\n";
-      cerr << "  value: " << value << "\n";
+    [&](const TreePath &path, NumericValue value){
+      treeValueChangedCallback(main_window_data, path, value);
     };
 }

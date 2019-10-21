@@ -15,6 +15,7 @@ struct TreePaths {
   }
 
   struct XYZ {
+    TreePath path;
     TreePath x;
     TreePath y;
     TreePath z;
@@ -42,6 +43,7 @@ struct TreePaths {
   };
 
   struct Box {
+    TreePath path;
     Translation translation;
     Rotation rotation;
   };

@@ -14,6 +14,7 @@ static TreePaths::XYZ
   const NumericValue no_maximum = noMaximumNumericValue();
 
   TreePaths::XYZ xyz_paths;
+  xyz_paths.path = parent_path;
   xyz_paths.x = childPath(parent_path,0);
   xyz_paths.y = childPath(parent_path,1);
   xyz_paths.z = childPath(parent_path,2);
@@ -63,8 +64,11 @@ TreePaths fillTree(TreeWidget &tree_widget)
     {0,0},LabelProperties{"[Transform]"}
   );
 
-  TreePath box_translation_path = {0,0,0};
-  TreePath box_rotation_path = {0,0,1};
+  TreePath box_path = {0,0};
+  TreePath box_translation_path = childPath(box_path,0);
+  TreePath box_rotation_path = childPath(box_path,1);
+
+  tree_paths.box.path = box_path;
 
   tree_widget.createVoidItem(
     box_translation_path,LabelProperties{"translation: []"}
