@@ -35,7 +35,6 @@ bool
     for (;iter!=intersections.end(); ++iter) {
       const LineSegmentIntersector::Intersection &intersection = *iter;
       osg::NodePath node_path = intersection.nodePath;
-      //printNodePath(cerr,node_path);
       osg::Node *node_ptr = node_path.back();
       new_selected_node_ptr = node_ptr;
       break;

@@ -19,6 +19,7 @@ using GeodePtr = osg::ref_ptr<osg::Geode>;
 using ViewPtr = osg::ref_ptr<osgViewer::View>;
 using GroupPtr = osg::ref_ptr<osg::Group>;
 using AutoTransformPtr = osg::ref_ptr<osg::AutoTransform>;
+using TransformHandle = Scene::TransformHandle;
 
 using TranslateAxisDraggerPtr =
   osg::ref_ptr<osgManipulator::TranslateAxisDragger>;
@@ -94,7 +95,7 @@ struct OSGScene::Impl {
       OSGScene &
     );
 
-  static size_t getHandleIndex(OSGScene &scene,osg::MatrixTransform &);
+  static size_t getNewHandleIndex(OSGScene &scene,osg::MatrixTransform &);
 
   static osg::MatrixTransform &
     geometryTransform(OSGScene &,TransformHandle);
@@ -131,6 +132,8 @@ struct OSGScene::Impl {
   {
     return parentTransform(geometryTransform(scene,t));
   }
+
+  static Optional<TransformHandle> selectedTransform(const OSGScene &scene);
 };
 
 
@@ -231,7 +234,7 @@ static osg::ShapeDrawable *findShapeDrawable(osg::Node *node_ptr)
 }
 
 
-static osg::MatrixTransform &transformParentOf(osg::Node *node_ptr)
+static osg::MatrixTransform &geometryTransformOf(osg::Node *node_ptr)
 {
   assert(node_ptr);
   osg::Node *parent_ptr = node_ptr->getParent(0);
@@ -240,7 +243,13 @@ static osg::MatrixTransform &transformParentOf(osg::Node *node_ptr)
   osg::MatrixTransform *geometry_transform_ptr =
     transform_ptr->asMatrixTransform();
   assert(geometry_transform_ptr);
-  return parentTransform(*geometry_transform_ptr);
+  return *geometry_transform_ptr;
+}
+
+
+static osg::MatrixTransform &transformParentOf(osg::Node *node_ptr)
+{
+  return parentTransform(geometryTransformOf(node_ptr));
 }
 
 
@@ -428,6 +437,32 @@ static void
 OSGScene::SelectionHandler::SelectionHandler(OSGScene &scene_arg)
 : scene(scene_arg)
 {
+}
+
+
+Optional<TransformHandle>
+  OSGScene::Impl::selectedTransform(const OSGScene &scene)
+{
+  osg::Node *node_ptr = scene.selection_handler.selected_node_ptr;
+
+  if (!node_ptr) {
+    return {};
+  }
+
+  osg::MatrixTransform &transform = geometryTransformOf(node_ptr);
+
+  size_t index = 0;
+
+  for (osg::MatrixTransform *transform_ptr : scene.transform_ptrs) {
+    if (transform_ptr == &transform) {
+      return TransformHandle{index};
+    }
+
+    ++index;
+  }
+
+  cerr << "Didn't find transform for selection\n";
+  return {};
 }
 
 
@@ -864,9 +899,11 @@ static size_t findNull(const std::vector<T*> &v)
 
 
 size_t
-  OSGScene::Impl::getHandleIndex(OSGScene &scene,osg::MatrixTransform &transform)
+  OSGScene::Impl::getNewHandleIndex(
+    OSGScene &scene,
+    osg::MatrixTransform &transform
+  )
 {
-  // Need to refactor this with makeLineHandle
   assert(!contains(scene.transform_ptrs,&transform));
   size_t index = findNull(scene.transform_ptrs);
 
@@ -905,7 +942,7 @@ auto
     OSGScene &scene,osg::MatrixTransform &transform
   ) -> TransformHandle
 {
-  return TransformHandle{getHandleIndex(scene,transform)};
+  return TransformHandle{getNewHandleIndex(scene,transform)};
 }
 
 
@@ -914,7 +951,7 @@ auto
     OSGScene &scene,osg::MatrixTransform &transform
   ) -> LineHandle
 {
-  return LineHandle{getHandleIndex(scene,transform)};
+  return LineHandle{getNewHandleIndex(scene,transform)};
 }
 
 
@@ -934,6 +971,12 @@ auto OSGScene::worldPoint(Point p,TransformHandle t) const -> Point
 
   osg::Vec3f v2 = ::localPoint(*top_node_ptr,v1);
   return {v2.x(),v2.y(),v2.z()};
+}
+
+
+Optional<TransformHandle> OSGScene::selectedObject() const
+{
+  return Impl::selectedTransform(*this);
 }
 
 

@@ -5,6 +5,7 @@
 #include <functional>
 #include "point.hpp"
 #include "coordinateaxes.hpp"
+#include "optional.hpp"
 
 
 struct Scene {
@@ -13,6 +14,18 @@ struct Scene {
 
   struct TransformHandle {
     const size_t index;
+
+    friend std::ostream&
+      operator<<(std::ostream &stream, const TransformHandle &transform_handle)
+    {
+      stream << "TransformHandle(index=" << transform_handle.index << ")";
+      return stream;
+    }
+
+    bool operator==(const TransformHandle &arg) const
+    {
+      return index == arg.index;
+    }
   };
 
   struct LineHandle : TransformHandle {
@@ -39,6 +52,7 @@ struct Scene {
   virtual void setStartPoint(LineHandle,Point) = 0;
   virtual void setEndPoint(LineHandle,Point) = 0;
   virtual Point worldPoint(Point local,TransformHandle) const = 0;
+  virtual Optional<TransformHandle> selectedObject() const = 0;
 
   std::function<void()> changing_callback;
   std::function<void()> changed_callback;

@@ -35,6 +35,7 @@ class OSGScene : public Scene {
     void setStartPoint(LineHandle,Point) override;
     void setEndPoint(LineHandle,Point) override;
     Point worldPoint(Point p,TransformHandle t) const override;
+    Optional<TransformHandle> selectedObject() const override;
 
     GraphicsWindowPtr createGraphicsWindow(ViewType view_type);
 

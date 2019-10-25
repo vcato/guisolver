@@ -92,19 +92,47 @@ static void showError(const Scene &scene, const SceneSetup &setup)
 }
 
 
+static bool movesWithBox(Scene::TransformHandle th, const SceneSetup &setup)
+{
+  if (th == setup.box) {
+    return true;
+  }
+
+  for (Scene::TransformHandle local_handle : setup.locals) {
+    if (th == local_handle) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
 static void sceneChangingCallback(MainWindowData &main_window_data)
 {
   // The mouse button is down.  The scene is being changed, but we don't
-  // consider this change complete.  We'll update the lines to be drawn
-  // between the new positions.  We'll wait to update the box position
-  // until the change is complete.
+  // consider this change complete.
 
   Scene &scene = main_window_data.scene;
+  Optional<Scene::TransformHandle> th = scene.selectedObject();
   SceneSetup &setup = main_window_data.scene_setup;
+  SceneState state = makeSceneState(scene,setup);
+
+  if (!th || !movesWithBox(*th,setup)) {
+    // If we're moving something that doesn't move with the box, then
+    // we'll go ahead and update the box position.
+    solveBoxPosition(state);
+    setTransform(setup.box, state.box_global, scene);
+  }
+  else {
+    // If we're moving something that moves with the box, then it will
+    // be confusing if we try to update the box position.
+  }
+
   updateLines(scene,setup);
   TreeWidget &tree_widget = main_window_data.tree_widget;
   TreePaths &tree_paths = main_window_data.tree_paths;
-  updateTreeValues(tree_widget, tree_paths, makeSceneState(scene,setup));
+  updateTreeValues(tree_widget, tree_paths, state);
   showError(scene, setup);
 }
 
