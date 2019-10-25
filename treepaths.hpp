@@ -6,11 +6,13 @@
 
 struct TreePaths {
   struct Marker;
+  struct DistanceError;
   using Markers = std::vector<Marker>;
+  using DistanceErrors = std::vector<DistanceError>;
 
   TreePaths()
-  : locals(3),
-    globals(3)
+  : markers(6),
+    distance_errors(3)
   {
   }
 
@@ -48,9 +50,14 @@ struct TreePaths {
     Rotation rotation;
   };
 
+  struct DistanceError {
+    TreePath path;
+    TreePath distance;
+  };
+
   Box box;
-  Markers locals;
-  Markers globals;
+  Markers markers;
+  DistanceErrors distance_errors;
 };
 
 

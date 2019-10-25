@@ -54,6 +54,28 @@ static TreePaths::Position
 }
 
 
+static TreePaths::DistanceError
+  createDistanceError(
+    TreeWidget &tree_widget,
+    const TreePath &path,
+    const string &start_name,
+    const string &end_name
+  )
+{
+  tree_widget.createVoidItem(path,LabelProperties{"[DistanceError]"});
+  TreePath start_path = childPath(path,0);
+  TreePath end_path = childPath(path,1);
+  TreePath distance_path = childPath(path,2);
+  LabelProperties start_label = {"start: " + start_name};
+  LabelProperties end_label = {"end: " + end_name};
+  LabelProperties distance_label = {"distance: 0"};
+  tree_widget.createVoidItem(start_path, start_label);
+  tree_widget.createVoidItem(end_path, end_label);
+  tree_widget.createVoidItem(distance_path, distance_label);
+  return TreePaths::DistanceError{path, distance_path};
+}
+
+
 TreePaths fillTree(TreeWidget &tree_widget)
 {
   TreePaths tree_paths;
@@ -88,11 +110,21 @@ TreePaths fillTree(TreeWidget &tree_widget)
     {0,0,2},LabelProperties{"[Box]"}
   );
 
-  tree_paths.locals[0].position = createMarker(tree_widget,{0,0,3},"local1");
-  tree_paths.locals[1].position = createMarker(tree_widget,{0,0,4},"local2");
-  tree_paths.locals[2].position = createMarker(tree_widget,{0,0,5},"local3");
-  tree_paths.globals[0].position = createMarker(tree_widget,{0,1},"global1");
-  tree_paths.globals[1].position = createMarker(tree_widget,{0,2},"global2");
-  tree_paths.globals[2].position = createMarker(tree_widget,{0,3},"global3");
+  tree_paths.markers[0].position = createMarker(tree_widget,{0,0,3},"local1");
+  tree_paths.markers[1].position = createMarker(tree_widget,{0,0,4},"local2");
+  tree_paths.markers[2].position = createMarker(tree_widget,{0,0,5},"local3");
+  tree_paths.markers[3].position = createMarker(tree_widget,{0,1},"global1");
+  tree_paths.markers[4].position = createMarker(tree_widget,{0,2},"global2");
+  tree_paths.markers[5].position = createMarker(tree_widget,{0,3},"global3");
+
+  tree_paths.distance_errors[0] =
+    createDistanceError(tree_widget,{0,4},"local1","global1");
+
+  tree_paths.distance_errors[1] =
+    createDistanceError(tree_widget,{0,5},"local2","global2");
+
+  tree_paths.distance_errors[2] =
+    createDistanceError(tree_widget,{0,6},"local3","global3");
+
   return tree_paths;
 }

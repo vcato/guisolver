@@ -4,38 +4,78 @@
 #include <vector>
 #include "point.hpp"
 #include "transform.hpp"
+#include "markerindex.hpp"
 
 
 struct SceneState {
   using Points = std::vector<Point>;
+  struct Marker;
+  using Markers = std::vector<Marker>;
 
-  struct Line {
-    int start_local_index;
-    int end_global_index;
+  struct Marker {
+    Point position;
+    bool is_local;
   };
 
-  Points locals;
-  Points globals;
+  struct Line {
+    MarkerIndex start_marker_index;
+    MarkerIndex end_marker_index;
+  };
+
+  Markers markers;
   std::vector<Line> lines;
   Transform box_global;
 
-  void addLine(const Point &start_local,const Point &end_global)
+  static Marker makeLocalMarker(const Point &position)
   {
-    int local_index = locals.size();
-    locals.push_back(start_local);
-    int global_index = globals.size();
-    globals.push_back(end_global);
-    lines.push_back(Line{local_index,global_index});
+    return Marker{position,/*is_local*/true};
   }
 
-  Point lineStartLocal(int line_index) const
+  static Marker makeGlobalMarker(const Point &position)
   {
-    return locals[lines[line_index].start_local_index];
+    return Marker{position,/*is_local*/false};
   }
 
-  Point lineEndGlobal(int line_index) const
+  MarkerIndex addMarker(const Marker &new_marker)
   {
-    return globals[lines[line_index].end_global_index];
+    MarkerIndex new_index = markers.size();
+    markers.push_back(new_marker);
+    return new_index;
+  }
+
+  MarkerIndex addLocalMarker(const Point &position)
+  {
+    return addMarker(makeLocalMarker(position));
+  }
+
+  MarkerIndex addGlobalMarker(const Point &position)
+  {
+    return addMarker(makeGlobalMarker(position));
+  }
+
+  void addLine(MarkerIndex start_marker_index, MarkerIndex end_marker_index)
+  {
+    lines.push_back(Line{start_marker_index,end_marker_index});
+  }
+
+  Point markerPredicted(int marker_index) const
+  {
+    if (markers[marker_index].is_local) {
+      return box_global * markers[marker_index].position;
+    }
+    else {
+      return markers[marker_index].position;
+    }
+  }
+
+  Point lineStartPredicted(int line_index) const
+  {
+    return markerPredicted(lines[line_index].start_marker_index);
+  }
+
+  Point lineEndPredicted(int line_index) const
+  {
+    return markerPredicted(lines[line_index].end_marker_index);
   }
 };
 

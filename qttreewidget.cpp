@@ -23,12 +23,21 @@ struct QtTreeWidget::Impl {
     QWidget *value_widget_ptr = nullptr;
   };
 
+  static QtItemWrapperWidget *
+    itemWrapperWidgetPtr(QTreeWidget &tree,QTreeWidgetItem &item)
+  {
+    QWidget *widget_ptr = tree.itemWidget(&item,/*column*/0);
+
+    QtItemWrapperWidget *item_widget_ptr =
+      dynamic_cast<QtItemWrapperWidget*>(widget_ptr);
+
+    return item_widget_ptr;
+  }
+
   static QtItemWrapperWidget &
     itemWrapperWidget(QTreeWidget &tree,QTreeWidgetItem &item)
   {
-    QWidget *widget_ptr = tree.itemWidget(&item,/*column*/0);
-    QtItemWrapperWidget *item_widget_ptr =
-      dynamic_cast<QtItemWrapperWidget*>(widget_ptr);
+    QtItemWrapperWidget *item_widget_ptr = itemWrapperWidgetPtr(tree,item);
     assert(item_widget_ptr);
     return *item_widget_ptr;
   }
@@ -485,8 +494,15 @@ void QtTreeWidget::changeItemToSpinBox(const TreePath &path)
 QLabel *QtTreeWidget::itemLabelPtr(const TreePath &path)
 {
   QTreeWidgetItem &item = itemFromPath(path);
-  Impl::QtItemWrapperWidget &item_widget = Impl::itemWrapperWidget(*this,item);
-  QLabel *label_widget_ptr = item_widget.label_widget_ptr;
+
+  Impl::QtItemWrapperWidget *item_widget_ptr =
+    Impl::itemWrapperWidgetPtr(*this,item);
+
+  if (!item_widget_ptr) {
+    return nullptr;
+  }
+
+  QLabel *label_widget_ptr = item_widget_ptr->label_widget_ptr;
   return label_widget_ptr;
 }
 
@@ -580,8 +596,14 @@ void
   QtTreeWidget::setItemLabel(const TreePath &path,const std::string &new_label)
 {
   QLabel *label_widget_ptr = itemLabelPtr(path);
-  assert(label_widget_ptr);
-  setLabelWidgetText(*label_widget_ptr,new_label);
+
+  if (label_widget_ptr) {
+    setLabelWidgetText(*label_widget_ptr,new_label);
+  }
+  else {
+    QTreeWidgetItem &item = itemFromPath(path);
+    setItemText(item,new_label);
+  }
 }
 
 

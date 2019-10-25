@@ -9,7 +9,7 @@ using TransformHandle = Scene::TransformHandle;
 using LineHandle = Scene::LineHandle;
 
 
-static TransformHandle
+static SceneSetup::Marker
   createLocal(
     Scene &scene,
     TransformHandle &parent,
@@ -20,11 +20,11 @@ static TransformHandle
   scene.setGeometryScale(point,0.1,0.1,0.1);
   scene.setColor(point,0,0,1);
   scene.setTranslation(point,position);
-  return point;
+  return SceneSetup::Marker{point,/*is_local*/true};
 }
 
 
-static TransformHandle
+static SceneSetup::Marker
   createGlobal(
     Scene &scene,
     Scene::Point position
@@ -34,18 +34,21 @@ static TransformHandle
   scene.setGeometryScale(point, 0.1, 0.1, 0.1);
   scene.setColor(point, 0, 1, 0);
   scene.setTranslation(point,position);
-  return point;
+  return SceneSetup::Marker{point,/*is_local*/false};
 }
 
 
 static void
   createLine(
     vector<SceneSetup::Line> &lines,
+    const SceneSetup::Markers &markers,
     Scene &scene,
-    Scene::TransformHandle local_handle,
-    Scene::TransformHandle global_handle
+    MarkerIndex local_marker_index,
+    MarkerIndex global_marker_index
   )
 {
+  Scene::TransformHandle local_handle = markers[local_marker_index].handle;
+  Scene::TransformHandle global_handle = markers[global_marker_index].handle;
   Scene::Point start = scene.worldPoint({0,0,0},local_handle);
   Scene::Point end = scene.worldPoint({0,0,0},global_handle);
   LineHandle line = scene.createLine(scene.top());
@@ -55,8 +58,8 @@ static void
 
   lines.push_back({
     line,
-    local_handle,
-    global_handle
+    local_marker_index,
+    global_marker_index
   });
 }
 
@@ -83,22 +86,22 @@ SceneSetup setupScene(Scene &scene)
   Scene::Point global2 = {1,0,1};
   Scene::Point global3 = {0,0,1};
 
-  vector<TransformHandle> locals;
-  locals.push_back(createLocal(scene,box,local1));
-  locals.push_back(createLocal(scene,box,local2));
-  locals.push_back(createLocal(scene,box,local3));
-
-  vector<TransformHandle> globals;
-  globals.push_back(createGlobal(scene,global1));
-  globals.push_back(createGlobal(scene,global2));
-  globals.push_back(createGlobal(scene,global3));
+  vector<SceneSetup::Marker> markers;
+  markers.push_back(createLocal(scene,box,local1));
+  markers.push_back(createLocal(scene,box,local2));
+  markers.push_back(createLocal(scene,box,local3));
+  markers.push_back(createGlobal(scene,global1));
+  markers.push_back(createGlobal(scene,global2));
+  markers.push_back(createGlobal(scene,global3));
 
   vector<SceneSetup::Line> lines;
   int n_lines = 3;
 
   for (int i=0; i!=n_lines; ++i) {
-    createLine(lines,scene,locals[i],globals[i]);
+    MarkerIndex local_marker_index = i;
+    MarkerIndex global_marker_index = i + 3;
+    createLine(lines, markers, scene, local_marker_index, global_marker_index);
   }
 
-  return { box, locals, globals, lines };
+  return { box, markers, lines };
 }

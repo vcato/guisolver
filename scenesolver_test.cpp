@@ -71,6 +71,15 @@ static Point localizePoint(const Point &global,const Transform &transform)
 }
 
 
+static void
+  addLineTo(SceneState &result,const Point &local, const Point &global)
+{
+  MarkerIndex local_marker_index = result.addLocalMarker(local);
+  MarkerIndex global_marker_index = result.addGlobalMarker(global);
+  result.addLine(local_marker_index, global_marker_index);
+}
+
+
 static SceneState exampleSceneState(RandomEngine &engine)
 {
   SceneState result;
@@ -85,9 +94,9 @@ static SceneState exampleSceneState(RandomEngine &engine)
   Point local1 = localizePoint(global1,true_box_global);
   Point local2 = localizePoint(global2,true_box_global);
   Point local3 = localizePoint(global3,true_box_global);
-  result.addLine(local1,global1);
-  result.addLine(local2,global2);
-  result.addLine(local3,global3);
+  addLineTo(result,local1,global1);
+  addLineTo(result,local2,global2);
+  addLineTo(result,local3,global3);
 
   // Then we can set the box global transform to some other random
   // transform.

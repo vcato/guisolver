@@ -49,21 +49,43 @@ static Point
 
 
 static void
-  addStateLine(
+  addStateMarker(
     SceneState &result,
-    const SceneSetup::Line &setup_line,
+    const SceneSetup::Marker &setup_marker,
     const Scene &scene
   )
 {
-  Point start = localTranslation(setup_line.start, scene);
-  Point end = localTranslation(setup_line.end, scene);
-  result.addLine(start,end);
+  Point position = localTranslation(setup_marker.handle, scene);
+
+  if (setup_marker.is_local) {
+    result.addLocalMarker(position);
+  }
+  else {
+    result.addGlobalMarker(position);
+  }
+}
+
+
+static void
+  addStateLine(
+    SceneState &result,
+    const SceneSetup::Line &setup_line,
+    const Scene &
+  )
+{
+  MarkerIndex start_marker_index = setup_line.start_marker_index;
+  MarkerIndex end_marker_index = setup_line.end_marker_index;
+  result.addLine(start_marker_index,end_marker_index);
 }
 
 
 static SceneState makeSceneState(const Scene &scene,const SceneSetup &setup)
 {
   SceneState result;
+
+  for (const auto &setup_marker : setup.markers) {
+    addStateMarker(result, setup_marker, scene);
+  }
 
   for (const auto &setup_line : setup.lines) {
     addStateLine(result, setup_line, scene);
@@ -78,8 +100,14 @@ static SceneState makeSceneState(const Scene &scene,const SceneSetup &setup)
 static void updateLines(Scene &scene,const SceneSetup &setup)
 {
   for (auto &line : setup.lines) {
-    Scene::Point start = scene.worldPoint({0,0,0}, line.start);
-    Scene::Point end = scene.worldPoint({0,0,0}, line.end);
+    Scene::TransformHandle line_start =
+      setup.markers[line.start_marker_index].handle;
+
+    Scene::TransformHandle line_end =
+      setup.markers[line.end_marker_index].handle;
+
+    Scene::Point start = scene.worldPoint({0,0,0}, line_start);
+    Scene::Point end = scene.worldPoint({0,0,0}, line_end);
     scene.setStartPoint(line.handle,start);
     scene.setEndPoint(line.handle,end);
   }
@@ -92,15 +120,24 @@ static void showError(const Scene &scene, const SceneSetup &setup)
 }
 
 
-static bool movesWithBox(Scene::TransformHandle th, const SceneSetup &setup)
+static bool
+  movesWithBox(
+    Scene::TransformHandle th,
+    const SceneSetup &setup,
+    const SceneState &state
+  )
 {
   if (th == setup.box) {
     return true;
   }
 
-  for (Scene::TransformHandle local_handle : setup.locals) {
-    if (th == local_handle) {
-      return true;
+  MarkerIndex n_markers = state.markers.size();
+
+  for (MarkerIndex i=0; i!=n_markers; ++i) {
+    if (th == setup.markers[i].handle) {
+      if (state.markers[i].is_local) {
+        return true;
+      }
     }
   }
 
@@ -118,7 +155,7 @@ static void sceneChangingCallback(MainWindowData &main_window_data)
   SceneSetup &setup = main_window_data.scene_setup;
   SceneState state = makeSceneState(scene,setup);
 
-  if (!th || !movesWithBox(*th,setup)) {
+  if (!th || !movesWithBox(*th,setup,state)) {
     // If we're moving something that doesn't move with the box, then
     // we'll go ahead and update the box position.
     solveBoxPosition(state);
@@ -233,15 +270,15 @@ static bool
     const TreePath &path,
     NumericValue value,
     const TreePaths::Markers &markers_paths,
-    const SceneSetup::TransformHandles &markers_handles
+    const SceneSetup::Markers &setup_markers
   )
 {
-  assert(markers_paths.size() == markers_handles.size());
+  assert(markers_paths.size() == setup_markers.size());
   int n_markers = markers_paths.size();
 
   for (int i=0; i!=n_markers; ++i) {
     const TreePaths::Marker &marker_paths = markers_paths[i];
-    Scene::TransformHandle marker_handle = markers_handles[i];
+    Scene::TransformHandle marker_handle = setup_markers[i].handle;
 
     if (startsWith(path,marker_paths.position.path)) {
       Scene::Point v = scene.translation(marker_handle);
@@ -278,19 +315,11 @@ static bool
   }
 
   {
-    const TreePaths::Markers &markers_paths = tree_paths.locals;
-    const SceneSetup::TransformHandles &markers_handles = scene_setup.locals;
+    const TreePaths::Markers &markers_paths = tree_paths.markers;
 
-    if (setMarkersValue(scene, path, value, markers_paths, markers_handles)) {
-      return true;
-    }
-  }
-
-  {
-    const TreePaths::Markers &markers_paths = tree_paths.globals;
-    const SceneSetup::TransformHandles &markers_handles = scene_setup.globals;
-
-    if (setMarkersValue(scene, path, value, markers_paths, markers_handles)) {
+    if (
+      setMarkersValue(scene, path, value, markers_paths, scene_setup.markers)
+    ) {
       return true;
     }
   }
