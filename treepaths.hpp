@@ -53,6 +53,7 @@ struct TreePaths {
   struct DistanceError {
     TreePath path;
     TreePath distance;
+    TreePath error;
   };
 
   Box box;

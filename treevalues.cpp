@@ -3,6 +3,7 @@
 #include "eigenconv.hpp"
 #include "rotationvector.hpp"
 #include "numericvalue.hpp"
+#include "sceneerror.hpp"
 
 
 using std::string;
@@ -56,6 +57,12 @@ static TreePaths::Position
 }
 
 
+static float dot(Eigen::Vector3f a,Eigen::Vector3f b)
+{
+  return a.dot(b);
+}
+
+
 static TreePaths::DistanceError
   createDistanceError(
     TreeWidget &tree_widget,
@@ -80,7 +87,37 @@ static TreePaths::DistanceError
   tree_widget.createVoidItem(distance_path, distance_label);
   tree_widget.createVoidItem(desired_distance_path, desired_distance_label);
   tree_widget.createVoidItem(error_path, error_label);
-  return TreePaths::DistanceError{path, distance_path};
+  return TreePaths::DistanceError{path, distance_path, error_path};
+}
+
+
+static void
+  updateDistanceError(
+    TreeWidget &tree_widget,
+    const TreePaths::DistanceError &distance_error_paths,
+    const SceneState &state,
+    int line_index
+  )
+{
+  const SceneState::Line &state_line = state.lines[line_index];
+  Point start = state.markerPredicted(state_line.start_marker_index);
+  Point end = state.markerPredicted(state_line.end_marker_index);
+  auto v = end-start;
+
+  float distance = sqrt(dot(v,v));
+  {
+    const TreePath &path = distance_error_paths.distance;
+    std::ostringstream label_stream;
+    label_stream << "distance: " << distance;
+    tree_widget.setItemLabel(path, label_stream.str());
+  }
+  {
+    float error = distanceError(start,end);
+    const TreePath &path = distance_error_paths.error;
+    std::ostringstream label_stream;
+    label_stream << "error: " << error;
+    tree_widget.setItemLabel(path, label_stream.str());
+  }
 }
 
 
@@ -172,43 +209,6 @@ static void
   Vec3 r_rad = rotationVector(rotation);
   Vec3 r_deg = r_rad * (180/M_PI);
   updateXYZValues(tree_widget, rotation_paths, r_deg);
-}
-
-
-static float dot(Eigen::Vector3f a,Eigen::Vector3f b)
-{
-  return a.dot(b);
-}
-
-
-static void
-  updateDistanceError(
-    TreeWidget &tree_widget,
-    const TreePaths::DistanceError &distance_error_paths,
-    const SceneState &state,
-    int line_index
-  )
-{
-  const SceneState::Line &state_line = state.lines[line_index];
-  Point start = state.markerPredicted(state_line.start_marker_index);
-  Point end = state.markerPredicted(state_line.end_marker_index);
-  auto v = end-start;
-
-  float distance = sqrt(dot(v,v));
-  {
-    const TreePath &path = distance_error_paths.distance;
-    std::ostringstream label_stream;
-    label_stream << "distance: " << distance;
-    tree_widget.setItemLabel(path, label_stream.str());
-  }
-#if 0
-  {
-    const TreePath &path = distance_error_paths.error;
-    std::ostringstream label_stream;
-    label_stream << "error: " << error;
-    tree_widget.setItemLabel(path, label_stream.str());
-  }
-#endif
 }
 
 

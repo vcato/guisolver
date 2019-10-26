@@ -23,6 +23,13 @@ static float dot(Vector3f a,Vector3f b)
 }
 
 
+float distanceError(const Point &start_predicted,const Point &end_predicted)
+{
+  Point delta = start_predicted - end_predicted;
+  return dot(delta,delta);
+}
+
+
 float sceneError(const SceneState &scene_state)
 {
   using Scalar = float;
@@ -33,8 +40,7 @@ float sceneError(const SceneState &scene_state)
   for (int i=0; i!=n_lines; ++i) {
     Point start_predicted = scene_state.lineStartPredicted(i);
     Point end_predicted = scene_state.lineEndPredicted(i);
-    Point delta = start_predicted - end_predicted;
-    error += dot(delta,delta);
+    error += distanceError(start_predicted, end_predicted);
   }
 
   return error;
