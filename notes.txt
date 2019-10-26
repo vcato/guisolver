@@ -373,3 +373,5 @@ t.origin
     * value: [Distance]
       * start: local3
       * end: global3
+---
+Have the error be updated in the DistanceError nodes.

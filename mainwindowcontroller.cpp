@@ -6,11 +6,10 @@
 #include "eigenconv.hpp"
 #include "maketransform.hpp"
 #include "scenestate.hpp"
-#include "updatetreevalues.hpp"
 #include "sceneerror.hpp"
 #include "scenesolver.hpp"
 #include "setupscene.hpp"
-#include "filltree.hpp"
+#include "treevalues.hpp"
 #include "startswith.hpp"
 #include "rotationvector.hpp"
 
