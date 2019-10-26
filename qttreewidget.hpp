@@ -34,7 +34,7 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
       createEnumerationItem(
         const TreePath &new_item_path,
         const LabelProperties &label_properties,
-        const std::vector<std::string> &options,
+        const vector<std::string> &options,
         int value
       ) override;
 
@@ -80,7 +80,7 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
 
     static void setItemText(QTreeWidgetItem &item,const std::string &label);
 
-    QTreeWidgetItem &itemFromPath(const std::vector<int> &path) const;
+    QTreeWidgetItem &itemFromPath(const vector<int> &path) const;
     void buildPath(TreePath &path,QTreeWidgetItem &item);
     void changeItemToSlider(const TreePath &path);
     void changeItemToSpinBox(const TreePath &path);
@@ -99,7 +99,7 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
         QTreeWidgetItem &parent_item,
         int index,
         const LabelProperties &,
-        const std::vector<std::string> &enumeration_names,
+        const vector<std::string> &enumeration_names,
         int value
       );
 

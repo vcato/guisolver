@@ -1,9 +1,9 @@
 #include <iostream>
-#include <vector>
+#include "vector.hpp"
 
 
 template <typename T>
-std::ostream& operator<<(std::ostream &stream,const std::vector<T> &value)
+std::ostream& operator<<(std::ostream &stream,const vector<T> &value)
 {
   bool first = true;
 

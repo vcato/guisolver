@@ -4,7 +4,6 @@
 #include <iostream>
 #include <cmath>
 
-using std::vector;
 using std::cerr;
 using std::fabs;
 

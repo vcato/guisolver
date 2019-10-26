@@ -7,8 +7,8 @@
 struct TreePaths {
   struct Marker;
   struct DistanceError;
-  using Markers = std::vector<Marker>;
-  using DistanceErrors = std::vector<DistanceError>;
+  using Markers = vector<Marker>;
+  using DistanceErrors = vector<DistanceError>;
 
   TreePaths()
   : markers(6),

@@ -10,6 +10,7 @@
 #include "osgselectionhandler.hpp"
 #include "qttimer.hpp"
 #include "scene.hpp"
+#include "vector.hpp"
 
 using GraphicsWindowPtr = osg::ref_ptr<osgQt::GraphicsWindowQt>;
 
@@ -52,7 +53,7 @@ class OSGScene : public Scene {
       void nodeSelected(osg::Node *new_selected_node_ptr) override;
     };
 
-    std::vector<osg::MatrixTransform *> transform_ptrs;
+    vector<osg::MatrixTransform *> transform_ptrs;
     const MatrixTransformPtr top_node_ptr;
     const TransformHandle top_handle;
     osgViewer::CompositeViewer composite_viewer;

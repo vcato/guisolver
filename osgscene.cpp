@@ -878,21 +878,21 @@ void OSGScene::setEndPoint(LineHandle handle,Point p)
 
 
 template <typename A,typename B>
-static size_t findIndex(const std::vector<A> &v,B p)
+static size_t findIndex(const vector<A> &v,B p)
 {
   return std::find(v.begin(),v.end(),p) - v.begin();
 }
 
 
 template <typename T>
-static bool contains(const std::vector<T*> &v,T* p)
+static bool contains(const vector<T*> &v,T* p)
 {
   return findIndex(v,p) != v.size();
 }
 
 
 template <typename T>
-static size_t findNull(const std::vector<T*> &v)
+static size_t findNull(const vector<T*> &v)
 {
   return findIndex(v,nullptr);
 }

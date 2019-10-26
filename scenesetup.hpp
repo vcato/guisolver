@@ -1,15 +1,15 @@
 #ifndef SCENESETUP_HPP_
 #define SCENESETUP_HPP_
 
-#include <vector>
+#include "vector.hpp"
 #include "scene.hpp"
 #include "markerindex.hpp"
 
 
 struct SceneSetup {
   struct Marker;
-  using TransformHandles = std::vector<Scene::TransformHandle>;
-  using Markers = std::vector<Marker>;
+  using TransformHandles = vector<Scene::TransformHandle>;
+  using Markers = vector<Marker>;
 
   struct Marker {
     Scene::TransformHandle handle;
@@ -24,7 +24,7 @@ struct SceneSetup {
 
   Scene::TransformHandle box;
   Markers markers;
-  std::vector<Line> lines;
+  vector<Line> lines;
 };
 
 

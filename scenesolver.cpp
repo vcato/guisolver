@@ -7,8 +7,6 @@
 #include "eigenconv.hpp"
 #include "rotationvector.hpp"
 
-using std::vector;
-
 
 static Eigen::Matrix3f makeRotation(float x,float y,float z)
 {

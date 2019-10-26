@@ -14,7 +14,6 @@
 #include "numericvalue.hpp"
 
 using std::string;
-using std::vector;
 using std::cerr;
 
 struct QtTreeWidget::Impl {
@@ -279,7 +278,7 @@ QTreeWidgetItem&
     QTreeWidgetItem &parent_item,
     int index,
     const LabelProperties &label_properties,
-    const std::vector<std::string> &enumeration_names,
+    const vector<std::string> &enumeration_names,
     int value
   )
 {
@@ -365,7 +364,7 @@ void
 
 
 
-QTreeWidgetItem &QtTreeWidget::itemFromPath(const std::vector<int> &path) const
+QTreeWidgetItem &QtTreeWidget::itemFromPath(const vector<int> &path) const
 {
   int path_length = path.size();
 
@@ -407,7 +406,7 @@ void QtTreeWidget::buildPath(vector<int> &path,QTreeWidgetItem &item)
 }
 
 
-std::vector<int> QtTreeWidget::itemPath(QTreeWidgetItem &item)
+vector<int> QtTreeWidget::itemPath(QTreeWidgetItem &item)
 {
   vector<int> path;
   buildPath(path,item);

@@ -24,7 +24,7 @@ void QtComboBox::currentIndexChangedSlot(int index)
 }
 
 
-void QtComboBox::setItems(const std::vector<std::string> &names)
+void QtComboBox::setItems(const vector<std::string> &names)
 {
   ignore_signals = true;
 
@@ -45,7 +45,7 @@ void QtComboBox::setIndex(int arg)
 }
 
 
-void QtComboBox::addItems(const std::vector<std::string> &names)
+void QtComboBox::addItems(const vector<std::string> &names)
 {
   for (auto &name : names) {
     addItem(QString::fromStdString(name));

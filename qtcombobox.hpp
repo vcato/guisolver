@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <QComboBox>
+#include "vector.hpp"
 
 
 class QtComboBox : public QComboBox {
@@ -11,7 +12,7 @@ class QtComboBox : public QComboBox {
   public:
     QtComboBox();
 
-    void setItems(const std::vector<std::string> &names);
+    void setItems(const vector<std::string> &names);
     void setIndex(int);
 
     std::function<void(int)> current_index_changed_function;
@@ -20,7 +21,7 @@ class QtComboBox : public QComboBox {
     void currentIndexChangedSlot(int);
 
   private:
-    void addItems(const std::vector<std::string> &enumeration_names);
+    void addItems(const vector<std::string> &enumeration_names);
 
     bool ignore_signals;
 };

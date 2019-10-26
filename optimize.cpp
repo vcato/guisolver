@@ -2,9 +2,10 @@
 
 #include <cassert>
 #include <iostream>
+#include <debug/vector>
 
 
-using std::vector;
+using __gnu_debug::vector;
 using std::cerr;
 
 

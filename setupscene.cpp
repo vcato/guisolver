@@ -4,7 +4,6 @@
 
 using std::cerr;
 using std::ostream;
-using std::vector;
 using TransformHandle = Scene::TransformHandle;
 using LineHandle = Scene::LineHandle;
 

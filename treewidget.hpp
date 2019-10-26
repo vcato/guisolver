@@ -31,7 +31,7 @@ struct TreeWidget {
     createEnumerationItem(
       const TreePath &new_item_path,
       const LabelProperties &,
-      const std::vector<std::string> &options,
+      const vector<std::string> &options,
       int value
     ) = 0;
 

@@ -1,11 +1,11 @@
 #ifndef TREEPATH_HPP_
 #define TREEPATH_HPP_
 
-#include <vector>
+#include "vector.hpp"
 
 
 using TreeItemIndex = int;
-using TreePath = std::vector<TreeItemIndex>;
+using TreePath = vector<TreeItemIndex>;
 
 
 inline TreePath childPath(TreePath path)

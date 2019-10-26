@@ -1,16 +1,17 @@
 #ifndef SCENESTATE_HPP_
 #define SCENESTATE_HPP_
 
-#include <vector>
+#include "vector.hpp"
 #include "point.hpp"
 #include "transform.hpp"
 #include "markerindex.hpp"
+#include "vector.hpp"
 
 
 struct SceneState {
-  using Points = std::vector<Point>;
+  using Points = vector<Point>;
   struct Marker;
-  using Markers = std::vector<Marker>;
+  using Markers = vector<Marker>;
 
   struct Marker {
     Point position;
@@ -23,7 +24,7 @@ struct SceneState {
   };
 
   Markers markers;
-  std::vector<Line> lines;
+  vector<Line> lines;
   Transform box_global;
 
   static Marker makeLocalMarker(const Point &position)

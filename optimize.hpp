@@ -1,4 +1,4 @@
-#include <vector>
+#include "vector.hpp"
 
 
 struct FunctionInterface {
@@ -7,17 +7,17 @@ struct FunctionInterface {
 
 
 extern float
-  minimizeImpl(const FunctionInterface &,std::vector<float> &/*variables*/);
+  minimizeImpl(const FunctionInterface &,vector<float> &/*variables*/);
 
 
 template <typename Function>
-extern float minimize(const Function &f,std::vector<float> &variables)
+extern float minimize(const Function &f,vector<float> &variables)
 {
   struct WrappedFunction : FunctionInterface {
     const Function &f;
-    std::vector<float> &variables;
+    vector<float> &variables;
 
-    WrappedFunction(const Function &f_arg,std::vector<float> &variables_arg)
+    WrappedFunction(const Function &f_arg,vector<float> &variables_arg)
     : f(f_arg),
       variables(variables_arg)
     {
