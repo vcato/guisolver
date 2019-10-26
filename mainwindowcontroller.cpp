@@ -36,29 +36,64 @@ static void
 static void
   updateSceneDistanceError(
     Scene &scene,
-    const SceneHandles::DistanceError &distance_error,
-    const SceneHandles &setup
+    const SceneHandles::DistanceError &distance_error_handles,
+#if ADD_SCENE_DESCRIPTION
+    const SceneDescription::DistanceError &distance_error_description,
+#endif
+    const SceneHandles &scene_handles
   )
 {
+#if !ADD_SCENE_DESCRIPTION
   Scene::TransformHandle line_start =
-    setup.markers[distance_error.start_marker_index].handle;
+    scene_handles.markers[distance_error_handles.start_marker_index].handle;
+#else
+  Scene::TransformHandle line_start =
+    scene_handles.markers[
+      distance_error_description.start_marker_index
+    ].handle;
+#endif
 
+#if !ADD_SCENE_DESCRIPTION
   Scene::TransformHandle line_end =
-    setup.markers[distance_error.end_marker_index].handle;
+    scene_handles.markers[distance_error_handles.end_marker_index].handle;
+#else
+  Scene::TransformHandle line_end =
+    scene_handles.markers[distance_error_description.end_marker_index].handle;
+#endif
 
   Scene::Point start = scene.worldPoint({0,0,0}, line_start);
   Scene::Point end = scene.worldPoint({0,0,0}, line_end);
-  scene.setStartPoint(distance_error.line_handle,start);
-  scene.setEndPoint(distance_error.line_handle,end);
+  scene.setStartPoint(distance_error_handles.line_handle,start);
+  scene.setEndPoint(distance_error_handles.line_handle,end);
 }
 
 
-static void updateSceneDistanceErrors(Scene &scene,const SceneHandles &setup)
+#if !ADD_SCENE_DESCRIPTION
+static void
+  updateSceneDistanceErrors(Scene &scene,const SceneHandles &scene_handles)
 {
-  for (auto &distance_error : setup.distance_errors) {
-    updateSceneDistanceError(scene,distance_error,setup);
+  for (auto &distance_error : scene_handles.distance_errors) {
+    updateSceneDistanceError(scene,distance_error,scene_handles);
   }
 }
+#else
+static void
+  updateSceneDistanceErrors(
+    Scene &scene,
+    const SceneHandles &scene_handles,
+    const SceneDescription &scene_description
+  )
+{
+  for (auto i : indicesOf(scene_description.distance_errors)) {
+    updateSceneDistanceError(
+      scene,
+      scene_handles.distance_errors[i],
+      scene_description.distance_errors[i],
+      scene_handles
+    );
+  }
+}
+#endif
 
 
 static void showError(const SceneState &state)
@@ -100,6 +135,9 @@ static void sceneChangingCallback(MainWindowData &main_window_data)
   Scene &scene = main_window_data.scene;
   Optional<Scene::TransformHandle> th = scene.selectedObject();
   SceneHandles &scene_handles = main_window_data.scene_setup;
+#if ADD_SCENE_DESCRIPTION
+  SceneDescription &scene_description = main_window_data.scene_description;
+#endif
   SceneState &state = main_window_data.scene_state;
   updateSceneStateFromScene(state, scene, scene_handles);
 
@@ -114,7 +152,11 @@ static void sceneChangingCallback(MainWindowData &main_window_data)
     // be confusing if we try to update the box position.
   }
 
+#if !ADD_SCENE_DESCRIPTION
   updateSceneDistanceErrors(scene,scene_handles);
+#else
+  updateSceneDistanceErrors(scene, scene_handles, scene_description);
+#endif
   TreeWidget &tree_widget = main_window_data.tree_widget;
   TreePaths &tree_paths = main_window_data.tree_paths;
   updateTreeValues(tree_widget, tree_paths, state);

@@ -19,7 +19,7 @@ static SceneHandles::Marker
   scene.setGeometryScale(point,0.1,0.1,0.1);
   scene.setColor(point,0,0,1);
   scene.setTranslation(point,position);
-#if !REMOVE_IS_LOCAL_FROM_SCENE_HANDLES
+#if !ADD_SCENE_DESCRIPTION
   return SceneHandles::Marker{point,/*is_local*/true};
 #else
   return SceneHandles::Marker{point};
@@ -37,7 +37,7 @@ static SceneHandles::Marker
   scene.setGeometryScale(point, 0.1, 0.1, 0.1);
   scene.setColor(point, 0, 1, 0);
   scene.setTranslation(point,position);
-#if !REMOVE_IS_LOCAL_FROM_SCENE_HANDLES
+#if !ADD_SCENE_DESCRIPTION
   return SceneHandles::Marker{point,/*is_local*/false};
 #else
   return SceneHandles::Marker{point};
@@ -47,7 +47,10 @@ static SceneHandles::Marker
 
 static void
   createLine(
-    vector<SceneHandles::DistanceError> &lines,
+    vector<SceneHandles::DistanceError> &distance_error_handles,
+#if ADD_SCENE_DESCRIPTION
+    vector<SceneDescription::DistanceError> &distance_error_descriptions,
+#endif
     const SceneHandles::Markers &markers,
     Scene &scene,
     MarkerIndex local_marker_index,
@@ -63,11 +66,20 @@ static void
   scene.setStartPoint(line,start);
   scene.setEndPoint(line,end);
 
-  lines.push_back({
+#if !ADD_SCENE_DESCRIPTION
+  distance_error_handles.push_back({
     line,
     local_marker_index,
     global_marker_index
   });
+#else
+  distance_error_handles.push_back({line});
+
+  distance_error_descriptions.push_back({
+    local_marker_index,
+    global_marker_index
+  });
+#endif
 }
 
 
@@ -101,14 +113,34 @@ SceneHandles setupScene(Scene &scene)
   markers.push_back(createGlobal(scene,global2));
   markers.push_back(createGlobal(scene,global3));
 
-  vector<SceneHandles::DistanceError> lines;
+  vector<SceneHandles::DistanceError> distance_error_handles;
+#if ADD_SCENE_DESCRIPTION
+  vector<SceneDescription::DistanceError> distance_error_descriptions;
+#endif
   int n_lines = 3;
 
   for (int i=0; i!=n_lines; ++i) {
     MarkerIndex local_marker_index = i;
     MarkerIndex global_marker_index = i + 3;
-    createLine(lines, markers, scene, local_marker_index, global_marker_index);
+#if !ADD_SCENE_DESCRIPTION
+    createLine(
+      distance_error_handles,
+      markers,
+      scene,
+      local_marker_index,
+      global_marker_index
+    );
+#else
+    createLine(
+      distance_error_handles,
+      distance_error_descriptions,
+      markers,
+      scene,
+      local_marker_index,
+      global_marker_index
+    );
+#endif
   }
 
-  return { box, markers, lines };
+  return { box, markers, distance_error_handles };
 }

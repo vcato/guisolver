@@ -9,6 +9,9 @@ struct MainWindowData {
   Scene &scene;
   TreeWidget &tree_widget;
   SceneHandles scene_setup;
+#if ADD_SCENE_DESCRIPTION
+  SceneDescription scene_description;
+#endif
   TreePaths tree_paths;
   SceneState scene_state;
 
