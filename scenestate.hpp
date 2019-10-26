@@ -18,13 +18,14 @@ struct SceneState {
     bool is_local;
   };
 
-  struct Line {
+  struct DistanceError {
     MarkerIndex start_marker_index;
     MarkerIndex end_marker_index;
   };
 
   Markers markers;
-  vector<Line> lines;
+  using DistanceErrors = vector<DistanceError>;
+  DistanceErrors distance_errors;
   Transform box_global;
 
   static Marker makeLocalMarker(const Point &position)
@@ -54,9 +55,15 @@ struct SceneState {
     return addMarker(makeGlobalMarker(position));
   }
 
-  void addLine(MarkerIndex start_marker_index, MarkerIndex end_marker_index)
+  void
+    addDistanceError(
+      MarkerIndex start_marker_index,
+      MarkerIndex end_marker_index
+    )
   {
-    lines.push_back(Line{start_marker_index,end_marker_index});
+    distance_errors.push_back(
+      DistanceError{start_marker_index,end_marker_index}
+    );
   }
 
   Point markerPredicted(int marker_index) const
@@ -69,14 +76,14 @@ struct SceneState {
     }
   }
 
-  Point lineStartPredicted(int line_index) const
+  Point distanceErrorStartPredicted(int line_index) const
   {
-    return markerPredicted(lines[line_index].start_marker_index);
+    return markerPredicted(distance_errors[line_index].start_marker_index);
   }
 
-  Point lineEndPredicted(int line_index) const
+  Point distanceErrorEndPredicted(int line_index) const
   {
-    return markerPredicted(lines[line_index].end_marker_index);
+    return markerPredicted(distance_errors[line_index].end_marker_index);
   }
 };
 

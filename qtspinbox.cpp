@@ -66,10 +66,12 @@ void QtSpinBox::setValue(Value arg)
   ignore_signals = true;
   QDoubleSpinBox::setValue(arg);
   ignore_signals = false;
+  float delta = std::abs(arg - value());
 
-  if (std::abs(arg - value()) > .005) {
+  if (delta > .005) {
     cerr << "arg: " << arg << "\n";
     cerr << "QtSpinBox::value(): " << value() << "\n";
+    cerr << "delta: " << delta << "\n";
     assert(false);
   }
 }

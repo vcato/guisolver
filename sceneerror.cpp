@@ -1,7 +1,8 @@
 #include "sceneerror.hpp"
 
 #include "scenestate.hpp"
-
+#include "sequence.hpp"
+#include "indicesof.hpp"
 
 using Vector3f = Eigen::Vector3f;
 
@@ -30,16 +31,18 @@ float distanceError(const Point &start_predicted,const Point &end_predicted)
 }
 
 
+#if !CHANGE_SCENE_ERROR
 float sceneError(const SceneState &scene_state)
+#else
+float sceneError(const SceneState &scene_state, const SceneSetup &)
+#endif
 {
   using Scalar = float;
   Scalar error = 0;
-  int n_lines = scene_state.lines.size();
 
-  // Add an error for each line
-  for (int i=0; i!=n_lines; ++i) {
-    Point start_predicted = scene_state.lineStartPredicted(i);
-    Point end_predicted = scene_state.lineEndPredicted(i);
+  for (auto i : indicesOf(scene_state.distance_errors)) {
+    Point start_predicted = scene_state.distanceErrorStartPredicted(i);
+    Point end_predicted = scene_state.distanceErrorEndPredicted(i);
     error += distanceError(start_predicted, end_predicted);
   }
 

@@ -4,7 +4,7 @@
 #include "rotationvector.hpp"
 #include "numericvalue.hpp"
 #include "sceneerror.hpp"
-
+#include "indicesof.hpp"
 
 using std::string;
 using LabelProperties = TreeWidget::LabelProperties;
@@ -80,14 +80,29 @@ static TreePaths::DistanceError
   LabelProperties start_label = {"start: " + start_name};
   LabelProperties end_label = {"end: " + end_name};
   LabelProperties distance_label = {"distance: 0"};
-  LabelProperties desired_distance_label = {"desired_distance: 0"};
+  LabelProperties desired_distance_label = {"desired_distance:"};
   LabelProperties error_label = {"error: 0"};
   tree_widget.createVoidItem(start_path, start_label);
   tree_widget.createVoidItem(end_path, end_label);
   tree_widget.createVoidItem(distance_path, distance_label);
-  tree_widget.createVoidItem(desired_distance_path, desired_distance_label);
+
+  tree_widget.createNumericItem(
+    desired_distance_path,
+    desired_distance_label,
+    /*value*/0,
+    /*minimum_value*/0,
+    /*maximum_value*/noMaximumNumericValue()
+  );
+
   tree_widget.createVoidItem(error_path, error_label);
-  return TreePaths::DistanceError{path, distance_path, error_path};
+
+  return
+    TreePaths::DistanceError{
+      path,
+      distance_path,
+      error_path,
+      desired_distance_path
+    };
 }
 
 
@@ -96,12 +111,14 @@ static void
     TreeWidget &tree_widget,
     const TreePaths::DistanceError &distance_error_paths,
     const SceneState &state,
-    int line_index
+    int distance_error_index
   )
 {
-  const SceneState::Line &state_line = state.lines[line_index];
-  Point start = state.markerPredicted(state_line.start_marker_index);
-  Point end = state.markerPredicted(state_line.end_marker_index);
+  const SceneState::DistanceError &state_distance_error =
+    state.distance_errors[distance_error_index];
+
+  Point start = state.markerPredicted(state_distance_error.start_marker_index);
+  Point end = state.markerPredicted(state_distance_error.end_marker_index);
   auto v = end-start;
 
   float distance = sqrt(dot(v,v));
@@ -257,9 +274,7 @@ void
 
   updateMarkers(tree_widget, tree_paths.markers, state.markers);
 
-  int n_distance_errors = tree_paths.distance_errors.size();
-
-  for (int i=0; i!=n_distance_errors; ++i) {
+  for (auto i : indicesOf(tree_paths.distance_errors)) {
     updateDistanceError(tree_widget, tree_paths.distance_errors[i], state, i);
   }
 }

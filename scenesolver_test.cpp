@@ -72,17 +72,30 @@ static Point localizePoint(const Point &global,const Transform &transform)
 
 
 static void
-  addLineTo(SceneState &result,const Point &local, const Point &global)
+  addDistanceErrorTo(SceneState &result,const Point &local, const Point &global)
 {
   MarkerIndex local_marker_index = result.addLocalMarker(local);
   MarkerIndex global_marker_index = result.addGlobalMarker(global);
-  result.addLine(local_marker_index, global_marker_index);
+  result.addDistanceError(local_marker_index, global_marker_index);
 }
 
 
-static SceneState exampleSceneState(RandomEngine &engine)
+namespace {
+struct Example {
+  SceneState scene_state;
+
+  void addDistanceError(const Point &local, const Point &global)
+  {
+    addDistanceErrorTo(scene_state, local, global);
+  }
+};
+}
+
+
+static Example example(RandomEngine &engine)
 {
-  SceneState result;
+  Example result;
+  SceneState &scene_state = result.scene_state;
 
   // We should be able to create a random box transform and three
   // random global points, then find the equvalent local points
@@ -94,14 +107,14 @@ static SceneState exampleSceneState(RandomEngine &engine)
   Point local1 = localizePoint(global1,true_box_global);
   Point local2 = localizePoint(global2,true_box_global);
   Point local3 = localizePoint(global3,true_box_global);
-  addLineTo(result,local1,global1);
-  addLineTo(result,local2,global2);
-  addLineTo(result,local3,global3);
+  result.addDistanceError(local1,global1);
+  result.addDistanceError(local2,global2);
+  result.addDistanceError(local3,global3);
 
   // Then we can set the box global transform to some other random
   // transform.
 
-  result.box_global = randomTransform(engine);
+  scene_state.box_global = randomTransform(engine);
   return result;
 }
 
@@ -109,7 +122,12 @@ static SceneState exampleSceneState(RandomEngine &engine)
 int main()
 {
   RandomEngine engine(/*seed*/1);
-  SceneState scene_state = exampleSceneState(engine);
+  SceneState scene_state = example(engine).scene_state;
+#if !CHANGE_SCENE_ERROR
   solveBoxPosition(scene_state);
   assert(sceneError(scene_state) < 0.002);
+#else
+  solveBoxPosition(scene_state, scene_setup);
+  assert(sceneError(scene_state, scene_setup) < 0.002);
+#endif
 }

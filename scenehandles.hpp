@@ -1,31 +1,34 @@
-#ifndef SCENESETUP_HPP_
-#define SCENESETUP_HPP_
+#ifndef SCENEHANDLES_HPP_
+#define SCENEHANDLES_HPP_
 
 #include "vector.hpp"
 #include "scene.hpp"
 #include "markerindex.hpp"
 
 
-struct SceneSetup {
+struct SceneHandles {
   struct Marker;
+  struct DistanceError;
   using TransformHandles = vector<Scene::TransformHandle>;
   using Markers = vector<Marker>;
+  using DistanceErrors = vector<DistanceError>;
 
   struct Marker {
     Scene::TransformHandle handle;
     bool is_local;
   };
 
-  struct Line {
-    Scene::LineHandle handle;
+  struct DistanceError {
+    Scene::LineHandle line_handle;
     MarkerIndex start_marker_index;
     MarkerIndex end_marker_index;
   };
 
   Scene::TransformHandle box;
   Markers markers;
-  vector<Line> lines;
+  DistanceErrors distance_errors;
 };
 
 
-#endif /* SCENESETUP_HPP_ */
+#endif /* SCENEHANDLES_HPP_ */
+

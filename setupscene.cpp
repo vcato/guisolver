@@ -8,7 +8,7 @@ using TransformHandle = Scene::TransformHandle;
 using LineHandle = Scene::LineHandle;
 
 
-static SceneSetup::Marker
+static SceneHandles::Marker
   createLocal(
     Scene &scene,
     TransformHandle &parent,
@@ -19,11 +19,11 @@ static SceneSetup::Marker
   scene.setGeometryScale(point,0.1,0.1,0.1);
   scene.setColor(point,0,0,1);
   scene.setTranslation(point,position);
-  return SceneSetup::Marker{point,/*is_local*/true};
+  return SceneHandles::Marker{point,/*is_local*/true};
 }
 
 
-static SceneSetup::Marker
+static SceneHandles::Marker
   createGlobal(
     Scene &scene,
     Scene::Point position
@@ -33,14 +33,14 @@ static SceneSetup::Marker
   scene.setGeometryScale(point, 0.1, 0.1, 0.1);
   scene.setColor(point, 0, 1, 0);
   scene.setTranslation(point,position);
-  return SceneSetup::Marker{point,/*is_local*/false};
+  return SceneHandles::Marker{point,/*is_local*/false};
 }
 
 
 static void
   createLine(
-    vector<SceneSetup::Line> &lines,
-    const SceneSetup::Markers &markers,
+    vector<SceneHandles::DistanceError> &lines,
+    const SceneHandles::Markers &markers,
     Scene &scene,
     MarkerIndex local_marker_index,
     MarkerIndex global_marker_index
@@ -63,7 +63,7 @@ static void
 }
 
 
-SceneSetup setupScene(Scene &scene)
+SceneHandles setupScene(Scene &scene)
 {
   auto box = scene.createBox();
   scene.setGeometryScale(box,5,.1,10);
@@ -85,7 +85,7 @@ SceneSetup setupScene(Scene &scene)
   Scene::Point global2 = {1,0,1};
   Scene::Point global3 = {0,0,1};
 
-  vector<SceneSetup::Marker> markers;
+  vector<SceneHandles::Marker> markers;
   markers.push_back(createLocal(scene,box,local1));
   markers.push_back(createLocal(scene,box,local2));
   markers.push_back(createLocal(scene,box,local3));
@@ -93,7 +93,7 @@ SceneSetup setupScene(Scene &scene)
   markers.push_back(createGlobal(scene,global2));
   markers.push_back(createGlobal(scene,global3));
 
-  vector<SceneSetup::Line> lines;
+  vector<SceneHandles::DistanceError> lines;
   int n_lines = 3;
 
   for (int i=0; i!=n_lines; ++i) {

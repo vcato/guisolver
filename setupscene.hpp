@@ -2,9 +2,9 @@
 #define SETUPSCENE_HPP_
 
 #include "scene.hpp"
-#include "scenesetup.hpp"
+#include "scenehandles.hpp"
 
 
-extern SceneSetup setupScene(Scene &scene);
+extern SceneHandles setupScene(Scene &scene);
 
 #endif /* SETUPSCENE_HPP_ */

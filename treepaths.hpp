@@ -54,6 +54,7 @@ struct TreePaths {
     TreePath path;
     TreePath distance;
     TreePath error;
+    TreePath desired_distance;
   };
 
   Box box;
