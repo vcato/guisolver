@@ -38,21 +38,11 @@ struct SceneState {
     return Marker{position,/*is_local*/false};
   }
 
-  MarkerIndex addMarker(const Marker &new_marker)
+  MarkerIndex addMarker()
   {
     MarkerIndex new_index = markers.size();
-    markers.push_back(new_marker);
+    markers.emplace_back();
     return new_index;
-  }
-
-  MarkerIndex addLocalMarker(const Point &position)
-  {
-    return addMarker(makeLocalMarker(position));
-  }
-
-  MarkerIndex addGlobalMarker(const Point &position)
-  {
-    return addMarker(makeGlobalMarker(position));
   }
 
   void
