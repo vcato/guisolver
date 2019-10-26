@@ -1,4 +1,4 @@
-#include "makescenestate.hpp"
+#include "updatescenestatefromscene.hpp"
 
 #include "maketransform.hpp"
 
@@ -50,7 +50,7 @@ static Transform
 }
 
 
-SceneState makeSceneState(const Scene &scene,const SceneHandles &setup)
+static SceneState makeSceneState(const Scene &scene,const SceneHandles &setup)
 {
   SceneState result;
 
@@ -65,4 +65,15 @@ SceneState makeSceneState(const Scene &scene,const SceneHandles &setup)
   result.box_global = globalTransform(scene,setup.box);
 
   return result;
+}
+
+
+void
+  updateSceneStateFromScene(
+    SceneState &state,
+    const Scene &scene,
+    const SceneHandles &scene_handles
+  )
+{
+  state = makeSceneState(scene, scene_handles);
 }

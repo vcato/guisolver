@@ -31,11 +31,7 @@ float distanceError(const Point &start_predicted,const Point &end_predicted)
 }
 
 
-#if !CHANGE_SCENE_ERROR
 float sceneError(const SceneState &scene_state)
-#else
-float sceneError(const SceneState &scene_state, const SceneSetup &)
-#endif
 {
   using Scalar = float;
   Scalar error = 0;

@@ -123,11 +123,6 @@ int main()
 {
   RandomEngine engine(/*seed*/1);
   SceneState scene_state = example(engine).scene_state;
-#if !CHANGE_SCENE_ERROR
   solveBoxPosition(scene_state);
   assert(sceneError(scene_state) < 0.002);
-#else
-  solveBoxPosition(scene_state, scene_setup);
-  assert(sceneError(scene_state, scene_setup) < 0.002);
-#endif
 }

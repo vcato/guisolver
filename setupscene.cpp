@@ -19,7 +19,11 @@ static SceneHandles::Marker
   scene.setGeometryScale(point,0.1,0.1,0.1);
   scene.setColor(point,0,0,1);
   scene.setTranslation(point,position);
+#if !REMOVE_IS_LOCAL_FROM_SCENE_HANDLES
   return SceneHandles::Marker{point,/*is_local*/true};
+#else
+  return SceneHandles::Marker{point};
+#endif
 }
 
 
@@ -33,7 +37,11 @@ static SceneHandles::Marker
   scene.setGeometryScale(point, 0.1, 0.1, 0.1);
   scene.setColor(point, 0, 1, 0);
   scene.setTranslation(point,position);
+#if !REMOVE_IS_LOCAL_FROM_SCENE_HANDLES
   return SceneHandles::Marker{point,/*is_local*/false};
+#else
+  return SceneHandles::Marker{point};
+#endif
 }
 
 

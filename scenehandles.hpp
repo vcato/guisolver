@@ -5,6 +5,8 @@
 #include "scene.hpp"
 #include "markerindex.hpp"
 
+#define REMOVE_IS_LOCAL_FROM_SCENE_HANDLES 0
+
 
 struct SceneHandles {
   struct Marker;
@@ -15,7 +17,9 @@ struct SceneHandles {
 
   struct Marker {
     Scene::TransformHandle handle;
+#if !REMOVE_IS_LOCAL_FROM_SCENE_HANDLES
     bool is_local;
+#endif
   };
 
   struct DistanceError {

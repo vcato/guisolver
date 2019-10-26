@@ -2,6 +2,7 @@
 #include "treewidget.hpp"
 #include "scenehandles.hpp"
 #include "treepaths.hpp"
+#include "scenestate.hpp"
 
 
 struct MainWindowData {
@@ -9,6 +10,7 @@ struct MainWindowData {
   TreeWidget &tree_widget;
   SceneHandles scene_setup;
   TreePaths tree_paths;
+  SceneState scene_state;
 
   MainWindowData(Scene &,TreeWidget &);
 };

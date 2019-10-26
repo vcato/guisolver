@@ -67,22 +67,14 @@ static Transform makeTransform(const vector<float> &variables)
 }
 
 
-#if !CHANGE_SCENE_ERROR
 void solveBoxPosition(SceneState &scene_state)
-#else
-void solveBoxPosition(SceneState &scene_state, const SceneSetup &scene_setup)
-#endif
 {
   // Extract variables from transform
   vector<float> variables = extractVariables(scene_state.box_global);
 
   auto f = [&]{
     scene_state.box_global = makeTransform(variables);
-#if !CHANGE_SCENE_ERROR
     return sceneError(scene_state);
-#else
-    return sceneError(scene_state, scene_setup);
-#endif
   };
 
   // minimize sceneError over the variables.
