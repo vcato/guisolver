@@ -1,11 +1,20 @@
 #include "setupscene.hpp"
 
 #include <iostream>
+#include "updatescenestatefromscene.hpp"
 
 using std::cerr;
 using std::ostream;
 using TransformHandle = Scene::TransformHandle;
 using LineHandle = Scene::LineHandle;
+
+
+namespace {
+struct MarkerData {
+  SceneHandles::Marker handles;
+  SceneDescription::Marker description;
+};
+}
 
 
 static SceneHandles::Marker
@@ -19,11 +28,20 @@ static SceneHandles::Marker
   scene.setGeometryScale(point,0.1,0.1,0.1);
   scene.setColor(point,0,0,1);
   scene.setTranslation(point,position);
-#if !ADD_SCENE_DESCRIPTION
-  return SceneHandles::Marker{point,/*is_local*/true};
-#else
-  return SceneHandles::Marker{point};
-#endif
+  SceneHandles::Marker marker_handles = SceneHandles::Marker{point};
+  return marker_handles;
+}
+
+static MarkerData
+  createLocalData(
+    Scene &scene,
+    TransformHandle &parent,
+    Scene::Point position
+  )
+{
+  SceneDescription::Marker marker_description = {/*is_local*/true};
+  SceneHandles::Marker marker_handles = createLocal(scene,parent,position);
+  return {marker_handles,marker_description};
 }
 
 
@@ -37,20 +55,23 @@ static SceneHandles::Marker
   scene.setGeometryScale(point, 0.1, 0.1, 0.1);
   scene.setColor(point, 0, 1, 0);
   scene.setTranslation(point,position);
-#if !ADD_SCENE_DESCRIPTION
-  return SceneHandles::Marker{point,/*is_local*/false};
-#else
-  return SceneHandles::Marker{point};
-#endif
+  SceneHandles::Marker marker_handles = SceneHandles::Marker{point};
+  return marker_handles;
+}
+
+
+static MarkerData createGlobalData(Scene &scene,Scene::Point position)
+{
+  SceneDescription::Marker marker_description = {/*is_local*/false};
+  SceneHandles::Marker marker_handles = createGlobal(scene,position);
+  return {marker_handles,marker_description};
 }
 
 
 static void
   createLine(
     vector<SceneHandles::DistanceError> &distance_error_handles,
-#if ADD_SCENE_DESCRIPTION
     vector<SceneDescription::DistanceError> &distance_error_descriptions,
-#endif
     const SceneHandles::Markers &markers,
     Scene &scene,
     MarkerIndex local_marker_index,
@@ -66,24 +87,16 @@ static void
   scene.setStartPoint(line,start);
   scene.setEndPoint(line,end);
 
-#if !ADD_SCENE_DESCRIPTION
-  distance_error_handles.push_back({
-    line,
-    local_marker_index,
-    global_marker_index
-  });
-#else
   distance_error_handles.push_back({line});
 
   distance_error_descriptions.push_back({
     local_marker_index,
     global_marker_index
   });
-#endif
 }
 
 
-SceneHandles setupScene(Scene &scene)
+SceneData setupScene(Scene &scene)
 {
   auto box = scene.createBox();
   scene.setGeometryScale(box,5,.1,10);
@@ -105,42 +118,57 @@ SceneHandles setupScene(Scene &scene)
   Scene::Point global2 = {1,0,1};
   Scene::Point global3 = {0,0,1};
 
-  vector<SceneHandles::Marker> markers;
-  markers.push_back(createLocal(scene,box,local1));
-  markers.push_back(createLocal(scene,box,local2));
-  markers.push_back(createLocal(scene,box,local3));
-  markers.push_back(createGlobal(scene,global1));
-  markers.push_back(createGlobal(scene,global2));
-  markers.push_back(createGlobal(scene,global3));
+  vector<SceneHandles::Marker> marker_handles;
+  MarkerData marker1 = createLocalData(scene,box,local1);
+  MarkerData marker2 = createLocalData(scene,box,local2);
+  MarkerData marker3 = createLocalData(scene,box,local3);
+  MarkerData marker4 = createGlobalData(scene,global1);
+  MarkerData marker5 = createGlobalData(scene,global2);
+  MarkerData marker6 = createGlobalData(scene,global3);
+  marker_handles.push_back(marker1.handles);
+  marker_handles.push_back(marker2.handles);
+  marker_handles.push_back(marker3.handles);
+  marker_handles.push_back(marker4.handles);
+  marker_handles.push_back(marker5.handles);
+  marker_handles.push_back(marker6.handles);
+  vector<SceneDescription::Marker> marker_descriptions;
+  marker_descriptions.push_back(marker1.description);
+  marker_descriptions.push_back(marker2.description);
+  marker_descriptions.push_back(marker3.description);
+  marker_descriptions.push_back(marker4.description);
+  marker_descriptions.push_back(marker5.description);
+  marker_descriptions.push_back(marker6.description);
 
   vector<SceneHandles::DistanceError> distance_error_handles;
-#if ADD_SCENE_DESCRIPTION
   vector<SceneDescription::DistanceError> distance_error_descriptions;
-#endif
   int n_lines = 3;
 
   for (int i=0; i!=n_lines; ++i) {
     MarkerIndex local_marker_index = i;
     MarkerIndex global_marker_index = i + 3;
-#if !ADD_SCENE_DESCRIPTION
-    createLine(
-      distance_error_handles,
-      markers,
-      scene,
-      local_marker_index,
-      global_marker_index
-    );
-#else
     createLine(
       distance_error_handles,
       distance_error_descriptions,
-      markers,
+      marker_handles,
       scene,
       local_marker_index,
       global_marker_index
     );
-#endif
   }
 
-  return { box, markers, distance_error_handles };
+  SceneHandles scene_handles = { box, marker_handles, distance_error_handles };
+
+  SceneDescription scene_description = {
+    marker_descriptions,
+    distance_error_descriptions
+  };
+
+  SceneState state;
+  updateSceneStateFromScene(state, scene, scene_handles, scene_description);
+
+  return {
+    scene_handles,
+    scene_description,
+    state
+  };
 }

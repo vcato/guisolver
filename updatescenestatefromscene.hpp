@@ -3,4 +3,9 @@
 #include "scenehandles.hpp"
 
 extern void
-  updateSceneStateFromScene(SceneState &,const Scene &,const SceneHandles &);
+  updateSceneStateFromScene(
+    SceneState &,
+    const Scene &,
+    const SceneHandles &,
+    const SceneDescription &
+  );

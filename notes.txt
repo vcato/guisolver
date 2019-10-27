@@ -382,4 +382,4 @@ Seems like the SceneState may be our main model.  SceneSetup could be
 scene-related information only, such as the scene handles for the objects.
 TreePaths is the corresponding tree data.
 ---
-Enable ADD_SCENE_DESCRIPTION
+Have the SceneState used instead of SceneDescription

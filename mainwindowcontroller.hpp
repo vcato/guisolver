@@ -1,19 +1,16 @@
 #include "scene.hpp"
 #include "treewidget.hpp"
-#include "scenehandles.hpp"
 #include "treepaths.hpp"
 #include "scenestate.hpp"
+#include "scenedata.hpp"
 
 
 struct MainWindowData {
   Scene &scene;
   TreeWidget &tree_widget;
-  SceneHandles scene_setup;
-#if ADD_SCENE_DESCRIPTION
-  SceneDescription scene_description;
-#endif
-  TreePaths tree_paths;
+  SceneData scene_data;
   SceneState scene_state;
+  TreePaths tree_paths;
 
   MainWindowData(Scene &,TreeWidget &);
 };

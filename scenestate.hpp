@@ -9,9 +9,11 @@
 
 
 struct SceneState {
-  using Points = vector<Point>;
   struct Marker;
+  struct DistanceError;
+  using Points = vector<Point>;
   using Markers = vector<Marker>;
+  using DistanceErrors = vector<DistanceError>;
 
   struct Marker {
     Point position;
@@ -24,7 +26,6 @@ struct SceneState {
   };
 
   Markers markers;
-  using DistanceErrors = vector<DistanceError>;
   DistanceErrors distance_errors;
   Transform box_global;
 
