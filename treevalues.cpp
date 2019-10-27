@@ -57,12 +57,6 @@ static TreePaths::Position
 }
 
 
-static float dot(Eigen::Vector3f a,Eigen::Vector3f b)
-{
-  return a.dot(b);
-}
-
-
 static TreePaths::DistanceError
   createDistanceError(
     TreeWidget &tree_widget,
@@ -116,30 +110,18 @@ static void
   updateDistanceError(
     TreeWidget &tree_widget,
     const TreePaths::DistanceError &distance_error_paths,
-    const SceneState &state,
-    int distance_error_index
+    const SceneState::DistanceError &distance_error_state
   )
 {
-  const SceneState::DistanceError &state_distance_error =
-    state.distance_errors[distance_error_index];
-
-  Point start = state.markerPredicted(state_distance_error.start_marker_index);
-  Point end = state.markerPredicted(state_distance_error.end_marker_index);
-  auto v = end-start;
-
-  float distance = sqrt(dot(v,v));
   {
-    const TreePath &path = distance_error_paths.distance;
     std::ostringstream label_stream;
-    label_stream << "distance: " << distance;
-    tree_widget.setItemLabel(path, label_stream.str());
+    label_stream << "distance: " << distance_error_state.distance;
+    tree_widget.setItemLabel(distance_error_paths.distance, label_stream.str());
   }
   {
-    float error = state.distance_errors[distance_error_index].error;
-    const TreePath &path = distance_error_paths.error;
     std::ostringstream label_stream;
-    label_stream << "error: " << error;
-    tree_widget.setItemLabel(path, label_stream.str());
+    label_stream << "error: " << distance_error_state.error;
+    tree_widget.setItemLabel(distance_error_paths.error, label_stream.str());
   }
 }
 
@@ -147,9 +129,7 @@ static void
 TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
 {
   TreePaths tree_paths;
-
   tree_widget.createVoidItem({0},LabelProperties{"[Scene]"});
-
   int n_scene_children = 0;
 
   tree_widget.createVoidItem(
@@ -157,11 +137,9 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
   );
 
   ++n_scene_children;
-
   TreePath box_path = {0,0};
   TreePath box_translation_path = childPath(box_path,0);
   TreePath box_rotation_path = childPath(box_path,1);
-
   tree_paths.box.path = box_path;
 
   tree_widget.createVoidItem(
@@ -308,6 +286,10 @@ void
   updateMarkers(tree_widget, tree_paths.markers, state.markers);
 
   for (auto i : indicesOf(tree_paths.distance_errors)) {
-    updateDistanceError(tree_widget, tree_paths.distance_errors[i], state, i);
+    updateDistanceError(
+      tree_widget,
+      tree_paths.distance_errors[i],
+      state.distance_errors[i]
+    );
   }
 }
