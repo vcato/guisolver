@@ -6,24 +6,6 @@
 #include "markerindex.hpp"
 
 
-struct SceneDescription {
-  struct Marker {
-    bool is_local;
-  };
-
-  struct DistanceError {
-    MarkerIndex start_marker_index;
-    MarkerIndex end_marker_index;
-  };
-
-  using Markers = vector<Marker>;
-  using DistanceErrors = vector<DistanceError>;
-
-  Markers markers;
-  DistanceErrors distance_errors;
-};
-
-
 struct SceneHandles {
   struct Marker;
   struct DistanceError;
@@ -36,7 +18,7 @@ struct SceneHandles {
   };
 
   struct DistanceError {
-    Scene::LineHandle line_handle;
+    Scene::LineHandle line;
   };
 
   Scene::TransformHandle box;

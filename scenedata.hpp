@@ -6,7 +6,6 @@
 
 struct SceneData {
   SceneHandles handles;
-  SceneDescription description;
   SceneState state;
 };
 

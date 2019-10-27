@@ -381,5 +381,3 @@ Calculate the distance when we build the scene state.
 Seems like the SceneState may be our main model.  SceneSetup could be
 scene-related information only, such as the scene handles for the objects.
 TreePaths is the corresponding tree data.
----
-Have the SceneState used instead of SceneDescription

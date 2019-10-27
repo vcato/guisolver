@@ -6,6 +6,5 @@ extern void
   updateSceneStateFromScene(
     SceneState &,
     const Scene &,
-    const SceneHandles &,
-    const SceneDescription &
+    const SceneHandles &
   );

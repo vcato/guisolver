@@ -37,22 +37,24 @@ static void
   updateSceneDistanceError(
     Scene &scene,
     const SceneHandles::DistanceError &distance_error_handles,
-    const SceneDescription::DistanceError &distance_error_description,
+    const SceneState::DistanceError &distance_error_state,
     const SceneHandles &scene_handles
   )
 {
   Scene::TransformHandle line_start =
     scene_handles.markers[
-      distance_error_description.start_marker_index
+      distance_error_state.start_marker_index
     ].handle;
 
   Scene::TransformHandle line_end =
-    scene_handles.markers[distance_error_description.end_marker_index].handle;
+    scene_handles.markers[
+      distance_error_state.end_marker_index
+    ].handle;
 
   Scene::Point start = scene.worldPoint({0,0,0}, line_start);
   Scene::Point end = scene.worldPoint({0,0,0}, line_end);
-  scene.setStartPoint(distance_error_handles.line_handle,start);
-  scene.setEndPoint(distance_error_handles.line_handle,end);
+  scene.setStartPoint(distance_error_handles.line, start);
+  scene.setEndPoint(distance_error_handles.line, end);
 }
 
 
@@ -60,14 +62,15 @@ static void
   updateSceneDistanceErrors(
     Scene &scene,
     const SceneHandles &scene_handles,
-    const SceneDescription &scene_description
+    const SceneState &scene_state
   )
 {
-  for (auto i : indicesOf(scene_description.distance_errors)) {
+  for (auto i : indicesOf(scene_state.distance_errors))
+  {
     updateSceneDistanceError(
       scene,
       scene_handles.distance_errors[i],
-      scene_description.distance_errors[i],
+      scene_state.distance_errors[i],
       scene_handles
     );
   }
@@ -113,9 +116,8 @@ static void sceneChangingCallback(MainWindowData &main_window_data)
   Scene &scene = main_window_data.scene;
   Optional<Scene::TransformHandle> th = scene.selectedObject();
   SceneHandles &scene_handles = main_window_data.scene_data.handles;
-  SceneDescription &scene_description = main_window_data.scene_data.description;
   SceneState &state = main_window_data.scene_data.state;
-  updateSceneStateFromScene(state, scene, scene_handles, scene_description);
+  updateSceneStateFromScene(state, scene, scene_handles);
 
   if (!th || !movesWithBox(*th,scene_handles,state)) {
     // If we're moving something that doesn't move with the box, then
@@ -128,7 +130,7 @@ static void sceneChangingCallback(MainWindowData &main_window_data)
     // be confusing if we try to update the box position.
   }
 
-  updateSceneDistanceErrors(scene, scene_handles, scene_description);
+  updateSceneDistanceErrors(scene, scene_handles, state);
   TreeWidget &tree_widget = main_window_data.tree_widget;
   TreePaths &tree_paths = main_window_data.tree_paths;
   updateTreeValues(tree_widget, tree_paths, state);
@@ -141,8 +143,7 @@ static void sceneChangedCallback(MainWindowData &main_window_data)
   SceneHandles &scene_handles = main_window_data.scene_data.handles;
   Scene &scene = main_window_data.scene;
   SceneState &state = main_window_data.scene_data.state;
-  SceneDescription &scene_description = main_window_data.scene_data.description;
-  updateSceneStateFromScene(state, scene, scene_handles, scene_description);
+  updateSceneStateFromScene(state, scene, scene_handles);
   solveBoxPosition(state);
   setTransform(scene_handles.box, state.box_global, scene);
 
@@ -150,7 +151,7 @@ static void sceneChangedCallback(MainWindowData &main_window_data)
   TreeWidget &tree_widget = main_window_data.tree_widget;
   updateTreeValues(tree_widget, tree_paths, state);
 
-  updateSceneDistanceErrors(scene,scene_handles,scene_description);
+  updateSceneDistanceErrors(scene,scene_handles,state);
 }
 
 
@@ -357,8 +358,7 @@ static void
   Scene &scene = main_window_data.scene;
   const SceneHandles &scene_handles = main_window_data.scene_data.handles;
   SceneState &state = main_window_data.scene_data.state;
-  SceneDescription &scene_description = main_window_data.scene_data.description;
-  updateSceneStateFromScene(state, scene, scene_handles, scene_description);
+  updateSceneStateFromScene(state, scene, scene_handles);
 
   bool scene_value_was_changed =
     setSceneValue(state, scene, path, value, tree_paths, scene_handles);
@@ -369,12 +369,12 @@ static void
       startsWith(path, tree_paths.box.rotation.path);
 
     if (!is_box_transform_path) {
-      updateSceneStateFromScene(state, scene, scene_handles, scene_description);
+      updateSceneStateFromScene(state, scene, scene_handles);
       solveBoxPosition(state);
       setTransform(scene_handles.box, state.box_global, scene);
     }
 
-    updateSceneDistanceErrors(scene, scene_handles, scene_description);
+    updateSceneDistanceErrors(scene, scene_handles, state);
     showError(state);
   }
   else {
@@ -404,11 +404,10 @@ MainWindowController::MainWindowController(Scene &scene,TreeWidget &tree_widget)
   SceneHandles &scene_setup = main_window_data.scene_data.handles;
 
   SceneState &state = main_window_data.scene_data.state;
-  SceneDescription &scene_description = main_window_data.scene_data.description;
-  updateSceneStateFromScene(state, scene, scene_setup, scene_description);
+  updateSceneStateFromScene(state, scene, scene_setup);
   solveBoxPosition(state);
   setTransform(scene_setup.box, state.box_global, scene);
-  updateSceneDistanceErrors(scene, scene_setup, scene_description);
+  updateSceneDistanceErrors(scene, scene_setup, state);
 
   updateTreeValues(tree_widget,tree_paths,state);
 
