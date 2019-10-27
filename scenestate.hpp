@@ -25,21 +25,14 @@ struct SceneState {
   struct DistanceError {
     MarkerIndex start_marker_index;
     MarkerIndex end_marker_index;
+    float distance;
+    float desired_distance;
+    float error;
   };
 
   Markers markers;
   DistanceErrors distance_errors;
   Transform box_global;
-
-  static Marker makeLocalMarker(const Point &position, const String &name)
-  {
-    return Marker{position, /*is_local*/true, name};
-  }
-
-  static Marker makeGlobalMarker(const Point &position, const String &name)
-  {
-    return Marker{position, /*is_local*/false, name};
-  }
 
   MarkerIndex addMarker()
   {
@@ -55,7 +48,13 @@ struct SceneState {
     )
   {
     distance_errors.push_back(
-      DistanceError{start_marker_index,end_marker_index}
+      DistanceError{
+        start_marker_index,
+        end_marker_index,
+        /*distance*/0,
+        /*desired_distance*/0,
+        /*error*/0
+      }
     );
   }
 

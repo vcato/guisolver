@@ -135,7 +135,7 @@ static void
     tree_widget.setItemLabel(path, label_stream.str());
   }
   {
-    float error = distanceError(start,end);
+    float error = state.distance_errors[distance_error_index].error;
     const TreePath &path = distance_error_paths.error;
     std::ostringstream label_stream;
     label_stream << "error: " << error;

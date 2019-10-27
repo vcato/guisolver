@@ -77,15 +77,12 @@ static SceneHandles::DistanceError
 
 static void
   createDistanceError(
-    vector<SceneState::DistanceError> &distance_error_states,
+    SceneState &state,
     MarkerIndex local_marker_index,
     MarkerIndex global_marker_index
   )
 {
-  distance_error_states.push_back({
-    local_marker_index,
-    global_marker_index
-  });
+  state.addDistanceError(local_marker_index, global_marker_index);
 }
 
 
@@ -106,46 +103,50 @@ static SceneHandles::Marker
 
 
 static void
+  createMarker(
+    SceneState &state,
+    const Point &position,
+    bool is_local,
+    const SceneState::String &name
+  )
+{
+  state.markers.push_back(SceneState::Marker{position, is_local, name});
+}
+
+
+static void
   createLocalMarker(
-    SceneState::Markers &marker_states,
+    SceneState &state,
     const Point &position,
     const SceneState::String &name
   )
 {
-  marker_states.push_back(SceneState::Marker{position,/*is_local*/true, name});
+  createMarker(state,position,/*is_local*/true,name);
 }
 
 
 static void
   createGlobalMarker(
-    SceneState::Markers &marker_states,
+    SceneState &state,
     const Point &position,
     const SceneState::String &name
   )
 {
-  marker_states.push_back(SceneState::Marker{position,/*is_local*/false, name});
+  createMarker(state,position,/*is_local*/false,name);
 }
 
 
 static SceneState defaultState()
 {
-  Scene::Point local1 = {1,1,0};
-  Scene::Point local2 = {1,1,1};
-  Scene::Point local3 = {0,1,1};
-  Scene::Point global1 = {1,0,0};
-  Scene::Point global2 = {1,0,1};
-  Scene::Point global3 = {0,0,1};
+  SceneState result;
 
-  vector<SceneState::Marker> marker_states;
+  createLocalMarker(result,  {1,1,0}, "local1");
+  createLocalMarker(result,  {1,1,1}, "local2");
+  createLocalMarker(result,  {0,1,1}, "local3");
+  createGlobalMarker(result, {1,0,0}, "global1");
+  createGlobalMarker(result, {1,0,1}, "global2");
+  createGlobalMarker(result, {0,0,1}, "global3");
 
-  createLocalMarker(marker_states,  local1, "local1");
-  createLocalMarker(marker_states,  local2, "local2");
-  createLocalMarker(marker_states,  local3, "local3");
-  createGlobalMarker(marker_states, global1, "global1");
-  createGlobalMarker(marker_states, global2, "global2");
-  createGlobalMarker(marker_states, global3, "global3");
-
-  vector<SceneState::DistanceError> distance_error_states;
   int n_lines = 3;
 
   for (int i=0; i!=n_lines; ++i) {
@@ -153,13 +154,13 @@ static SceneState defaultState()
     MarkerIndex global_marker_index = i + 3;
 
     createDistanceError(
-      distance_error_states,
+      result,
       local_marker_index,
       global_marker_index
     );
   }
 
-  return { marker_states, distance_error_states, {} };
+  return result;
 }
 
 
@@ -173,8 +174,8 @@ static SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
     box_handle,
     CoordinateAxes{
       Scene::Vector(0,0,-1),
-      Scene::Vector(0,1,0),
-      Scene::Vector(1,0,0)
+      Scene::Vector(0,1, 0),
+      Scene::Vector(1,0, 0)
     }
   );
 

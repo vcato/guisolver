@@ -374,7 +374,18 @@ t.origin
       * start: local3
       * end: global3
 ---
-Make it where you can specify the desired distance.
+Show the total error in the tree.
 ---
-Have the distance and the desired destance stored in the scene state.
-Calculate the distance when we build the scene state.
+Test
+* Steps
+  * Local is moved.
+  * Desired distance is changed to match.
+  * Distance should match desired distance.
+  * All errors should be near zero.
+  * Total error should be near zero.
+* Looks like we're not updating the distance errors in the tree when
+  we change the desired distance.
+---
+May want to break up the scene state to express the dependencies better.
+* Distance error distances depend on marker positions and box position.
+* Distance error errors depend on distances and desired distances.
