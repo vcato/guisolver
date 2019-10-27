@@ -53,6 +53,7 @@ struct Scene {
   virtual void setEndPoint(LineHandle,Point) = 0;
   virtual Point worldPoint(Point local,TransformHandle) const = 0;
   virtual Optional<TransformHandle> selectedObject() const = 0;
+  virtual void selectObject(TransformHandle) = 0;
 
   std::function<void()> changing_callback;
   std::function<void()> changed_callback;

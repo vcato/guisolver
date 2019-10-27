@@ -393,6 +393,34 @@ static void
 }
 
 
+static void treeSelectionChangedCallback(MainWindowData &main_window_data)
+{
+  TreeWidget &tree_widget = main_window_data.tree_widget;
+  TreePaths &tree_paths = main_window_data.tree_paths;
+  Scene &scene = main_window_data.scene;
+  SceneHandles &scene_handles = main_window_data.scene_handles;
+  Optional<TreePath> maybe_selected_item_path = tree_widget.selectedItem();
+
+  if (!maybe_selected_item_path) {
+    cerr << "No tree item selected\n";
+    return;
+  }
+
+  const TreePath &selected_item_path = *maybe_selected_item_path;
+
+  for (auto i : indicesOf(tree_paths.markers)) {
+    if (startsWith(selected_item_path, tree_paths.markers[i].path)) {
+      scene.selectObject(scene_handles.markers[i].handle);
+      return;
+    }
+  }
+
+  if (startsWith(selected_item_path, tree_paths.box.path)) {
+    scene.selectObject(scene_handles.box);
+  }
+}
+
+
 MainWindowData::MainWindowData(
   Scene &scene_arg,
   TreeWidget &tree_widget_arg
@@ -460,10 +488,13 @@ MainWindowController::MainWindowController(Scene &scene,TreeWidget &tree_widget)
   scene.changing_callback = [&]{ sceneChangingCallback(main_window_data); };
 
   scene.selection_changed_callback =
-    [&]{ sceneSelectionChanged(main_window_data); };
+    [this]{ sceneSelectionChanged(main_window_data); };
 
-  tree_widget.spin_box_item_value_changed_function =
-    [&](const TreePath &path, NumericValue value){
+  tree_widget.spin_box_item_value_changed_callback =
+    [this](const TreePath &path, NumericValue value){
       treeValueChangedCallback(main_window_data, path, value);
     };
+
+  tree_widget.selection_changed_callback =
+    [this](){ treeSelectionChangedCallback(main_window_data); };
 }

@@ -375,4 +375,3 @@ t.origin
       * end: global3
 ---
 Clicking on a line should select the distance error.
-Select an item in the tree should select it in the scene.

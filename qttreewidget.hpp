@@ -12,6 +12,8 @@ struct QLabel;
 
 
 class QtTreeWidget : public QTreeWidget, public TreeWidget {
+  Q_OBJECT
+
   public:
     QtTreeWidget();
 
@@ -56,21 +58,16 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
       setItemLabel(const TreePath &path,const std::string &new_label) override;
 
   public:
-    std::function<void(const TreePath &,int index)>
-      combobox_item_index_changed_function;
-
-    std::function<void(const TreePath &,int index)>
-      slider_item_value_changed_function;
-
-    std::function<void(const TreePath &,const std::string &value)>
-      line_edit_item_value_changed_function;
-
-    TreePath itemPath(QTreeWidgetItem &item);
+    TreePath itemPath(QTreeWidgetItem &item) const;
     void selectItem(const TreePath &path);
     void setItemExpanded(const TreePath &path,bool new_expanded_state);
     int itemChildCount(const TreePath &parent_item) const;
     void removeItem(const TreePath &path) override;
     void removeChildItems(const TreePath &path);
+    Optional<TreePath> selectedItem() const override;
+
+  private slots:
+    void selectionChangedSlot();
 
   private:
     struct Impl;
@@ -81,7 +78,7 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
     static void setItemText(QTreeWidgetItem &item,const std::string &label);
 
     QTreeWidgetItem &itemFromPath(const vector<int> &path) const;
-    void buildPath(TreePath &path,QTreeWidgetItem &item);
+    void buildPath(TreePath &path,QTreeWidgetItem &item) const;
     void changeItemToSlider(const TreePath &path);
     void changeItemToSpinBox(const TreePath &path);
     QtSlider* itemSliderPtr(const TreePath &path);

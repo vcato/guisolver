@@ -37,6 +37,7 @@ class OSGScene : public Scene {
     void setEndPoint(LineHandle,Point) override;
     Point worldPoint(Point p,TransformHandle t) const override;
     Optional<TransformHandle> selectedObject() const override;
+    void selectObject(TransformHandle) override;
 
     GraphicsWindowPtr createGraphicsWindow(ViewType view_type);
 
@@ -51,6 +52,7 @@ class OSGScene : public Scene {
 
       SelectionHandler(OSGScene &scene_arg);
       void nodeSelected(osg::Node *new_selected_node_ptr) override;
+      void attachDraggerTo(osg::Node *new_selected_node_ptr);
     };
 
     vector<osg::MatrixTransform *> transform_ptrs;

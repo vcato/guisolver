@@ -467,9 +467,7 @@ Optional<TransformHandle>
 
 
 void
-  OSGScene::SelectionHandler::nodeSelected(
-    osg::Node *new_selected_node_ptr
-  )
+  OSGScene::SelectionHandler::attachDraggerTo(osg::Node *new_selected_node_ptr)
 {
   if (selected_node_ptr) {
     osg::ShapeDrawable *shape_drawable_ptr =
@@ -504,6 +502,15 @@ void
       *dc
     );
   }
+}
+
+
+void
+  OSGScene::SelectionHandler::nodeSelected(
+    osg::Node *new_selected_node_ptr
+  )
+{
+  attachDraggerTo(new_selected_node_ptr);
 
   if (scene.selection_changed_callback) {
     scene.selection_changed_callback();
@@ -981,6 +988,14 @@ auto OSGScene::worldPoint(Point p,TransformHandle t) const -> Point
 Optional<TransformHandle> OSGScene::selectedObject() const
 {
   return Impl::selectedTransform(*this);
+}
+
+
+void OSGScene::selectObject(TransformHandle handle)
+{
+  selection_handler.attachDraggerTo(
+    Impl::geometryTransform(*this,handle).getChild(0)
+  );
 }
 
 

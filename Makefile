@@ -23,10 +23,11 @@ run_guisolver: guisolver
 
 guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
   osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o setupscene.o \
-  sceneerror.o maketransform.o scenesolver.o optimize.o qttreewidget.o \
+  sceneerror.o maketransform.o scenesolver.o optimize.o \
   qttreewidgetitem.o qtcombobox.o qtcombobox_moc.o \
   qtlineedit.o qtlineedit_moc.o qtslider.o qtslider.o \
   qtslider_moc.o qtspinbox.o qtspinbox_moc.o treevalues.o \
+  qttreewidget.o qttreewidget_moc.o \
   mainwindowcontroller.o updatescenestatefromscene.o globaltransform.o \
   settransform.o createsceneobjects.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`

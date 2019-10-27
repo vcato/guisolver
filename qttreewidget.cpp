@@ -146,6 +146,12 @@ QtTreeWidget::QtTreeWidget()
 {
   assert(header());
   header()->close();
+
+  connect(
+    this,
+    SIGNAL(currentItemChanged(QTreeWidgetItem *,QTreeWidgetItem *)),
+    SLOT(selectionChangedSlot())
+  );
 }
 
 
@@ -392,7 +398,7 @@ QTreeWidgetItem &QtTreeWidget::itemFromPath(const vector<int> &path) const
 }
 
 
-void QtTreeWidget::buildPath(vector<int> &path,QTreeWidgetItem &item)
+void QtTreeWidget::buildPath(vector<int> &path,QTreeWidgetItem &item) const
 {
   QTreeWidgetItem *parent_item_ptr = item.parent();
 
@@ -406,7 +412,7 @@ void QtTreeWidget::buildPath(vector<int> &path,QTreeWidgetItem &item)
 }
 
 
-vector<int> QtTreeWidget::itemPath(QTreeWidgetItem &item)
+vector<int> QtTreeWidget::itemPath(QTreeWidgetItem &item) const
 {
   vector<int> path;
   buildPath(path,item);
@@ -423,7 +429,7 @@ void
   assert(item_ptr);
 
   TreePath path = itemPath(*item_ptr);
-  combobox_item_index_changed_function(path,index);
+  combobox_item_index_changed_callback(path,index);
 }
 
 
@@ -435,12 +441,12 @@ void
 {
   assert(item_ptr);
 
-  if (!spin_box_item_value_changed_function) {
+  if (!spin_box_item_value_changed_callback) {
     cerr << "spin_box_item_value_changed_function is not set\n";
     return;
   }
 
-  spin_box_item_value_changed_function(itemPath(*item_ptr),value);
+  spin_box_item_value_changed_callback(itemPath(*item_ptr),value);
 }
 
 
@@ -451,7 +457,7 @@ void
   )
 {
   assert(item_ptr);
-  slider_item_value_changed_function(itemPath(*item_ptr),value);
+  slider_item_value_changed_callback(itemPath(*item_ptr),value);
 }
 
 
@@ -462,7 +468,7 @@ void
   )
 {
   assert(item_ptr);
-  line_edit_item_value_changed_function(itemPath(*item_ptr),value);
+  line_edit_item_value_changed_callback(itemPath(*item_ptr),value);
 }
 
 
@@ -652,4 +658,24 @@ void QtTreeWidget::selectItem(const TreePath &path)
 void QtTreeWidget::setItemExpanded(const TreePath &path,bool new_expanded_state)
 {
   itemFromPath(path).setExpanded(new_expanded_state);
+}
+
+
+void QtTreeWidget::selectionChangedSlot()
+{
+  if (selection_changed_callback) {
+    selection_changed_callback();
+  }
+}
+
+
+Optional<TreePath> QtTreeWidget::selectedItem() const
+{
+  QTreeWidgetItem *item_ptr = currentItem();
+
+  if (!item_ptr) {
+    return {};
+  }
+
+  return itemPath(*item_ptr);
 }
