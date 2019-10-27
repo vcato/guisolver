@@ -5,7 +5,7 @@
 #include "treepaths.hpp"
 
 
-extern TreePaths fillTree(TreeWidget &tree_widget);
+extern TreePaths fillTree(TreeWidget &, const SceneState &);
 
 
 extern void

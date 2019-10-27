@@ -138,15 +138,19 @@ static void
 }
 
 
-TreePaths fillTree(TreeWidget &tree_widget)
+TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
 {
   TreePaths tree_paths;
 
   tree_widget.createVoidItem({0},LabelProperties{"[Scene]"});
 
+  int n_scene_children = 0;
+
   tree_widget.createVoidItem(
-    {0,0},LabelProperties{"[Transform]"}
+    {0,n_scene_children},LabelProperties{"[Transform]"}
   );
+
+  ++n_scene_children;
 
   TreePath box_path = {0,0};
   TreePath box_translation_path = childPath(box_path,0);
@@ -172,21 +176,42 @@ TreePaths fillTree(TreeWidget &tree_widget)
     {0,0,2},LabelProperties{"[Box]"}
   );
 
-  tree_paths.markers[0].position = createMarker(tree_widget,{0,0,3},"local1");
-  tree_paths.markers[1].position = createMarker(tree_widget,{0,0,4},"local2");
-  tree_paths.markers[2].position = createMarker(tree_widget,{0,0,5},"local3");
-  tree_paths.markers[3].position = createMarker(tree_widget,{0,1},"global1");
-  tree_paths.markers[4].position = createMarker(tree_widget,{0,2},"global2");
-  tree_paths.markers[5].position = createMarker(tree_widget,{0,3},"global3");
+  {
+    int n_box_children = 3;
+    int marker_index = 0;
 
-  tree_paths.distance_errors[0] =
-    createDistanceError(tree_widget,{0,4},"local1","global1");
+    for (auto &state_marker : scene_state.markers) {
+      if (state_marker.is_local) {
+        tree_paths.markers[marker_index].position =
+          createMarker(tree_widget,{0,0,n_box_children},state_marker.name);
 
-  tree_paths.distance_errors[1] =
-    createDistanceError(tree_widget,{0,5},"local2","global2");
+        ++n_box_children;
+      }
+      else {
+        tree_paths.markers[marker_index].position =
+          createMarker(tree_widget,{0,n_scene_children},state_marker.name);
 
-  tree_paths.distance_errors[2] =
-    createDistanceError(tree_widget,{0,6},"local3","global3");
+        ++n_scene_children;
+      }
+
+      ++marker_index;
+    }
+  }
+
+  {
+    int distance_error_index = 0;
+
+    for (auto &state_distance_error : scene_state.distance_errors) {
+      tree_paths.distance_errors[distance_error_index] =
+        createDistanceError(tree_widget,{0,n_scene_children},
+          scene_state.markers[state_distance_error.start_marker_index].name,
+          scene_state.markers[state_distance_error.end_marker_index].name
+        );
+
+      ++n_scene_children;
+      ++distance_error_index;
+    }
+  }
 
   return tree_paths;
 }

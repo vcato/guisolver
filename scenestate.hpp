@@ -14,10 +14,12 @@ struct SceneState {
   using Points = vector<Point>;
   using Markers = vector<Marker>;
   using DistanceErrors = vector<DistanceError>;
+  using String = std::string;
 
   struct Marker {
     Point position;
     bool is_local;
+    String name;
   };
 
   struct DistanceError {
@@ -29,14 +31,14 @@ struct SceneState {
   DistanceErrors distance_errors;
   Transform box_global;
 
-  static Marker makeLocalMarker(const Point &position)
+  static Marker makeLocalMarker(const Point &position, const String &name)
   {
-    return Marker{position,/*is_local*/true};
+    return Marker{position, /*is_local*/true, name};
   }
 
-  static Marker makeGlobalMarker(const Point &position)
+  static Marker makeGlobalMarker(const Point &position, const String &name)
   {
-    return Marker{position,/*is_local*/false};
+    return Marker{position, /*is_local*/false, name};
   }
 
   MarkerIndex addMarker()

@@ -392,7 +392,7 @@ MainWindowData::MainWindowData(
 : scene(scene_arg),
   tree_widget(tree_widget_arg),
   scene_data(setupScene(scene)),
-  tree_paths(fillTree(tree_widget))
+  tree_paths(fillTree(tree_widget,scene_data.state))
 {
 }
 
