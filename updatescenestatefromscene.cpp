@@ -31,8 +31,7 @@ static void
   )
 {
   for (auto i : indicesOf(handles_markers)) {
-    const SceneHandles::Marker &handles_marker = handles_markers[i];
-    updateMarkerPosition(state_markers[i], handles_marker, scene);
+    updateMarkerPosition(state_markers[i], handles_markers[i], scene);
   }
 }
 
