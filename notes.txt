@@ -374,6 +374,5 @@ t.origin
       * start: local3
       * end: global3
 ---
-Selecting a marker should select it in the tree.
-Selecting the box should select it in the tree.
 Clicking on a line should select the distance error.
+Select an item in the tree should select it in the scene.

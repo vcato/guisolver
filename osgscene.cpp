@@ -504,6 +504,10 @@ void
       *dc
     );
   }
+
+  if (scene.selection_changed_callback) {
+    scene.selection_changed_callback();
+  }
 }
 
 

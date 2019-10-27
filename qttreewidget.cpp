@@ -645,7 +645,7 @@ void QtTreeWidget::removeChildItems(const TreePath &path)
 
 void QtTreeWidget::selectItem(const TreePath &path)
 {
-  itemFromPath(path).setSelected(true);
+  setCurrentItem(&itemFromPath(path));
 }
 
 

@@ -29,6 +29,7 @@ struct TreePaths {
   };
 
   struct Marker {
+    TreePath path;
     Position position;
   };
 

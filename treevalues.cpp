@@ -38,7 +38,7 @@ static TreePaths::XYZ
 }
 
 
-static TreePaths::Position
+static TreePaths::Marker
   createMarker(
     TreeWidget &tree_widget,
     const TreePath &path,
@@ -53,7 +53,11 @@ static TreePaths::Position
 
   tree_widget.createVoidItem(childPath(path,1),LabelProperties{"position: []"});
 
-  return TreePaths::Position(createXYZ(tree_widget, childPath(path,1)));
+  TreePaths::Position position_path =
+    TreePaths::Position(createXYZ(tree_widget, childPath(path,1)));
+
+  TreePaths::Marker marker_paths = {path, position_path};
+  return marker_paths;
 }
 
 
@@ -176,7 +180,7 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
 
     for (auto &state_marker : scene_state.markers) {
       if (state_marker.is_local) {
-        tree_paths.markers[marker_index].position =
+        tree_paths.markers[marker_index] =
           createMarker(tree_widget,{0,0,n_box_children},state_marker.name);
 
         ++n_box_children;
@@ -185,7 +189,7 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
         TreePath marker_position_path = next_scene_child_path;
         ++next_scene_child_path.back();
 
-        tree_paths.markers[marker_index].position =
+        tree_paths.markers[marker_index] =
           createMarker(tree_widget,marker_position_path,state_marker.name);
       }
 

@@ -415,6 +415,36 @@ static void updateBoxPositionInScene(MainWindowData &main_window_data)
 }
 
 
+static void sceneSelectionChanged(MainWindowData &main_window_data)
+{
+  Scene &scene = main_window_data.scene;
+  SceneHandles &scene_handles = main_window_data.scene_handles;
+  TreeWidget &tree_widget = main_window_data.tree_widget;
+  TreePaths &tree_paths = main_window_data.tree_paths;
+
+  Optional<Scene::TransformHandle> maybe_selected_transform_handle =
+    scene.selectedObject();
+
+  if (!maybe_selected_transform_handle) {
+    cerr << "No object selected in the scene.\n";
+    return;
+  }
+
+  Scene::TransformHandle selected_transform_handle =
+    *maybe_selected_transform_handle;
+
+  if (scene_handles.box == selected_transform_handle) {
+    tree_widget.selectItem(tree_paths.box.path);
+  }
+
+  for (auto i : indicesOf(scene_handles.markers)) {
+    if (scene_handles.markers[i].handle == selected_transform_handle) {
+      tree_widget.selectItem(tree_paths.markers[i].path);
+    }
+  }
+}
+
+
 MainWindowController::MainWindowController(Scene &scene,TreeWidget &tree_widget)
 : main_window_data{scene,tree_widget}
 {
@@ -428,6 +458,9 @@ MainWindowController::MainWindowController(Scene &scene,TreeWidget &tree_widget)
   updateTreeValues(main_window_data);
   scene.changed_callback = [&]{ sceneChangedCallback(main_window_data); };
   scene.changing_callback = [&]{ sceneChangingCallback(main_window_data); };
+
+  scene.selection_changed_callback =
+    [&]{ sceneSelectionChanged(main_window_data); };
 
   tree_widget.spin_box_item_value_changed_function =
     [&](const TreePath &path, NumericValue value){

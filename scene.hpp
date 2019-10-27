@@ -56,6 +56,7 @@ struct Scene {
 
   std::function<void()> changing_callback;
   std::function<void()> changed_callback;
+  std::function<void()> selection_changed_callback;
 };
 
 #endif /* SCENE_HPP_ */

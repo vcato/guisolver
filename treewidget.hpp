@@ -59,6 +59,7 @@ struct TreeWidget {
   virtual void
     setItemLabel(const TreePath &path,const std::string &new_label) = 0;
 
+  virtual void selectItem(const TreePath &path) = 0;
   virtual void removeItem(const TreePath &path) = 0;
 
   std::function<void(const TreePath &,NumericValue)>
