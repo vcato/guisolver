@@ -67,10 +67,16 @@ static TreePaths::DistanceError
   createDistanceError(
     TreeWidget &tree_widget,
     const TreePath &path,
-    const string &start_name,
-    const string &end_name
+    const SceneState::Markers &state_markers,
+    const SceneState::DistanceError &state_distance_error
   )
 {
+  const string &start_name =
+    state_markers[state_distance_error.start_marker_index].name;
+
+  const string &end_name =
+    state_markers[state_distance_error.end_marker_index].name;
+
   tree_widget.createVoidItem(path,LabelProperties{"[DistanceError]"});
   TreePath start_path = childPath(path,0);
   TreePath end_path = childPath(path,1);
@@ -203,9 +209,11 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
 
     for (auto &state_distance_error : scene_state.distance_errors) {
       tree_paths.distance_errors[distance_error_index] =
-        createDistanceError(tree_widget,{0,n_scene_children},
-          scene_state.markers[state_distance_error.start_marker_index].name,
-          scene_state.markers[state_distance_error.end_marker_index].name
+        createDistanceError(
+          tree_widget,
+          {0,n_scene_children},
+          scene_state.markers,
+          state_distance_error
         );
 
       ++n_scene_children;
