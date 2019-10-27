@@ -14,23 +14,10 @@
 #include "rotationvector.hpp"
 #include "indicesof.hpp"
 #include "updatescenestatefromscene.hpp"
+#include "settransform.hpp"
+#include "createsceneobjects.hpp"
 
 using std::cerr;
-
-
-static void
-  setTransform(
-    Scene::TransformHandle transform_id,
-    const Transform &transform_value,
-    Scene &scene
-  )
-{
-  CoordinateAxes coordinate_axes =
-    coordinateAxes(transform_value.rotation());
-
-  scene.setCoordinateAxes(transform_id, coordinate_axes);
-  scene.setTranslation(transform_id, transform_value.translation());
-}
 
 
 static void
@@ -112,7 +99,7 @@ static void updateTreeValues(MainWindowData &main_window_data)
 {
   TreeWidget &tree_widget = main_window_data.tree_widget;
   TreePaths &tree_paths = main_window_data.tree_paths;
-  SceneState &state = main_window_data.scene_data.state;
+  SceneState &state = main_window_data.scene_state;
   updateTreeValues(tree_widget, tree_paths, state);
 }
 
@@ -124,8 +111,8 @@ static void sceneChangingCallback(MainWindowData &main_window_data)
 
   Scene &scene = main_window_data.scene;
   Optional<Scene::TransformHandle> th = scene.selectedObject();
-  SceneHandles &scene_handles = main_window_data.scene_data.handles;
-  SceneState &state = main_window_data.scene_data.state;
+  SceneHandles &scene_handles = main_window_data.scene_handles;
+  SceneState &state = main_window_data.scene_state;
   updateSceneStateFromScene(state, scene, scene_handles);
 
   if (!th || !movesWithBox(*th,scene_handles,state)) {
@@ -148,13 +135,12 @@ static void sceneChangingCallback(MainWindowData &main_window_data)
 
 static void sceneChangedCallback(MainWindowData &main_window_data)
 {
-  SceneHandles &scene_handles = main_window_data.scene_data.handles;
+  SceneHandles &scene_handles = main_window_data.scene_handles;
   Scene &scene = main_window_data.scene;
-  SceneState &state = main_window_data.scene_data.state;
+  SceneState &state = main_window_data.scene_state;
   updateSceneStateFromScene(state, scene, scene_handles);
   solveBoxPosition(state);
   setTransform(scene_handles.box, state.box_global, scene);
-
   updateDistanceErrorsInState(state);
   updateTreeValues(main_window_data);
   updateDistanceErrorsInScene(scene,scene_handles,state);
@@ -385,8 +371,8 @@ static void
 {
   const TreePaths &tree_paths = main_window_data.tree_paths;
   Scene &scene = main_window_data.scene;
-  const SceneHandles &scene_handles = main_window_data.scene_data.handles;
-  SceneState &state = main_window_data.scene_data.state;
+  const SceneHandles &scene_handles = main_window_data.scene_handles;
+  SceneState &state = main_window_data.scene_state;
   updateSceneStateFromScene(state, scene, scene_handles);
 
   bool scene_value_was_changed =
@@ -421,16 +407,17 @@ MainWindowData::MainWindowData(
 )
 : scene(scene_arg),
   tree_widget(tree_widget_arg),
-  scene_data(setupScene(scene)),
-  tree_paths(fillTree(tree_widget,scene_data.state))
+  scene_state(defaultSceneState()),
+  scene_handles(createSceneObjects(scene_state, scene)),
+  tree_paths(fillTree(tree_widget,scene_state))
 {
 }
 
 
 static void updateBoxPositionInScene(MainWindowData &main_window_data)
 {
-  SceneHandles &scene_handles = main_window_data.scene_data.handles;
-  SceneState &state = main_window_data.scene_data.state;
+  SceneHandles &scene_handles = main_window_data.scene_handles;
+  SceneState &state = main_window_data.scene_state;
   Scene &scene = main_window_data.scene;
   setTransform(scene_handles.box, state.box_global, scene);
 }
@@ -439,8 +426,8 @@ static void updateBoxPositionInScene(MainWindowData &main_window_data)
 MainWindowController::MainWindowController(Scene &scene,TreeWidget &tree_widget)
 : main_window_data{scene,tree_widget}
 {
-  SceneHandles &scene_handles = main_window_data.scene_data.handles;
-  SceneState &state = main_window_data.scene_data.state;
+  SceneHandles &scene_handles = main_window_data.scene_handles;
+  SceneState &state = main_window_data.scene_state;
   updateSceneStateFromScene(state, scene, scene_handles);
   solveBoxPosition(state);
   updateDistanceErrorsInState(state);
