@@ -126,17 +126,27 @@ static void
 }
 
 
+static string totalErrorLabel(float total_error)
+{
+  std::ostringstream label_stream;
+  label_stream << "total_error: " << total_error;
+  return label_stream.str();
+}
+
+
 TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
 {
   TreePaths tree_paths;
   tree_widget.createVoidItem({0},LabelProperties{"[Scene]"});
-  int n_scene_children = 0;
+
+  TreePath next_scene_child_path = {0,0};
+  TreePath box_transform_path = next_scene_child_path;
+  ++next_scene_child_path.back();
 
   tree_widget.createVoidItem(
-    {0,n_scene_children},LabelProperties{"[Transform]"}
+    box_transform_path,LabelProperties{"[Transform]"}
   );
 
-  ++n_scene_children;
   TreePath box_path = {0,0};
   TreePath box_translation_path = childPath(box_path,0);
   TreePath box_rotation_path = childPath(box_path,1);
@@ -172,10 +182,11 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
         ++n_box_children;
       }
       else {
-        tree_paths.markers[marker_index].position =
-          createMarker(tree_widget,{0,n_scene_children},state_marker.name);
+        TreePath marker_position_path = next_scene_child_path;
+        ++next_scene_child_path.back();
 
-        ++n_scene_children;
+        tree_paths.markers[marker_index].position =
+          createMarker(tree_widget,marker_position_path,state_marker.name);
       }
 
       ++marker_index;
@@ -186,18 +197,28 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
     int distance_error_index = 0;
 
     for (auto &state_distance_error : scene_state.distance_errors) {
+      TreePath distance_error_path = next_scene_child_path;
+      ++next_scene_child_path.back();
+
       tree_paths.distance_errors[distance_error_index] =
         createDistanceError(
           tree_widget,
-          {0,n_scene_children},
+          distance_error_path,
           scene_state.markers,
           state_distance_error
         );
 
-      ++n_scene_children;
       ++distance_error_index;
     }
   }
+
+  tree_paths.total_error = next_scene_child_path;
+  ++next_scene_child_path.back();
+
+  tree_widget.createVoidItem(
+    tree_paths.total_error, LabelProperties{totalErrorLabel(0)}
+  );
+
 
   return tree_paths;
 }
@@ -292,4 +313,8 @@ void
       state.distance_errors[i]
     );
   }
+
+  tree_widget.setItemLabel(
+    tree_paths.total_error, totalErrorLabel(state.total_error)
+  );
 }

@@ -30,9 +30,10 @@ struct SceneState {
     float error;
   };
 
+  Transform box_global;
   Markers markers;
   DistanceErrors distance_errors;
-  Transform box_global;
+  float total_error = 0;
 
   MarkerIndex addMarker()
   {

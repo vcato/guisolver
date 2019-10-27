@@ -374,18 +374,6 @@ t.origin
       * start: local3
       * end: global3
 ---
-Show the total error in the tree.
----
-Test
-* Steps
-  * Local is moved.
-  * Desired distance is changed to match.
-  * Distance should match desired distance.
-  * All errors should be near zero.
-  * Total error should be near zero.
-* Looks like we're not updating the distance errors in the tree when
-  we change the desired distance.
----
-May want to break up the scene state to express the dependencies better.
-* Distance error distances depend on marker positions and box position.
-* Distance error errors depend on distances and desired distances.
+Selecting a marker should select it in the tree.
+Selecting the box should select it in the tree.
+Clicking on a line should select the distance error.

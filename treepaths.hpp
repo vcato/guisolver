@@ -60,6 +60,7 @@ struct TreePaths {
   Box box;
   Markers markers;
   DistanceErrors distance_errors;
+  TreePath total_error;
 };
 
 

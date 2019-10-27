@@ -42,6 +42,8 @@ static float squared(float x)
 
 void updateDistanceErrorsInState(SceneState &scene_state)
 {
+  float total_error = 0;
+
   for (auto i : indicesOf(scene_state.distance_errors)) {
     Point start_predicted = scene_state.distanceErrorStartPredicted(i);
     Point end_predicted = scene_state.distanceErrorEndPredicted(i);
@@ -52,18 +54,14 @@ void updateDistanceErrorsInState(SceneState &scene_state)
     float desired_distance = scene_state.distance_errors[i].desired_distance;
     scene_state.distance_errors[i].distance = distance;
     scene_state.distance_errors[i].error = squared(distance - desired_distance);
+    total_error += scene_state.distance_errors[i].error;
   }
+
+  scene_state.total_error = total_error;
 }
 
 
 float sceneError(const SceneState &scene_state)
 {
-  using Scalar = float;
-  Scalar error = 0;
-
-  for (auto i : indicesOf(scene_state.distance_errors)) {
-    error += scene_state.distance_errors[i].error;
-  }
-
-  return error;
+  return scene_state.total_error;
 }

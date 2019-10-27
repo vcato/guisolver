@@ -64,12 +64,6 @@ static void
 }
 
 
-static void showError(const SceneState &state)
-{
-  cerr << sceneError(state) << "\n";
-}
-
-
 static bool
   movesWithBox(
     Scene::TransformHandle th,
@@ -129,7 +123,6 @@ static void sceneChangingCallback(MainWindowData &main_window_data)
   updateDistanceErrorsInState(state);
   updateTreeValues(main_window_data);
   updateDistanceErrorsInScene(scene, scene_handles, state);
-  showError(state);
 }
 
 
@@ -391,7 +384,6 @@ static void
 
     updateDistanceErrorsInScene(scene, scene_handles, state);
     updateTreeValues(main_window_data);
-    showError(state);
   }
   else {
     cerr << "Handling spin_box_item_value_changed_function\n";
