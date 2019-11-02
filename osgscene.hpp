@@ -46,13 +46,15 @@ class OSGScene : public Scene {
 
     struct SelectionHandler : OSGSelectionHandler {
       osg::Node *selected_node_ptr = nullptr;
-      osg::Vec4 old_color;
+      osg::Node *dragger_node_ptr = nullptr;
+      osg::Vec3 old_color;
       bool use_screen_relative_dragger = false;
       OSGScene &scene;
 
       SelectionHandler(OSGScene &scene_arg);
-      void nodeSelected(osg::Node *new_selected_node_ptr) override;
-      void attachDraggerTo(osg::Node *new_selected_node_ptr);
+      void nodeSelected(osg::Node *) override;
+      void attachDraggerTo(osg::Node *);
+      void changeSelectedNodeTo(osg::Node *);
     };
 
     vector<osg::MatrixTransform *> transform_ptrs;

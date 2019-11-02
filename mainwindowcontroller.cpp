@@ -18,6 +18,7 @@
 #include "createsceneobjects.hpp"
 
 using std::cerr;
+using TransformHandle = Scene::TransformHandle;
 
 
 static void
@@ -28,12 +29,12 @@ static void
     const SceneHandles &scene_handles
   )
 {
-  Scene::TransformHandle line_start =
+  TransformHandle line_start =
     scene_handles.markers[
       distance_error_state.start_marker_index
     ].handle;
 
-  Scene::TransformHandle line_end =
+  TransformHandle line_end =
     scene_handles.markers[
       distance_error_state.end_marker_index
     ].handle;
@@ -66,7 +67,7 @@ static void
 
 static bool
   movesWithBox(
-    Scene::TransformHandle th,
+    TransformHandle th,
     const SceneHandles &setup,
     const SceneState &state
   )
@@ -104,7 +105,7 @@ static void sceneChangingCallback(MainWindowData &main_window_data)
   // consider this change complete.
 
   Scene &scene = main_window_data.scene;
-  Optional<Scene::TransformHandle> th = scene.selectedObject();
+  Optional<TransformHandle> th = scene.selectedObject();
   SceneHandles &scene_handles = main_window_data.scene_handles;
   SceneState &state = main_window_data.scene_state;
   updateSceneStateFromScene(state, scene, scene_handles);
@@ -393,12 +394,40 @@ static void
 }
 
 
+static Optional<TransformHandle>
+  sceneObjectForTreeItem(
+    MainWindowData &main_window_data,
+    const TreePath &item_path
+  )
+{
+  TreePaths &tree_paths = main_window_data.tree_paths;
+  SceneHandles &scene_handles = main_window_data.scene_handles;
+  Optional<TransformHandle> maybe_object;
+
+  for (auto i : indicesOf(tree_paths.markers)) {
+    if (startsWith(item_path, tree_paths.markers[i].path)) {
+      return scene_handles.markers[i].handle;
+    }
+  }
+
+  if (startsWith(item_path, tree_paths.box.path)) {
+    return scene_handles.box;
+  }
+
+  for (auto i : indicesOf(tree_paths.distance_errors)) {
+    if (startsWith(item_path, tree_paths.distance_errors[i].path)) {
+      return scene_handles.distance_errors[i].line;
+    }
+  }
+
+  return {};
+}
+
+
 static void treeSelectionChangedCallback(MainWindowData &main_window_data)
 {
   TreeWidget &tree_widget = main_window_data.tree_widget;
-  TreePaths &tree_paths = main_window_data.tree_paths;
   Scene &scene = main_window_data.scene;
-  SceneHandles &scene_handles = main_window_data.scene_handles;
   Optional<TreePath> maybe_selected_item_path = tree_widget.selectedItem();
 
   if (!maybe_selected_item_path) {
@@ -406,17 +435,11 @@ static void treeSelectionChangedCallback(MainWindowData &main_window_data)
     return;
   }
 
-  const TreePath &selected_item_path = *maybe_selected_item_path;
+  Optional<TransformHandle> maybe_object =
+    sceneObjectForTreeItem(main_window_data, *maybe_selected_item_path);
 
-  for (auto i : indicesOf(tree_paths.markers)) {
-    if (startsWith(selected_item_path, tree_paths.markers[i].path)) {
-      scene.selectObject(scene_handles.markers[i].handle);
-      return;
-    }
-  }
-
-  if (startsWith(selected_item_path, tree_paths.box.path)) {
-    scene.selectObject(scene_handles.box);
+  if (maybe_object) {
+    scene.selectObject(*maybe_object);
   }
 }
 
@@ -443,14 +466,42 @@ static void updateBoxPositionInScene(MainWindowData &main_window_data)
 }
 
 
+static Optional<TreePath>
+  treeItemForSceneObject(
+    MainWindowData &main_window_data,
+    TransformHandle handle
+  )
+{
+  SceneHandles &scene_handles = main_window_data.scene_handles;
+  TreePaths &tree_paths = main_window_data.tree_paths;
+  Optional<TreePath> maybe_tree_path;
+
+  if (scene_handles.box == handle) {
+    return tree_paths.box.path;
+  }
+
+  for (auto i : indicesOf(scene_handles.markers)) {
+    if (scene_handles.markers[i].handle == handle) {
+      return tree_paths.markers[i].path;
+    }
+  }
+
+  for (auto i : indicesOf(scene_handles.distance_errors)) {
+    if (scene_handles.distance_errors[i].line == handle) {
+      return tree_paths.distance_errors[i].path;
+    }
+  }
+
+  return {};
+}
+
+
 static void sceneSelectionChanged(MainWindowData &main_window_data)
 {
   Scene &scene = main_window_data.scene;
-  SceneHandles &scene_handles = main_window_data.scene_handles;
   TreeWidget &tree_widget = main_window_data.tree_widget;
-  TreePaths &tree_paths = main_window_data.tree_paths;
 
-  Optional<Scene::TransformHandle> maybe_selected_transform_handle =
+  Optional<TransformHandle> maybe_selected_transform_handle =
     scene.selectedObject();
 
   if (!maybe_selected_transform_handle) {
@@ -458,17 +509,17 @@ static void sceneSelectionChanged(MainWindowData &main_window_data)
     return;
   }
 
-  Scene::TransformHandle selected_transform_handle =
+  TransformHandle selected_transform_handle =
     *maybe_selected_transform_handle;
 
-  if (scene_handles.box == selected_transform_handle) {
-    tree_widget.selectItem(tree_paths.box.path);
-  }
+  Optional<TreePath> maybe_tree_path =
+    treeItemForSceneObject(main_window_data, selected_transform_handle);
 
-  for (auto i : indicesOf(scene_handles.markers)) {
-    if (scene_handles.markers[i].handle == selected_transform_handle) {
-      tree_widget.selectItem(tree_paths.markers[i].path);
-    }
+  if (maybe_tree_path) {
+    tree_widget.selectItem(*maybe_tree_path);
+  }
+  else {
+    cerr << "No tree item for scene object.\n";
   }
 }
 
