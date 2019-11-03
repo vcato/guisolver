@@ -22,7 +22,7 @@ run_guisolver: guisolver
 	touch $@
 
 guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
-  osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o setupscene.o \
+  osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o defaultscenestate.o \
   sceneerror.o maketransform.o scenesolver.o optimize.o \
   qttreewidgetitem.o qtcombobox.o qtcombobox_moc.o \
   qtlineedit.o qtlineedit_moc.o qtslider.o qtslider.o \

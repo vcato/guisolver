@@ -4,7 +4,7 @@
 #include "eigenconv.hpp"
 #include "sceneerror.hpp"
 #include "scenesolver.hpp"
-#include "setupscene.hpp"
+#include "defaultscenestate.hpp"
 #include "treevalues.hpp"
 #include "startswith.hpp"
 #include "rotationvector.hpp"
