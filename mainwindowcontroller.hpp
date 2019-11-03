@@ -1,23 +1,26 @@
+#include "scenestate.hpp"
 #include "scene.hpp"
+#include "scenehandles.hpp"
 #include "treewidget.hpp"
 #include "treepaths.hpp"
-#include "scenestate.hpp"
-#include "scenehandles.hpp"
-#include "scenestate.hpp"
 
 
-struct MainWindowData {
-  Scene &scene;
-  TreeWidget &tree_widget;
-  SceneState scene_state;
-  SceneHandles scene_handles;
-  TreePaths tree_paths;
+class MainWindowController {
+  public:
+    MainWindowController(Scene &scene,TreeWidget &tree_widget);
 
-  MainWindowData(Scene &,TreeWidget &);
-};
+  private:
+    struct Impl;
 
+    struct Data {
+      Scene &scene;
+      TreeWidget &tree_widget;
+      SceneState scene_state;
+      SceneHandles scene_handles;
+      TreePaths tree_paths;
 
-struct MainWindowController {
-  MainWindowData main_window_data;
-  MainWindowController(Scene &scene,TreeWidget &tree_widget);
+      Data(Scene &,TreeWidget &);
+    };
+
+    Data data;
 };

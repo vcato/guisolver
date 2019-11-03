@@ -40,55 +40,6 @@ static bool
 }
 
 
-static void updateTreeValues(MainWindowData &main_window_data)
-{
-  TreeWidget &tree_widget = main_window_data.tree_widget;
-  TreePaths &tree_paths = main_window_data.tree_paths;
-  SceneState &state = main_window_data.scene_state;
-  updateTreeValues(tree_widget, tree_paths, state);
-}
-
-
-static void sceneChangingCallback(MainWindowData &main_window_data)
-{
-  // The mouse button is down.  The scene is being changed, but we don't
-  // consider this change complete.
-
-  Scene &scene = main_window_data.scene;
-  SceneHandles &scene_handles = main_window_data.scene_handles;
-  SceneState &state = main_window_data.scene_state;
-  Optional<TransformHandle> th = scene.selectedObject();
-  updateSceneStateFromSceneObjects(state, scene, scene_handles);
-
-  if (!th || !movesWithBox(*th,scene_handles,state)) {
-    // If we're moving something that doesn't move with the box, then
-    // we'll go ahead and update the box position.
-    solveBoxPosition(state);
-  }
-  else {
-    // If we're moving something that moves with the box, then it will
-    // be confusing if we try to update the box position.
-  }
-
-  updateErrorsInState(state);
-  updateTreeValues(main_window_data);
-  updateSceneObjects(scene, scene_handles, state);
-}
-
-
-static void sceneChangedCallback(MainWindowData &main_window_data)
-{
-  SceneHandles &scene_handles = main_window_data.scene_handles;
-  Scene &scene = main_window_data.scene;
-  SceneState &state = main_window_data.scene_state;
-  updateSceneStateFromSceneObjects(state, scene, scene_handles);
-  solveBoxPosition(state);
-  updateErrorsInState(state);
-  updateTreeValues(main_window_data);
-  updateSceneObjects(scene, scene_handles, state);
-}
-
-
 static void
   setVectorValue(
     Eigen::Vector3f &v,
@@ -316,47 +267,13 @@ static bool
 }
 
 
-static void
-  treeValueChangedCallback(
-    MainWindowData &main_window_data,
-    const TreePath &path,
-    NumericValue value
-  )
-{
-  const TreePaths &tree_paths = main_window_data.tree_paths;
-  SceneState &state = main_window_data.scene_state;
-  bool value_was_changed = setSceneStateValue(state, path, value, tree_paths);
-
-  if (value_was_changed) {
-    bool is_box_transform_path =
-      startsWith(path, tree_paths.box.translation.path) ||
-      startsWith(path, tree_paths.box.rotation.path);
-
-    if (!is_box_transform_path) {
-      solveBoxPosition(state);
-    }
-
-    Scene &scene = main_window_data.scene;
-    const SceneHandles &scene_handles = main_window_data.scene_handles;
-    updateSceneObjects(scene, scene_handles, state);
-    updateTreeValues(main_window_data);
-  }
-  else {
-    cerr << "Handling spin_box_item_value_changed_function\n";
-    cerr << "  path: " << path << "\n";
-    cerr << "  value: " << value << "\n";
-  }
-}
-
-
 static Optional<TransformHandle>
   sceneObjectForTreeItem(
-    MainWindowData &main_window_data,
-    const TreePath &item_path
+    const TreePath &item_path,
+    const TreePaths &tree_paths,
+    const SceneHandles &scene_handles
   )
 {
-  TreePaths &tree_paths = main_window_data.tree_paths;
-  SceneHandles &scene_handles = main_window_data.scene_handles;
   Optional<TransformHandle> maybe_object;
 
   for (auto i : indicesOf(tree_paths.markers)) {
@@ -379,34 +296,13 @@ static Optional<TransformHandle>
 }
 
 
-static void treeSelectionChangedCallback(MainWindowData &main_window_data)
-{
-  TreeWidget &tree_widget = main_window_data.tree_widget;
-  Scene &scene = main_window_data.scene;
-  Optional<TreePath> maybe_selected_item_path = tree_widget.selectedItem();
-
-  if (!maybe_selected_item_path) {
-    cerr << "No tree item selected\n";
-    return;
-  }
-
-  Optional<TransformHandle> maybe_object =
-    sceneObjectForTreeItem(main_window_data, *maybe_selected_item_path);
-
-  if (maybe_object) {
-    scene.selectObject(*maybe_object);
-  }
-}
-
-
 static Optional<TreePath>
   treeItemForSceneObject(
-    MainWindowData &main_window_data,
-    TransformHandle handle
+    TransformHandle handle,
+    const TreePaths &tree_paths,
+    const SceneHandles &scene_handles
   )
 {
-  SceneHandles &scene_handles = main_window_data.scene_handles;
-  TreePaths &tree_paths = main_window_data.tree_paths;
   Optional<TreePath> maybe_tree_path;
 
   if (scene_handles.box == handle) {
@@ -429,10 +325,144 @@ static Optional<TreePath>
 }
 
 
-static void sceneSelectionChanged(MainWindowData &main_window_data)
+struct MainWindowController::Impl {
+  static void sceneChangingCallback(MainWindowController &);
+  static void sceneChangedCallback(MainWindowController &);
+  static void treeSelectionChangedCallback(MainWindowController &controller);
+  static void sceneSelectionChanged(MainWindowController &controller);
+
+  static void
+    treeValueChangedCallback(
+      MainWindowController &,
+      const TreePath &,
+      NumericValue
+    );
+
+};
+
+
+void
+  MainWindowController::Impl::sceneChangingCallback(
+    MainWindowController &controller
+  )
 {
-  Scene &scene = main_window_data.scene;
-  TreeWidget &tree_widget = main_window_data.tree_widget;
+  Data &data = controller.data;
+  // The mouse button is down.  The scene is being changed, but we don't
+  // consider this change complete.
+
+  Scene &scene = data.scene;
+  SceneHandles &scene_handles = data.scene_handles;
+  SceneState &state = data.scene_state;
+  TreeWidget &tree_widget = data.tree_widget;
+  TreePaths &tree_paths = data.tree_paths;
+  Optional<TransformHandle> th = scene.selectedObject();
+  updateSceneStateFromSceneObjects(state, scene, scene_handles);
+
+  if (!th || !movesWithBox(*th,scene_handles,state)) {
+    // If we're moving something that doesn't move with the box, then
+    // we'll go ahead and update the box position.
+    solveBoxPosition(state);
+  }
+  else {
+    // If we're moving something that moves with the box, then it will
+    // be confusing if we try to update the box position.
+  }
+
+  updateErrorsInState(state);
+  updateTreeValues(tree_widget, tree_paths, state);
+  updateSceneObjects(scene, scene_handles, state);
+}
+
+
+void
+  MainWindowController::Impl::sceneChangedCallback(
+    MainWindowController &controller
+  )
+{
+  Data &data = controller.data;
+  SceneHandles &scene_handles = data.scene_handles;
+  Scene &scene = data.scene;
+  SceneState &state = data.scene_state;
+  TreeWidget &tree_widget = data.tree_widget;
+  TreePaths &tree_paths = data.tree_paths;
+
+  updateSceneStateFromSceneObjects(state, scene, scene_handles);
+  solveBoxPosition(state);
+  updateErrorsInState(state);
+  updateTreeValues(tree_widget, tree_paths, state);
+  updateSceneObjects(scene, scene_handles, state);
+}
+
+
+void
+  MainWindowController::Impl::treeValueChangedCallback(
+    MainWindowController &controller,
+    const TreePath &path,
+    NumericValue value
+  )
+{
+  Data &data = controller.data;
+  TreeWidget &tree_widget = data.tree_widget;
+  const TreePaths &tree_paths = data.tree_paths;
+  SceneState &state = data.scene_state;
+  bool value_was_changed = setSceneStateValue(state, path, value, tree_paths);
+
+  if (value_was_changed) {
+    bool is_box_transform_path =
+      startsWith(path, tree_paths.box.translation.path) ||
+      startsWith(path, tree_paths.box.rotation.path);
+
+    if (!is_box_transform_path) {
+      solveBoxPosition(state);
+    }
+
+    Scene &scene = data.scene;
+    const SceneHandles &scene_handles = data.scene_handles;
+    updateSceneObjects(scene, scene_handles, state);
+    updateTreeValues(tree_widget, tree_paths, state);
+  }
+  else {
+    cerr << "Handling spin_box_item_value_changed_function\n";
+    cerr << "  path: " << path << "\n";
+    cerr << "  value: " << value << "\n";
+  }
+}
+
+
+void
+  MainWindowController::Impl::treeSelectionChangedCallback(
+    MainWindowController &controller
+  )
+{
+  Data &data = controller.data;
+  TreeWidget &tree_widget = data.tree_widget;
+  Scene &scene = data.scene;
+  Optional<TreePath> maybe_selected_item_path = tree_widget.selectedItem();
+
+  if (!maybe_selected_item_path) {
+    cerr << "No tree item selected\n";
+    return;
+  }
+
+  Optional<TransformHandle> maybe_object =
+    sceneObjectForTreeItem(
+      *maybe_selected_item_path, data.tree_paths, data.scene_handles
+    );
+
+  if (maybe_object) {
+    scene.selectObject(*maybe_object);
+  }
+}
+
+
+void
+  MainWindowController::Impl::sceneSelectionChanged(
+    MainWindowController &controller
+  )
+{
+  Data &data = controller.data;
+  Scene &scene = data.scene;
+  TreeWidget &tree_widget = data.tree_widget;
 
   Optional<TransformHandle> maybe_selected_transform_handle =
     scene.selectedObject();
@@ -446,7 +476,11 @@ static void sceneSelectionChanged(MainWindowData &main_window_data)
     *maybe_selected_transform_handle;
 
   Optional<TreePath> maybe_tree_path =
-    treeItemForSceneObject(main_window_data, selected_transform_handle);
+    treeItemForSceneObject(
+      selected_transform_handle,
+      data.tree_paths,
+      data.scene_handles
+    );
 
   if (maybe_tree_path) {
     tree_widget.selectItem(*maybe_tree_path);
@@ -457,7 +491,7 @@ static void sceneSelectionChanged(MainWindowData &main_window_data)
 }
 
 
-MainWindowData::MainWindowData(
+MainWindowController::Data::Data(
   Scene &scene_arg,
   TreeWidget &tree_widget_arg
 )
@@ -471,26 +505,27 @@ MainWindowData::MainWindowData(
 
 
 MainWindowController::MainWindowController(Scene &scene,TreeWidget &tree_widget)
-: main_window_data{scene,tree_widget}
+: data{scene,tree_widget}
 {
-  SceneHandles &scene_handles = main_window_data.scene_handles;
-  SceneState &state = main_window_data.scene_state;
+  TreePaths &tree_paths = data.tree_paths;
+  SceneHandles &scene_handles = data.scene_handles;
+  SceneState &state = data.scene_state;
   updateSceneStateFromSceneObjects(state, scene, scene_handles);
   solveBoxPosition(state);
   updateErrorsInState(state);
   updateSceneObjects(scene, scene_handles, state);
-  updateTreeValues(main_window_data);
-  scene.changed_callback = [&]{ sceneChangedCallback(main_window_data); };
-  scene.changing_callback = [&]{ sceneChangingCallback(main_window_data); };
+  updateTreeValues(tree_widget, tree_paths, state);
+  scene.changed_callback = [&]{ Impl::sceneChangedCallback(*this); };
+  scene.changing_callback = [&]{ Impl::sceneChangingCallback(*this); };
 
   scene.selection_changed_callback =
-    [this]{ sceneSelectionChanged(main_window_data); };
+    [this]{ Impl::sceneSelectionChanged(*this); };
 
   tree_widget.spin_box_item_value_changed_callback =
     [this](const TreePath &path, NumericValue value){
-      treeValueChangedCallback(main_window_data, path, value);
+      Impl::treeValueChangedCallback(*this, path, value);
     };
 
   tree_widget.selection_changed_callback =
-    [this](){ treeSelectionChangedCallback(main_window_data); };
+    [this](){ Impl::treeSelectionChangedCallback(*this); };
 }
