@@ -5,7 +5,7 @@
 #include "globaltransform.hpp"
 #include "settransform.hpp"
 #include "maketransform.hpp"
-#include "createsceneobjects.hpp"
+#include "sceneobjects.hpp"
 
 using std::cerr;
 using std::ostream;

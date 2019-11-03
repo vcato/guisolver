@@ -24,6 +24,9 @@ struct SceneState {
 
   struct Box {
     Transform global;
+    float scale_x =  5.0;
+    float scale_y =  0.1;
+    float scale_z = 10.0;
   };
 
   struct DistanceError {

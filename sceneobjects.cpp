@@ -1,6 +1,7 @@
-#include "createsceneobjects.hpp"
+#include "sceneobjects.hpp"
 
 #include "settransform.hpp"
+#include "indicesof.hpp"
 
 
 using TransformHandle = Scene::TransformHandle;
@@ -90,7 +91,14 @@ static SceneHandles::DistanceError
 SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
 {
   auto box_handle = scene.createBox();
-  scene.setGeometryScale(box_handle,5,.1,10);
+
+  scene.setGeometryScale(
+    box_handle,
+    state.box.scale_x,
+    state.box.scale_y,
+    state.box.scale_z
+  );
+
   setTransform(box_handle, state.box.global, scene);
 
   vector<SceneHandles::Marker> marker_handles;
@@ -112,4 +120,62 @@ SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
     marker_handles,
     distance_error_handles
   };
+}
+
+
+void
+  updateBoxInScene(
+    Scene &scene,
+    const TransformHandle &box_handle,
+    const SceneState::Box &box_state
+  )
+{
+  setTransform(box_handle, box_state.global, scene);
+
+  scene.setGeometryScale(
+    box_handle, box_state.scale_x, box_state.scale_y, box_state.scale_z
+  );
+}
+
+
+static void
+  updateDistanceErrorInScene(
+    Scene &scene,
+    const SceneHandles::DistanceError &distance_error_handles,
+    const SceneState::DistanceError &distance_error_state,
+    const SceneHandles &scene_handles
+  )
+{
+  TransformHandle line_start =
+    scene_handles.markers[
+      distance_error_state.start_marker_index
+    ].handle;
+
+  TransformHandle line_end =
+    scene_handles.markers[
+      distance_error_state.end_marker_index
+    ].handle;
+
+  Scene::Point start = scene.worldPoint({0,0,0}, line_start);
+  Scene::Point end = scene.worldPoint({0,0,0}, line_end);
+  scene.setStartPoint(distance_error_handles.line, start);
+  scene.setEndPoint(distance_error_handles.line, end);
+}
+
+
+void
+  updateDistanceErrorsInScene(
+    Scene &scene,
+    const SceneHandles &scene_handles,
+    const SceneState &scene_state
+  )
+{
+  for (auto i : indicesOf(scene_state.distance_errors)) {
+    updateDistanceErrorInScene(
+      scene,
+      scene_handles.distance_errors[i],
+      scene_state.distance_errors[i],
+      scene_handles
+    );
+  }
 }

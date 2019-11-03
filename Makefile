@@ -29,7 +29,7 @@ guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
   qtslider_moc.o qtspinbox.o qtspinbox_moc.o treevalues.o \
   qttreewidget.o qttreewidget_moc.o \
   mainwindowcontroller.o updatescenestatefromscene.o globaltransform.o \
-  settransform.o createsceneobjects.o intersector.o
+  settransform.o sceneobjects.o intersector.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 osgutil_test: osgutil_test.o osgutil.o
