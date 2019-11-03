@@ -16,7 +16,7 @@ QTreeWidgetItem& insertChildItem(QTreeWidgetItem &parent_item,int index)
   QTreeWidgetItem *item_ptr = new QTreeWidgetItem;
   parent_item.insertChild(index,item_ptr);
   QTreeWidgetItem &item = *item_ptr;
-  item.setExpanded(true);
+  item.setExpanded(false);
   return item;
 }
 
