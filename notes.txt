@@ -373,23 +373,3 @@ t.origin
     * value: [Distance]
       * start: local3
       * end: global3
----
-Clicking on a line should select the distance error.
-We need to be able to select lines in the scene.
-* This really just means changing the line color.
-We need to be able to click on a line in the scene and have it select
-the corresponding distance error.
-* This is a problem because we don't have a way to do a pick that can
-  work with either lines or solid geometry.
-  * Ideally we would be able to click and create a frustum, then for each
-    pixel in that frustum, pick the pixel with the least depth, and then
-    find which geode that pixel came from.
-* Seems like we generally have to take this approach:
-  * Use the LineSegmentIntersector to find a node in the scene.
-    * If this finds something, then use that.
-    * If it doesn't find anything, then use the PolytopeIntersector
-      and if that finds a geode with a line, then use that.
-  * The issue right now is that the OSGPickHandler can't tell
-    whether a node is a LineDrawable because that class definition
-    only exists within osgscene.cpp
-  * Would it be better to put the OSGPickHandler in the OSGScene?
