@@ -303,7 +303,7 @@ void
     const SceneState &state
   )
 {
-  const Transform &box_global = state.box_global;
+  const Transform &box_global = state.box.global;
 
   {
     const TreePaths::Translation &translation_paths =

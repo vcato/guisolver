@@ -291,6 +291,31 @@ t.origin
     * [Define]
       * name: name
       * self.origin
+* [Define]
+  * name: "DistanceError"
+  * [Parameter]
+    * name: "start"
+    * type: Marker
+  * [Parameter]
+    * name: "end"
+    * type: Marker
+  * [Attribute]
+    * name: "distance"
+    * value: distanceBetween(start.position, end.position)
+  * [Parameter]
+    * name: "desired_distance"
+    * type: [Float]
+      * minimum: 0
+  * [Parameter]
+    * name: "weight"
+    * type: [Float]
+      * minimum: 0
+  * [Attribute]
+    * name: "error"
+    * value: squared(distance - desired_distance) * weight
+  * [Line]
+    * start: start.position
+    * end: end.position
 * [Scene]
   * [Transform]
     * tx: [Variable]
@@ -352,24 +377,12 @@ t.origin
       * y: 2
       * z: 3
     * name: "global3"
-  * [Line]
+  * [DistanceError]
     * start: local1
     * end: global1
-  * [Line]
+  * [DistanceError]
     * start: local2
     * end: global2
-  * [Line]
+  * [DistanceError]
     * start: local3
     * end: global3
-  * [Error]
-    * value: [Distance]
-      * start: local1
-      * end: global1
-  * [Error]
-    * value: [Distance]
-      * start: local2
-      * end: global2
-  * [Error]
-    * value: [Distance]
-      * start: local3
-      * end: global3

@@ -114,7 +114,7 @@ static void sceneChangingCallback(MainWindowData &main_window_data)
     // If we're moving something that doesn't move with the box, then
     // we'll go ahead and update the box position.
     solveBoxPosition(state);
-    setTransform(scene_handles.box, state.box_global, scene);
+    setTransform(scene_handles.box, state.box.global, scene);
   }
   else {
     // If we're moving something that moves with the box, then it will
@@ -134,7 +134,7 @@ static void sceneChangedCallback(MainWindowData &main_window_data)
   SceneState &state = main_window_data.scene_state;
   updateSceneStateFromScene(state, scene, scene_handles);
   solveBoxPosition(state);
-  setTransform(scene_handles.box, state.box_global, scene);
+  setTransform(scene_handles.box, state.box.global, scene);
   updateErrorsInState(state);
   updateTreeValues(main_window_data);
   updateDistanceErrorsInScene(scene,scene_handles,state);
@@ -320,7 +320,7 @@ static bool
   const TreePaths::Box &box_paths = tree_paths.box;
 
   if (startsWith(path,box_paths.path)) {
-    Transform box_global = scene_state.box_global;
+    Transform box_global = scene_state.box.global;
 
     if (setTransformValue(box_global, path, value, box_paths)) {
       setTransform(scene_setup.box, box_global, scene);
@@ -385,7 +385,7 @@ static void
     if (!is_box_transform_path) {
       updateSceneStateFromScene(state, scene, scene_handles);
       solveBoxPosition(state);
-      setTransform(scene_handles.box, state.box_global, scene);
+      setTransform(scene_handles.box, state.box.global, scene);
     }
 
     updateDistanceErrorsInScene(scene, scene_handles, state);
@@ -467,7 +467,7 @@ static void updateBoxPositionInScene(MainWindowData &main_window_data)
   SceneHandles &scene_handles = main_window_data.scene_handles;
   SceneState &state = main_window_data.scene_state;
   Scene &scene = main_window_data.scene;
-  setTransform(scene_handles.box, state.box_global, scene);
+  setTransform(scene_handles.box, state.box.global, scene);
 }
 
 

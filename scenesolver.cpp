@@ -70,10 +70,10 @@ static Transform makeTransform(const vector<float> &variables)
 void solveBoxPosition(SceneState &scene_state)
 {
   // Extract variables from transform
-  vector<float> variables = extractVariables(scene_state.box_global);
+  vector<float> variables = extractVariables(scene_state.box.global);
 
   auto f = [&]{
-    scene_state.box_global = makeTransform(variables);
+    scene_state.box.global = makeTransform(variables);
     updateErrorsInState(scene_state);
     return sceneError(scene_state);
   };
@@ -82,5 +82,5 @@ void solveBoxPosition(SceneState &scene_state)
   minimize(f, variables);
 
   // return resulting transform.
-  scene_state.box_global = makeTransform(variables);
+  scene_state.box.global = makeTransform(variables);
 }

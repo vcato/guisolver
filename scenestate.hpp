@@ -22,6 +22,10 @@ struct SceneState {
     String name;
   };
 
+  struct Box {
+    Transform global;
+  };
+
   struct DistanceError {
     MarkerIndex start_marker_index;
     MarkerIndex end_marker_index;
@@ -41,7 +45,7 @@ struct SceneState {
     float error = 0;
   };
 
-  Transform box_global;
+  Box box;
   Markers markers;
   DistanceErrors distance_errors;
   float total_error = 0;
@@ -65,7 +69,7 @@ struct SceneState {
   Point markerPredicted(int marker_index) const
   {
     if (markers[marker_index].is_local) {
-      return box_global * markers[marker_index].position;
+      return box.global * markers[marker_index].position;
     }
     else {
       return markers[marker_index].position;

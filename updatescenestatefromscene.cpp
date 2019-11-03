@@ -44,5 +44,5 @@ void
   )
 {
   updateStateMarkerPositions(state.markers, scene_handles.markers, scene);
-  state.box_global = globalTransform(scene, scene_handles.box);
+  state.box.global = globalTransform(scene, scene_handles.box);
 }

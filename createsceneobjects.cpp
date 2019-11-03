@@ -91,7 +91,7 @@ SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
 {
   auto box_handle = scene.createBox();
   scene.setGeometryScale(box_handle,5,.1,10);
-  setTransform(box_handle, state.box_global, scene);
+  setTransform(box_handle, state.box.global, scene);
 
   vector<SceneHandles::Marker> marker_handles;
 

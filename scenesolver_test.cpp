@@ -132,7 +132,7 @@ static Example example(RandomEngine &engine)
   // Then we can set the box global transform to some other random
   // transform.
 
-  scene_state.box_global = randomTransform(engine);
+  scene_state.box.global = randomTransform(engine);
   return result;
 }
 

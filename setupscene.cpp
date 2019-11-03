@@ -77,7 +77,7 @@ SceneState defaultSceneState()
 {
   SceneState result;
 
-  result.box_global =
+  result.box.global =
     makeTransform(defaultBoxCoordinateAxes(),defaultBoxTranslation());
 
   createLocalMarker(result,  {1,1,0}, "local1");
