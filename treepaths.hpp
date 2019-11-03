@@ -45,10 +45,22 @@ struct TreePaths {
     explicit Rotation(const XYZ &xyz_arg) : XYZ(xyz_arg) {}
   };
 
+  struct Scale : XYZ
+  {
+    Scale() {}
+    explicit Scale(const XYZ &xyz_arg) : XYZ(xyz_arg) {}
+  };
+
   struct Box {
+    struct Geometry {
+      TreePath path;
+      Scale scale;
+    };
+
     TreePath path;
     Translation translation;
     Rotation rotation;
+    Geometry geometry;
   };
 
   struct DistanceError {

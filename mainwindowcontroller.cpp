@@ -274,7 +274,19 @@ static bool
     Transform box_global = scene_state.box.global;
 
     if (setTransformValue(box_global, path, value, box_paths)) {
+      scene_state.box.global = box_global;
       updateBoxInScene(scene, scene_handles.box, scene_state.box);
+      return true;
+    }
+
+    if (startsWith(path, box_paths.geometry.path)) {
+      SceneState::Box &box = scene_state.box;
+      Eigen::Vector3f v = {box.scale_x, box.scale_y, box.scale_z};
+      const TreePaths::XYZ& xyz_path = box_paths.geometry.scale;
+      setVectorValue(v, path, value, xyz_path);
+      box.scale_x = v.x();
+      box.scale_y = v.y();
+      box.scale_z = v.z();
       return true;
     }
   }
@@ -323,7 +335,6 @@ static void
   Scene &scene = main_window_data.scene;
   const SceneHandles &scene_handles = main_window_data.scene_handles;
   SceneState &state = main_window_data.scene_state;
-  updateSceneStateFromScene(state, scene, scene_handles);
 
   bool scene_value_was_changed =
     setSceneValue(state, scene, path, value, tree_paths, scene_handles);

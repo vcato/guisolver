@@ -1,11 +1,13 @@
 #include "sceneobjects.hpp"
 
+#include <iostream>
 #include "settransform.hpp"
 #include "indicesof.hpp"
 
-
+using std::cerr;
 using TransformHandle = Scene::TransformHandle;
 using LineHandle = Scene::LineHandle;
+
 
 static SceneHandles::Marker
   createSceneLocal(

@@ -151,6 +151,8 @@ static string totalErrorLabel(float total_error)
 
 TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
 {
+  const NumericValue no_maximum = noMaximumNumericValue();
+
   TreePaths tree_paths;
   tree_widget.createVoidItem({0},LabelProperties{"[Scene]"});
 
@@ -165,7 +167,12 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
   TreePath box_path = {0,0};
   TreePath box_translation_path = childPath(box_path,0);
   TreePath box_rotation_path = childPath(box_path,1);
+  TreePath box_geometry_path = childPath(box_path, 2);
   tree_paths.box.path = box_path;
+
+  TreePath box_scale_x_path = childPath(box_geometry_path, 0);
+  TreePath box_scale_y_path = childPath(box_geometry_path, 1);
+  TreePath box_scale_z_path = childPath(box_geometry_path, 2);
 
   tree_widget.createVoidItem(
     box_translation_path,LabelProperties{"translation: []"}
@@ -182,8 +189,37 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
     TreePaths::Rotation(createXYZ(tree_widget, box_rotation_path));
 
   tree_widget.createVoidItem(
-    {0,0,2},LabelProperties{"[Box]"}
+    box_geometry_path, LabelProperties{"[Box]"}
   );
+
+  tree_widget.createNumericItem(
+    box_scale_x_path,
+    LabelProperties{"scale_x:"},
+    /*value*/scene_state.box.scale_x,
+    /*minimum_value*/0,
+    no_maximum
+  );
+
+  tree_widget.createNumericItem(
+    box_scale_y_path,
+    LabelProperties{"scale_y:"},
+    /*value*/scene_state.box.scale_y,
+    /*minimum_value*/0,
+    no_maximum
+  );
+
+  tree_widget.createNumericItem(
+    box_scale_z_path,
+    LabelProperties{"scale_z:"},
+    /*value*/scene_state.box.scale_z,
+    /*minimum_value*/0,
+    no_maximum
+  );
+
+  tree_paths.box.geometry.path = box_geometry_path;
+  tree_paths.box.geometry.scale.x = box_scale_x_path;
+  tree_paths.box.geometry.scale.y = box_scale_y_path;
+  tree_paths.box.geometry.scale.z = box_scale_z_path;
 
   {
     int n_box_children = 3;
