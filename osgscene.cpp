@@ -452,7 +452,7 @@ Optional<size_t>
 Optional<TransformHandle>
   OSGScene::Impl::selectedTransform(const OSGScene &scene)
 {
-  osg::Node *node_ptr = scene.selection_handler.selected_node_ptr;
+  osg::Node *node_ptr = scene.selection_handler.selectedNodePtr();
 
   if (!node_ptr) {
     return {};
@@ -542,21 +542,21 @@ void
     osg::Node *new_selected_node_ptr
   )
 {
-  if (selected_node_ptr) {
-    osg::Geode *geode_ptr = selected_node_ptr->asGeode();
+  if (_selected_node_ptr) {
+    osg::Geode *geode_ptr = _selected_node_ptr->asGeode();
 
     if (geode_ptr) {
-      setGeodeColor(*geode_ptr, old_color);
+      setGeodeColor(*geode_ptr, _old_color);
     }
   }
 
-  selected_node_ptr = new_selected_node_ptr;
+  _selected_node_ptr = new_selected_node_ptr;
 
-  if (selected_node_ptr) {
-    osg::Geode *geode_ptr = selected_node_ptr->asGeode();
+  if (_selected_node_ptr) {
+    osg::Geode *geode_ptr = _selected_node_ptr->asGeode();
 
     if (geode_ptr) {
-      old_color = geodeColor(*geode_ptr);
+      _old_color = geodeColor(*geode_ptr);
       setGeodeColor(*geode_ptr, selectionColor());
     }
   }
@@ -566,19 +566,19 @@ void
 void
   OSGScene::SelectionHandler::attachDraggerTo(osg::Node *new_selected_node_ptr)
 {
-  if (dragger_node_ptr) {
-    removeDraggerFrom(&transformParentOf(dragger_node_ptr));
-    dragger_node_ptr = 0;
+  if (_dragger_node_ptr) {
+    removeDraggerFrom(&transformParentOf(_dragger_node_ptr));
+    _dragger_node_ptr = 0;
   }
 
-  dragger_node_ptr = new_selected_node_ptr;
+  _dragger_node_ptr = new_selected_node_ptr;
 
-  if (dragger_node_ptr) {
+  if (_dragger_node_ptr) {
     osg::ref_ptr<osgManipulator::DraggerCallback> dc =
       new Impl::DraggerCallback(scene);
 
     addDraggerTo(
-      &transformParentOf(dragger_node_ptr),
+      &transformParentOf(_dragger_node_ptr),
       use_screen_relative_dragger,
       *dc
     );
@@ -624,10 +624,7 @@ static bool nodeIsShape(osg::Node &node)
 }
 
 
-void
-  OSGScene::SelectionHandler::nodeSelected(
-    osg::Node *new_selected_node_ptr
-  )
+void OSGScene::SelectionHandler::nodeClicked(osg::Node *new_selected_node_ptr)
 {
   if (new_selected_node_ptr) {
     if (nodeIsLine(*new_selected_node_ptr)) {
@@ -639,7 +636,7 @@ void
     }
   }
 
-  changeSelectedNodeTo(new_selected_node_ptr);
+  selectNode(new_selected_node_ptr);
 
   if (scene.selection_changed_callback) {
     scene.selection_changed_callback();
@@ -1085,18 +1082,24 @@ Optional<TransformHandle> OSGScene::selectedObject() const
 }
 
 
-void OSGScene::selectObject(TransformHandle handle)
+void OSGScene::SelectionHandler::selectNode(osg::Node *node_ptr)
 {
-  osg::Node *node_ptr = Impl::geometryTransform(*this,handle).getChild(0);
-
-  selection_handler.changeSelectedNodeTo(node_ptr);
+  changeSelectedNodeTo(node_ptr);
 
   if (!node_ptr || !nodeIsLine(*node_ptr)) {
-    selection_handler.attachDraggerTo(node_ptr);
+    attachDraggerTo(node_ptr);
   }
   else {
-    selection_handler.attachDraggerTo(nullptr);
+    attachDraggerTo(nullptr);
   }
+}
+
+
+void OSGScene::selectObject(TransformHandle handle)
+{
+  selection_handler.selectNode(
+    Impl::geometryTransform(*this,handle).getChild(0)
+  );
 }
 
 

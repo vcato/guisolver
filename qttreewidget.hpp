@@ -57,7 +57,6 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
     void
       setItemLabel(const TreePath &path,const std::string &new_label) override;
 
-  public:
     TreePath itemPath(QTreeWidgetItem &item) const;
     void selectItem(const TreePath &path);
     void setItemExpanded(const TreePath &path,bool new_expanded_state);
@@ -71,6 +70,7 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
 
   private:
     struct Impl;
+    bool _ignore_selelection_changed = false;
 
     static QTreeWidgetItem&
       createChildItem(QTreeWidgetItem &parent_item,const std::string &label);

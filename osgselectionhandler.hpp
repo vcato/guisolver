@@ -5,7 +5,7 @@
 
 
 struct OSGSelectionHandler {
-  virtual void nodeSelected(osg::Node *new_selected_node_ptr) = 0;
+  virtual void nodeClicked(osg::Node *new_selected_node_ptr) = 0;
 };
 
 

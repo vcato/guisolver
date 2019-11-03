@@ -651,7 +651,9 @@ void QtTreeWidget::removeChildItems(const TreePath &path)
 
 void QtTreeWidget::selectItem(const TreePath &path)
 {
+  _ignore_selelection_changed = true;
   setCurrentItem(&itemFromPath(path));
+  _ignore_selelection_changed = false;
 }
 
 
@@ -663,6 +665,8 @@ void QtTreeWidget::setItemExpanded(const TreePath &path,bool new_expanded_state)
 
 void QtTreeWidget::selectionChangedSlot()
 {
+  if (_ignore_selelection_changed) return;
+
   if (selection_changed_callback) {
     selection_changed_callback();
   }

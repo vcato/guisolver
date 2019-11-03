@@ -44,17 +44,23 @@ class OSGScene : public Scene {
   private:
     struct Impl;
 
-    struct SelectionHandler : OSGSelectionHandler {
-      osg::Node *selected_node_ptr = nullptr;
-      osg::Node *dragger_node_ptr = nullptr;
-      osg::Vec3 old_color;
-      bool use_screen_relative_dragger = false;
-      OSGScene &scene;
+    class SelectionHandler : public OSGSelectionHandler {
+      public:
+        bool use_screen_relative_dragger = false;
+        OSGScene &scene;
 
-      SelectionHandler(OSGScene &scene_arg);
-      void nodeSelected(osg::Node *) override;
-      void attachDraggerTo(osg::Node *);
-      void changeSelectedNodeTo(osg::Node *);
+        SelectionHandler(OSGScene &scene_arg);
+        void selectNode(osg::Node *node_ptr);
+        osg::Node *selectedNodePtr() const { return _selected_node_ptr; }
+
+      private:
+        osg::Node *_selected_node_ptr = nullptr;
+        osg::Node *_dragger_node_ptr = nullptr;
+        osg::Vec3 _old_color;
+
+        void nodeClicked(osg::Node *) override;
+        void attachDraggerTo(osg::Node *);
+        void changeSelectedNodeTo(osg::Node *);
     };
 
     vector<osg::MatrixTransform *> transform_ptrs;

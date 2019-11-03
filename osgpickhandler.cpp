@@ -223,10 +223,10 @@ bool
 #endif
 
   if (!new_selected_node_ptr) {
-    selection_handler_ptr->nodeSelected(nullptr);
+    selection_handler_ptr->nodeClicked(nullptr);
   }
   else if (!isDragger(new_selected_node_ptr)) {
-    selection_handler_ptr->nodeSelected(new_selected_node_ptr);
+    selection_handler_ptr->nodeClicked(new_selected_node_ptr);
   }
   else {
     cerr << "Selected a dragger\n";
