@@ -207,29 +207,13 @@ bool
 
   assert(view_ptr);
 
-#if 0
-  osg::Node *new_selected_node_ptr =
-    findLineSegmentIntersection(*view_ptr, event_adapter);
-  cerr << "line intersection node: " << new_selected_node_ptr << "\n";
-#endif
-#if 1
-  osg::Node *new_selected_node_ptr =
-    findIntersection(*view_ptr, event_adapter);
-#endif
+  osg::Node *clicked_node_ptr = findIntersection(*view_ptr, event_adapter);
 
-#if 0
-  osg::Node *new_selected_node_ptr =
-    findPolytopeIntersection(event_adapter, *view_ptr);
-#endif
-
-  if (!new_selected_node_ptr) {
+  if (!clicked_node_ptr) {
     selection_handler_ptr->nodeClicked(nullptr);
   }
-  else if (!isDragger(new_selected_node_ptr)) {
-    selection_handler_ptr->nodeClicked(new_selected_node_ptr);
-  }
-  else {
-    cerr << "Selected a dragger\n";
+  else if (!isDragger(clicked_node_ptr)) {
+    selection_handler_ptr->nodeClicked(clicked_node_ptr);
   }
 
   return true;
