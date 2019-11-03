@@ -1,6 +1,13 @@
 #include "scenehandles.hpp"
 #include "scenestate.hpp"
+#include "scene.hpp"
 
+extern void
+  updateSceneStateFromScene(
+    SceneState &,
+    const Scene &,
+    const SceneHandles &
+  );
 
 extern SceneHandles createSceneObjects(const SceneState &state, Scene &scene);
 

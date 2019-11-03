@@ -28,7 +28,7 @@ guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
   qtlineedit.o qtlineedit_moc.o qtslider.o qtslider.o \
   qtslider_moc.o qtspinbox.o qtspinbox_moc.o treevalues.o \
   qttreewidget.o qttreewidget_moc.o \
-  mainwindowcontroller.o updatescenestatefromscene.o globaltransform.o \
+  mainwindowcontroller.o globaltransform.o \
   settransform.o sceneobjects.o intersector.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 

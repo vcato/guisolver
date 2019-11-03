@@ -9,7 +9,6 @@
 #include "startswith.hpp"
 #include "rotationvector.hpp"
 #include "indicesof.hpp"
-#include "updatescenestatefromscene.hpp"
 #include "sceneobjects.hpp"
 
 using std::cerr;
@@ -56,9 +55,9 @@ static void sceneChangingCallback(MainWindowData &main_window_data)
   // consider this change complete.
 
   Scene &scene = main_window_data.scene;
-  Optional<TransformHandle> th = scene.selectedObject();
   SceneHandles &scene_handles = main_window_data.scene_handles;
   SceneState &state = main_window_data.scene_state;
+  Optional<TransformHandle> th = scene.selectedObject();
   updateSceneStateFromScene(state, scene, scene_handles);
 
   if (!th || !movesWithBox(*th,scene_handles,state)) {
