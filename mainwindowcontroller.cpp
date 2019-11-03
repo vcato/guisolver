@@ -326,23 +326,22 @@ static Optional<TreePath>
 
 
 struct MainWindowController::Impl {
-  static void sceneChangingCallback(MainWindowController &);
-  static void sceneChangedCallback(MainWindowController &);
-  static void treeSelectionChangedCallback(MainWindowController &controller);
-  static void sceneSelectionChanged(MainWindowController &controller);
+  static void handleSceneChanging(MainWindowController &);
+  static void handleSceneChanged(MainWindowController &);
+  static void handleTreeSelectionChanged(MainWindowController &controller);
+  static void handleSceneSelectionChanged(MainWindowController &controller);
 
   static void
-    treeValueChangedCallback(
+    handleTreeValueChanged(
       MainWindowController &,
       const TreePath &,
       NumericValue
     );
-
 };
 
 
 void
-  MainWindowController::Impl::sceneChangingCallback(
+  MainWindowController::Impl::handleSceneChanging(
     MainWindowController &controller
   )
 {
@@ -375,7 +374,7 @@ void
 
 
 void
-  MainWindowController::Impl::sceneChangedCallback(
+  MainWindowController::Impl::handleSceneChanged(
     MainWindowController &controller
   )
 {
@@ -395,7 +394,7 @@ void
 
 
 void
-  MainWindowController::Impl::treeValueChangedCallback(
+  MainWindowController::Impl::handleTreeValueChanged(
     MainWindowController &controller,
     const TreePath &path,
     NumericValue value
@@ -430,7 +429,7 @@ void
 
 
 void
-  MainWindowController::Impl::treeSelectionChangedCallback(
+  MainWindowController::Impl::handleTreeSelectionChanged(
     MainWindowController &controller
   )
 {
@@ -456,7 +455,7 @@ void
 
 
 void
-  MainWindowController::Impl::sceneSelectionChanged(
+  MainWindowController::Impl::handleSceneSelectionChanged(
     MainWindowController &controller
   )
 {
@@ -515,17 +514,17 @@ MainWindowController::MainWindowController(Scene &scene,TreeWidget &tree_widget)
   updateErrorsInState(state);
   updateSceneObjects(scene, scene_handles, state);
   updateTreeValues(tree_widget, tree_paths, state);
-  scene.changed_callback = [&]{ Impl::sceneChangedCallback(*this); };
-  scene.changing_callback = [&]{ Impl::sceneChangingCallback(*this); };
+  scene.changed_callback = [&]{ Impl::handleSceneChanged(*this); };
+  scene.changing_callback = [&]{ Impl::handleSceneChanging(*this); };
 
   scene.selection_changed_callback =
-    [this]{ Impl::sceneSelectionChanged(*this); };
+    [this]{ Impl::handleSceneSelectionChanged(*this); };
 
   tree_widget.spin_box_item_value_changed_callback =
     [this](const TreePath &path, NumericValue value){
-      Impl::treeValueChangedCallback(*this, path, value);
+      Impl::handleTreeValueChanged(*this, path, value);
     };
 
   tree_widget.selection_changed_callback =
-    [this](){ Impl::treeSelectionChangedCallback(*this); };
+    [this](){ Impl::handleTreeSelectionChanged(*this); };
 }
