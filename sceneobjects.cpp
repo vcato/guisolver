@@ -43,7 +43,7 @@ static void
 
 
 void
-  updateSceneStateFromScene(
+  updateSceneStateFromSceneObjects(
     SceneState &state,
     const Scene &scene,
     const SceneHandles &scene_handles
@@ -52,6 +52,7 @@ void
   updateStateMarkerPositions(state.markers, scene_handles.markers, scene);
   state.box.global = globalTransform(scene, scene_handles.box);
 }
+
 
 static SceneHandles::Marker
   createSceneLocal(
@@ -169,7 +170,7 @@ SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
 }
 
 
-void
+static void
   updateBoxInScene(
     Scene &scene,
     const TransformHandle &box_handle,
@@ -209,7 +210,7 @@ static void
 }
 
 
-void
+static void
   updateDistanceErrorsInScene(
     Scene &scene,
     const SceneHandles &scene_handles,
@@ -224,4 +225,41 @@ void
       scene_handles
     );
   }
+}
+
+
+static void
+  updateMarkerInScene(
+    Scene &scene,
+    const SceneHandles::Marker &marker_handles,
+    const SceneState::Marker &marker_state
+  )
+{
+  scene.setTranslation(marker_handles.handle, marker_state.position);
+}
+
+
+static void
+  updateMarkersInScene(
+    Scene &scene,
+    const SceneHandles::Markers &markers_handles,
+    const SceneState::Markers &marker_states
+  )
+{
+  for (auto i : indicesOf(marker_states)) {
+    updateMarkerInScene(scene, markers_handles[i], marker_states[i]);
+  }
+}
+
+
+void
+  updateSceneObjects(
+    Scene &scene,
+    const SceneHandles &scene_handles,
+    const SceneState &state
+  )
+{
+  updateBoxInScene(scene, scene_handles.box, state.box);
+  updateMarkersInScene(scene, scene_handles.markers, state.markers);
+  updateDistanceErrorsInScene(scene, scene_handles, state);
 }

@@ -58,7 +58,7 @@ static void sceneChangingCallback(MainWindowData &main_window_data)
   SceneHandles &scene_handles = main_window_data.scene_handles;
   SceneState &state = main_window_data.scene_state;
   Optional<TransformHandle> th = scene.selectedObject();
-  updateSceneStateFromScene(state, scene, scene_handles);
+  updateSceneStateFromSceneObjects(state, scene, scene_handles);
 
   if (!th || !movesWithBox(*th,scene_handles,state)) {
     // If we're moving something that doesn't move with the box, then
@@ -72,8 +72,7 @@ static void sceneChangingCallback(MainWindowData &main_window_data)
 
   updateErrorsInState(state);
   updateTreeValues(main_window_data);
-  updateBoxInScene(scene, scene_handles.box, state.box);
-  updateDistanceErrorsInScene(scene, scene_handles, state);
+  updateSceneObjects(scene, scene_handles, state);
 }
 
 
@@ -82,12 +81,11 @@ static void sceneChangedCallback(MainWindowData &main_window_data)
   SceneHandles &scene_handles = main_window_data.scene_handles;
   Scene &scene = main_window_data.scene;
   SceneState &state = main_window_data.scene_state;
-  updateSceneStateFromScene(state, scene, scene_handles);
+  updateSceneStateFromSceneObjects(state, scene, scene_handles);
   solveBoxPosition(state);
   updateErrorsInState(state);
   updateTreeValues(main_window_data);
-  updateBoxInScene(scene, scene_handles.box, state.box);
-  updateDistanceErrorsInScene(scene,scene_handles,state);
+  updateSceneObjects(scene, scene_handles, state);
 }
 
 
@@ -167,17 +165,14 @@ static bool
 
 static bool
   setMarkerValue(
-    Scene &scene,
     const TreePath &path,
     NumericValue value,
     const TreePaths::Marker &marker_path,
-    const SceneHandles::Marker &setup_marker
+    SceneState::Marker &marker_state
   )
 {
   if (startsWith(path,marker_path.position.path)) {
-    Scene::Point v = scene.translation(setup_marker.handle);
-    setVectorValue(v, path, value, marker_path.position);
-    scene.setTranslation(setup_marker.handle, v);
+    setVectorValue(marker_state.position, path, value, marker_path.position);
     return true;
   }
 
@@ -237,17 +232,19 @@ static bool
 
 static bool
   setMarkersValue(
-    Scene &scene,
     const TreePath &path,
     NumericValue value,
     const TreePaths::Markers &markers_paths,
-    const SceneHandles::Markers &setup_markers
+    SceneState::Markers &marker_states
   )
 {
-  assert(markers_paths.size() == setup_markers.size());
-
   for (auto i : indicesOf(markers_paths)) {
-    if (setMarkerValue(scene,path,value,markers_paths[i],setup_markers[i])) {
+    bool value_was_set =
+      setMarkerValue(
+        path,value,markers_paths[i],marker_states[i]
+      );
+
+    if (value_was_set) {
       return true;
     }
   }
@@ -258,13 +255,11 @@ static bool
 
 
 static bool
-  setSceneValue(
+  setSceneStateValue(
     SceneState &scene_state,
-    Scene &scene,
     const TreePath &path,
     NumericValue value,
-    const TreePaths &tree_paths,
-    const SceneHandles &scene_handles
+    const TreePaths &tree_paths
   )
 {
   const TreePaths::Box &box_paths = tree_paths.box;
@@ -274,7 +269,6 @@ static bool
 
     if (setTransformValue(box_global, path, value, box_paths)) {
       scene_state.box.global = box_global;
-      updateBoxInScene(scene, scene_handles.box, scene_state.box);
       return true;
     }
 
@@ -293,11 +287,10 @@ static bool
   {
     bool was_markers_value =
       setMarkersValue(
-        scene,
         path,
         value,
         tree_paths.markers,
-        scene_handles.markers
+        scene_state.markers
       );
 
     if (was_markers_value) {
@@ -331,25 +324,21 @@ static void
   )
 {
   const TreePaths &tree_paths = main_window_data.tree_paths;
-  Scene &scene = main_window_data.scene;
-  const SceneHandles &scene_handles = main_window_data.scene_handles;
   SceneState &state = main_window_data.scene_state;
+  bool value_was_changed = setSceneStateValue(state, path, value, tree_paths);
 
-  bool scene_value_was_changed =
-    setSceneValue(state, scene, path, value, tree_paths, scene_handles);
-
-  if (scene_value_was_changed) {
+  if (value_was_changed) {
     bool is_box_transform_path =
       startsWith(path, tree_paths.box.translation.path) ||
       startsWith(path, tree_paths.box.rotation.path);
 
     if (!is_box_transform_path) {
-      updateSceneStateFromScene(state, scene, scene_handles);
       solveBoxPosition(state);
     }
 
-    updateBoxInScene(scene, scene_handles.box, state.box);
-    updateDistanceErrorsInScene(scene, scene_handles, state);
+    Scene &scene = main_window_data.scene;
+    const SceneHandles &scene_handles = main_window_data.scene_handles;
+    updateSceneObjects(scene, scene_handles, state);
     updateTreeValues(main_window_data);
   }
   else {
@@ -486,11 +475,10 @@ MainWindowController::MainWindowController(Scene &scene,TreeWidget &tree_widget)
 {
   SceneHandles &scene_handles = main_window_data.scene_handles;
   SceneState &state = main_window_data.scene_state;
-  updateSceneStateFromScene(state, scene, scene_handles);
+  updateSceneStateFromSceneObjects(state, scene, scene_handles);
   solveBoxPosition(state);
   updateErrorsInState(state);
-  updateBoxInScene(scene, scene_handles.box, state.box);
-  updateDistanceErrorsInScene(scene, scene_handles, state);
+  updateSceneObjects(scene, scene_handles, state);
   updateTreeValues(main_window_data);
   scene.changed_callback = [&]{ sceneChangedCallback(main_window_data); };
   scene.changing_callback = [&]{ sceneChangingCallback(main_window_data); };
