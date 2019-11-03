@@ -2,4 +2,4 @@
 #include "scenehandles.hpp"
 
 extern float sceneError(const SceneState &);
-extern void updateDistanceErrorsInState(SceneState &scene_state);
+extern void updateErrorsInState(SceneState &scene_state);

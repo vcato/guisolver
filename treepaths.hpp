@@ -54,8 +54,9 @@ struct TreePaths {
   struct DistanceError {
     TreePath path;
     TreePath distance;
-    TreePath error;
     TreePath desired_distance;
+    TreePath weight;
+    TreePath error;
   };
 
   Box box;

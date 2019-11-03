@@ -25,9 +25,20 @@ struct SceneState {
   struct DistanceError {
     MarkerIndex start_marker_index;
     MarkerIndex end_marker_index;
-    float distance;
-    float desired_distance;
-    float error;
+
+    DistanceError(
+      MarkerIndex start_marker_index_arg,
+      MarkerIndex end_marker_index_arg
+    )
+    : start_marker_index(start_marker_index_arg),
+      end_marker_index(end_marker_index_arg)
+    {
+    }
+
+    float distance = 0;
+    float desired_distance = 0;
+    float weight = 1;
+    float error = 0;
   };
 
   Transform box_global;
@@ -48,15 +59,7 @@ struct SceneState {
       MarkerIndex end_marker_index
     )
   {
-    distance_errors.push_back(
-      DistanceError{
-        start_marker_index,
-        end_marker_index,
-        /*distance*/0,
-        /*desired_distance*/0,
-        /*error*/0
-      }
-    );
+    distance_errors.push_back({start_marker_index,end_marker_index});
   }
 
   Point markerPredicted(int marker_index) const
@@ -67,16 +70,6 @@ struct SceneState {
     else {
       return markers[marker_index].position;
     }
-  }
-
-  Point distanceErrorStartPredicted(int line_index) const
-  {
-    return markerPredicted(distance_errors[line_index].start_marker_index);
-  }
-
-  Point distanceErrorEndPredicted(int line_index) const
-  {
-    return markerPredicted(distance_errors[line_index].end_marker_index);
   }
 };
 

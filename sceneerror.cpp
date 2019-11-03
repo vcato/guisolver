@@ -40,21 +40,38 @@ static float squared(float x)
 }
 
 
-void updateDistanceErrorsInState(SceneState &scene_state)
+static float distanceBetween(const Point &a,const Point &b)
+{
+  return sqrt(squaredDistanceBetween(a,b));
+}
+
+
+static void
+  updateDistanceErrorInState(
+    SceneState::DistanceError &distance_error,
+    SceneState &scene_state
+  )
+{
+  MarkerIndex start_marker_index = distance_error.start_marker_index;
+  MarkerIndex end_marker_index = distance_error.end_marker_index;
+  Point start_predicted = scene_state.markerPredicted(start_marker_index);
+  Point end_predicted = scene_state.markerPredicted(end_marker_index);
+  float distance = distanceBetween(start_predicted, end_predicted);
+  float desired_distance = distance_error.desired_distance;
+  float weight = distance_error.weight;
+  distance_error.distance = distance;
+  distance_error.error = squared(distance - desired_distance) * weight;
+}
+
+
+void updateErrorsInState(SceneState &scene_state)
 {
   float total_error = 0;
 
   for (auto i : indicesOf(scene_state.distance_errors)) {
-    Point start_predicted = scene_state.distanceErrorStartPredicted(i);
-    Point end_predicted = scene_state.distanceErrorEndPredicted(i);
-
-    float distance =
-      sqrt(squaredDistanceBetween(start_predicted, end_predicted));
-
-    float desired_distance = scene_state.distance_errors[i].desired_distance;
-    scene_state.distance_errors[i].distance = distance;
-    scene_state.distance_errors[i].error = squared(distance - desired_distance);
-    total_error += scene_state.distance_errors[i].error;
+    SceneState::DistanceError &distance_error = scene_state.distance_errors[i];
+    updateDistanceErrorInState(distance_error, scene_state);
+    total_error += distance_error.error;
   }
 
   scene_state.total_error = total_error;

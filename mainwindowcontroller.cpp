@@ -121,7 +121,7 @@ static void sceneChangingCallback(MainWindowData &main_window_data)
     // be confusing if we try to update the box position.
   }
 
-  updateDistanceErrorsInState(state);
+  updateErrorsInState(state);
   updateTreeValues(main_window_data);
   updateDistanceErrorsInScene(scene, scene_handles, state);
 }
@@ -135,7 +135,7 @@ static void sceneChangedCallback(MainWindowData &main_window_data)
   updateSceneStateFromScene(state, scene, scene_handles);
   solveBoxPosition(state);
   setTransform(scene_handles.box, state.box_global, scene);
-  updateDistanceErrorsInState(state);
+  updateErrorsInState(state);
   updateTreeValues(main_window_data);
   updateDistanceErrorsInScene(scene,scene_handles,state);
 }
@@ -240,11 +240,16 @@ static bool
     SceneState::DistanceError &distance_error_state,
     const TreePath &path,
     NumericValue value,
-    const TreePaths::DistanceError &distance_error_path
+    const TreePaths::DistanceError &distance_error_paths
   )
 {
-  if (startsWith(path, distance_error_path.desired_distance)) {
+  if (startsWith(path, distance_error_paths.desired_distance)) {
     distance_error_state.desired_distance = value;
+    return true;
+  }
+
+  if (startsWith(path, distance_error_paths.weight)) {
+    distance_error_state.weight = value;
     return true;
   }
 
@@ -531,7 +536,7 @@ MainWindowController::MainWindowController(Scene &scene,TreeWidget &tree_widget)
   SceneState &state = main_window_data.scene_state;
   updateSceneStateFromScene(state, scene, scene_handles);
   solveBoxPosition(state);
-  updateDistanceErrorsInState(state);
+  updateErrorsInState(state);
   updateBoxPositionInScene(main_window_data);
   updateDistanceErrorsInScene(scene, scene_handles, state);
   updateTreeValues(main_window_data);

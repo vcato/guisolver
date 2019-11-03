@@ -142,6 +142,6 @@ int main()
   RandomEngine engine(/*seed*/1);
   SceneState scene_state = example(engine).scene_state;
   solveBoxPosition(scene_state);
-  updateDistanceErrorsInState(scene_state);
+  updateErrorsInState(scene_state);
   assert(sceneError(scene_state) < 0.002);
 }

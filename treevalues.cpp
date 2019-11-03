@@ -80,11 +80,13 @@ static TreePaths::DistanceError
   TreePath end_path = childPath(path,1);
   TreePath distance_path = childPath(path,2);
   TreePath desired_distance_path = childPath(path,3);
-  TreePath error_path = childPath(path,4);
+  TreePath weight_path = childPath(path,4);
+  TreePath error_path = childPath(path,5);
   LabelProperties start_label = {"start: " + start_name};
   LabelProperties end_label = {"end: " + end_name};
   LabelProperties distance_label = {"distance: 0"};
   LabelProperties desired_distance_label = {"desired_distance:"};
+  LabelProperties weight_label = {"weight:"};
   LabelProperties error_label = {"error: 0"};
   tree_widget.createVoidItem(start_path, start_label);
   tree_widget.createVoidItem(end_path, end_label);
@@ -98,14 +100,23 @@ static TreePaths::DistanceError
     /*maximum_value*/noMaximumNumericValue()
   );
 
+  tree_widget.createNumericItem(
+    weight_path,
+    weight_label,
+    /*value*/1,
+    /*minimum_value*/0,
+    /*maximum_value*/noMaximumNumericValue()
+  );
+
   tree_widget.createVoidItem(error_path, error_label);
 
   return
     TreePaths::DistanceError{
       path,
       distance_path,
-      error_path,
-      desired_distance_path
+      desired_distance_path,
+      weight_path,
+      error_path
     };
 }
 

@@ -74,7 +74,7 @@ void solveBoxPosition(SceneState &scene_state)
 
   auto f = [&]{
     scene_state.box_global = makeTransform(variables);
-    updateDistanceErrorsInState(scene_state);
+    updateErrorsInState(scene_state);
     return sceneError(scene_state);
   };
 
