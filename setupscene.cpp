@@ -1,14 +1,7 @@
 #include "setupscene.hpp"
 
-#include <iostream>
-#include "updatescenestatefromscene.hpp"
-#include "globaltransform.hpp"
-#include "settransform.hpp"
+#include "scene.hpp"
 #include "maketransform.hpp"
-#include "sceneobjects.hpp"
-
-using std::cerr;
-using std::ostream;
 
 
 static void
