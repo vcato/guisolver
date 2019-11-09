@@ -113,8 +113,9 @@ int enumerationValueFromMarkerIndex(Optional<MarkerIndex> maybe_marker_index)
 
 
 TreePaths::DistanceError
-  createDistanceErrorInTree(
+  createDistanceErrorInTree1(
     TreeWidget &tree_widget,
+    TreePaths &/*tree_paths*/,
     const TreePath &path,
     const SceneState::Markers &state_markers,
     const SceneState::DistanceError &state_distance_error
@@ -321,23 +322,31 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
     }
   }
 
+  // We'll need to have a way of indicating where distance errors should
+  // be added.
   {
-    int distance_error_index = 0;
+    TreePath next_distance_error_path = next_scene_child_path;
 
     for (auto &state_distance_error : scene_state.distance_errors) {
-      TreePath distance_error_path = next_scene_child_path;
-      ++next_scene_child_path.back();
+      TreePath distance_error_path = next_distance_error_path;
+      ++next_distance_error_path.back();
 
-      tree_paths.distance_errors[distance_error_index] =
-        createDistanceErrorInTree(
+      tree_paths.distance_errors.push_back(
+        createDistanceErrorInTree1(
           tree_widget,
+          tree_paths,
           distance_error_path,
           scene_state.markers,
           state_distance_error
-        );
-
-      ++distance_error_index;
+        )
+      );
     }
+
+    assert(
+      tree_paths.distance_errors.size() == scene_state.distance_errors.size()
+    );
+
+    next_scene_child_path = next_distance_error_path;
   }
 
   tree_paths.total_error = next_scene_child_path;

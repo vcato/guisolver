@@ -3,7 +3,6 @@
 
 #include "treepath.hpp"
 
-
 struct TreePaths {
   struct Marker;
   struct DistanceError;
@@ -11,8 +10,7 @@ struct TreePaths {
   using DistanceErrors = vector<DistanceError>;
 
   TreePaths()
-  : markers(6),
-    distance_errors(3)
+  : markers(6)
   {
   }
 
