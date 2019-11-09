@@ -61,6 +61,18 @@ static TreePaths::Marker
 }
 
 
+static vector<string> markerNames(const SceneState::Markers &state_markers)
+{
+  vector<string> result;
+
+  for (const SceneState::Marker &marker : state_markers) {
+    result.push_back(marker.name);
+  }
+
+  return result;
+}
+
+
 static TreePaths::DistanceError
   createDistanceError(
     TreeWidget &tree_widget,
@@ -69,11 +81,8 @@ static TreePaths::DistanceError
     const SceneState::DistanceError &state_distance_error
   )
 {
-  const string &start_name =
-    state_markers[state_distance_error.start_marker_index].name;
-
-  const string &end_name =
-    state_markers[state_distance_error.end_marker_index].name;
+  MarkerIndex start_index = state_distance_error.start_marker_index;
+  MarkerIndex end_index = state_distance_error.end_marker_index;
 
   tree_widget.createVoidItem(path,LabelProperties{"[DistanceError]"});
   TreePath start_path = childPath(path,0);
@@ -82,14 +91,22 @@ static TreePaths::DistanceError
   TreePath desired_distance_path = childPath(path,3);
   TreePath weight_path = childPath(path,4);
   TreePath error_path = childPath(path,5);
-  LabelProperties start_label = {"start: " + start_name};
-  LabelProperties end_label = {"end: " + end_name};
-  LabelProperties distance_label = {"distance: 0"};
+  LabelProperties start_label = {"start:"};
+  LabelProperties end_label = {"end:"};
+  LabelProperties distance_label = {"distance:"};
   LabelProperties desired_distance_label = {"desired_distance:"};
   LabelProperties weight_label = {"weight:"};
-  LabelProperties error_label = {"error: 0"};
-  tree_widget.createVoidItem(start_path, start_label);
-  tree_widget.createVoidItem(end_path, end_label);
+  LabelProperties error_label = {"error:"};
+  TreeWidget::EnumerationOptions marker_names = markerNames(state_markers);
+
+  tree_widget.createEnumerationItem(
+    start_path, start_label, marker_names, start_index
+  );
+
+  tree_widget.createEnumerationItem(
+    end_path, end_label, marker_names, end_index
+  );
+
   tree_widget.createVoidItem(distance_path, distance_label);
 
   tree_widget.createNumericItem(
@@ -113,6 +130,8 @@ static TreePaths::DistanceError
   return
     TreePaths::DistanceError{
       path,
+      start_path,
+      end_path,
       distance_path,
       desired_distance_path,
       weight_path,

@@ -248,7 +248,7 @@ void
   QtTreeWidget::createEnumerationItem(
     const TreePath &new_item_path,
     const LabelProperties &label_properties,
-    const vector<string> &options,
+    const EnumerationOptions &options,
     int value
   )
 {
@@ -429,7 +429,7 @@ void
   assert(item_ptr);
 
   TreePath path = itemPath(*item_ptr);
-  combobox_item_index_changed_callback(path,index);
+  enumeration_item_index_changed_callback(path,index);
 }
 
 

@@ -9,6 +9,8 @@
 
 
 struct TreeWidget {
+  using EnumerationOptions = vector<std::string>;
+
   struct LabelProperties {
     std::string text;
   };
@@ -32,7 +34,7 @@ struct TreeWidget {
     createEnumerationItem(
       const TreePath &new_item_path,
       const LabelProperties &,
-      const vector<std::string> &options,
+      const EnumerationOptions &options,
       int value
     ) = 0;
 
@@ -70,7 +72,7 @@ struct TreeWidget {
   std::function<void()> selection_changed_callback;
 
   std::function<void(const TreePath &,int index)>
-    combobox_item_index_changed_callback;
+    enumeration_item_index_changed_callback;
 
   std::function<void(const TreePath &,int index)>
     slider_item_value_changed_callback;

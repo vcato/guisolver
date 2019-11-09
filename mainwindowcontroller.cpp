@@ -267,6 +267,31 @@ static bool
 }
 
 
+static void
+  setSceneStateEnumerationIndex(
+    SceneState &scene_state,
+    const TreePath &path,
+    int value,
+    const TreePaths &tree_paths
+  )
+{
+  for (auto i : indicesOf(tree_paths.distance_errors)) {
+    const TreePaths::DistanceError &distance_error_paths =
+      tree_paths.distance_errors[i];
+
+    auto &state_distance_error = scene_state.distance_errors[i];
+
+    if (path == distance_error_paths.start) {
+      state_distance_error.start_marker_index = value;
+    }
+
+    if (path == distance_error_paths.end) {
+      state_distance_error.end_marker_index = value;
+    }
+  }
+}
+
+
 static Optional<TransformHandle>
   sceneObjectForTreeItem(
     const TreePath &item_path,
@@ -336,6 +361,13 @@ struct MainWindowController::Impl {
       MainWindowController &,
       const TreePath &,
       NumericValue
+    );
+
+  static void
+    handleTreeEnumerationIndexChanged(
+      MainWindowController &controller,
+      const TreePath &path,
+      int value
     );
 };
 
@@ -425,6 +457,25 @@ void
     cerr << "  path: " << path << "\n";
     cerr << "  value: " << value << "\n";
   }
+}
+
+
+void
+  MainWindowController::Impl::handleTreeEnumerationIndexChanged(
+    MainWindowController &controller,
+    const TreePath &path,
+    int value
+  )
+{
+  Data &data = controller.data;
+  const TreePaths &tree_paths = data.tree_paths;
+  SceneState &scene_state = data.scene_state;
+
+  setSceneStateEnumerationIndex(scene_state, path, value, tree_paths);
+  solveBoxPosition(scene_state);
+  updateErrorsInState(scene_state);
+  updateSceneObjects(data.scene, data.scene_handles, scene_state);
+  updateTreeValues(data.tree_widget, data.tree_paths, scene_state);
 }
 
 
@@ -523,6 +574,11 @@ MainWindowController::MainWindowController(Scene &scene,TreeWidget &tree_widget)
   tree_widget.spin_box_item_value_changed_callback =
     [this](const TreePath &path, NumericValue value){
       Impl::handleTreeValueChanged(*this, path, value);
+    };
+
+  tree_widget.enumeration_item_index_changed_callback =
+    [this](const TreePath &path, int index){
+      Impl::handleTreeEnumerationIndexChanged(*this, path, index);
     };
 
   tree_widget.selection_changed_callback =

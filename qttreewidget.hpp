@@ -36,7 +36,7 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
       createEnumerationItem(
         const TreePath &new_item_path,
         const LabelProperties &label_properties,
-        const vector<std::string> &options,
+        const EnumerationOptions &options,
         int value
       ) override;
 
