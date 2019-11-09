@@ -68,6 +68,7 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
 
   private slots:
     void selectionChangedSlot();
+    void prepareMenuSlot(const QPoint &pos);
 
   private:
     struct Impl;
@@ -165,6 +166,8 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
         QTreeWidgetItem *item_ptr,
         const std::string &value
       );
+
+    void prepareMenu(const QPoint &pos);
 };
 
 

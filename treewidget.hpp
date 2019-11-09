@@ -16,6 +16,11 @@ struct TreeWidget {
     std::string text;
   };
 
+  struct MenuItem {
+    std::string label;
+    std::function<void()> callback;
+  };
+
   virtual void
     createVoidItem(
       const TreePath &new_item_path,
@@ -81,6 +86,8 @@ struct TreeWidget {
   std::function<void(const TreePath &,const std::string &value)>
     line_edit_item_value_changed_callback;
 
+  std::function<vector<MenuItem>(const TreePath &)>
+    context_menu_items_callback;
 };
 
 #endif /* TREEWIDGET_HPP_ */

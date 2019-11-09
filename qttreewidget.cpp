@@ -5,11 +5,13 @@
 #include <QBoxLayout>
 #include <QLabel>
 #include <QHeaderView>
+#include <QMenu>
 #include "qtlayout.hpp"
 #include "qtwidget.hpp"
 #include "qtcombobox.hpp"
 #include "qtlineedit.hpp"
 #include "qttreewidgetitem.hpp"
+#include "qtmenu.hpp"
 #include "streamvector.hpp"
 #include "numericvalue.hpp"
 
@@ -146,11 +148,18 @@ QtTreeWidget::QtTreeWidget()
 {
   assert(header());
   header()->close();
+  setContextMenuPolicy(Qt::CustomContextMenu);
 
   connect(
     this,
     SIGNAL(currentItemChanged(QTreeWidgetItem *,QTreeWidgetItem *)),
     SLOT(selectionChangedSlot())
+  );
+
+  connect(
+    this,
+    SIGNAL(customContextMenuRequested(const QPoint &)),
+    SLOT(prepareMenuSlot(const QPoint &))
   );
 }
 
@@ -687,4 +696,34 @@ Optional<TreePath> QtTreeWidget::selectedItem() const
 
 QtTreeWidget::~QtTreeWidget()
 {
+}
+
+
+void QtTreeWidget::prepareMenuSlot(const QPoint &pos)
+{
+  prepareMenu(pos);
+}
+
+
+void QtTreeWidget::prepareMenu(const QPoint &pos)
+{
+  QTreeWidgetItem *widget_item_ptr = itemAt(pos);
+  TreePath path;
+
+  if (widget_item_ptr) {
+    path = itemPath(*widget_item_ptr);
+  }
+
+  if (!context_menu_items_callback) {
+    return;
+  }
+
+  auto menu_items = context_menu_items_callback(path);
+  QMenu menu;
+
+  for (auto &item : menu_items) {
+    createAction(menu,item.label,item.callback);
+  }
+
+  menu.exec(mapToGlobal(pos));
 }
