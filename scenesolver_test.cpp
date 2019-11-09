@@ -94,7 +94,9 @@ static void
 {
   MarkerIndex local_marker_index = addLocalMarkerTo(result, local);
   MarkerIndex global_marker_index = addGlobalMarkerTo(result, global);
-  result.addDistanceError(local_marker_index, global_marker_index);
+  SceneState::DistanceError &new_distance_error = result.addDistanceError();
+  new_distance_error.optional_start_marker_index = local_marker_index;
+  new_distance_error.optional_end_marker_index = global_marker_index;
 }
 
 

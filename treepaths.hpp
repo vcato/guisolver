@@ -73,6 +73,7 @@ struct TreePaths {
     TreePath error;
   };
 
+  TreePath path;
   Box box;
   Markers markers;
   DistanceErrors distance_errors;

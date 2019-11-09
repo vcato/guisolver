@@ -11,9 +11,11 @@ extern void
     const SceneHandles &
   );
 
-void
+extern void
   updateSceneObjects(
     Scene &scene,
     const SceneHandles &scene_handles,
     const SceneState &state
   );
+
+extern SceneHandles::DistanceError createDistanceErrorInScene(Scene &scene);

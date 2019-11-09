@@ -101,8 +101,7 @@ static SceneHandles::Marker
 }
 
 
-static SceneHandles::DistanceError
-  createDistanceErrorHandles(Scene &scene)
+SceneHandles::DistanceError createDistanceErrorInScene(Scene &scene)
 {
   LineHandle line = scene.createLine(scene.top());
   scene.setColor(line,1,0,0);
@@ -113,7 +112,7 @@ static SceneHandles::DistanceError
 static SceneHandles::DistanceError createSceneDistanceError(Scene &scene)
 {
   SceneHandles::DistanceError one_distance_error_handles =
-    createDistanceErrorHandles(scene);
+    createDistanceErrorInScene(scene);
 
   return one_distance_error_handles;
 }

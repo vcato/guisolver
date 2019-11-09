@@ -10,7 +10,9 @@
 
 
 struct TreeWidget {
+  struct MenuItem;
   using EnumerationOptions = vector<std::string>;
+  using MenuItems = vector<MenuItem>;
 
   struct LabelProperties {
     std::string text;

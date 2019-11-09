@@ -395,3 +395,7 @@ is the abstraction we want.  It may be better to have a general callback
 for any item being clicked and a way to refer to items.  The callback
 does seem easier to use right now though, and it still allows us to abstract
 away the Qt details, so I think it is fine.
+
+createDistanceErrorInTree() needs the path for the new distance error, but
+it isn't clear how we should get that path.  We could store the path
+for the next distance error in the TreePaths.

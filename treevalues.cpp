@@ -112,8 +112,8 @@ int enumerationValueFromMarkerIndex(Optional<MarkerIndex> maybe_marker_index)
 }
 
 
-static TreePaths::DistanceError
-  createDistanceError(
+TreePaths::DistanceError
+  createDistanceErrorInTree(
     TreeWidget &tree_widget,
     const TreePath &path,
     const SceneState::Markers &state_markers,
@@ -229,9 +229,11 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
   const NumericValue no_maximum = noMaximumNumericValue();
 
   TreePaths tree_paths;
-  tree_widget.createVoidItem({0},LabelProperties{"[Scene]"});
+  TreePath scene_path = {0};
+  tree_widget.createVoidItem(scene_path,LabelProperties{"[Scene]"});
+  tree_paths.path = scene_path;
 
-  TreePath next_scene_child_path = {0,0};
+  TreePath next_scene_child_path = childPath(scene_path, 0);
   TreePath box_transform_path = next_scene_child_path;
   ++next_scene_child_path.back();
 
@@ -327,7 +329,7 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
       ++next_scene_child_path.back();
 
       tree_paths.distance_errors[distance_error_index] =
-        createDistanceError(
+        createDistanceErrorInTree(
           tree_widget,
           distance_error_path,
           scene_state.markers,

@@ -33,16 +33,6 @@ struct SceneState {
   struct DistanceError {
     Optional<MarkerIndex> optional_start_marker_index;
     Optional<MarkerIndex> optional_end_marker_index;
-
-    DistanceError(
-      MarkerIndex start_marker_index_arg,
-      MarkerIndex end_marker_index_arg
-    )
-    : optional_start_marker_index(start_marker_index_arg),
-      optional_end_marker_index(end_marker_index_arg)
-    {
-    }
-
     Optional<float> maybe_distance;
     float desired_distance = 0;
     float weight = 1;
@@ -61,13 +51,10 @@ struct SceneState {
     return new_index;
   }
 
-  void
-    addDistanceError(
-      MarkerIndex start_marker_index,
-      MarkerIndex end_marker_index
-    )
+  DistanceError& addDistanceError()
   {
-    distance_errors.push_back({start_marker_index,end_marker_index});
+    distance_errors.emplace_back();
+    return distance_errors.back();
   }
 
   Point markerPredicted(int marker_index) const

@@ -17,3 +17,11 @@ extern void
 
 extern Optional<MarkerIndex>
   markerIndexFromEnumerationValue(int enumeration_value);
+
+extern TreePaths::DistanceError
+  createDistanceErrorInTree(
+    TreeWidget &tree_widget,
+    const TreePath &path,
+    const SceneState::Markers &state_markers,
+    const SceneState::DistanceError &state_distance_error
+  );

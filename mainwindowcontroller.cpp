@@ -11,6 +11,8 @@
 #include "indicesof.hpp"
 #include "sceneobjects.hpp"
 
+#define IMPLEMENT_ADD_DISTANCE_ERROR 0
+
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
 
@@ -352,6 +354,14 @@ static Optional<TreePath>
 }
 
 
+#if IMPLEMENT_ADD_DISTANCE_ERROR
+static bool isScenePath(const TreePath &path, const TreePaths &tree_paths)
+{
+  return path == tree_paths.path;
+}
+#endif
+
+
 struct MainWindowController::Impl {
   static void handleSceneChanging(MainWindowController &);
   static void handleSceneChanged(MainWindowController &);
@@ -371,6 +381,56 @@ struct MainWindowController::Impl {
       const TreePath &path,
       int value
     );
+
+#if IMPLEMENT_ADD_DISTANCE_ERROR
+  static TreeWidget::MenuItems
+    contextMenuItemsForPath(
+      MainWindowController &controller,
+      const TreePath &path
+    )
+  {
+    if (isScenePath(path, controller.data.tree_paths)) {
+      return {
+        {"Add Distance Error",
+          [&controller,path]{ Impl::addDistanceErrorPressed(controller, path); }
+        }
+      };
+    }
+
+    return {};
+  }
+#else
+  static TreeWidget::MenuItems
+    contextMenuItemsForPath(
+      MainWindowController &,
+      const TreePath &
+    )
+  {
+    return {};
+  }
+#endif
+
+#if IMPLEMENT_ADD_DISTANCE_ERROR
+  static void
+    addDistanceErrorPressed(MainWindowController &controller,const TreePath &)
+  {
+    Scene &scene = controller.data.scene;
+    SceneHandles &scene_handles = controller.data.scene_handles;
+    SceneState &scene_state = controller.data.scene_state;
+    TreeWidget &tree_widget = controller.data.tree_widget;
+    TreePaths &tree_paths = controller.data.tree_paths;
+    SceneState::DistanceError &distance_error = scene_state.addDistanceError();
+
+    SceneHandles::DistanceError distance_error_handles =
+      createDistanceErrorInScene(scene);
+
+    scene_handles.distance_errors.push_back(distance_error_handles);
+    createDistanceErrorInTree(distance_error, tree_widget, tree_paths);
+    updateErrorsInState(scene_state);
+    updateSceneObjects();
+    updateTreeValues();
+  }
+#endif
 };
 
 
@@ -585,4 +645,9 @@ MainWindowController::MainWindowController(Scene &scene,TreeWidget &tree_widget)
 
   tree_widget.selection_changed_callback =
     [this](){ Impl::handleTreeSelectionChanged(*this); };
+
+  tree_widget.context_menu_items_callback =
+    [this](const TreePath &path){
+      return Impl::contextMenuItemsForPath(*this, path);
+    };
 }
