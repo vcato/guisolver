@@ -6,6 +6,7 @@
 #include "treepath.hpp"
 #include "numericvalue.hpp"
 #include "optional.hpp"
+#include "vector.hpp"
 
 
 struct TreeWidget {

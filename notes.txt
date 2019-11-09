@@ -388,3 +388,5 @@ t.origin
     * end: global3
 ---
 We should make it where new distance errors can be added.
+---
+Need to have a context menu on the scene item in the tree.

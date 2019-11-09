@@ -16,6 +16,7 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
 
   public:
     QtTreeWidget();
+    ~QtTreeWidget();
 
     void
       createVoidItem(
@@ -58,7 +59,7 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
       setItemLabel(const TreePath &path,const std::string &new_label) override;
 
     TreePath itemPath(QTreeWidgetItem &item) const;
-    void selectItem(const TreePath &path);
+    void selectItem(const TreePath &path) override;
     void setItemExpanded(const TreePath &path,bool new_expanded_state);
     int itemChildCount(const TreePath &parent_item) const;
     void removeItem(const TreePath &path) override;

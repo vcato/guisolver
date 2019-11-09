@@ -683,3 +683,8 @@ Optional<TreePath> QtTreeWidget::selectedItem() const
 
   return itemPath(*item_ptr);
 }
+
+
+QtTreeWidget::~QtTreeWidget()
+{
+}
