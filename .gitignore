@@ -8,3 +8,4 @@ osgutil_test
 transform_test
 optimize_test
 scenesolver_test
+optional_test

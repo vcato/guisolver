@@ -386,3 +386,5 @@ t.origin
   * [DistanceError]
     * start: local3
     * end: global3
+---
+We should make it where new distance errors can be added.

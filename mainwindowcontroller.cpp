@@ -282,11 +282,13 @@ static void
     auto &state_distance_error = scene_state.distance_errors[i];
 
     if (path == distance_error_paths.start) {
-      state_distance_error.start_marker_index = value;
+      state_distance_error.optional_start_marker_index =
+        markerIndexFromEnumerationValue(value);
     }
 
     if (path == distance_error_paths.end) {
-      state_distance_error.end_marker_index = value;
+      state_distance_error.optional_end_marker_index =
+        markerIndexFromEnumerationValue(value);
     }
   }
 }

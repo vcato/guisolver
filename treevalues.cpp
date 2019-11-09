@@ -6,6 +6,7 @@
 #include "sceneerror.hpp"
 #include "indicesof.hpp"
 
+using std::cerr;
 using std::string;
 using LabelProperties = TreeWidget::LabelProperties;
 
@@ -73,6 +74,44 @@ static vector<string> markerNames(const SceneState::Markers &state_markers)
 }
 
 
+template <typename T>
+static void appendTo(vector<T> &v, const vector<T> &new_values)
+{
+  v.insert(v.end(), new_values.begin(), new_values.end());
+}
+
+
+static TreeWidget::EnumerationOptions
+  markerEnumerationOptions(const SceneState::Markers &state_markers)
+{
+  TreeWidget::EnumerationOptions result = {"None"};
+  appendTo(result, markerNames(state_markers));
+  return result;
+}
+
+
+Optional<MarkerIndex> markerIndexFromEnumerationValue(int enumeration_value)
+{
+  if (enumeration_value == 0) {
+    return {};
+  }
+  else {
+    return enumeration_value - 1;
+  }
+}
+
+
+int enumerationValueFromMarkerIndex(Optional<MarkerIndex> maybe_marker_index)
+{
+  if (!maybe_marker_index) {
+    return 0;
+  }
+  else {
+    return *maybe_marker_index + 1;
+  }
+}
+
+
 static TreePaths::DistanceError
   createDistanceError(
     TreeWidget &tree_widget,
@@ -81,8 +120,11 @@ static TreePaths::DistanceError
     const SceneState::DistanceError &state_distance_error
   )
 {
-  MarkerIndex start_index = state_distance_error.start_marker_index;
-  MarkerIndex end_index = state_distance_error.end_marker_index;
+  Optional<MarkerIndex> optional_start_index =
+    state_distance_error.optional_start_marker_index;
+
+  Optional<MarkerIndex> optional_end_index =
+    state_distance_error.optional_end_marker_index;
 
   tree_widget.createVoidItem(path,LabelProperties{"[DistanceError]"});
   TreePath start_path = childPath(path,0);
@@ -97,14 +139,21 @@ static TreePaths::DistanceError
   LabelProperties desired_distance_label = {"desired_distance:"};
   LabelProperties weight_label = {"weight:"};
   LabelProperties error_label = {"error:"};
-  TreeWidget::EnumerationOptions marker_names = markerNames(state_markers);
+  TreeWidget::EnumerationOptions marker_options =
+    markerEnumerationOptions(state_markers);
 
   tree_widget.createEnumerationItem(
-    start_path, start_label, marker_names, start_index
+    start_path,
+    start_label,
+    marker_options,
+    enumerationValueFromMarkerIndex(optional_start_index)
   );
 
   tree_widget.createEnumerationItem(
-    end_path, end_label, marker_names, end_index
+    end_path,
+    end_label,
+    marker_options,
+    enumerationValueFromMarkerIndex(optional_end_index)
   );
 
   tree_widget.createVoidItem(distance_path, distance_label);
@@ -149,7 +198,14 @@ static void
 {
   {
     std::ostringstream label_stream;
-    label_stream << "distance: " << distance_error_state.distance;
+
+    if (distance_error_state.maybe_distance) {
+      label_stream << "distance: " << *distance_error_state.maybe_distance;
+    }
+    else {
+      label_stream << "distance: N/A";
+    }
+
     tree_widget.setItemLabel(distance_error_paths.distance, label_stream.str());
   }
   {

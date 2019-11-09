@@ -4,6 +4,7 @@
 #include "sequence.hpp"
 #include "indicesof.hpp"
 
+using std::cerr;
 using Vector3f = Eigen::Vector3f;
 
 
@@ -52,14 +53,25 @@ static void
     SceneState &scene_state
   )
 {
-  MarkerIndex start_marker_index = distance_error.start_marker_index;
-  MarkerIndex end_marker_index = distance_error.end_marker_index;
+  bool have_both_markers =
+    distance_error.optional_start_marker_index &&
+    distance_error.optional_end_marker_index;
+
+  if (!have_both_markers) {
+    distance_error.maybe_distance = {};
+    distance_error.error = 0;
+    assert(!distance_error.maybe_distance);
+    return;
+  }
+
+  MarkerIndex start_marker_index = *distance_error.optional_start_marker_index;
+  MarkerIndex end_marker_index = *distance_error.optional_end_marker_index;
   Point start_predicted = scene_state.markerPredicted(start_marker_index);
   Point end_predicted = scene_state.markerPredicted(end_marker_index);
   float distance = distanceBetween(start_predicted, end_predicted);
   float desired_distance = distance_error.desired_distance;
   float weight = distance_error.weight;
-  distance_error.distance = distance;
+  distance_error.maybe_distance = distance;
   distance_error.error = squared(distance - desired_distance) * weight;
 }
 

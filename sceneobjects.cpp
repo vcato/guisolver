@@ -110,26 +110,10 @@ static SceneHandles::DistanceError
 }
 
 
-static SceneHandles::DistanceError
-  createSceneDistanceError(
-    const SceneState::DistanceError &distance_error_state,
-    Scene &scene,
-    const SceneHandles::Markers &markers
-  )
+static SceneHandles::DistanceError createSceneDistanceError(Scene &scene)
 {
-  MarkerIndex start_marker_index = distance_error_state.start_marker_index;
-  MarkerIndex end_marker_index = distance_error_state.end_marker_index;
-
-  Scene::TransformHandle start_handle = markers[start_marker_index].handle;
-  Scene::TransformHandle end_handle = markers[end_marker_index].handle;
-  Scene::Point start = scene.worldPoint({0,0,0},start_handle);
-  Scene::Point end = scene.worldPoint({0,0,0},end_handle);
-
   SceneHandles::DistanceError one_distance_error_handles =
     createDistanceErrorHandles(scene);
-
-  scene.setStartPoint(one_distance_error_handles.line, start);
-  scene.setEndPoint(one_distance_error_handles.line, end);
 
   return one_distance_error_handles;
 }
@@ -156,10 +140,10 @@ SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
 
   vector<SceneHandles::DistanceError> distance_error_handles;
 
-  for (auto &distance_error_state : state.distance_errors) {
-    distance_error_handles.push_back(
-      createSceneDistanceError(distance_error_state, scene, marker_handles)
-    );
+  auto n_distance_errors = state.distance_errors.size();
+
+  for (decltype(n_distance_errors) i=0; i!=n_distance_errors; ++i) {
+    distance_error_handles.push_back(createSceneDistanceError(scene));
   }
 
   return {
@@ -193,18 +177,30 @@ static void
     const SceneHandles &scene_handles
   )
 {
-  TransformHandle line_start =
-    scene_handles.markers[
-      distance_error_state.start_marker_index
-    ].handle;
+  bool have_both_markers =
+    distance_error_state.optional_start_marker_index &&
+    distance_error_state.optional_end_marker_index;
 
-  TransformHandle line_end =
-    scene_handles.markers[
-      distance_error_state.end_marker_index
-    ].handle;
+  Scene::Point start = {0,0,0};
+  Scene::Point end = {0,0,0};
 
-  Scene::Point start = scene.worldPoint({0,0,0}, line_start);
-  Scene::Point end = scene.worldPoint({0,0,0}, line_end);
+  if (have_both_markers) {
+    MarkerIndex start_marker_index =
+      *distance_error_state.optional_start_marker_index;
+
+    MarkerIndex end_marker_index =
+      *distance_error_state.optional_end_marker_index;
+
+    TransformHandle line_start =
+      scene_handles.markers[start_marker_index].handle;
+
+    TransformHandle line_end =
+      scene_handles.markers[end_marker_index].handle;
+
+    start = scene.worldPoint({0,0,0}, line_start);
+    end = scene.worldPoint({0,0,0}, line_end);
+  }
+
   scene.setStartPoint(distance_error_handles.line, start);
   scene.setEndPoint(distance_error_handles.line, end);
 }

@@ -73,12 +73,12 @@ SceneState defaultSceneState()
   result.box.global =
     makeTransform(defaultBoxCoordinateAxes(),defaultBoxTranslation());
 
-  createLocalMarker(result,  {1,0,0}, "local1");
-  createLocalMarker(result,  {1,0,1}, "local2");
-  createLocalMarker(result,  {0,0,1}, "local3");
-  createGlobalMarker(result, {1,1,0}, "global1");
-  createGlobalMarker(result, {1,1,1}, "global2");
-  createGlobalMarker(result, {0,1,1}, "global3");
+  createLocalMarker(result,  {1,1,0}, "local1");
+  createLocalMarker(result,  {1,1,1}, "local2");
+  createLocalMarker(result,  {0,1,1}, "local3");
+  createGlobalMarker(result, {1,2,0}, "global1");
+  createGlobalMarker(result, {1,2,1}, "global2");
+  createGlobalMarker(result, {0,2,1}, "global3");
 
   int n_lines = 3;
 

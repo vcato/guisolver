@@ -6,6 +6,7 @@
 #include "transform.hpp"
 #include "markerindex.hpp"
 #include "vector.hpp"
+#include "optional.hpp"
 
 
 struct SceneState {
@@ -30,19 +31,19 @@ struct SceneState {
   };
 
   struct DistanceError {
-    MarkerIndex start_marker_index;
-    MarkerIndex end_marker_index;
+    Optional<MarkerIndex> optional_start_marker_index;
+    Optional<MarkerIndex> optional_end_marker_index;
 
     DistanceError(
       MarkerIndex start_marker_index_arg,
       MarkerIndex end_marker_index_arg
     )
-    : start_marker_index(start_marker_index_arg),
-      end_marker_index(end_marker_index_arg)
+    : optional_start_marker_index(start_marker_index_arg),
+      optional_end_marker_index(end_marker_index_arg)
     {
     }
 
-    float distance = 0;
+    Optional<float> maybe_distance;
     float desired_distance = 0;
     float weight = 1;
     float error = 0;

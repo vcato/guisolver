@@ -14,3 +14,6 @@ extern void
     const TreePaths &tree_paths,
     const SceneState &state
   );
+
+extern Optional<MarkerIndex>
+  markerIndexFromEnumerationValue(int enumeration_value);

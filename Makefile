@@ -9,7 +9,11 @@ all:
 	$(MAKE) run_guisolver
 
 run_unit_tests: \
-  osgutil_test.pass transform_test.pass scenesolver_test.pass optimize_test.pass
+  optional_test.pass \
+  osgutil_test.pass \
+  transform_test.pass \
+  scenesolver_test.pass \
+  optimize_test.pass
 
 run_guisolver: guisolver
 	./guisolver
@@ -30,6 +34,9 @@ guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
   qttreewidget.o qttreewidget_moc.o \
   mainwindowcontroller.o globaltransform.o \
   settransform.o sceneobjects.o intersector.o
+	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
+
+optional_test: optional_test.o osgutil.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 osgutil_test: osgutil_test.o osgutil.o

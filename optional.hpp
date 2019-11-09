@@ -50,6 +50,14 @@ class Optional {
     {
     }
 
+    Optional(const Optional &arg)
+    : _has_value(arg._has_value)
+    {
+      if (arg._has_value) {
+        createObject(_value, arg._value);
+      }
+    }
+
     Optional(Optional&& arg)
     : _has_value(arg._has_value)
     {
@@ -82,19 +90,6 @@ class Optional {
       else {
         // We don't have a value and the arg doesn't have a value, so
         // there's nothing to do.
-      }
-
-      return *this;
-    }
-
-    Optional &operator=(const T &arg)
-    {
-      if (_has_value) {
-        _value = arg;
-      }
-      else {
-        createObject(_value,arg);
-        _has_value = true;
       }
 
       return *this;
