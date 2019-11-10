@@ -1,3 +1,6 @@
+#include "eigenconv.hpp"
+
+
 inline Vec3 rotationVector(const Eigen::Matrix3f &r)
 {
   Eigen::AngleAxisf a;

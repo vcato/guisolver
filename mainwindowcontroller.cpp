@@ -1,7 +1,6 @@
 #include "mainwindowcontroller.hpp"
 
 #include "streamvector.hpp"
-#include "eigenconv.hpp"
 #include "sceneerror.hpp"
 #include "scenesolver.hpp"
 #include "defaultscenestate.hpp"
@@ -382,18 +381,7 @@ struct MainWindowController::Impl {
     contextMenuItemsForPath(
       MainWindowController &controller,
       const TreePath &path
-    )
-  {
-    if (isScenePath(path, controller.data.tree_paths)) {
-      return {
-        {"Add Distance Error",
-          [&controller,path]{ Impl::addDistanceErrorPressed(controller, path); }
-        }
-      };
-    }
-
-    return {};
-  }
+    );
 
   static void
     addDistanceErrorPressed(MainWindowController &controller,const TreePath &)
@@ -522,12 +510,29 @@ void
   Data &data = controller.data;
   const TreePaths &tree_paths = data.tree_paths;
   SceneState &scene_state = data.scene_state;
-
   setSceneStateEnumerationIndex(scene_state, path, value, tree_paths);
   solveBoxPosition(scene_state);
   updateErrorsInState(scene_state);
   updateSceneObjects(data.scene, data.scene_handles, scene_state);
   updateTreeValues(data.tree_widget, data.tree_paths, scene_state);
+}
+
+
+TreeWidget::MenuItems
+  MainWindowController::Impl::contextMenuItemsForPath(
+    MainWindowController &controller,
+    const TreePath &path
+  )
+{
+  if (isScenePath(path, controller.data.tree_paths)) {
+    return {
+      {"Add Distance Error",
+        [&controller,path]{ Impl::addDistanceErrorPressed(controller, path); }
+      }
+    };
+  }
+
+  return {};
 }
 
 

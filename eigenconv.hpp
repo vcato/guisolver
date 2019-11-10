@@ -1,3 +1,6 @@
+#ifndef EIGENCONV_HPP_
+#define EIGENCONV_HPP_
+
 #include "vec3.hpp"
 #include "coordinateaxes.hpp"
 
@@ -27,3 +30,6 @@ inline CoordinateAxes coordinateAxes(const Eigen::Matrix3f &rotation)
   Vec3 z = vec3(rotation.col(2));
   return {x,y,z};
 }
+
+
+#endif /* EIGENCONV_HPP_ */
