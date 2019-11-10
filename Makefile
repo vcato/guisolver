@@ -13,7 +13,8 @@ run_unit_tests: \
   osgutil_test.pass \
   transform_test.pass \
   scenesolver_test.pass \
-  optimize_test.pass
+  optimize_test.pass \
+  treevalues_test.pass
 
 run_guisolver: guisolver
 	./guisolver
@@ -50,6 +51,10 @@ scenesolver_test: scenesolver_test.o \
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 optimize_test: optimize_test.o optimize.o
+	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
+
+treevalues_test: treevalues_test.o defaultscenestate.o treevalues.o \
+  maketransform.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 clean:

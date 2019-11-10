@@ -53,7 +53,7 @@ static osg::Node *
   double vy = viewport.y();
   double mx = lerp(norm_x, -1, 1, vx, vx + viewport.width());
   double my = lerp(norm_y, -1, 1, vy, vy + viewport.height());
-#if 1
+
   osg::ref_ptr<const osg::Camera> camera_t =
     view.getCameraContainingPosition(mx, my, local_x, local_y);
 
@@ -62,7 +62,6 @@ static osg::Node *
 
   if (!camera_ptr.valid())
     return nullptr;
-#endif
 
   osgUtil::Intersector::CoordinateFrame cf;
   if (camera_ptr->getViewport())

@@ -2,6 +2,7 @@
 #define TREEPATHS_HPP_
 
 #include "treepath.hpp"
+#include "isequal.hpp"
 
 struct TreePaths {
   struct Marker;
@@ -19,6 +20,20 @@ struct TreePaths {
     TreePath x;
     TreePath y;
     TreePath z;
+
+    template <typename F>
+    static void forEachMember(const F &f)
+    {
+      f(&XYZ::path);
+      f(&XYZ::x);
+      f(&XYZ::y);
+      f(&XYZ::z);
+    }
+
+    bool operator==(const XYZ &arg) const
+    {
+      return isEqual(*this, arg);
+    }
   };
 
   struct Position : XYZ {
@@ -29,6 +44,18 @@ struct TreePaths {
   struct Marker {
     TreePath path;
     Position position;
+
+    template <typename F>
+    static void forEachMember(const F &f)
+    {
+      f(&Marker::path);
+      f(&Marker::position);
+    }
+
+    bool operator==(const Marker &arg) const
+    {
+      return isEqual(*this, arg);
+    }
   };
 
   struct Translation : XYZ
@@ -53,12 +80,38 @@ struct TreePaths {
     struct Geometry {
       TreePath path;
       Scale scale;
+
+      template <typename F>
+      static void forEachMember(const F &f)
+      {
+        f(&Geometry::path);
+        f(&Geometry::scale);
+      }
+
+      bool operator==(const Geometry &arg) const
+      {
+        return isEqual(*this, arg);
+      }
     };
 
     TreePath path;
     Translation translation;
     Rotation rotation;
     Geometry geometry;
+
+    template <typename F>
+    static void forEachMember(const F &f)
+    {
+      f(&Box::path);
+      f(&Box::translation);
+      f(&Box::rotation);
+      f(&Box::geometry);
+    }
+
+    bool operator==(const Box &arg) const
+    {
+      return isEqual(*this, arg);
+    }
   };
 
   struct DistanceError {
@@ -81,6 +134,11 @@ struct TreePaths {
       f(&DistanceError::weight);
       f(&DistanceError::error);
     }
+
+    bool operator==(const DistanceError &arg) const
+    {
+      return isEqual(*this, arg);
+    }
   };
 
   TreePath path;
@@ -89,6 +147,19 @@ struct TreePaths {
   DistanceErrors distance_errors;
   TreePath next_distance_error_path;
   TreePath total_error;
+
+  template <typename F>
+  static void forEachMember(const F &f)
+  {
+    f(&TreePaths::path);
+    f(&TreePaths::box);
+    f(&TreePaths::markers);
+    f(&TreePaths::distance_errors);
+    f(&TreePaths::next_distance_error_path);
+    f(&TreePaths::total_error);
+  }
+
+  bool operator==(const TreePaths &arg) const { return isEqual(*this, arg); }
 };
 
 
