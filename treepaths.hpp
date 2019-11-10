@@ -75,6 +75,7 @@ struct TreePaths {
   Box box;
   Markers markers;
   DistanceErrors distance_errors;
+  TreePath next_distance_error_path;
   TreePath total_error;
 };
 

@@ -11,8 +11,6 @@
 #include "indicesof.hpp"
 #include "sceneobjects.hpp"
 
-#define IMPLEMENT_ADD_DISTANCE_ERROR 0
-
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
 
@@ -354,12 +352,10 @@ static Optional<TreePath>
 }
 
 
-#if IMPLEMENT_ADD_DISTANCE_ERROR
 static bool isScenePath(const TreePath &path, const TreePaths &tree_paths)
 {
   return path == tree_paths.path;
 }
-#endif
 
 
 struct MainWindowController::Impl {
@@ -382,7 +378,6 @@ struct MainWindowController::Impl {
       int value
     );
 
-#if IMPLEMENT_ADD_DISTANCE_ERROR
   static TreeWidget::MenuItems
     contextMenuItemsForPath(
       MainWindowController &controller,
@@ -399,18 +394,7 @@ struct MainWindowController::Impl {
 
     return {};
   }
-#else
-  static TreeWidget::MenuItems
-    contextMenuItemsForPath(
-      MainWindowController &,
-      const TreePath &
-    )
-  {
-    return {};
-  }
-#endif
 
-#if IMPLEMENT_ADD_DISTANCE_ERROR
   static void
     addDistanceErrorPressed(MainWindowController &controller,const TreePath &)
   {
@@ -425,12 +409,18 @@ struct MainWindowController::Impl {
       createDistanceErrorInScene(scene);
 
     scene_handles.distance_errors.push_back(distance_error_handles);
-    createDistanceErrorInTree(distance_error, tree_widget, tree_paths);
+
+    createDistanceErrorInTree(
+      distance_error,
+      tree_widget,
+      tree_paths,
+      scene_state
+    );
+
     updateErrorsInState(scene_state);
-    updateSceneObjects();
-    updateTreeValues();
+    updateSceneObjects(scene, scene_handles, scene_state);
+    updateTreeValues(tree_widget, tree_paths, scene_state);
   }
-#endif
 };
 
 

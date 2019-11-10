@@ -5,6 +5,7 @@
 #include "numericvalue.hpp"
 #include "sceneerror.hpp"
 #include "indicesof.hpp"
+#include "streamvector.hpp"
 
 using std::cerr;
 using std::string;
@@ -190,6 +191,32 @@ TreePaths::DistanceError
 }
 
 
+void
+  createDistanceErrorInTree(
+    const SceneState::DistanceError &state_distance_error,
+    TreeWidget &tree_widget,
+    TreePaths &tree_paths,
+    const SceneState &scene_state
+  )
+{
+  TreePath &next_distance_error_path = tree_paths.next_distance_error_path;
+  TreePath distance_error_path = next_distance_error_path;
+  ++next_distance_error_path.back();
+
+  tree_paths.distance_errors.push_back(
+    createDistanceErrorInTree1(
+      tree_widget,
+      tree_paths,
+      distance_error_path,
+      scene_state.markers,
+      state_distance_error
+    )
+  );
+
+  ++tree_paths.total_error[1];
+}
+
+
 static void
   updateDistanceError(
     TreeWidget &tree_widget,
@@ -322,40 +349,29 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
     }
   }
 
-  // We'll need to have a way of indicating where distance errors should
-  // be added.
-  {
-    TreePath next_distance_error_path = next_scene_child_path;
+  tree_paths.next_distance_error_path = next_scene_child_path;
 
-    for (auto &state_distance_error : scene_state.distance_errors) {
-      TreePath distance_error_path = next_distance_error_path;
-      ++next_distance_error_path.back();
-
-      tree_paths.distance_errors.push_back(
-        createDistanceErrorInTree1(
-          tree_widget,
-          tree_paths,
-          distance_error_path,
-          scene_state.markers,
-          state_distance_error
-        )
-      );
-    }
-
-    assert(
-      tree_paths.distance_errors.size() == scene_state.distance_errors.size()
-    );
-
-    next_scene_child_path = next_distance_error_path;
-  }
-
-  tree_paths.total_error = next_scene_child_path;
+  TreePath total_error_path = next_scene_child_path;
   ++next_scene_child_path.back();
 
+  tree_paths.total_error = total_error_path;
+
   tree_widget.createVoidItem(
-    tree_paths.total_error, LabelProperties{totalErrorLabel(0)}
+    total_error_path, LabelProperties{totalErrorLabel(0)}
   );
 
+  for (auto &state_distance_error : scene_state.distance_errors) {
+    createDistanceErrorInTree(
+      state_distance_error,
+      tree_widget,
+      tree_paths,
+      scene_state
+    );
+  }
+
+  assert(
+    tree_paths.distance_errors.size() == scene_state.distance_errors.size()
+  );
 
   return tree_paths;
 }
