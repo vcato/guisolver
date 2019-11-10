@@ -6,6 +6,7 @@
 #include "sceneerror.hpp"
 #include "indicesof.hpp"
 #include "streamvector.hpp"
+#include "removeindexfrom.hpp"
 
 using std::cerr;
 using std::string;
@@ -214,6 +215,36 @@ void
   );
 
   ++tree_paths.total_error[1];
+}
+
+
+void
+  removeDistanceErrorFromTree(
+    int distance_error_index,
+    TreePaths &tree_paths,
+    TreeWidget &tree_widget
+  )
+{
+  TreePaths::DistanceErrors &distance_errors = tree_paths.distance_errors;
+  tree_widget.removeItem(distance_errors[distance_error_index].path);
+  removeIndexFrom(distance_errors, distance_error_index);
+
+  while (distance_error_index < int(distance_errors.size())) {
+    TreePaths::DistanceError &distance_error =
+      distance_errors[distance_error_index];
+
+    distance_error.forEachMember(
+      [&](TreePath (TreePaths::DistanceError::*member_ptr)){
+        TreePath &member = distance_error.*member_ptr;
+        --member[1];
+      }
+    );
+
+    ++distance_error_index;
+  }
+
+  --tree_paths.next_distance_error_path[1];
+  --tree_paths.total_error[1];
 }
 
 

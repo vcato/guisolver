@@ -18,4 +18,15 @@ extern void
     const SceneState &state
   );
 
-extern SceneHandles::DistanceError createDistanceErrorInScene(Scene &scene);
+void
+  removeDistanceErrorFromScene(
+    Scene &scene,
+    SceneHandles::DistanceErrors &distance_errors,
+    int index
+  );
+
+extern void
+  createDistanceErrorInScene(
+    Scene &scene,
+    vector<SceneHandles::DistanceError> &distance_error_handles
+  );

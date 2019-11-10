@@ -5,11 +5,11 @@
 #include "maketransform.hpp"
 #include "indicesof.hpp"
 #include "globaltransform.hpp"
+#include "removeindexfrom.hpp"
 
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
 using LineHandle = Scene::LineHandle;
-
 
 static Point
   localTranslation(Scene::TransformHandle transform_id,const Scene &scene)
@@ -101,7 +101,7 @@ static SceneHandles::Marker
 }
 
 
-SceneHandles::DistanceError createDistanceErrorInScene(Scene &scene)
+static SceneHandles::DistanceError createDistanceErrorInScene1(Scene &scene)
 {
   LineHandle line = scene.createLine(scene.top());
   scene.setColor(line,1,0,0);
@@ -109,12 +109,36 @@ SceneHandles::DistanceError createDistanceErrorInScene(Scene &scene)
 }
 
 
-static SceneHandles::DistanceError createSceneDistanceError(Scene &scene)
-{
-  SceneHandles::DistanceError one_distance_error_handles =
-    createDistanceErrorInScene(scene);
 
-  return one_distance_error_handles;
+void
+  createDistanceErrorInScene(
+    Scene &scene,
+    vector<SceneHandles::DistanceError> &distance_error_handles
+  )
+{
+  distance_error_handles.push_back(createDistanceErrorInScene1(scene));
+}
+
+
+static void
+  removeDistanceErrorFromScene1(
+    Scene &scene,
+    const SceneHandles::DistanceError &distance_error
+  )
+{
+  scene.destroyLine(distance_error.line);
+}
+
+
+void
+  removeDistanceErrorFromScene(
+    Scene &scene,
+    SceneHandles::DistanceErrors &distance_errors,
+    int index
+  )
+{
+  removeDistanceErrorFromScene1(scene, distance_errors[index]);
+  removeIndexFrom(distance_errors, index);
 }
 
 
@@ -142,7 +166,7 @@ SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
   auto n_distance_errors = state.distance_errors.size();
 
   for (decltype(n_distance_errors) i=0; i!=n_distance_errors; ++i) {
-    distance_error_handles.push_back(createSceneDistanceError(scene));
+    createDistanceErrorInScene(scene, distance_error_handles);
   }
 
   return {

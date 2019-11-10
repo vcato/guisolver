@@ -7,6 +7,7 @@
 #include "markerindex.hpp"
 #include "vector.hpp"
 #include "optional.hpp"
+#include "removeindexfrom.hpp"
 
 
 struct SceneState {
@@ -55,6 +56,11 @@ struct SceneState {
   {
     distance_errors.emplace_back();
     return distance_errors.back();
+  }
+
+  void removeDistanceError(int index)
+  {
+    removeIndexFrom(distance_errors, index);
   }
 
   Point markerPredicted(int marker_index) const

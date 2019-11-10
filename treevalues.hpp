@@ -1,8 +1,6 @@
 #include "treepaths.hpp"
 #include "treewidget.hpp"
 #include "scenestate.hpp"
-#include "treewidget.hpp"
-#include "treepaths.hpp"
 
 
 extern TreePaths fillTree(TreeWidget &, const SceneState &);
@@ -24,4 +22,11 @@ extern void
     TreeWidget &tree_widget,
     TreePaths &tree_paths,
     const SceneState &scene_state
+  );
+
+extern void
+  removeDistanceErrorFromTree(
+    int distance_error_index,
+    TreePaths &tree_paths,
+    TreeWidget &tree_widget
   );

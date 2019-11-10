@@ -88,6 +88,9 @@ struct OSGScene::Impl {
       const ShapeParams &shape_params
     );
 
+  static void
+    destroyGeometryTransform(osg::MatrixTransform &geometry_transform);
+
   static ViewPtr
     setupViewInGraphicsWindow(
       GraphicsWindowPtr graphics_window_ptr,
@@ -98,7 +101,7 @@ struct OSGScene::Impl {
   static size_t getNewHandleIndex(OSGScene &scene,osg::MatrixTransform &);
 
   static osg::MatrixTransform &
-    geometryTransform(OSGScene &,TransformHandle);
+    geometryTransform(OSGScene &,const TransformHandle &);
 
   static const osg::MatrixTransform &
     geometryTransform(const OSGScene &,TransformHandle);
@@ -273,25 +276,6 @@ static void scaleAxisXY(osg::Node *x_axis_node,float scale_factor)
   osg::MatrixTransform *x_axis_transform = x_axis_node->asTransform()->asMatrixTransform();
   x_axis_transform->setMatrix(osg::Matrix::scale(scale_factor,scale_factor,1)*x_axis_transform->getMatrix());
 }
-
-
-#if 0
-static string stageName(osgManipulator::MotionCommand::Stage stage)
-{
-  switch (stage) {
-    case osgManipulator::MotionCommand::NONE:
-      return "NONE";
-    case osgManipulator::MotionCommand::START:
-      return "START";
-    case osgManipulator::MotionCommand::MOVE:
-      return "MOVE";
-    case osgManipulator::MotionCommand::FINISH:
-      return "FINISH";
-  }
-
-  return "";
-}
-#endif
 
 
 struct OSGScene::Impl::DraggerCallback : osgManipulator::DraggerCallback {
@@ -683,12 +667,22 @@ static osg::ref_ptr<osg::ShapeDrawable> createBoxDrawable()
 
 
 static osg::MatrixTransform &
-  addTransformTo(osg::Group &parent)
+  addTransformToGroup(osg::Group &parent)
 {
   MatrixTransformPtr transform_ptr = createMatrixTransform();
   osg::MatrixTransform &matrix_transform = *transform_ptr;
   parent.addChild(transform_ptr);
   return matrix_transform;
+}
+
+
+static void
+  removeTransformFromGroup(
+    osg::Group &parent,
+    osg::Group &matrix_transform
+  )
+{
+  parent.removeChild(&matrix_transform);
 }
 
 
@@ -800,13 +794,13 @@ static void addFloorTo(osg::MatrixTransform &matrix_transform)
 
 OSGScene::OSGScene()
 : top_node_ptr(createMatrixTransform()),
-  top_handle(Impl::makeHandle(*this,addTransformTo(*top_node_ptr))),
+  top_handle(Impl::makeHandle(*this,addTransformToGroup(*top_node_ptr))),
   selection_handler(*this)
 {
   osg::MatrixTransform &node = *top_node_ptr;
 
   osg::MatrixTransform &geometry_transform =
-    Impl::geometryTransform(*this,top_handle);
+    Impl::geometryTransform(*this, top_handle);
 
   addFloorTo(geometry_transform);
   setRotatation(node,worldRotation());
@@ -858,16 +852,32 @@ auto
     const ShapeParams &shape_params
   ) -> osg::MatrixTransform &
 {
-  osg::MatrixTransform &matrix_transform =
-    addTransformTo(parentOf(Impl::geometryTransform(scene,parent)));
+  // * parent group
+  //   * parent geometry transform
+  //   * new transform/group
+  //     * new geometry transform
+  osg::MatrixTransform &parent_geometry_transform =
+    Impl::geometryTransform(scene,parent);
 
-  osg::MatrixTransform &geometry_transform =
-    addTransformTo(matrix_transform);
-
+  osg::Group &parent_group = parentOf(parent_geometry_transform);
+  osg::MatrixTransform &matrix_transform = addTransformToGroup(parent_group);
+  osg::Group &new_group = matrix_transform;
+  osg::MatrixTransform &geometry_transform = addTransformToGroup(new_group);
   osg::Geode &geode = createGeode(geometry_transform, shape_params.colorMode());
   geode.setName(shape_params.geode_name);
   geode.addDrawable(shape_params.createDrawable());
   return geometry_transform;
+}
+
+
+void
+  OSGScene::Impl::destroyGeometryTransform(
+    osg::MatrixTransform &geometry_transform
+  )
+{
+  osg::Group &matrix_transform = parentOf(geometry_transform);
+  osg::Group &parent_group = parentOf(matrix_transform);
+  removeTransformFromGroup(parent_group, matrix_transform);
 }
 
 
@@ -906,8 +916,20 @@ auto OSGScene::createLine(TransformHandle parent) -> LineHandle
 }
 
 
+void OSGScene::destroyLine(LineHandle line_handle)
+{
+  osg::MatrixTransform &geometry_transform =
+    Impl::geometryTransform(*this, line_handle);
+
+  Impl::destroyGeometryTransform(geometry_transform);
+}
+
+
 osg::MatrixTransform&
-  OSGScene::Impl::geometryTransform(OSGScene &scene,TransformHandle handle)
+  OSGScene::Impl::geometryTransform(
+    OSGScene &scene,
+    const TransformHandle &handle
+  )
 {
   assert(scene.transform_ptrs[handle.index]);
   return *scene.transform_ptrs[handle.index];
@@ -1050,7 +1072,8 @@ auto
 
 auto
   OSGScene::Impl::makeLineHandle(
-    OSGScene &scene,osg::MatrixTransform &transform
+    OSGScene &scene,
+    osg::MatrixTransform &transform
   ) -> LineHandle
 {
   return LineHandle{getNewHandleIndex(scene,transform)};

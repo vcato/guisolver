@@ -357,6 +357,25 @@ static bool isScenePath(const TreePath &path, const TreePaths &tree_paths)
 }
 
 
+static Optional<int>
+  maybeDistanceErrorIndexOfPath(
+    const TreePath &path,
+    const TreePaths &tree_paths
+  )
+{
+  for (auto index : indicesOf(tree_paths.distance_errors)) {
+    const TreePaths::DistanceError &distance_error_paths =
+      tree_paths.distance_errors[index];
+
+    if (path == distance_error_paths.path) {
+      return index;
+    }
+  }
+
+  return {};
+}
+
+
 struct MainWindowController::Impl {
   static void handleSceneChanging(MainWindowController &);
   static void handleSceneChanged(MainWindowController &);
@@ -384,31 +403,16 @@ struct MainWindowController::Impl {
     );
 
   static void
-    addDistanceErrorPressed(MainWindowController &controller,const TreePath &)
-  {
-    Scene &scene = controller.data.scene;
-    SceneHandles &scene_handles = controller.data.scene_handles;
-    SceneState &scene_state = controller.data.scene_state;
-    TreeWidget &tree_widget = controller.data.tree_widget;
-    TreePaths &tree_paths = controller.data.tree_paths;
-    SceneState::DistanceError &distance_error = scene_state.addDistanceError();
-
-    SceneHandles::DistanceError distance_error_handles =
-      createDistanceErrorInScene(scene);
-
-    scene_handles.distance_errors.push_back(distance_error_handles);
-
-    createDistanceErrorInTree(
-      distance_error,
-      tree_widget,
-      tree_paths,
-      scene_state
+    addDistanceErrorPressed(
+      MainWindowController &controller,
+      const TreePath &
     );
 
-    updateErrorsInState(scene_state);
-    updateSceneObjects(scene, scene_handles, scene_state);
-    updateTreeValues(tree_widget, tree_paths, scene_state);
-  }
+  static void
+    removeDistanceErrorPressed(
+      MainWindowController &controller,
+      int distance_error_index
+    );
 };
 
 
@@ -518,18 +522,110 @@ void
 }
 
 
+void
+  MainWindowController::Impl::addDistanceErrorPressed(
+    MainWindowController &controller,
+    const TreePath &
+  )
+{
+  Scene &scene = controller.data.scene;
+  SceneHandles &scene_handles = controller.data.scene_handles;
+  SceneState &scene_state = controller.data.scene_state;
+  TreeWidget &tree_widget = controller.data.tree_widget;
+  TreePaths &tree_paths = controller.data.tree_paths;
+  SceneState::DistanceError &distance_error = scene_state.addDistanceError();
+  createDistanceErrorInScene(scene, scene_handles.distance_errors);
+
+  createDistanceErrorInTree(
+    distance_error,
+    tree_widget,
+    tree_paths,
+    scene_state
+  );
+
+  updateErrorsInState(scene_state);
+  updateSceneObjects(scene, scene_handles, scene_state);
+  updateTreeValues(tree_widget, tree_paths, scene_state);
+}
+
+
+#if 0
+void
+  MainWindowController::Impl::removeDistanceErrorPressed(
+    MainWindowController &/*controller*/,
+    int /*distance_error_index*/
+  )
+{
+  assert(false); // not implemented
+}
+#else
+void
+  MainWindowController::Impl::removeDistanceErrorPressed(
+    MainWindowController &controller,
+    int distance_error_index
+  )
+{
+  SceneState &scene_state = controller.data.scene_state;
+  Scene &scene = controller.data.scene;
+  SceneHandles &scene_handles = controller.data.scene_handles;
+  TreePaths &tree_paths = controller.data.tree_paths;
+  TreeWidget &tree_widget = controller.data.tree_widget;
+
+  removeDistanceErrorFromTree(
+    distance_error_index,
+    tree_paths,
+    tree_widget
+  );
+
+  removeDistanceErrorFromScene(
+    scene,
+    scene_handles.distance_errors,
+    distance_error_index
+  );
+
+  scene_state.removeDistanceError(distance_error_index);
+  solveBoxPosition(scene_state);
+  updateTreeValues(tree_widget, tree_paths, scene_state);
+  updateSceneObjects(scene, scene_handles, scene_state);
+}
+#endif
+
+
 TreeWidget::MenuItems
   MainWindowController::Impl::contextMenuItemsForPath(
     MainWindowController &controller,
     const TreePath &path
   )
 {
-  if (isScenePath(path, controller.data.tree_paths)) {
+  const TreePaths &tree_paths = controller.data.tree_paths;
+
+  if (isScenePath(path, tree_paths)) {
+    auto add_distance_error_function =
+      [&controller,path]{
+        Impl::addDistanceErrorPressed(controller, path);
+      };
+
     return {
-      {"Add Distance Error",
-        [&controller,path]{ Impl::addDistanceErrorPressed(controller, path); }
-      }
+      {"Add Distance Error", add_distance_error_function }
     };
+  }
+
+  {
+    Optional<int> maybe_distance_error_index =
+      maybeDistanceErrorIndexOfPath(path, tree_paths);
+
+    if (maybe_distance_error_index) {
+      auto index = *maybe_distance_error_index;
+
+      auto remove_distance_error_function =
+        [&controller,index]{
+          Impl::removeDistanceErrorPressed(controller, index);
+        };
+
+      return {
+        {"Remove Distance Error", remove_distance_error_function}
+      };
+    }
   }
 
   return {};

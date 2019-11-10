@@ -69,6 +69,18 @@ struct TreePaths {
     TreePath desired_distance;
     TreePath weight;
     TreePath error;
+
+    template <typename F>
+    static void forEachMember(const F &f)
+    {
+      f(&DistanceError::path);
+      f(&DistanceError::start);
+      f(&DistanceError::end);
+      f(&DistanceError::distance);
+      f(&DistanceError::desired_distance);
+      f(&DistanceError::weight);
+      f(&DistanceError::error);
+    }
   };
 
   TreePath path;

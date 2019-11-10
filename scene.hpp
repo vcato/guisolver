@@ -13,7 +13,7 @@ struct Scene {
   using Vector = Vec3;
 
   struct TransformHandle {
-    const size_t index;
+    size_t index;
 
     friend std::ostream&
       operator<<(std::ostream &stream, const TransformHandle &transform_handle)
@@ -36,6 +36,7 @@ struct Scene {
   virtual TransformHandle createSphere(TransformHandle parent) = 0;
   virtual TransformHandle createBox(TransformHandle parent) = 0;
   virtual LineHandle createLine(TransformHandle parent) = 0;
+  virtual void destroyLine(LineHandle) = 0;
 
   TransformHandle createSphere() { return createSphere(top()); }
   TransformHandle createBox() { return createBox(top()); }
