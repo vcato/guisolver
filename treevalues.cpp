@@ -7,6 +7,7 @@
 #include "indicesof.hpp"
 #include "streamvector.hpp"
 #include "removeindexfrom.hpp"
+#include "startswith.hpp"
 
 using std::cerr;
 using std::string;
@@ -230,40 +231,6 @@ static void
 }
 
 
-static void offsetPath(TreePath &member, int offset, int depth)
-{
-  member[depth] += offset;
-}
-
-
-static void offsetPath(TreePaths::XYZ &xyz, int offset, int depth)
-{
-  xyz.forEachMember(
-    [&](auto TreePaths::XYZ::*member_ptr){
-      offsetPath(xyz.*member_ptr, offset, depth);
-    }
-  );
-}
-
-
-static void offsetPath(TreePaths::Position &position, int offset, int depth)
-{
-  TreePaths::XYZ &xyz = position;
-  offsetPath(xyz, offset, depth);
-}
-
-
-static void
-  offsetMarkerPath(TreePaths::Marker &marker, int offset, int depth)
-{
-  marker.forEachMember(
-    [&](auto TreePaths::Marker::*member_ptr){
-      offsetPath(marker.*member_ptr, offset, depth);
-    }
-  );
-}
-
-
 void
   removeDistanceErrorFromTree(
     int distance_error_index,
@@ -288,6 +255,57 @@ void
 }
 
 
+template <typename Visitor>
+static void visitPaths(TreePath &path, const Visitor &visitor)
+{
+  visitor(path);
+}
+
+
+template <typename T, typename Visitor>
+static void visitPaths(vector<T> &v, const Visitor &visitor)
+{
+  for (auto i : indicesOf(v)) {
+    visitPaths(v[i], visitor);
+  }
+}
+
+
+template <typename T, typename Visitor>
+static void visitPaths(const vector<T> &v, const Visitor &visitor)
+{
+  for (auto i : indicesOf(v)) {
+    visitPaths(v[i], visitor);
+  }
+}
+
+
+template <typename Object, typename Visitor>
+static void visitPaths(Object &object, const Visitor &visitor)
+{
+  object.forEachMember(
+    [&](auto member_ptr){
+      visitPaths(object.*member_ptr, visitor);
+    }
+  );
+}
+
+
+static void
+  handlePathRemoval(TreePath &path_to_update, const TreePath &path_removed)
+{
+  if (startsWith(path_to_update, parentPath(path_removed))) {
+    if (path_to_update.size() >= path_removed.size()) {
+      auto depth = path_removed.size() - 1;
+
+      if (path_to_update[depth] > path_removed[depth]) {
+        --path_to_update[depth];
+      }
+    }
+  }
+}
+
+
 extern void
   removeMarkerFromTree(
     MarkerIndex marker_index,
@@ -296,47 +314,17 @@ extern void
   )
 {
   TreePaths::Markers &markers = tree_paths.markers;
-  const TreePath &marker_path = markers[marker_index].path;
+  TreePath marker_path = markers[marker_index].path;
 
-  if (marker_path.size() == 2) {
-    tree_widget.removeItem(marker_path);
-    removeIndexFrom(markers, marker_index);
+  tree_widget.removeItem(marker_path);
+  removeIndexFrom(markers, marker_index);
 
-    for (auto i : indicesOf(markers)) {
-      if (markers[i].path.size() == 2) {
-        // This is a global marker.
-        if (int(i) >= marker_index) {
-          offsetMarkerPath(markers[i], -1, /*depth*/1);
-        }
-      }
+  visitPaths(
+    tree_paths,
+    [&](TreePath &path){
+      handlePathRemoval(path, marker_path);
     }
-
-    for (auto distance_error_index : indicesOf(tree_paths.distance_errors)) {
-      TreePaths::DistanceError &distance_error =
-        tree_paths.distance_errors[distance_error_index];
-
-      offsetDistanceErrorPath(distance_error, -1);
-    }
-
-    --tree_paths.next_distance_error_path[1];
-    --tree_paths.next_scene_marker_path[1];
-    --tree_paths.total_error[1];
-  }
-  else {
-    tree_widget.removeItem(marker_path);
-    removeIndexFrom(markers, marker_index);
-
-    for (auto i : indicesOf(markers)) {
-      if (markers[i].path.size() != 2) {
-        // This is a local marker.
-        if (int(i) >= marker_index) {
-          offsetMarkerPath(markers[i], -1, /*depth*/2);
-        }
-      }
-    }
-
-    cerr << "Removing local marker\n";
-  }
+  );
 }
 
 
