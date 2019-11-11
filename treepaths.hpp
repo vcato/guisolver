@@ -11,7 +11,7 @@ struct TreePaths {
   using DistanceErrors = vector<DistanceError>;
 
   TreePaths()
-  : markers(6)
+  : markers()
   {
   }
 
@@ -146,6 +146,8 @@ struct TreePaths {
   Markers markers;
   DistanceErrors distance_errors;
   TreePath next_distance_error_path;
+  TreePath next_box_marker_path;
+  TreePath next_scene_marker_path;
   TreePath total_error;
 
   template <typename F>

@@ -71,26 +71,38 @@ static Point localizePoint(const Point &global,const Transform &transform)
 }
 
 
-static MarkerIndex addLocalMarkerTo(SceneState &result, const Point &local)
+static MarkerIndex
+  addLocalMarkerTo(
+    SceneState &result,
+    const Point &local
+  )
 {
-  MarkerIndex marker_index = result.addMarker();
-  result.markers[marker_index].position = local;
-  result.markers[marker_index].is_local = true;
+  MarkerIndex marker_index = result.addUnnamedMarker();
+  result.marker(marker_index).position = local;
+  result.marker(marker_index).is_local = true;
   return marker_index;
 }
 
 
-static MarkerIndex addGlobalMarkerTo(SceneState &result, const Point &local)
+static MarkerIndex
+  addGlobalMarkerTo(
+    SceneState &result,
+    const Point &local
+  )
 {
-  MarkerIndex marker_index = result.addMarker();
-  result.markers[marker_index].position = local;
-  result.markers[marker_index].is_local = false;
+  MarkerIndex marker_index = result.addUnnamedMarker();
+  result.marker(marker_index).position = local;
+  result.marker(marker_index).is_local = false;
   return marker_index;
 }
 
 
 static void
-  addDistanceErrorTo(SceneState &result,const Point &local, const Point &global)
+  addDistanceErrorTo(
+    SceneState &result,
+    const Point &local,
+    const Point &global
+  )
 {
   MarkerIndex local_marker_index = addLocalMarkerTo(result, local);
   MarkerIndex global_marker_index = addGlobalMarkerTo(result, global);

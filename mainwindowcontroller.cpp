@@ -25,11 +25,11 @@ static bool
     return true;
   }
 
-  MarkerIndex n_markers = state.markers.size();
+  MarkerIndex n_markers = state.markers().size();
 
   for (MarkerIndex i=0; i!=n_markers; ++i) {
     if (handle == setup.markers[i].handle) {
-      if (state.markers[i].is_local) {
+      if (state.marker(i).is_local) {
         return true;
       }
     }
@@ -185,13 +185,16 @@ static bool
     const TreePath &path,
     NumericValue value,
     const TreePaths::Markers &markers_paths,
-    SceneState::Markers &marker_states
+    SceneState &scene_state
   )
 {
   for (auto i : indicesOf(markers_paths)) {
     bool value_was_set =
       setMarkerValue(
-        path,value,markers_paths[i],marker_states[i]
+        path,
+        value,
+        markers_paths[i],
+        scene_state.marker(i)
       );
 
     if (value_was_set) {
@@ -240,7 +243,7 @@ static bool
         path,
         value,
         tree_paths.markers,
-        scene_state.markers
+        scene_state
       );
 
     if (was_markers_value) {
@@ -409,6 +412,12 @@ struct MainWindowController::Impl {
     );
 
   static void
+    addMarkerPressed(
+      MainWindowController &controller,
+      const TreePath &
+    );
+
+  static void
     removeDistanceErrorPressed(
       MainWindowController &controller,
       int distance_error_index
@@ -534,7 +543,7 @@ void
   TreeWidget &tree_widget = controller.data.tree_widget;
   TreePaths &tree_paths = controller.data.tree_paths;
   SceneState::DistanceError &distance_error = scene_state.addDistanceError();
-  createDistanceErrorInScene(scene, scene_handles.distance_errors);
+  createDistanceErrorInScene(scene, scene_handles, distance_error);
 
   createDistanceErrorInTree(
     distance_error,
@@ -549,16 +558,32 @@ void
 }
 
 
-#if 0
 void
-  MainWindowController::Impl::removeDistanceErrorPressed(
-    MainWindowController &/*controller*/,
-    int /*distance_error_index*/
+  MainWindowController::Impl::addMarkerPressed(
+    MainWindowController &controller,
+    const TreePath &path
   )
 {
-  assert(false); // not implemented
+  TreePaths &tree_paths = controller.data.tree_paths;
+  SceneState &scene_state = controller.data.scene_state;
+  Scene &scene = controller.data.scene;
+  SceneHandles &scene_handles = controller.data.scene_handles;
+  TreeWidget &tree_widget = controller.data.tree_widget;
+
+  if (isScenePath(path, tree_paths)) {
+    MarkerIndex marker_index =
+      createMarkerInState(scene_state, /*is_local*/false);
+
+    createMarkerInScene(scene, scene_handles, scene_state, marker_index);
+    createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
+    updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+  }
+  else {
+    cerr << "Add marker to something else\n";
+  }
 }
-#else
+
+
 void
   MainWindowController::Impl::removeDistanceErrorPressed(
     MainWindowController &controller,
@@ -588,7 +613,6 @@ void
   updateTreeValues(tree_widget, tree_paths, scene_state);
   updateSceneObjects(scene, scene_handles, scene_state);
 }
-#endif
 
 
 TreeWidget::MenuItems
@@ -605,8 +629,14 @@ TreeWidget::MenuItems
         Impl::addDistanceErrorPressed(controller, path);
       };
 
+    auto add_marker_error_function =
+      [&controller,path]{
+        Impl::addMarkerPressed(controller, path);
+      };
+
     return {
-      {"Add Distance Error", add_distance_error_function }
+      {"Add Distance Error", add_distance_error_function },
+      {"Add Marker", add_marker_error_function },
     };
   }
 

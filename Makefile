@@ -26,15 +26,17 @@ run_guisolver: guisolver
 	./$*
 	touch $@
 
+DEFAULTSCENESTATE=defaultscenestate.o scenestate.o
+
 guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
-  osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o defaultscenestate.o \
+  osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o $(DEFAULTSCENESTATE) \
   sceneerror.o maketransform.o scenesolver.o optimize.o \
   qttreewidgetitem.o qtcombobox.o qtcombobox_moc.o \
   qtlineedit.o qtlineedit_moc.o qtslider.o qtslider.o \
   qtslider_moc.o qtspinbox.o qtspinbox_moc.o treevalues.o \
   qttreewidget.o qttreewidget_moc.o qtmenu.o qtslot.o qtslot_moc.o \
   mainwindowcontroller.o globaltransform.o \
-  settransform.o sceneobjects.o intersector.o
+  settransform.o sceneobjects.o intersector.o scenestate.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 optional_test: optional_test.o osgutil.o
@@ -53,7 +55,7 @@ scenesolver_test: scenesolver_test.o \
 optimize_test: optimize_test.o optimize.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
-treevalues_test: treevalues_test.o defaultscenestate.o treevalues.o \
+treevalues_test: treevalues_test.o $(DEFAULTSCENESTATE) treevalues.o \
   maketransform.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 

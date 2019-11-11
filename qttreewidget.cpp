@@ -293,16 +293,18 @@ QTreeWidgetItem&
     QTreeWidgetItem &parent_item,
     int index,
     const LabelProperties &label_properties,
-    const vector<std::string> &enumeration_names,
+    const EnumerationOptions &enumeration_names,
     int value
   )
 {
   QTreeWidgetItem &item = ::insertChildItem(parent_item,index);
   QtComboBox &combo_box = createItemWidget<QtComboBox>(item,label_properties);
+
   combo_box.current_index_changed_function =
     [this,&item](int index){
       handleComboBoxItemIndexChanged(&item,index);
     };
+
   combo_box.setItems(enumeration_names);
   combo_box.setIndex(value);
   return item;
@@ -545,6 +547,20 @@ QtSpinBox* QtTreeWidget::itemSpinBoxPtr(const TreePath &path)
 }
 
 
+QtComboBox* QtTreeWidget::itemComboBoxPtr(const TreePath &path)
+{
+  QTreeWidgetItem &item = itemFromPath(path);
+
+  Impl::QtItemWrapperWidget &wrapper_widget =
+    Impl::itemWrapperWidget(*this,item);
+
+  auto combo_box_ptr =
+    dynamic_cast<QtComboBox*>(wrapper_widget.value_widget_ptr);
+
+  return combo_box_ptr;
+}
+
+
 void
   QtTreeWidget::setItemNumericValue(
     const TreePath &path,
@@ -603,6 +619,20 @@ void
     assert(spin_box_ptr);
     spin_box_ptr->setValue(value);
   }
+}
+
+
+void
+  QtTreeWidget::setItemEnumerationValue(
+    const TreePath &path,
+    int value,
+    const EnumerationOptions &options
+  )
+{
+  QtComboBox *combo_box_ptr = itemComboBoxPtr(path);
+  assert(combo_box_ptr);
+  combo_box_ptr->setItems(options);
+  combo_box_ptr->setIndex(value);
 }
 
 

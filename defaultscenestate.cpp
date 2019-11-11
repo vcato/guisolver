@@ -2,7 +2,9 @@
 
 #include "scene.hpp"
 #include "maketransform.hpp"
+#include "contains.hpp"
 
+using std::ostringstream;
 
 static void
   createDistanceError(
@@ -21,33 +23,23 @@ static void
   createMarker(
     SceneState &state,
     const Point &position,
-    bool is_local,
-    const SceneState::String &name
+    bool is_local
   )
 {
-  state.markers.push_back(SceneState::Marker{position, is_local, name});
+  MarkerIndex index = createMarkerInState(state, is_local);
+  state.marker(index).position = position;
 }
 
 
-static void
-  createLocalMarker(
-    SceneState &state,
-    const Point &position,
-    const SceneState::String &name
-  )
+static void createLocalMarker(SceneState &state, const Point &position)
 {
-  createMarker(state,position,/*is_local*/true,name);
+  createMarker(state,position,/*is_local*/true);
 }
 
 
-static void
-  createGlobalMarker(
-    SceneState &state,
-    const Point &position,
-    const SceneState::String &name
-  )
+static void createGlobalMarker(SceneState &state, const Point &position)
 {
-  createMarker(state,position,/*is_local*/false,name);
+  createMarker(state,position,/*is_local*/false);
 }
 
 
@@ -75,12 +67,12 @@ SceneState defaultSceneState()
   result.box.global =
     makeTransform(defaultBoxCoordinateAxes(),defaultBoxTranslation());
 
-  createLocalMarker(result,  {1,1,0}, "local1");
-  createLocalMarker(result,  {1,1,1}, "local2");
-  createLocalMarker(result,  {0,1,1}, "local3");
-  createGlobalMarker(result, {1,2,0}, "global1");
-  createGlobalMarker(result, {1,2,1}, "global2");
-  createGlobalMarker(result, {0,2,1}, "global3");
+  createLocalMarker(result,  {1,1,0});
+  createLocalMarker(result,  {1,1,1});
+  createLocalMarker(result,  {0,1,1});
+  createGlobalMarker(result, {1,2,0});
+  createGlobalMarker(result, {1,2,1});
+  createGlobalMarker(result, {0,2,1});
 
   int n_lines = 3;
 

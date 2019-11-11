@@ -12,6 +12,7 @@
 #include <osg/io_utils>
 #include "osgutil.hpp"
 #include "osgpickhandler.hpp"
+#include "contains.hpp"
 
 using std::cerr;
 using std::string;
@@ -89,7 +90,10 @@ struct OSGScene::Impl {
     );
 
   static void
-    destroyGeometryTransform(osg::MatrixTransform &geometry_transform);
+    destroyGeometryTransform(
+      OSGScene &,
+      osg::MatrixTransform &geometry_transform
+    );
 
   static ViewPtr
     setupViewInGraphicsWindow(
@@ -872,9 +876,19 @@ auto
 
 void
   OSGScene::Impl::destroyGeometryTransform(
+    OSGScene &scene,
     osg::MatrixTransform &geometry_transform
   )
 {
+  if (scene.selection_handler.selectedNodePtr()) {
+    osg::Group &selected_geometry_transform =
+      parentOf(*scene.selection_handler.selectedNodePtr());
+
+    if (&geometry_transform == &selected_geometry_transform) {
+      scene.selection_handler.selectNode(nullptr);
+    }
+  }
+
   osg::Group &matrix_transform = parentOf(geometry_transform);
   osg::Group &parent_group = parentOf(matrix_transform);
   removeTransformFromGroup(parent_group, matrix_transform);
@@ -921,7 +935,7 @@ void OSGScene::destroyLine(LineHandle line_handle)
   osg::MatrixTransform &geometry_transform =
     Impl::geometryTransform(*this, line_handle);
 
-  Impl::destroyGeometryTransform(geometry_transform);
+  Impl::destroyGeometryTransform(*this, geometry_transform);
 }
 
 
@@ -998,20 +1012,6 @@ void OSGScene::setEndPoint(LineHandle handle,Point p)
   LineDrawable &line_drawable = Impl::lineDrawable(*this,handle);
   line_drawable.end_point = osg::Vec3f(p.x(),p.y(),p.z());
   line_drawable.setup();
-}
-
-
-template <typename A,typename B>
-static size_t findIndex(const vector<A> &v,B p)
-{
-  return std::find(v.begin(),v.end(),p) - v.begin();
-}
-
-
-template <typename T>
-static bool contains(const vector<T*> &v,T* p)
-{
-  return findIndex(v,p) != v.size();
 }
 
 

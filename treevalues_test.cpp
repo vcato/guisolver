@@ -2,31 +2,45 @@
 
 #include "defaultscenestate.hpp"
 #include "streamvector.hpp"
+#include "indicesof.hpp"
 
 using std::string;
 using std::ostringstream;
+using std::ostream;
+using std::cerr;
 using LabelText = std::string;
+
+
+namespace {
+struct FakeTreeItem {
+  LabelText label_text;
+  string value_string;
+  vector<FakeTreeItem> children;
+
+  template <typename F>
+  static void forEachMember(const F &f)
+  {
+    f(&FakeTreeItem::label_text);
+    f(&FakeTreeItem::value_string);
+    f(&FakeTreeItem::children);
+  }
+
+  bool operator==(const FakeTreeItem &arg) const
+  {
+    return isEqual(*this, arg);
+  }
+};
+}
+
 
 namespace {
 struct FakeTreeWidget : TreeWidget {
-  struct Item {
-    LabelText label;
-    vector<Item> children;
+  using Item = FakeTreeItem;
 
-    bool operator==(const Item &arg) const
-    {
-      return label == arg.label && children == arg.children;
-    }
-  };
+  static string voidValueText() { return ""; }
 
-  static LabelText voidLabelText(const LabelProperties &label_properties)
-  {
-    return label_properties.text;
-  }
-
-  static LabelText
-    numericLabelText(
-      const LabelProperties &label_properties,
+  static string
+    numericValueText(
       NumericValue value,
       NumericValue minimum_value,
       NumericValue maximum_value
@@ -35,7 +49,6 @@ struct FakeTreeWidget : TreeWidget {
     ostringstream stream;
 
     stream <<
-      label_properties.text <<
       ", value=" << value <<
       ", min=" << minimum_value <<
       ", max=" << maximum_value;
@@ -44,8 +57,7 @@ struct FakeTreeWidget : TreeWidget {
   }
 
   static LabelText
-    enumerationLabelText(
-      const LabelProperties &label_properties,
+    enumerationValueText(
       int value,
       const EnumerationOptions &options
     )
@@ -53,7 +65,6 @@ struct FakeTreeWidget : TreeWidget {
     ostringstream stream;
 
     stream <<
-      label_properties.text <<
       ", value=" << value <<
       ", options=" << options;
 
@@ -72,13 +83,19 @@ struct FakeTreeWidget : TreeWidget {
 
   Item root_item;
 
-  void createItem(const TreePath &new_item_path, const LabelText &label_text)
+  void
+    createItem(
+      const TreePath &new_item_path,
+      const LabelProperties &label_properties,
+      const string &value_string
+    )
   {
+    const LabelText &label_text = label_properties.text;
     Item &parent_item = item(root_item, parentPath(new_item_path));
 
     parent_item.children.emplace(
       parent_item.children.begin() + new_item_path.back(),
-      Item{label_text,{}}
+      Item{label_text, value_string, {}}
     );
   }
 
@@ -88,7 +105,7 @@ struct FakeTreeWidget : TreeWidget {
       const TreeWidget::LabelProperties &label_properties
     ) override
   {
-    createItem(new_item_path, voidLabelText(label_properties));
+    createItem(new_item_path, label_properties, voidValueText());
   }
 
   void
@@ -102,7 +119,8 @@ struct FakeTreeWidget : TreeWidget {
   {
     createItem(
       new_item_path,
-      numericLabelText(label_properties, value, minimum_value, maximum_value)
+      label_properties,
+      numericValueText(value, minimum_value, maximum_value)
     );
   }
 
@@ -116,7 +134,8 @@ struct FakeTreeWidget : TreeWidget {
   {
     createItem(
       new_item_path,
-      enumerationLabelText(label_properties, value, options)
+      label_properties,
+      enumerationValueText(value, options)
     );
   }
 
@@ -155,6 +174,17 @@ struct FakeTreeWidget : TreeWidget {
     assert(false); // not implemented
   }
 
+  void
+    setItemEnumerationValue(
+      const TreePath &path,
+      int value,
+      const EnumerationOptions &options
+    ) override
+  {
+    FakeTreeItem &item = this->item(root_item, path);
+    item.value_string = enumerationValueText(value, options);
+  }
+
   void selectItem(const TreePath &) override
   {
     assert(false); // not implemented
@@ -171,15 +201,21 @@ struct FakeTreeWidget : TreeWidget {
     assert(false); // not implemented
   }
 
+  template <typename F>
+  static void forEachMember(const F &f)
+  {
+    f(&FakeTreeWidget::root_item);
+  }
+
   bool operator==(const FakeTreeWidget &arg) const
   {
-    return root_item == arg.root_item;
+    return isEqual(*this, arg);
   }
 };
 }
 
 
-int main()
+static void testRemovingDistanceError()
 {
   SceneState state = defaultSceneState();
   FakeTreeWidget tree_widget;
@@ -193,9 +229,114 @@ int main()
   );
 
   state.removeDistanceError(distance_error_to_remove_index);
-  FakeTreeWidget new_tree_widget;
-  TreePaths new_tree_paths = fillTree(new_tree_widget, state);
+  FakeTreeWidget recreated_tree_widget;
+  TreePaths new_tree_paths = fillTree(recreated_tree_widget, state);
 
-  assert(new_tree_widget == tree_widget);
+  assert(recreated_tree_widget == tree_widget);
   assert(new_tree_paths == tree_paths);
+}
+
+
+static void indent(ostream &stream, int indent_level)
+{
+  for (int i=0; i!=indent_level; ++i) {
+    stream << "  ";
+  }
+}
+
+
+static void
+  showItem(const FakeTreeItem &item, ostream &stream, int &indent_level)
+{
+  indent(stream, indent_level);
+  stream << item.label_text << ": " << item.value_string << "\n";
+  ++indent_level;
+
+  for (auto &child_item : item.children) {
+    showItem(child_item, stream, indent_level);
+  }
+
+  --indent_level;
+}
+
+
+#if 0
+static void showTree(const string &name, const FakeTreeWidget &tree)
+{
+  cerr << name << ":\n";
+  int indent_level = 1;
+  showItem(tree.root_item, cerr, indent_level);
+}
+#endif
+
+
+template <typename T>
+static void checkMembersEqual(const T &a,const T &b);
+
+static void checkEqual(const FakeTreeWidget &a,const FakeTreeWidget &b)
+{
+  checkMembersEqual(a,b);
+}
+
+
+static void checkEqual(const FakeTreeItem &a,const FakeTreeItem &b)
+{
+  checkMembersEqual(a,b);
+}
+
+
+static void checkEqual(const string &a,const string &b)
+{
+  if (a != b) {
+    cerr << "a: " << a << "\n";
+    cerr << "b: " << b << "\n";
+    assert(false);
+  }
+}
+
+
+template <typename T>
+static void checkEqual(const vector<T> &a,const vector<T> &b)
+{
+  if (a.size() != b.size()) {
+    assert(false);
+  }
+
+  for (auto index : indicesOf(a)) {
+    checkEqual(a[index], b[index]);
+  }
+}
+
+
+template <typename T>
+static void checkMembersEqual(const T &a,const T &b)
+{
+  T::forEachMember([&](auto T::*member_ptr){
+    checkEqual(a.*member_ptr, b.*member_ptr);
+  });
+}
+
+
+static void testAddingMarker()
+{
+  SceneState state = defaultSceneState();
+  FakeTreeWidget tree_widget;
+  TreePaths tree_paths = fillTree(tree_widget, state);
+
+  MarkerIndex marker_index = createMarkerInState(state, /*is_local*/false);
+  createMarkerInTree(tree_widget, tree_paths, state, marker_index);
+  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, state);
+
+  FakeTreeWidget recreated_tree_widget;
+  TreePaths new_tree_paths = fillTree(recreated_tree_widget, state);
+  assert(recreated_tree_widget == tree_widget);
+  checkEqual(recreated_tree_widget, tree_widget);
+  assert(new_tree_paths == tree_paths);
+}
+
+
+int main()
+{
+  testRemovingDistanceError();
+  testAddingMarker();
 }

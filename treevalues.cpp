@@ -209,12 +209,24 @@ void
       tree_widget,
       tree_paths,
       distance_error_path,
-      scene_state.markers,
+      scene_state.markers(),
       state_distance_error
     )
   );
 
   ++tree_paths.total_error[1];
+}
+
+
+static void
+  offsetDistanceErrorPath(TreePaths::DistanceError &distance_error, int offset)
+{
+  distance_error.forEachMember(
+    [&](TreePath (TreePaths::DistanceError::*member_ptr)){
+      TreePath &member = distance_error.*member_ptr;
+      member[1] += offset;
+    }
+  );
 }
 
 
@@ -233,13 +245,7 @@ void
     TreePaths::DistanceError &distance_error =
       distance_errors[distance_error_index];
 
-    distance_error.forEachMember(
-      [&](TreePath (TreePaths::DistanceError::*member_ptr)){
-        TreePath &member = distance_error.*member_ptr;
-        --member[1];
-      }
-    );
-
+    offsetDistanceErrorPath(distance_error, -1);
     ++distance_error_index;
   }
 
@@ -280,6 +286,45 @@ static string totalErrorLabel(float total_error)
   std::ostringstream label_stream;
   label_stream << "total_error: " << total_error;
   return label_stream.str();
+}
+
+
+void
+  createMarkerInTree(
+    TreeWidget &tree_widget,
+    TreePaths &tree_paths,
+    const SceneState &scene_state,
+    MarkerIndex marker_index
+  )
+{
+  const SceneState::Marker &state_marker = scene_state.marker(marker_index);
+  assert(marker_index == MarkerIndex(tree_paths.markers.size()));
+
+  if (state_marker.is_local) {
+    TreePath &next_box_marker_path = tree_paths.next_box_marker_path;
+
+    tree_paths.markers.push_back(
+      createMarker(tree_widget,next_box_marker_path,state_marker.name)
+    );
+
+    ++next_box_marker_path.back();
+  }
+  else {
+    TreePath &next_scene_marker_path = tree_paths.next_scene_marker_path;
+
+    tree_paths.markers.push_back(
+      createMarker(tree_widget,next_scene_marker_path,state_marker.name)
+    );
+
+    ++next_scene_marker_path.back();
+
+    for (auto &distance_error : tree_paths.distance_errors) {
+      offsetDistanceErrorPath(distance_error, 1);
+    }
+
+    ++tree_paths.next_distance_error_path[1];
+    ++tree_paths.total_error[1];
+  }
 }
 
 
@@ -357,39 +402,27 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
   tree_paths.box.geometry.scale.y = box_scale_y_path;
   tree_paths.box.geometry.scale.z = box_scale_z_path;
 
-  {
-    int n_box_children = 3;
-    int marker_index = 0;
-
-    for (auto &state_marker : scene_state.markers) {
-      if (state_marker.is_local) {
-        tree_paths.markers[marker_index] =
-          createMarker(tree_widget,{0,0,n_box_children},state_marker.name);
-
-        ++n_box_children;
-      }
-      else {
-        TreePath marker_position_path = next_scene_child_path;
-        ++next_scene_child_path.back();
-
-        tree_paths.markers[marker_index] =
-          createMarker(tree_widget,marker_position_path,state_marker.name);
-      }
-
-      ++marker_index;
-    }
-  }
-
   tree_paths.next_distance_error_path = next_scene_child_path;
+  tree_paths.next_scene_marker_path = next_scene_child_path;
 
   TreePath total_error_path = next_scene_child_path;
   ++next_scene_child_path.back();
-
   tree_paths.total_error = total_error_path;
 
   tree_widget.createVoidItem(
     total_error_path, LabelProperties{totalErrorLabel(0)}
   );
+
+  {
+    TreePath &next_box_marker_path = tree_paths.next_box_marker_path;
+    next_box_marker_path = childPath(box_path, 3);
+
+    for (auto marker_index : indicesOf(scene_state.markers())) {
+      createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
+    }
+
+    next_scene_child_path = tree_paths.next_scene_marker_path;
+  }
 
   for (auto &state_distance_error : scene_state.distance_errors) {
     createDistanceErrorInTree(
@@ -488,7 +521,7 @@ void
     updateRotationValues(tree_widget, rotation_paths, rotation);
   }
 
-  updateMarkers(tree_widget, tree_paths.markers, state.markers);
+  updateMarkers(tree_widget, tree_paths.markers, state.markers());
 
   for (auto i : indicesOf(tree_paths.distance_errors)) {
     updateDistanceError(
@@ -501,4 +534,49 @@ void
   tree_widget.setItemLabel(
     tree_paths.total_error, totalErrorLabel(state.total_error)
   );
+}
+
+
+void
+  updateTreeDistanceErrorMarkerOptions(
+    TreeWidget &tree_widget,
+    const TreePaths &tree_paths,
+    const SceneState &scene_state
+  )
+{
+  const SceneState::Markers &state_markers = scene_state.markers();
+
+  TreeWidget::EnumerationOptions marker_options =
+    markerEnumerationOptions(state_markers);
+
+  for (auto i : indicesOf(tree_paths.distance_errors)) {
+    const TreePaths::DistanceError &distance_error_paths =
+      tree_paths.distance_errors[i];
+
+    const SceneState::DistanceError &distance_error_state =
+      scene_state.distance_errors[i];
+
+    const TreePath &start_path = distance_error_paths.start;
+    const TreePath &end_path = distance_error_paths.end;
+
+    Optional<MarkerIndex> optional_start_marker_index =
+      distance_error_state.optional_start_marker_index;
+
+    Optional<MarkerIndex> optional_end_marker_index =
+      distance_error_state.optional_end_marker_index;
+
+    int start_value =
+      enumerationValueFromMarkerIndex(optional_start_marker_index);
+
+    int end_value =
+      enumerationValueFromMarkerIndex(optional_end_marker_index);
+
+    tree_widget.setItemEnumerationValue(
+      start_path, start_value, marker_options
+    );
+
+    tree_widget.setItemEnumerationValue(
+      end_path, end_value, marker_options
+    );
+  }
 }

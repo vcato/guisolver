@@ -70,6 +70,13 @@ struct TreeWidget {
   virtual void
     setItemLabel(const TreePath &path,const std::string &new_label) = 0;
 
+  virtual void
+    setItemEnumerationValue(
+      const TreePath &,
+      int index,
+      const EnumerationOptions &
+    ) = 0;
+
   virtual void selectItem(const TreePath &path) = 0;
   virtual void removeItem(const TreePath &path) = 0;
   virtual Optional<TreePath> selectedItem() const = 0;

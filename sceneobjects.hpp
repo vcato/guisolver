@@ -18,7 +18,7 @@ extern void
     const SceneState &state
   );
 
-void
+extern void
   removeDistanceErrorFromScene(
     Scene &scene,
     SceneHandles::DistanceErrors &distance_errors,
@@ -28,5 +28,14 @@ void
 extern void
   createDistanceErrorInScene(
     Scene &scene,
-    vector<SceneHandles::DistanceError> &distance_error_handles
+    SceneHandles &,
+    const SceneState::DistanceError &
+  );
+
+extern void
+  createMarkerInScene(
+    Scene &scene,
+    SceneHandles &scene_handles,
+    const SceneState &,
+    MarkerIndex
   );

@@ -24,9 +24,24 @@ extern void
     const SceneState &scene_state
   );
 
+void
+  createMarkerInTree(
+    TreeWidget &tree_widget,
+    TreePaths &tree_paths,
+    const SceneState &scene_state,
+    MarkerIndex marker_index
+  );
+
 extern void
   removeDistanceErrorFromTree(
     int distance_error_index,
     TreePaths &tree_paths,
     TreeWidget &tree_widget
+  );
+
+extern void
+  updateTreeDistanceErrorMarkerOptions(
+    TreeWidget &tree_widget,
+    const TreePaths &tree_paths,
+    const SceneState &scene_state
   );

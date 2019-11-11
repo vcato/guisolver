@@ -5,6 +5,7 @@
 
 #include "qtslider.hpp"
 #include "qtspinbox.hpp"
+#include "qtcombobox.hpp"
 #include "treewidget.hpp"
 
 struct QHBoxLayout;
@@ -58,6 +59,13 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
     void
       setItemLabel(const TreePath &path,const std::string &new_label) override;
 
+    void
+      setItemEnumerationValue(
+        const TreePath &,
+        int index,
+        const EnumerationOptions &
+      ) override;
+
     TreePath itemPath(QTreeWidgetItem &item) const;
     void selectItem(const TreePath &path) override;
     void setItemExpanded(const TreePath &path,bool new_expanded_state);
@@ -85,6 +93,7 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
     void changeItemToSpinBox(const TreePath &path);
     QtSlider* itemSliderPtr(const TreePath &path);
     QtSpinBox* itemSpinBoxPtr(const TreePath &path);
+    QtComboBox* itemComboBoxPtr(const TreePath &path);
     QLabel *itemLabelPtr(const TreePath &path);
 
     template <typename T>
@@ -98,7 +107,7 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
         QTreeWidgetItem &parent_item,
         int index,
         const LabelProperties &,
-        const vector<std::string> &enumeration_names,
+        const EnumerationOptions &,
         int value
       );
 

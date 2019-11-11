@@ -386,6 +386,3 @@ t.origin
   * [DistanceError]
     * start: local3
     * end: global3
----
-It would be good to have some way to easily test the consistency between
-the tree and the scene state.

@@ -31,13 +31,13 @@ static void
 
 static void
   updateStateMarkerPositions(
-    SceneState::Markers &state_markers,
+    SceneState &scene_state,
     const SceneHandles::Markers &handles_markers,
     const Scene &scene
   )
 {
   for (auto i : indicesOf(handles_markers)) {
-    updateMarkerPosition(state_markers[i], handles_markers[i], scene);
+    updateMarkerPosition(scene_state.marker(i), handles_markers[i], scene);
   }
 }
 
@@ -49,7 +49,7 @@ void
     const SceneHandles &scene_handles
   )
 {
-  updateStateMarkerPositions(state.markers, scene_handles.markers, scene);
+  updateStateMarkerPositions(state, scene_handles.markers, scene);
   state.box.global = globalTransform(scene, scene_handles.box);
 }
 
@@ -86,7 +86,7 @@ static SceneHandles::Marker
 
 
 static SceneHandles::Marker
-  createSceneMarker(
+  createSceneMarker1(
     Scene &scene,
     const SceneState::Marker &state_marker,
     Scene::TransformHandle box
@@ -113,9 +113,13 @@ static SceneHandles::DistanceError createDistanceErrorInScene1(Scene &scene)
 void
   createDistanceErrorInScene(
     Scene &scene,
-    vector<SceneHandles::DistanceError> &distance_error_handles
+    SceneHandles &scene_handles,
+    const SceneState::DistanceError &
   )
 {
+  vector<SceneHandles::DistanceError> &distance_error_handles =
+    scene_handles.distance_errors;
+
   distance_error_handles.push_back(createDistanceErrorInScene1(scene));
 }
 
@@ -142,6 +146,21 @@ void
 }
 
 
+void
+  createMarkerInScene(
+    Scene &scene,
+    SceneHandles &scene_handles,
+    const SceneState &state,
+    MarkerIndex marker_index
+  )
+{
+  const SceneState::Marker &state_marker = state.marker(marker_index);
+  TransformHandle box_handle = scene_handles.box;
+  vector<SceneHandles::Marker> &marker_handles = scene_handles.markers;
+  marker_handles.push_back(createSceneMarker1(scene,state_marker,box_handle));
+}
+
+
 SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
 {
   auto box_handle = scene.createBox();
@@ -153,27 +172,20 @@ SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
     state.box.scale_z
   );
 
+  SceneHandles scene_handles;
+  scene_handles.box = box_handle;
+
   setTransform(box_handle, state.box.global, scene);
 
-  vector<SceneHandles::Marker> marker_handles;
-
-  for (auto &state_marker : state.markers) {
-    marker_handles.push_back(createSceneMarker(scene,state_marker,box_handle));
+  for (MarkerIndex marker_index : indicesOf(state.markers())) {
+    createMarkerInScene(scene, scene_handles, state, marker_index);
   }
 
-  vector<SceneHandles::DistanceError> distance_error_handles;
-
-  auto n_distance_errors = state.distance_errors.size();
-
-  for (decltype(n_distance_errors) i=0; i!=n_distance_errors; ++i) {
-    createDistanceErrorInScene(scene, distance_error_handles);
+  for (auto &distance_error : state.distance_errors) {
+    createDistanceErrorInScene(scene, scene_handles, distance_error);
   }
 
-  return {
-    box_handle,
-    marker_handles,
-    distance_error_handles
-  };
+  return scene_handles;
 }
 
 
@@ -279,6 +291,6 @@ void
   )
 {
   updateBoxInScene(scene, scene_handles.box, state.box);
-  updateMarkersInScene(scene, scene_handles.markers, state.markers);
+  updateMarkersInScene(scene, scene_handles.markers, state.markers());
   updateDistanceErrorsInScene(scene, scene_handles, state);
 }
