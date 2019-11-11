@@ -157,7 +157,9 @@ struct TreePaths {
     f(&TreePaths::box);
     f(&TreePaths::markers);
     f(&TreePaths::distance_errors);
-    f(&TreePaths::next_distance_error_path);
+    // f(&TreePaths::next_distance_error_path);
+    // f(&TreePaths::next_box_marker_path);
+    // f(&TreePaths::next_scene_marker_path);
     f(&TreePaths::total_error);
   }
 

@@ -193,65 +193,36 @@ TreePaths::DistanceError
 }
 
 
-void
-  createDistanceErrorInTree(
-    const SceneState::DistanceError &state_distance_error,
-    TreeWidget &tree_widget,
-    TreePaths &tree_paths,
-    const SceneState &scene_state
-  )
+static void
+  updatePathAfterRemoval(TreePath &path_to_update, const TreePath &path_removed)
 {
-  TreePath &next_distance_error_path = tree_paths.next_distance_error_path;
-  TreePath distance_error_path = next_distance_error_path;
-  ++next_distance_error_path.back();
+  if (startsWith(path_to_update, parentPath(path_removed))) {
+    if (path_to_update.size() >= path_removed.size()) {
+      auto depth = path_removed.size() - 1;
 
-  tree_paths.distance_errors.push_back(
-    createDistanceErrorInTree1(
-      tree_widget,
-      tree_paths,
-      distance_error_path,
-      scene_state.markers(),
-      state_distance_error
-    )
-  );
-
-  ++tree_paths.total_error[1];
+      if (path_to_update[depth] > path_removed[depth]) {
+        --path_to_update[depth];
+      }
+    }
+  }
 }
 
 
 static void
-  offsetDistanceErrorPath(TreePaths::DistanceError &distance_error, int offset)
-{
-  distance_error.forEachMember(
-    [&](TreePath (TreePaths::DistanceError::*member_ptr)){
-      TreePath &member = distance_error.*member_ptr;
-      member[1] += offset;
-    }
-  );
-}
-
-
-void
-  removeDistanceErrorFromTree(
-    int distance_error_index,
-    TreePaths &tree_paths,
-    TreeWidget &tree_widget
+  updatePathBeforeInsertion(
+    TreePath &path_to_update,
+    const TreePath &path_to_insert
   )
 {
-  TreePaths::DistanceErrors &distance_errors = tree_paths.distance_errors;
-  tree_widget.removeItem(distance_errors[distance_error_index].path);
-  removeIndexFrom(distance_errors, distance_error_index);
+  if (startsWith(path_to_update, parentPath(path_to_insert))) {
+    if (path_to_update.size() >= path_to_insert.size()) {
+      auto depth = path_to_insert.size() - 1;
 
-  while (distance_error_index < int(distance_errors.size())) {
-    TreePaths::DistanceError &distance_error =
-      distance_errors[distance_error_index];
-
-    offsetDistanceErrorPath(distance_error, -1);
-    ++distance_error_index;
+      if (path_to_update[depth] >= path_to_insert[depth]) {
+        ++path_to_update[depth];
+      }
+    }
   }
-
-  --tree_paths.next_distance_error_path[1];
-  --tree_paths.total_error[1];
 }
 
 
@@ -292,17 +263,67 @@ static void visitPaths(Object &object, const Visitor &visitor)
 
 
 static void
-  handlePathRemoval(TreePath &path_to_update, const TreePath &path_removed)
+  handlePathRemoval(TreePaths &tree_paths, const TreePath &path_removed)
 {
-  if (startsWith(path_to_update, parentPath(path_removed))) {
-    if (path_to_update.size() >= path_removed.size()) {
-      auto depth = path_removed.size() - 1;
+  visitPaths(
+    tree_paths,
+    [&](TreePath &path){ updatePathAfterRemoval(path, path_removed); }
+  );
+}
 
-      if (path_to_update[depth] > path_removed[depth]) {
-        --path_to_update[depth];
-      }
-    }
-  }
+
+static void
+  handlePathInsertion(TreePaths &tree_paths, const TreePath &path_to_insert)
+{
+  visitPaths(
+    tree_paths,
+    [&](TreePath &path){ updatePathBeforeInsertion(path, path_to_insert); }
+  );
+}
+
+
+void
+  createDistanceErrorInTree(
+    const SceneState::DistanceError &state_distance_error,
+    TreeWidget &tree_widget,
+    TreePaths &tree_paths,
+    const SceneState &scene_state
+  )
+{
+  TreePath &next_distance_error_path = tree_paths.next_distance_error_path;
+  TreePath distance_error_path = next_distance_error_path;
+  handlePathInsertion(tree_paths, distance_error_path);
+  ++next_distance_error_path.back();
+
+  tree_paths.distance_errors.push_back(
+    createDistanceErrorInTree1(
+      tree_widget,
+      tree_paths,
+      distance_error_path,
+      scene_state.markers(),
+      state_distance_error
+    )
+  );
+}
+
+
+void
+  removeDistanceErrorFromTree(
+    int distance_error_index,
+    TreePaths &tree_paths,
+    TreeWidget &tree_widget
+  )
+{
+  TreePaths::DistanceErrors &distance_errors = tree_paths.distance_errors;
+  TreePath distance_error_path = distance_errors[distance_error_index].path;
+  tree_widget.removeItem(distance_error_path);
+  removeIndexFrom(distance_errors, distance_error_index);
+  handlePathRemoval(tree_paths, distance_error_path);
+
+  updatePathAfterRemoval(
+    tree_paths.next_distance_error_path,
+    distance_error_path
+  );
 }
 
 
@@ -315,16 +336,12 @@ extern void
 {
   TreePaths::Markers &markers = tree_paths.markers;
   TreePath marker_path = markers[marker_index].path;
-
   tree_widget.removeItem(marker_path);
   removeIndexFrom(markers, marker_index);
-
-  visitPaths(
-    tree_paths,
-    [&](TreePath &path){
-      handlePathRemoval(path, marker_path);
-    }
-  );
+  handlePathRemoval(tree_paths, marker_path);
+  updatePathAfterRemoval(tree_paths.next_distance_error_path, marker_path);
+  updatePathAfterRemoval(tree_paths.next_scene_marker_path, marker_path);
+  updatePathAfterRemoval(tree_paths.next_box_marker_path, marker_path);
 }
 
 
@@ -363,6 +380,17 @@ static string totalErrorLabel(float total_error)
 }
 
 
+static TreePath &nextMarkerInsertionPoint(TreePaths &tree_paths, bool is_local)
+{
+  if (is_local) {
+    return tree_paths.next_box_marker_path;
+  }
+  else {
+    return tree_paths.next_scene_marker_path;
+  }
+}
+
+
 void
   createMarkerInTree(
     TreeWidget &tree_widget,
@@ -373,32 +401,21 @@ void
 {
   const SceneState::Marker &state_marker = scene_state.marker(marker_index);
   assert(marker_index == MarkerIndex(tree_paths.markers.size()));
+  TreePath &insert_point =
+    nextMarkerInsertionPoint(tree_paths, state_marker.is_local);
 
-  if (state_marker.is_local) {
-    TreePath &next_box_marker_path = tree_paths.next_box_marker_path;
+  TreePath marker_path = insert_point;
+  ++insert_point.back();
 
-    tree_paths.markers.push_back(
-      createMarker(tree_widget,next_box_marker_path,state_marker.name)
-    );
-
-    ++next_box_marker_path.back();
+  if (!state_marker.is_local) {
+    ++tree_paths.next_distance_error_path.back();
   }
-  else {
-    TreePath &next_scene_marker_path = tree_paths.next_scene_marker_path;
 
-    tree_paths.markers.push_back(
-      createMarker(tree_widget,next_scene_marker_path,state_marker.name)
-    );
+  handlePathInsertion(tree_paths, marker_path);
 
-    ++next_scene_marker_path.back();
-
-    for (auto &distance_error : tree_paths.distance_errors) {
-      offsetDistanceErrorPath(distance_error, 1);
-    }
-
-    ++tree_paths.next_distance_error_path[1];
-    ++tree_paths.total_error[1];
-  }
+  tree_paths.markers.push_back(
+    createMarker(tree_widget, marker_path, state_marker.name)
+  );
 }
 
 

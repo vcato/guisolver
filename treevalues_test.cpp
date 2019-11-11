@@ -407,11 +407,9 @@ static void testAddingMarker()
   SceneState state = defaultSceneState();
   FakeTreeWidget tree_widget;
   TreePaths tree_paths = fillTree(tree_widget, state);
-
   MarkerIndex marker_index = createMarkerInState(state, /*is_local*/false);
   createMarkerInTree(tree_widget, tree_paths, state, marker_index);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, state);
-
   checkTree(tree_widget, tree_paths, state);
 }
 
@@ -422,11 +420,9 @@ static void testRemovingMarker(const string &name)
   FakeTreeWidget tree_widget;
   TreePaths tree_paths = fillTree(tree_widget, state);
   MarkerIndex marker_index = findIndex(markerNames(state), name);
-
   state.removeMarker(marker_index);
   removeMarkerFromTree(marker_index, tree_paths, tree_widget);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, state);
-
   checkTree(tree_widget, tree_paths, state);
 }
 
