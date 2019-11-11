@@ -64,9 +64,19 @@ class SceneState {
       return addMarker("");
     }
 
-    void removeMarker(MarkerIndex index)
+    void removeMarker(MarkerIndex index_to_remove)
     {
-      removeIndexFrom(_markers, index);
+      removeIndexFrom(_markers, index_to_remove);
+
+      for (auto &distance_error : distance_errors) {
+        _handleMarkerRemoved(
+          distance_error.optional_start_marker_index, index_to_remove
+        );
+
+        _handleMarkerRemoved(
+          distance_error.optional_end_marker_index, index_to_remove
+        );
+      }
     }
 
     DistanceError& addDistanceError()
@@ -92,6 +102,24 @@ class SceneState {
 
   private:
     Markers _markers;
+
+    void
+      _handleMarkerRemoved(
+        Optional<MarkerIndex> &optional_marker_index,
+        MarkerIndex index_to_remove
+      )
+    {
+      if (!optional_marker_index) return;
+
+      MarkerIndex &marker_index = *optional_marker_index;
+
+      if (marker_index == index_to_remove) {
+        optional_marker_index.reset();
+      }
+      else if (marker_index > index_to_remove) {
+        --marker_index;
+      }
+    }
 };
 
 
