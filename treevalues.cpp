@@ -230,35 +230,35 @@ static void
 }
 
 
-static void offsetPath(TreePath &member, int offset)
+static void offsetPath(TreePath &member, int offset, int depth)
 {
-  member[1] += offset;
+  member[depth] += offset;
 }
 
 
-static void offsetPath(TreePaths::XYZ &xyz, int offset)
+static void offsetPath(TreePaths::XYZ &xyz, int offset, int depth)
 {
   xyz.forEachMember(
     [&](auto TreePaths::XYZ::*member_ptr){
-      offsetPath(xyz.*member_ptr, offset);
+      offsetPath(xyz.*member_ptr, offset, depth);
     }
   );
 }
 
 
-static void offsetPath(TreePaths::Position &position, int offset)
+static void offsetPath(TreePaths::Position &position, int offset, int depth)
 {
   TreePaths::XYZ &xyz = position;
-  offsetPath(xyz, offset);
+  offsetPath(xyz, offset, depth);
 }
 
 
 static void
-  offsetMarkerPath(TreePaths::Marker &marker, int offset)
+  offsetMarkerPath(TreePaths::Marker &marker, int offset, int depth)
 {
   marker.forEachMember(
     [&](auto TreePaths::Marker::*member_ptr){
-      offsetPath(marker.*member_ptr, offset);
+      offsetPath(marker.*member_ptr, offset, depth);
     }
   );
 }
@@ -306,7 +306,7 @@ extern void
       if (markers[i].path.size() == 2) {
         // This is a global marker.
         if (int(i) >= marker_index) {
-          offsetMarkerPath(markers[i], -1);
+          offsetMarkerPath(markers[i], -1, /*depth*/1);
         }
       }
     }
@@ -323,6 +323,18 @@ extern void
     --tree_paths.total_error[1];
   }
   else {
+    tree_widget.removeItem(marker_path);
+    removeIndexFrom(markers, marker_index);
+
+    for (auto i : indicesOf(markers)) {
+      if (markers[i].path.size() != 2) {
+        // This is a local marker.
+        if (int(i) >= marker_index) {
+          offsetMarkerPath(markers[i], -1, /*depth*/2);
+        }
+      }
+    }
+
     cerr << "Removing local marker\n";
   }
 }

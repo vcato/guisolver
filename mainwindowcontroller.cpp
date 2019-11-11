@@ -697,14 +697,6 @@ TreeWidget::MenuItems
         {"Remove Marker", remove_marker_function}
       };
     }
-    else {
-      cerr << "Not a marker path: " << path << "\n";
-
-      for (auto index : indicesOf(tree_paths.markers)) {
-        const TreePaths::Marker &marker_paths = tree_paths.markers[index];
-        cerr << "  marker path: " << marker_paths.path << "\n";
-      }
-    }
   }
 
   {

@@ -387,5 +387,4 @@ t.origin
     * start: local3
     * end: global3
 ---
-If we remove a marker, we need to find any distance errors using that
-marker and set them to use None.
+We could generalize updating paths if we had a way to iterate over all paths.

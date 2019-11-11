@@ -386,6 +386,22 @@ static void checkMembersEqual(const T &a,const T &b)
 }
 
 
+static void
+  checkTree(
+    const FakeTreeWidget &tree_widget,
+    const TreePaths &tree_paths,
+    const SceneState &state
+  )
+{
+  FakeTreeWidget recreated_tree_widget;
+  TreePaths recreated_tree_paths = fillTree(recreated_tree_widget, state);
+  checkEqual(recreated_tree_paths, tree_paths);
+  assert(recreated_tree_widget == tree_widget);
+  checkEqual(recreated_tree_widget, tree_widget);
+  assert(recreated_tree_paths == tree_paths);
+}
+
+
 static void testAddingMarker()
 {
   SceneState state = defaultSceneState();
@@ -396,30 +412,34 @@ static void testAddingMarker()
   createMarkerInTree(tree_widget, tree_paths, state, marker_index);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, state);
 
-  FakeTreeWidget recreated_tree_widget;
-  TreePaths new_tree_paths = fillTree(recreated_tree_widget, state);
-  assert(recreated_tree_widget == tree_widget);
-  checkEqual(recreated_tree_widget, tree_widget);
-  assert(new_tree_paths == tree_paths);
+  checkTree(tree_widget, tree_paths, state);
 }
 
 
-static void testRemovingMarker()
+static void testRemovingMarker(const string &name)
 {
   SceneState state = defaultSceneState();
   FakeTreeWidget tree_widget;
   TreePaths tree_paths = fillTree(tree_widget, state);
-  MarkerIndex marker_index = findIndex(markerNames(state), "global1");
+  MarkerIndex marker_index = findIndex(markerNames(state), name);
 
   state.removeMarker(marker_index);
   removeMarkerFromTree(marker_index, tree_paths, tree_widget);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, state);
 
-  FakeTreeWidget recreated_tree_widget;
-  TreePaths recreated_tree_paths = fillTree(recreated_tree_widget, state);
-  checkEqual(recreated_tree_widget, tree_widget);
-  checkEqual(recreated_tree_paths, tree_paths);
-  assert(recreated_tree_paths.markers == tree_paths.markers);
+  checkTree(tree_widget, tree_paths, state);
+}
+
+
+static void testRemovingAGlobalMarker()
+{
+  testRemovingMarker("global1");
+}
+
+
+static void testRemovingALocalMarker()
+{
+  testRemovingMarker("local1");
 }
 
 
@@ -427,5 +447,6 @@ int main()
 {
   testRemovingDistanceError();
   testAddingMarker();
-  testRemovingMarker();
+  testRemovingAGlobalMarker();
+  testRemovingALocalMarker();
 }
