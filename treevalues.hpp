@@ -40,6 +40,13 @@ extern void
   );
 
 extern void
+  removeMarkerFromTree(
+    MarkerIndex,
+    TreePaths &tree_paths,
+    TreeWidget &tree_widget
+  );
+
+extern void
   updateTreeDistanceErrorMarkerOptions(
     TreeWidget &tree_widget,
     const TreePaths &tree_paths,

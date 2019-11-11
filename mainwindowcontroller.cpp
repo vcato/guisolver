@@ -379,6 +379,24 @@ static Optional<int>
 }
 
 
+static Optional<MarkerIndex>
+  maybeMarkerIndexOfPath(
+    const TreePath &path,
+    const TreePaths &tree_paths
+  )
+{
+  for (auto index : indicesOf(tree_paths.markers)) {
+    const TreePaths::Marker &marker_paths = tree_paths.markers[index];
+
+    if (path == marker_paths.path) {
+      return index;
+    }
+  }
+
+  return {};
+}
+
+
 struct MainWindowController::Impl {
   static void handleSceneChanging(MainWindowController &);
   static void handleSceneChanged(MainWindowController &);
@@ -421,6 +439,12 @@ struct MainWindowController::Impl {
     removeDistanceErrorPressed(
       MainWindowController &controller,
       int distance_error_index
+    );
+
+  static void
+    removeMarkerPressed(
+      MainWindowController &controller,
+      MarkerIndex
     );
 };
 
@@ -615,6 +639,24 @@ void
 }
 
 
+void
+  MainWindowController::Impl::removeMarkerPressed(
+    MainWindowController &controller,
+    MarkerIndex marker_index
+  )
+{
+  TreePaths &tree_paths = controller.data.tree_paths;
+  TreeWidget &tree_widget = controller.data.tree_widget;
+  Scene &scene = controller.data.scene;
+  SceneHandles &scene_handles = controller.data.scene_handles;
+  SceneState &scene_state = controller.data.scene_state;
+  removeMarkerFromTree(marker_index, tree_paths, tree_widget);
+  removeMarkerFromScene(scene, scene_handles.markers, marker_index);
+  scene_state.removeMarker(marker_index);
+  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+}
+
+
 TreeWidget::MenuItems
   MainWindowController::Impl::contextMenuItemsForPath(
     MainWindowController &controller,
@@ -638,6 +680,31 @@ TreeWidget::MenuItems
       {"Add Distance Error", add_distance_error_function },
       {"Add Marker", add_marker_error_function },
     };
+  }
+
+  {
+    Optional<MarkerIndex> maybe_marker_index =
+      maybeMarkerIndexOfPath(path, tree_paths);
+
+    if (maybe_marker_index) {
+      auto index = *maybe_marker_index;
+
+      auto remove_marker_function = [&controller,index]{
+        Impl::removeMarkerPressed(controller, index);
+      };
+
+      return {
+        {"Remove Marker", remove_marker_function}
+      };
+    }
+    else {
+      cerr << "Not a marker path: " << path << "\n";
+
+      for (auto index : indicesOf(tree_paths.markers)) {
+        const TreePaths::Marker &marker_paths = tree_paths.markers[index];
+        cerr << "  marker path: " << marker_paths.path << "\n";
+      }
+    }
   }
 
   {

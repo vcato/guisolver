@@ -230,6 +230,40 @@ static void
 }
 
 
+static void offsetPath(TreePath &member, int offset)
+{
+  member[1] += offset;
+}
+
+
+static void offsetPath(TreePaths::XYZ &xyz, int offset)
+{
+  xyz.forEachMember(
+    [&](auto TreePaths::XYZ::*member_ptr){
+      offsetPath(xyz.*member_ptr, offset);
+    }
+  );
+}
+
+
+static void offsetPath(TreePaths::Position &position, int offset)
+{
+  TreePaths::XYZ &xyz = position;
+  offsetPath(xyz, offset);
+}
+
+
+static void
+  offsetMarkerPath(TreePaths::Marker &marker, int offset)
+{
+  marker.forEachMember(
+    [&](auto TreePaths::Marker::*member_ptr){
+      offsetPath(marker.*member_ptr, offset);
+    }
+  );
+}
+
+
 void
   removeDistanceErrorFromTree(
     int distance_error_index,
@@ -251,6 +285,46 @@ void
 
   --tree_paths.next_distance_error_path[1];
   --tree_paths.total_error[1];
+}
+
+
+extern void
+  removeMarkerFromTree(
+    MarkerIndex marker_index,
+    TreePaths &tree_paths,
+    TreeWidget &tree_widget
+  )
+{
+  TreePaths::Markers &markers = tree_paths.markers;
+  const TreePath &marker_path = markers[marker_index].path;
+
+  if (marker_path.size() == 2) {
+    tree_widget.removeItem(marker_path);
+    removeIndexFrom(markers, marker_index);
+
+    for (auto i : indicesOf(markers)) {
+      if (markers[i].path.size() == 2) {
+        // This is a global marker.
+        if (int(i) >= marker_index) {
+          offsetMarkerPath(markers[i], -1);
+        }
+      }
+    }
+
+    for (auto distance_error_index : indicesOf(tree_paths.distance_errors)) {
+      TreePaths::DistanceError &distance_error =
+        tree_paths.distance_errors[distance_error_index];
+
+      offsetDistanceErrorPath(distance_error, -1);
+    }
+
+    --tree_paths.next_distance_error_path[1];
+    --tree_paths.next_scene_marker_path[1];
+    --tree_paths.total_error[1];
+  }
+  else {
+    cerr << "Removing local marker\n";
+  }
 }
 
 

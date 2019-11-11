@@ -930,10 +930,19 @@ auto OSGScene::createLine(TransformHandle parent) -> LineHandle
 }
 
 
-void OSGScene::destroyLine(LineHandle line_handle)
+void OSGScene::destroyLine(LineHandle handle)
 {
   osg::MatrixTransform &geometry_transform =
-    Impl::geometryTransform(*this, line_handle);
+    Impl::geometryTransform(*this, handle);
+
+  Impl::destroyGeometryTransform(*this, geometry_transform);
+}
+
+
+void OSGScene::destroyObject(TransformHandle handle)
+{
+  osg::MatrixTransform &geometry_transform =
+    Impl::geometryTransform(*this, handle);
 
   Impl::destroyGeometryTransform(*this, geometry_transform);
 }

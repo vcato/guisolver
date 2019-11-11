@@ -26,6 +26,13 @@ extern void
   );
 
 extern void
+  removeMarkerFromScene(
+    Scene &scene,
+    SceneHandles::Markers &,
+    MarkerIndex index
+  );
+
+extern void
   createDistanceErrorInScene(
     Scene &scene,
     SceneHandles &,

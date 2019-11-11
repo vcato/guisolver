@@ -37,6 +37,7 @@ struct Scene {
   virtual TransformHandle createBox(TransformHandle parent) = 0;
   virtual LineHandle createLine(TransformHandle parent) = 0;
   virtual void destroyLine(LineHandle) = 0;
+  virtual void destroyObject(TransformHandle) = 0;
 
   TransformHandle createSphere() { return createSphere(top()); }
   TransformHandle createBox() { return createBox(top()); }

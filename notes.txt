@@ -386,3 +386,6 @@ t.origin
   * [DistanceError]
     * start: local3
     * end: global3
+---
+If we remove a marker, we need to find any distance errors using that
+marker and set them to use None.

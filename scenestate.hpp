@@ -64,6 +64,11 @@ class SceneState {
       return addMarker("");
     }
 
+    void removeMarker(MarkerIndex index)
+    {
+      removeIndexFrom(_markers, index);
+    }
+
     DistanceError& addDistanceError()
     {
       distance_errors.emplace_back();
@@ -91,5 +96,6 @@ class SceneState {
 
 
 extern MarkerIndex createMarkerInState(SceneState &state, bool is_local);
+extern vector<SceneState::Marker::Name> markerNames(const SceneState &state);
 
 #endif /* SCENESTATE_HPP_ */

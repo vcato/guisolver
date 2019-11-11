@@ -29,7 +29,7 @@ static SceneState::Marker::Name namePrefix(bool is_local)
 }
 
 
-static vector<SceneState::Marker::Name> markerNames(const SceneState &state)
+vector<SceneState::Marker::Name> markerNames(const SceneState &state)
 {
   vector<SceneState::Marker::Name> result;
 

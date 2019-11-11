@@ -3,6 +3,7 @@
 #include "defaultscenestate.hpp"
 #include "streamvector.hpp"
 #include "indicesof.hpp"
+#include "contains.hpp"
 
 using std::string;
 using std::ostringstream;
@@ -270,6 +271,16 @@ static void showTree(const string &name, const FakeTreeWidget &tree)
 #endif
 
 
+#if 0
+static void showTreePaths(const string &name, const TreePaths &tree_paths)
+{
+  cerr << name << ":\n";
+  int indent_level = 1;
+  showPaths(tree.root_item, cerr, indent_level);
+}
+#endif
+
+
 template <typename T>
 static void checkMembersEqual(const T &a,const T &b);
 
@@ -285,7 +296,63 @@ static void checkEqual(const FakeTreeItem &a,const FakeTreeItem &b)
 }
 
 
+static void checkEqual(const TreePaths::Box &a,const TreePaths::Box &b)
+{
+  checkMembersEqual(a,b);
+}
+
+
+static void
+  checkEqual(
+    const TreePaths::Box::Geometry &a,
+    const TreePaths::Box::Geometry &b
+  )
+{
+  checkMembersEqual(a,b);
+}
+
+
+static void
+  checkEqual(const TreePaths::XYZ &a,const TreePaths::XYZ &b)
+{
+  checkMembersEqual(a,b);
+}
+
+
+static void
+  checkEqual(const TreePaths::Marker &a,const TreePaths::Marker &b)
+{
+  checkMembersEqual(a,b);
+}
+
+
+static void
+  checkEqual(
+    const TreePaths::DistanceError &a,
+    const TreePaths::DistanceError &b
+  )
+{
+  checkMembersEqual(a,b);
+}
+
+
+static void checkEqual(const TreePaths &a,const TreePaths &b)
+{
+  checkMembersEqual(a,b);
+}
+
+
 static void checkEqual(const string &a,const string &b)
+{
+  if (a != b) {
+    cerr << "a: " << a << "\n";
+    cerr << "b: " << b << "\n";
+    assert(false);
+  }
+}
+
+
+static void checkEqual(size_t a,size_t b)
 {
   if (a != b) {
     cerr << "a: " << a << "\n";
@@ -299,6 +366,8 @@ template <typename T>
 static void checkEqual(const vector<T> &a,const vector<T> &b)
 {
   if (a.size() != b.size()) {
+    cerr << "a.size() = " << a.size() << "\n";
+    cerr << "b.size() = " << b.size() << "\n";
     assert(false);
   }
 
@@ -335,8 +404,28 @@ static void testAddingMarker()
 }
 
 
+static void testRemovingMarker()
+{
+  SceneState state = defaultSceneState();
+  FakeTreeWidget tree_widget;
+  TreePaths tree_paths = fillTree(tree_widget, state);
+  MarkerIndex marker_index = findIndex(markerNames(state), "global1");
+
+  state.removeMarker(marker_index);
+  removeMarkerFromTree(marker_index, tree_paths, tree_widget);
+  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, state);
+
+  FakeTreeWidget recreated_tree_widget;
+  TreePaths recreated_tree_paths = fillTree(recreated_tree_widget, state);
+  checkEqual(recreated_tree_widget, tree_widget);
+  checkEqual(recreated_tree_paths, tree_paths);
+  assert(recreated_tree_paths.markers == tree_paths.markers);
+}
+
+
 int main()
 {
   testRemovingDistanceError();
   testAddingMarker();
+  testRemovingMarker();
 }

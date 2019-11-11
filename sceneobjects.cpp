@@ -124,16 +124,6 @@ void
 }
 
 
-static void
-  removeDistanceErrorFromScene1(
-    Scene &scene,
-    const SceneHandles::DistanceError &distance_error
-  )
-{
-  scene.destroyLine(distance_error.line);
-}
-
-
 void
   removeDistanceErrorFromScene(
     Scene &scene,
@@ -141,8 +131,20 @@ void
     int index
   )
 {
-  removeDistanceErrorFromScene1(scene, distance_errors[index]);
+  scene.destroyLine(distance_errors[index].line);
   removeIndexFrom(distance_errors, index);
+}
+
+
+void
+  removeMarkerFromScene(
+    Scene &scene,
+    SceneHandles::Markers &markers,
+    MarkerIndex index
+  )
+{
+  scene.destroyObject(markers[index].handle);
+  removeIndexFrom(markers, index);
 }
 
 

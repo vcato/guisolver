@@ -25,6 +25,7 @@ class OSGScene : public Scene {
     TransformHandle createBox(TransformHandle parent) override;
     LineHandle createLine(TransformHandle parent) override;
     void destroyLine(LineHandle) override;
+    void destroyObject(TransformHandle) override;
 
     void
       setGeometryScale(TransformHandle handle,float x,float y,float z) override;
