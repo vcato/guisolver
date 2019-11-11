@@ -108,7 +108,7 @@ struct OSGScene::Impl {
     geometryTransform(OSGScene &,const TransformHandle &);
 
   static const osg::MatrixTransform &
-    geometryTransform(const OSGScene &,TransformHandle);
+    geometryTransform(const OSGScene &,const TransformHandle &);
 
   static TransformHandle makeHandle(OSGScene &,osg::MatrixTransform &);
   static LineDrawable& lineDrawable(OSGScene &,LineHandle);
@@ -936,6 +936,7 @@ void OSGScene::destroyLine(LineHandle handle)
     Impl::geometryTransform(*this, handle);
 
   Impl::destroyGeometryTransform(*this, geometry_transform);
+  transform_ptrs[handle.index] = 0;
 }
 
 
@@ -945,6 +946,7 @@ void OSGScene::destroyObject(TransformHandle handle)
     Impl::geometryTransform(*this, handle);
 
   Impl::destroyGeometryTransform(*this, geometry_transform);
+  transform_ptrs[handle.index] = 0;
 }
 
 
@@ -960,7 +962,10 @@ osg::MatrixTransform&
 
 
 const osg::MatrixTransform&
-  OSGScene::Impl::geometryTransform(const OSGScene &scene,TransformHandle handle)
+  OSGScene::Impl::geometryTransform(
+    const OSGScene &scene,
+    const TransformHandle &handle
+  )
 {
   assert(scene.transform_ptrs[handle.index]);
   return *scene.transform_ptrs[handle.index];

@@ -386,25 +386,3 @@ t.origin
   * [DistanceError]
     * start: local3
     * end: global3
----
-Handle adding a local marker.
----
-We should create a new InsertionPoint type so that the
-TreePaths::forEachMember() can includes the "next" members.  Right
-now, we are skipping those because when we call handlePathInsertion()
-or handlePathRemoval(), we need to treat the "next" members specially.
-By having them be a different type, we could treat them specially without
-fudging the forEachMember() method.
-
-Insertion points are a bit weird.  We can have two insertion points that
-are the same in the tree paths, but they aren't updated the same.  Not sure
-what a good mental model is here.  It's kind of like they have another sort
-key that distinguishes them.  FOr example, the insertion point for new
-markers in the scene is logically before the insertion point for new
-distance errors in the scene, even if they both are pointing at the
-same place.
-
-Maybe we can generalize this by having the InsertionPoint type have
-an "order" member.  When we insert into the tree, we can update paths
-and insertion points.  Any insertion point with an equal or less order
-will have their path back incremented.

@@ -360,6 +360,12 @@ static bool isScenePath(const TreePath &path, const TreePaths &tree_paths)
 }
 
 
+static bool isBoxPath(const TreePath &path, const TreePaths &tree_paths)
+{
+  return path == tree_paths.box.path;
+}
+
+
 static Optional<int>
   maybeDistanceErrorIndexOfPath(
     const TreePath &path,
@@ -429,8 +435,16 @@ struct MainWindowController::Impl {
       const TreePath &
     );
 
+  static void addMarker(MainWindowController &controller, bool is_local);
+
   static void
-    addMarkerPressed(
+    addGlobalMarkerPressed(
+      MainWindowController &controller,
+      const TreePath &
+    );
+
+  static void
+    addLocalMarkerPressed(
       MainWindowController &controller,
       const TreePath &
     );
@@ -583,9 +597,9 @@ void
 
 
 void
-  MainWindowController::Impl::addMarkerPressed(
+  MainWindowController::Impl::addMarker(
     MainWindowController &controller,
-    const TreePath &path
+    bool is_local
   )
 {
   TreePaths &tree_paths = controller.data.tree_paths;
@@ -593,18 +607,30 @@ void
   Scene &scene = controller.data.scene;
   SceneHandles &scene_handles = controller.data.scene_handles;
   TreeWidget &tree_widget = controller.data.tree_widget;
+  MarkerIndex marker_index = createMarkerInState(scene_state, is_local);
+  createMarkerInScene(scene, scene_handles, scene_state, marker_index);
+  createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
+  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+}
 
-  if (isScenePath(path, tree_paths)) {
-    MarkerIndex marker_index =
-      createMarkerInState(scene_state, /*is_local*/false);
 
-    createMarkerInScene(scene, scene_handles, scene_state, marker_index);
-    createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
-    updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
-  }
-  else {
-    cerr << "Add marker to something else\n";
-  }
+void
+  MainWindowController::Impl::addGlobalMarkerPressed(
+    MainWindowController &controller,
+    const TreePath &
+  )
+{
+  addMarker(controller, /*is_local*/false);
+}
+
+
+void
+  MainWindowController::Impl::addLocalMarkerPressed(
+    MainWindowController &controller,
+    const TreePath &/*path*/
+  )
+{
+  addMarker(controller, /*is_local*/true);
 }
 
 
@@ -673,12 +699,23 @@ TreeWidget::MenuItems
 
     auto add_marker_error_function =
       [&controller,path]{
-        Impl::addMarkerPressed(controller, path);
+        Impl::addGlobalMarkerPressed(controller, path);
       };
 
     return {
       {"Add Distance Error", add_distance_error_function },
       {"Add Marker", add_marker_error_function },
+    };
+  }
+
+  if (isBoxPath(path, tree_paths)) {
+    auto add_marker_error_function =
+      [&controller,path]{
+        Impl::addLocalMarkerPressed(controller, path);
+      };
+
+    return {
+      {"Add Marker", add_marker_error_function}
     };
   }
 

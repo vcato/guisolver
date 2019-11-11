@@ -401,6 +401,7 @@ void
 {
   const SceneState::Marker &state_marker = scene_state.marker(marker_index);
   assert(marker_index == MarkerIndex(tree_paths.markers.size()));
+
   TreePath &insert_point =
     nextMarkerInsertionPoint(tree_paths, state_marker.is_local);
 
