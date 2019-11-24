@@ -1,0 +1,119 @@
+This file describes the kind of general structure that I'm hoping to represent.
+The actual application basically has some of this hard code.  I'm hoping to
+eventually move the application to allow for this kind of generality.
+
+* [Define]
+  * name: "Marker"
+  * [Parameter]
+    * name: "position"
+    * type: Vector
+  * [Parameter]
+    * name: "name"
+    * type: String
+  * [Transform]
+    * tx: position.x
+    * ty: position.y
+    * tz: position.z
+    * rx: 0
+    * ry: 0
+    * rz: 0
+    * [Sphere]
+      * radius: 1
+    * [Define]
+      * name: name
+      * self.origin
+* [Define]
+  * name: "DistanceError"
+  * [Parameter]
+    * name: "start"
+    * type: Marker
+  * [Parameter]
+    * name: "end"
+    * type: Marker
+  * [Attribute]
+    * name: "distance"
+    * value: distanceBetween(start.position, end.position)
+  * [Parameter]
+    * name: "desired_distance"
+    * type: [Float]
+      * minimum: 0
+  * [Parameter]
+    * name: "weight"
+    * type: [Float]
+      * minimum: 0
+  * [Attribute]
+    * name: "error"
+    * value: squared(distance - desired_distance) * weight
+  * [Line]
+    * start: start.position
+    * end: end.position
+* [Scene]
+  * [Transform]
+    * tx: [Variable]
+      value: 1
+      solve: true
+    * ty: [Variable]
+      value: 2
+      solve: true
+    * tz: [Variable]
+      value: 3
+      solve: true
+    * rx: [Variable]
+      value: 4
+      solve: true
+    * ry: [Variable]
+      value: 5
+      solve: true
+    * rz: [Variable]
+      value: 6
+      solve: true
+    * [Box]
+      * size: []
+        * x: 1
+        * y: 2
+        * z: 3
+    * [Marker]
+      * position: []
+        * x: 1
+        * y: 2
+        * z: 3
+      * name: "local1"
+    * [Marker]
+      * position: []
+        * x: 1
+        * y: 2
+        * z: 3
+      * name: "local2"
+    * [Marker]
+      * position: []
+        * x: 1
+        * y: 2
+        * z: 3
+      * name: "local3"
+  * [Marker]
+    * position: []
+      * x: 1
+      * y: 2
+      * z: 3
+    * name: "global1"
+  * [Marker]
+    * position: []
+      * x: 1
+      * y: 2
+      * z: 3
+    * name: "global2"
+  * [Marker]
+    * position: []
+      * x: 1
+      * y: 2
+      * z: 3
+    * name: "global3"
+  * [DistanceError]
+    * start: local1
+    * end: global1
+  * [DistanceError]
+    * start: local2
+    * end: global2
+  * [DistanceError]
+    * start: local3
+    * end: global3
