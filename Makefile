@@ -27,7 +27,9 @@ run_guisolver: guisolver
 	./$*
 	touch $@
 
-DEFAULTSCENESTATE=defaultscenestate.o scenestate.o
+DEFAULTSCENESTATE=defaultscenestate.o scenestate.o maketransform.o
+TAGGEDVALUEIO=taggedvalueio.o printindent.o streamparser.o stringutil.o
+SCENESTATEIO=scenestateio.o $(TAGGEDVALUEIO)
 
 guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
   osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o $(DEFAULTSCENESTATE) \
@@ -37,7 +39,7 @@ guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
   qtslider_moc.o qtspinbox.o qtspinbox_moc.o treevalues.o \
   qttreewidget.o qttreewidget_moc.o qtmenu.o qtslot.o qtslot_moc.o \
   mainwindowcontroller.o globaltransform.o \
-  settransform.o sceneobjects.o intersector.o scenestate.o scenestateio.o
+  settransform.o sceneobjects.o intersector.o scenestate.o $(SCENESTATEIO)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 optional_test: optional_test.o osgutil.o
@@ -49,7 +51,7 @@ osgutil_test: osgutil_test.o osgutil.o
 transform_test: transform_test.o maketransform.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
-scenestateio_test: scenestateio_test.o scenestateio.o
+scenestateio_test: scenestateio_test.o $(DEFAULTSCENESTATE) $(SCENESTATEIO)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 scenesolver_test: scenesolver_test.o \

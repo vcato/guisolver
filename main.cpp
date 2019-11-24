@@ -15,8 +15,6 @@
 #include "defaultscenestate.hpp"
 #include "scenestateio.hpp"
 
-#define ADD_SAVE 0
-
 using std::cerr;
 using std::string;
 using std::ostream;
@@ -93,14 +91,9 @@ int main(int argc,char** argv)
 
   {
     QMenuBar &menu_bar = *main_window.menuBar();
-#if ADD_SAVE
-    QMenu &file_menu = *
-#endif
-      menu_bar.addMenu("File");
-#if ADD_SAVE
+    QMenu &file_menu = *menu_bar.addMenu("File");
     QAction &save_action = *file_menu.addAction("Save...");
     save_slot.connectSignal(save_action, SIGNAL(triggered()));
-#endif
   }
   QBoxLayout &layout = createLayout<QHBoxLayout>(central_widget);
   QtTreeWidget &tree_widget = createWidget<QtTreeWidget>(layout);
