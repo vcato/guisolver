@@ -272,3 +272,7 @@ t.origin
 ---
 I'd like to be able to save and load a scene.
 I need a file menu.
+---
+Implement printSceneStateOn() using TaggedValue
+---
+Take TaggedValue from Charmapper project.

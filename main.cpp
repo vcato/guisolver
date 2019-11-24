@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <QApplication>
 #include <QMainWindow>
 #include <QMenuBar>
@@ -12,11 +13,14 @@
 #include "mainwindowcontroller.hpp"
 #include "optional.hpp"
 #include "defaultscenestate.hpp"
+#include "scenestateio.hpp"
 
 #define ADD_SAVE 0
 
 using std::cerr;
 using std::string;
+using std::ostream;
+using std::ofstream;
 
 
 static void createGraphicsWindow(QBoxLayout &layout, OSGScene &scene)
@@ -46,6 +50,22 @@ static Optional<string> askForSavePath(QWidget &parent)
 }
 
 
+static void saveScene(SceneState &scene_state, const string &path)
+{
+  ofstream stream(path);
+
+  if (!stream) {
+    assert(false); // not implemented
+  }
+
+  printSceneStateOn(stream, scene_state);
+
+  if (!stream) {
+    assert(false); // not implemented
+  }
+}
+
+
 int main(int argc,char** argv)
 {
   QApplication app(argc,argv);
@@ -53,6 +73,7 @@ int main(int argc,char** argv)
   main_window.resize(1024,480);
   main_window.show();
   OSGScene scene;
+  SceneState scene_state(defaultSceneState());
 
   QWidget central_widget;
   main_window.setCentralWidget(&central_widget);
@@ -65,7 +86,7 @@ int main(int argc,char** argv)
         // Cancelled
       }
       else {
-        // saveScene(scene_state, *maybe_path);
+        saveScene(scene_state, *maybe_path);
       }
     }
   );
@@ -84,7 +105,6 @@ int main(int argc,char** argv)
   QBoxLayout &layout = createLayout<QHBoxLayout>(central_widget);
   QtTreeWidget &tree_widget = createWidget<QtTreeWidget>(layout);
   createGraphicsWindow(layout, scene);
-  SceneState scene_state(defaultSceneState());
   MainWindowController controller(scene_state, scene, tree_widget);
   app.exec();
 }

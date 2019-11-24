@@ -12,6 +12,7 @@ run_unit_tests: \
   optional_test.pass \
   osgutil_test.pass \
   transform_test.pass \
+  scenestateio_test.pass \
   scenesolver_test.pass \
   optimize_test.pass \
   treevalues_test.pass
@@ -36,7 +37,7 @@ guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
   qtslider_moc.o qtspinbox.o qtspinbox_moc.o treevalues.o \
   qttreewidget.o qttreewidget_moc.o qtmenu.o qtslot.o qtslot_moc.o \
   mainwindowcontroller.o globaltransform.o \
-  settransform.o sceneobjects.o intersector.o scenestate.o
+  settransform.o sceneobjects.o intersector.o scenestate.o scenestateio.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 optional_test: optional_test.o osgutil.o
@@ -46,6 +47,9 @@ osgutil_test: osgutil_test.o osgutil.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 transform_test: transform_test.o maketransform.o
+	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
+
+scenestateio_test: scenestateio_test.o scenestateio.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 scenesolver_test: scenesolver_test.o \
