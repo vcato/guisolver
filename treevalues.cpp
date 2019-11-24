@@ -8,6 +8,7 @@
 #include "streamvector.hpp"
 #include "removeindexfrom.hpp"
 #include "startswith.hpp"
+#include "numericvaluelimits.hpp"
 
 using std::cerr;
 using std::string;

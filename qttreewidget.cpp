@@ -14,6 +14,7 @@
 #include "qtmenu.hpp"
 #include "streamvector.hpp"
 #include "numericvalue.hpp"
+#include "numericvaluelimits.hpp"
 
 using std::string;
 using std::cerr;
