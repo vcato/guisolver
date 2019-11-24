@@ -11,6 +11,7 @@
 #include "qtslot.hpp"
 #include "mainwindowcontroller.hpp"
 #include "optional.hpp"
+#include "defaultscenestate.hpp"
 
 #define ADD_SAVE 0
 
@@ -83,6 +84,7 @@ int main(int argc,char** argv)
   QBoxLayout &layout = createLayout<QHBoxLayout>(central_widget);
   QtTreeWidget &tree_widget = createWidget<QtTreeWidget>(layout);
   createGraphicsWindow(layout, scene);
-  MainWindowController controller(scene, tree_widget);
+  SceneState scene_state(defaultSceneState());
+  MainWindowController controller(scene_state, scene, tree_widget);
   app.exec();
 }

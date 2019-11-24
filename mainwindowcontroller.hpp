@@ -7,22 +7,20 @@
 
 class MainWindowController {
   public:
-    MainWindowController(Scene &scene,TreeWidget &tree_widget);
+    MainWindowController(SceneState &,Scene &,TreeWidget &);
 
   private:
     struct Impl;
 
     struct Data {
+      SceneState &scene_state;
       Scene &scene;
       TreeWidget &tree_widget;
-
-      SceneState scene_state;
-        // Have this passed as a parameter.
 
       SceneHandles scene_handles;
       TreePaths tree_paths;
 
-      Data(Scene &,TreeWidget &);
+      Data(SceneState &scene_state, Scene &, TreeWidget &);
     };
 
     Data data;

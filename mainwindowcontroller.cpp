@@ -3,7 +3,6 @@
 #include "streamvector.hpp"
 #include "sceneerror.hpp"
 #include "scenesolver.hpp"
-#include "defaultscenestate.hpp"
 #include "treevalues.hpp"
 #include "startswith.hpp"
 #include "rotationvector.hpp"
@@ -821,20 +820,25 @@ void
 
 
 MainWindowController::Data::Data(
+  SceneState &scene_state_arg,
   Scene &scene_arg,
   TreeWidget &tree_widget_arg
 )
-: scene(scene_arg),
+: scene_state(scene_state_arg),
+  scene(scene_arg),
   tree_widget(tree_widget_arg),
-  scene_state(defaultSceneState()),
   scene_handles(createSceneObjects(scene_state, scene)),
   tree_paths(fillTree(tree_widget,scene_state))
 {
 }
 
 
-MainWindowController::MainWindowController(Scene &scene,TreeWidget &tree_widget)
-: data{scene,tree_widget}
+MainWindowController::MainWindowController(
+  SceneState &scene_state,
+  Scene &scene,
+  TreeWidget &tree_widget
+)
+: data{scene_state, scene, tree_widget}
 {
   TreePaths &tree_paths = data.tree_paths;
   SceneHandles &scene_handles = data.scene_handles;
