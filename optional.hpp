@@ -97,6 +97,15 @@ class Optional {
 
     bool hasValue() const { return _has_value; }
 
+    T valueOr(T arg) const
+    {
+      if (!hasValue()) {
+        return arg;
+      }
+
+      return **this;
+    }
+
     void reset()
     {
       if (_has_value) {

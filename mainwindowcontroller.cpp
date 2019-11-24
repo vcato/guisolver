@@ -8,6 +8,7 @@
 #include "rotationvector.hpp"
 #include "indicesof.hpp"
 #include "sceneobjects.hpp"
+#include "maketransform.hpp"
 
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
@@ -96,7 +97,7 @@ static bool
     Eigen::Vector3f v = box_global.translation();
     const TreePaths::XYZ& xyz_path = box_paths.translation;
     setVectorValue(v, path, value, xyz_path);
-    box_global.translation() = v;
+    setTransformTranslation(box_global, vec3(v));
     return true;
   }
 
@@ -104,7 +105,8 @@ static bool
     Vec3 v = rotationVector(box_global.rotation());
     const TreePaths::XYZ& xyz_path = box_paths.rotation;
     setVectorValue(v, path, value*M_PI/180, xyz_path);
-    box_global.matrix().topLeftCorner<3,3>() = makeRotation(v);
+    setTransformRotation(box_global, v);
+
     return true;
   }
 
@@ -206,6 +208,7 @@ static bool
 
 
 
+// This should be in treevalues.cpp
 static bool
   setSceneStateValue(
     SceneState &scene_state,

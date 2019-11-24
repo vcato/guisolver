@@ -1,5 +1,8 @@
 #include "maketransform.hpp"
 
+#include "eigenconv.hpp"
+#include "rotationvector.hpp"
+
 
 Transform makeTransform(const CoordinateAxes &axes,const Point &origin)
 {
@@ -17,4 +20,17 @@ Transform makeTransform(const CoordinateAxes &axes,const Point &origin)
   transform(1,3) = origin.y();
   transform(2,3) = origin.z();
   return transform;
+}
+
+
+void
+  setTransformTranslation(Transform &box_global, const Vec3 &v)
+{
+  box_global.translation() = eigenVector3f(v);
+}
+
+
+void setTransformRotation(Transform &box_global, const Vec3 &v)
+{
+  box_global.matrix().topLeftCorner<3,3>() = makeRotation(v);
 }

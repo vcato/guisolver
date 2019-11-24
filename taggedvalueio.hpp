@@ -14,7 +14,7 @@ extern void
   printTaggedValueOn(
     std::ostream &stream,
     const TaggedValue &tagged_value,
-    int indent
+    int indent = 0
   );
 
 extern Optional<TaggedValue> scanTaggedValue(StreamParser &);

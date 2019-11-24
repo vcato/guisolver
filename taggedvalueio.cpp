@@ -196,3 +196,29 @@ Optional<TaggedValue> scanTaggedValue(StreamParser &parser)
 
   return tagged_value;
 }
+
+
+static ScanTaggedValueResult error(const std::string &message)
+{
+  return Error{message};
+}
+
+
+ScanTaggedValueResult scanTaggedValueFrom(std::istream & stream)
+{
+  StreamParser parser(stream);
+
+  parser.scanWord();
+
+  if (!parser.stream) {
+    assert(false); // not implemented
+  }
+
+  Optional<TaggedValue> maybe_state = scanTaggedValue(parser);
+
+  if (!maybe_state) {
+    return error(parser.error);
+  }
+
+  return *maybe_state;
+}

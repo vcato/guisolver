@@ -1,12 +1,16 @@
 #ifndef EXPECTED_HPP_
 #define EXPECTED_HPP_
 
+#include "noinittag.hpp"
+#include "basicvariant.hpp"
+
+struct Error {
+  std::string message;
+};
+
+
 template <typename Value>
 struct ExpectedPolicy {
-  struct Error {
-    std::string message;
-  };
-
   union PossibleValues {
     Value value;
     Error error;
