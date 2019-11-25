@@ -9,6 +9,8 @@ class MainWindowController {
   public:
     MainWindowController(SceneState &,Scene &,TreeWidget &);
 
+    void notifySceneStateChanged();
+
   private:
     struct Impl;
 

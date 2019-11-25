@@ -191,6 +191,23 @@ SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
 }
 
 
+void destroySceneObjects(Scene &scene, const SceneHandles &scene_handles)
+{
+  for (const SceneHandles::Marker &marker : scene_handles.markers) {
+    scene.destroyObject(marker.handle);
+  }
+
+  for (
+    const SceneHandles::DistanceError &distance_error
+    : scene_handles.distance_errors
+  ) {
+    scene.destroyLine(distance_error.line);
+  }
+
+  scene.destroyObject(scene_handles.box);
+}
+
+
 static void
   updateBoxInScene(
     Scene &scene,

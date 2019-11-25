@@ -643,3 +643,16 @@ MainWindowController::MainWindowController(
       return Impl::contextMenuItemsForPath(*this, path);
     };
 }
+
+
+void MainWindowController::notifySceneStateChanged()
+{
+  Scene &scene = data.scene;
+  SceneHandles &scene_handles = data.scene_handles;
+  TreeWidget &tree_widget = data.tree_widget;
+  SceneState &scene_state = data.scene_state;
+  destroySceneObjects(scene, scene_handles);
+  clearTree(tree_widget, data.tree_paths);
+  scene_handles = createSceneObjects(scene_state, scene);
+  data.tree_paths = fillTree(tree_widget, scene_state);
+}

@@ -4,6 +4,8 @@
 #include "taggedvalueio.hpp"
 #include "vec3.hpp"
 #include "rotationvector.hpp"
+#include "maketransform.hpp"
+#include "indicesof.hpp"
 
 using std::ostream;
 using std::cerr;
@@ -96,6 +98,39 @@ static void
 }
 
 
+static void
+  createDistanceError(
+    TaggedValue &parent,
+    const SceneState &scene_state,
+    const SceneState::DistanceError &distance_error_state
+  )
+{
+  auto &distance_error = create(parent, "DistanceError");
+  {
+    auto &parent = distance_error;
+
+    if (distance_error_state.optional_start_marker_index) {
+      MarkerIndex start_marker_index =
+        *distance_error_state.optional_start_marker_index;
+
+      auto &start_marker_name = scene_state.marker(start_marker_index).name;
+      create(parent, "start", start_marker_name);
+    }
+
+    if (distance_error_state.optional_end_marker_index) {
+      MarkerIndex end_marker_index =
+        *distance_error_state.optional_end_marker_index;
+
+      auto &end_marker_name = scene_state.marker(end_marker_index).name;
+      create(parent, "end", end_marker_name);
+    }
+
+    create(parent, "desired_distance", distance_error_state.desired_distance);
+    create(parent, "weight", distance_error_state.weight);
+  }
+}
+
+
 static TaggedValue makeTaggedValue(const SceneState &scene_state)
 {
   TaggedValue result("Scene");
@@ -119,12 +154,18 @@ static TaggedValue makeTaggedValue(const SceneState &scene_state)
         createMarker(parent, marker_state);
       }
     }
+
+    for (
+      const SceneState::DistanceError &distance_error_state
+      : scene_state.distance_errors
+    ) {
+      createDistanceError(parent, scene_state, distance_error_state);
+    }
   }
   return result;
 }
 
 
-#if ADD_SCAN_SCENE_STATE
 static const TaggedValue *
   findChild(const TaggedValue &tagged_value, const TaggedValue::Tag &tag)
 {
@@ -136,10 +177,8 @@ static const TaggedValue *
 
   return nullptr;
 }
-#endif
 
 
-#if ADD_SCAN_SCENE_STATE
 static Optional<NumericValue>
   findNumericValue(
     const TaggedValue &tagged_value,
@@ -158,10 +197,28 @@ static Optional<NumericValue>
 
   return x_ptr->value.asNumeric();
 }
-#endif
 
 
-#if ADD_SCAN_SCENE_STATE
+static Optional<StringValue>
+  findStringValue(
+    const TaggedValue &tagged_value,
+    const TaggedValue::Tag &child_name
+  )
+{
+  const TaggedValue *x_ptr = findChild(tagged_value, child_name);
+
+  if (!x_ptr) {
+    return {};
+  }
+
+  if (!x_ptr->value.isString()) {
+    return {};
+  }
+
+  return x_ptr->value.asString();
+}
+
+
 static NumericValue
   numericValueOr(
     const TaggedValue &tagged_value,
@@ -171,10 +228,8 @@ static NumericValue
 {
   return findNumericValue(tagged_value, child_name).valueOr(default_value);
 }
-#endif
 
 
-#if ADD_SCAN_SCENE_STATE
 static Vec3 makeVec3(const TaggedValue &tagged_value)
 {
   NumericValue x = numericValueOr(tagged_value, "x", 0);
@@ -183,10 +238,8 @@ static Vec3 makeVec3(const TaggedValue &tagged_value)
 
   return {x,y,z};
 }
-#endif
 
 
-#if ADD_SCAN_SCENE_STATE
 static Transform makeTransform(const TaggedValue &tagged_value)
 {
   Transform result;
@@ -203,19 +256,117 @@ static Transform makeTransform(const TaggedValue &tagged_value)
     assert(false);
   }
 
-  // Vec3 translation = makeVec3(*translation_ptr);
-  // Vec3 rotation = makeVec3(*rotation_ptr);
-  // result.setRotation(makeRotation(rotation));
-  printTaggedValueOn(cerr, tagged_value);
-  cerr << "makeTransform() Not implemented\n";
-  assert(false);
+  Vec3 translation = makeVec3(*translation_ptr);
+  Vec3 rotation = makeVec3(*rotation_ptr);
 
+  setTransformTranslation(result, translation);
+  setTransformRotation(result, rotation*(M_PI/180));
   return result;
 }
-#endif
 
 
-#if ADD_SCAN_SCENE_STATE
+static void
+  extractMarkers(
+    SceneState &scene_state,
+    const TaggedValue &tagged_value,
+    bool is_local
+  )
+{
+  for (auto &child_tagged_value : tagged_value.children) {
+    if (child_tagged_value.tag == "Marker") {
+      Optional<StringValue> maybe_name =
+        findStringValue(child_tagged_value, "name");
+
+      Optional<MarkerIndex> maybe_marker_index;
+
+      if (maybe_name) {
+        maybe_marker_index = scene_state.addMarker(*maybe_name);
+      }
+      else {
+        assert(false);
+      }
+
+      assert(maybe_marker_index);
+      MarkerIndex marker_index = *maybe_marker_index;
+      scene_state.marker(marker_index).is_local = is_local;
+
+      const TaggedValue *position_ptr =
+        findChild(child_tagged_value, "position");
+
+      if (position_ptr) {
+        scene_state.marker(marker_index).position =
+          eigenVector3f(makeVec3(*position_ptr));
+      }
+    }
+  }
+}
+
+
+static Optional<MarkerIndex>
+  findMarkerIndex( 
+    const SceneState &scene_state,
+    const SceneState::Marker::Name &name
+  )
+{
+  for (auto i : indicesOf(scene_state.markers())) {
+    if (scene_state.marker(i).name == name) {
+      return i;
+    }
+  }
+
+  return {};
+}
+
+
+static void
+  extractDistanceErrors(SceneState &result, const TaggedValue &tagged_value)
+{
+  for (auto &child_tagged_value : tagged_value.children) {
+    if (child_tagged_value.tag == "DistanceError") {
+      SceneState::DistanceError &distance_error_state =
+        result.addDistanceError();
+
+      {
+        Optional<StringValue> maybe_start_marker_name =
+          findStringValue(child_tagged_value, "start");
+
+        if (maybe_start_marker_name) {
+          distance_error_state.optional_start_marker_index =
+            findMarkerIndex(result, *maybe_start_marker_name);
+        }
+      }
+
+      {
+        Optional<StringValue> maybe_end_marker_name =
+          findStringValue(child_tagged_value, "end");
+
+        if (maybe_end_marker_name) {
+          distance_error_state.optional_end_marker_index =
+            findMarkerIndex(result, *maybe_end_marker_name);
+        }
+      }
+
+      {
+        auto tag = "desired_distance";
+        auto optional_value = findNumericValue(child_tagged_value, tag);
+
+        if (optional_value) {
+          distance_error_state.desired_distance = *optional_value;
+        }
+      }
+
+      {
+        auto tag = "weight";
+        auto optional_value = findNumericValue(child_tagged_value, tag);
+
+        if (optional_value) {
+          distance_error_state.weight = *optional_value;
+        }
+      }
+    }
+  }
+}
+
 static SceneState makeSceneState(const TaggedValue &tagged_value)
 {
   const TaggedValue *transform_ptr = findChild(tagged_value, "Transform");
@@ -226,9 +377,11 @@ static SceneState makeSceneState(const TaggedValue &tagged_value)
 
   SceneState result;
   result.box.global = makeTransform(*transform_ptr);
+  extractMarkers(result, *transform_ptr, /*is_local*/true);
+  extractMarkers(result, tagged_value, /*is_local*/false);
+  extractDistanceErrors(result, tagged_value);
   return result;
 }
-#endif
 
 
 
@@ -238,7 +391,6 @@ void printSceneStateOn(ostream &stream, const SceneState &state)
 }
 
 
-#if ADD_SCAN_SCENE_STATE
 Expected<SceneState> scanSceneStateFrom(std::istream &stream)
 {
   Expected<TaggedValue> expected_tagged_value = scanTaggedValueFrom(stream);
@@ -249,4 +401,3 @@ Expected<SceneState> scanSceneStateFrom(std::istream &stream)
 
   return makeSceneState(expected_tagged_value.asValue());
 }
-#endif

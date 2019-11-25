@@ -4,6 +4,7 @@
 
 
 extern TreePaths fillTree(TreeWidget &, const SceneState &);
+extern void clearTree(TreeWidget &, const TreePaths &);
 
 
 extern void

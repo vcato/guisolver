@@ -535,6 +535,12 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
 }
 
 
+void clearTree(TreeWidget &tree_widget, const TreePaths &tree_paths)
+{
+  tree_widget.removeItem(tree_paths.path);
+}
+
+
 static void
   updateXYZValues(
     TreeWidget &tree_widget,

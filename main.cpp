@@ -19,6 +19,7 @@ using std::cerr;
 using std::string;
 using std::ostream;
 using std::ofstream;
+using std::ifstream;
 
 
 static void createGraphicsWindow(QBoxLayout &layout, OSGScene &scene)
@@ -48,6 +49,19 @@ static Optional<string> askForSavePath(QWidget &parent)
 }
 
 
+static Optional<string> askForOpenPath(QWidget &parent)
+{
+  QFileDialog file_dialog;
+  QString path = file_dialog.getOpenFileName(&parent,"Open Scene",".");
+
+  if (path == "") {
+    return {};
+  }
+
+  return path.toStdString();
+}
+
+
 static void saveScene(SceneState &scene_state, const string &path)
 {
   ofstream stream(path);
@@ -64,6 +78,24 @@ static void saveScene(SceneState &scene_state, const string &path)
 }
 
 
+static void loadScene(SceneState &scene_state, const string &path)
+{
+  ifstream stream(path);
+
+  if (!stream) {
+    assert(false); // not implemented
+  }
+
+  Expected<SceneState> scan_result = scanSceneStateFrom(stream);
+
+  if (scan_result.isError()) {
+    assert(false); // not implemented
+  }
+
+  scene_state = scan_result.asValue();
+}
+
+
 int main(int argc,char** argv)
 {
   QApplication app(argc,argv);
@@ -75,6 +107,11 @@ int main(int argc,char** argv)
 
   QWidget central_widget;
   main_window.setCentralWidget(&central_widget);
+
+  QBoxLayout &layout = createLayout<QHBoxLayout>(central_widget);
+  QtTreeWidget &tree_widget = createWidget<QtTreeWidget>(layout);
+  createGraphicsWindow(layout, scene);
+  MainWindowController controller(scene_state, scene, tree_widget);
 
   QtSlot save_slot(
     [&](){
@@ -89,15 +126,27 @@ int main(int argc,char** argv)
     }
   );
 
+  QtSlot open_slot(
+    [&](){
+      Optional<string> maybe_path = askForOpenPath(/*parent*/main_window);
+
+      if (!maybe_path) {
+        // Cancelled
+      }
+      else {
+        loadScene(scene_state, *maybe_path);
+        controller.notifySceneStateChanged();
+      }
+    }
+  );
+
   {
     QMenuBar &menu_bar = *main_window.menuBar();
     QMenu &file_menu = *menu_bar.addMenu("File");
+    QAction &open_action = *file_menu.addAction("Open...");
     QAction &save_action = *file_menu.addAction("Save...");
     save_slot.connectSignal(save_action, SIGNAL(triggered()));
+    open_slot.connectSignal(open_action, SIGNAL(triggered()));
   }
-  QBoxLayout &layout = createLayout<QHBoxLayout>(central_widget);
-  QtTreeWidget &tree_widget = createWidget<QtTreeWidget>(layout);
-  createGraphicsWindow(layout, scene);
-  MainWindowController controller(scene_state, scene, tree_widget);
   app.exec();
 }
