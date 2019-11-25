@@ -9,6 +9,7 @@
 #include "removeindexfrom.hpp"
 #include "startswith.hpp"
 #include "numericvaluelimits.hpp"
+#include "maketransform.hpp"
 
 using std::cerr;
 using std::string;
@@ -672,4 +673,235 @@ void
       end_path, end_value, marker_options
     );
   }
+}
+
+
+static void
+  setVectorValue(
+    Eigen::Vector3f &v,
+    const TreePath &path,
+    NumericValue value,
+    const TreePaths::XYZ &xyz_path
+  )
+{
+  if (path == xyz_path.x) {
+    v.x() = value;
+  }
+  else if (path == xyz_path.y) {
+    v.y() = value;
+  }
+  else if (path == xyz_path.z) {
+    v.z() = value;
+  }
+  else {
+    assert(false);
+  }
+}
+
+
+static void
+  setVectorValue(
+    Vec3 &v,
+    const TreePath &path,
+    NumericValue value,
+    const TreePaths::XYZ &xyz_path
+  )
+{
+  if (path == xyz_path.x) {
+    v.x = value;
+  }
+  else if (path == xyz_path.y) {
+    v.y = value;
+  }
+  else if (path == xyz_path.z) {
+    v.z = value;
+  }
+  else {
+    assert(false);
+  }
+}
+
+
+static bool
+  setTransformValue(
+    Transform &box_global,
+    const TreePath &path,
+    NumericValue value,
+    const TreePaths::Box &box_paths
+  )
+{
+  if (startsWith(path,box_paths.translation.path)) {
+    Eigen::Vector3f v = box_global.translation();
+    const TreePaths::XYZ& xyz_path = box_paths.translation;
+    setVectorValue(v, path, value, xyz_path);
+    setTransformTranslation(box_global, vec3(v));
+    return true;
+  }
+
+  if (startsWith(path,box_paths.rotation.path)) {
+    Vec3 v = rotationVector(box_global.rotation());
+    const TreePaths::XYZ& xyz_path = box_paths.rotation;
+    setVectorValue(v, path, value*M_PI/180, xyz_path);
+    setTransformRotation(box_global, v);
+
+    return true;
+  }
+
+  return false;
+}
+
+
+static bool
+  setMarkerValue(
+    const TreePath &path,
+    NumericValue value,
+    const TreePaths::Marker &marker_path,
+    SceneState::Marker &marker_state
+  )
+{
+  if (startsWith(path,marker_path.position.path)) {
+    setVectorValue(marker_state.position, path, value, marker_path.position);
+    return true;
+  }
+
+  return false;
+}
+
+
+static bool
+  setMarkersValue(
+    const TreePath &path,
+    NumericValue value,
+    const TreePaths::Markers &markers_paths,
+    SceneState &scene_state
+  )
+{
+  for (auto i : indicesOf(markers_paths)) {
+    bool value_was_set =
+      setMarkerValue(
+        path,
+        value,
+        markers_paths[i],
+        scene_state.marker(i)
+      );
+
+    if (value_was_set) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+
+static bool
+  setDistanceErrorValue(
+    SceneState::DistanceError &distance_error_state,
+    const TreePath &path,
+    NumericValue value,
+    const TreePaths::DistanceError &distance_error_paths
+  )
+{
+  if (startsWith(path, distance_error_paths.desired_distance)) {
+    distance_error_state.desired_distance = value;
+    return true;
+  }
+
+  if (startsWith(path, distance_error_paths.weight)) {
+    distance_error_state.weight = value;
+    return true;
+  }
+
+  return false;
+}
+
+
+static bool
+  setDistanceErrorsValue(
+    SceneState::DistanceErrors &distance_error_states,
+    const TreePath &path,
+    NumericValue value,
+    const TreePaths::DistanceErrors &distance_errors_paths
+  )
+{
+  assert(distance_errors_paths.size() == distance_error_states.size());
+
+  for (auto i : indicesOf(distance_errors_paths)) {
+    bool value_was_set =
+      setDistanceErrorValue(
+        distance_error_states[i],
+        path,
+        value,
+        distance_errors_paths[i]
+      );
+
+    if (value_was_set) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+bool
+  setSceneStateValue(
+    SceneState &scene_state,
+    const TreePath &path,
+    NumericValue value,
+    const TreePaths &tree_paths
+  )
+{
+  const TreePaths::Box &box_paths = tree_paths.box;
+
+  if (startsWith(path,box_paths.path)) {
+    Transform box_global = scene_state.box.global;
+
+    if (setTransformValue(box_global, path, value, box_paths)) {
+      scene_state.box.global = box_global;
+      return true;
+    }
+
+    if (startsWith(path, box_paths.geometry.path)) {
+      SceneState::Box &box = scene_state.box;
+      Eigen::Vector3f v = {box.scale_x, box.scale_y, box.scale_z};
+      const TreePaths::XYZ& xyz_path = box_paths.geometry.scale;
+      setVectorValue(v, path, value, xyz_path);
+      box.scale_x = v.x();
+      box.scale_y = v.y();
+      box.scale_z = v.z();
+      return true;
+    }
+  }
+
+  {
+    bool was_markers_value =
+      setMarkersValue(
+        path,
+        value,
+        tree_paths.markers,
+        scene_state
+      );
+
+    if (was_markers_value) {
+      return true;
+    }
+  }
+
+  {
+    bool was_distance_error_value =
+      setDistanceErrorsValue(
+        scene_state.distance_errors,
+        path,
+        value,
+        tree_paths.distance_errors
+      );
+
+    if (was_distance_error_value) {
+      return true;
+    }
+  }
+
+  return false;
 }

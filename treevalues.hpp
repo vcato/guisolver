@@ -52,3 +52,12 @@ extern void
     const TreePaths &tree_paths,
     const SceneState &scene_state
   );
+
+
+extern bool
+  setSceneStateValue(
+    SceneState &scene_state,
+    const TreePath &path,
+    NumericValue value,
+    const TreePaths &tree_paths
+  );
