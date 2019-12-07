@@ -758,7 +758,7 @@ void QtTreeWidget::prepareMenu(const QPoint &pos)
   QMenu menu;
 
   for (auto &item : menu_items) {
-    createAction(menu,item.label,item.callback);
+    createAction(menu, item.label, item.callback, item.optional_checked_state);
   }
 
   menu.exec(mapToGlobal(pos));

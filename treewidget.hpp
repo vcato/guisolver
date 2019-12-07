@@ -21,6 +21,7 @@ struct TreeWidget {
   struct MenuItem {
     std::string label;
     std::function<void()> callback;
+    Optional<bool> optional_checked_state = {};
   };
 
   virtual void
