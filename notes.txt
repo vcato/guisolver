@@ -270,5 +270,29 @@ Names are acting like outputs.
 t = Transform(tx=$, ty=$, tz=$, rx=$, ry=$, rz=$)
 t.origin
 ---
-I'd like to be able to save and load a scene.
-I need a file menu.
+I'd like to be able to enable/disable solving for particular
+values.
+* Having a toggle next to each thing would be convenient, but it doesn't
+  fit with the tree model very well.
+* Maybe we have child nodes
+  * solve (yes/no)
+  * min (optional)
+  * max (optional)
+  * expression
+* It doesn't make sense for something to have both an expressin and a solve
+  flag, so maybe a value has a type which can be either constant, variable,
+  or expression.
+  * x: [Variable] {
+  *   value: 0.5
+  *   min: -10
+  *   max: 20
+  * }
+  * y: 0.75
+  * z: v1*7 {
+  *   value: 0.23
+  * }
+* If something is an expression, we still want to be able to see its value,
+  but maybe not dynamically.  Maybe this is a hover-over thing.
+* Right now, what would seem to make the most sense is having a context menu
+  with a "Solve" toggle.  The menu could also have options to turn it into
+  an expression.
