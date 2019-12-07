@@ -10,6 +10,7 @@
 #include "removeindexfrom.hpp"
 
 
+
 class SceneState {
   public:
     struct Marker;

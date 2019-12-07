@@ -61,8 +61,7 @@ static TaggedValue &
     auto &rotation = create(parent, "rotation");
     auto &parent = rotation;
     auto &value = transform_state.rotation();
-    Vec3 r_rad = rotationVector(value);
-    Vec3 r_deg = r_rad * (180/M_PI);
+    Vec3 r_deg = rotationVectorDeg(value);
     createXYZChildren(parent, r_deg);
   }
 

@@ -33,7 +33,7 @@ static vector<float> concat(const vector<float> &a,const vector<float> &b)
 
 static vector<float> extractRotationVariables(const Eigen::Matrix3f &r)
 {
-  Vec3 v = rotationVector(r);
+  Vec3 v = rotationVectorRad(r);
   float x = v.x;
   float y = v.y;
   float z = v.z;

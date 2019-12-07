@@ -572,8 +572,7 @@ static void
     const Eigen::Matrix3f &rotation
   )
 {
-  Vec3 r_rad = rotationVector(rotation);
-  Vec3 r_deg = r_rad * (180/M_PI);
+  Vec3 r_deg = rotationVectorDeg(rotation);
   updateXYZValues(tree_widget, rotation_paths, r_deg);
 }
 
@@ -745,10 +744,10 @@ static bool
   }
 
   if (startsWith(path,box_paths.rotation.path)) {
-    Vec3 v = rotationVector(box_global.rotation());
+    Vec3 v = rotationVectorDeg(box_global.rotation());
     const TreePaths::XYZ& xyz_path = box_paths.rotation;
-    setVectorValue(v, path, value*M_PI/180, xyz_path);
-    setTransformRotationRad(box_global, v);
+    setVectorValue(v, path, value, xyz_path);
+    setTransformRotationDeg(box_global, v);
     return true;
   }
 

@@ -1,6 +1,7 @@
 #include "scenestate.hpp"
 
 #include "contains.hpp"
+#include "maketransform.hpp"
 
 using std::ostringstream;
 
