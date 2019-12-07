@@ -54,3 +54,14 @@ MarkerIndex createMarkerInState(SceneState &state, bool is_local)
   state.marker(index).is_local = is_local;
   return index;
 }
+
+
+Point SceneState::markerPredicted(int marker_index) const
+{
+  if (_markers[marker_index].is_local) {
+    return box.global * _markers[marker_index].position;
+  }
+  else {
+    return _markers[marker_index].position;
+  }
+}

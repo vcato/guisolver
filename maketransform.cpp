@@ -30,7 +30,13 @@ void
 }
 
 
-void setTransformRotation(Transform &box_global, const Vec3 &v)
+void setTransformRotationRad(Transform &box_global, const Vec3 &v)
 {
   box_global.matrix().topLeftCorner<3,3>() = makeRotation(v);
+}
+
+
+void setTransformRotationDeg(Transform &result, const Vec3 &rotation)
+{
+  setTransformRotationRad(result, rotation*(M_PI/180));
 }

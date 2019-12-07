@@ -90,15 +90,7 @@ class SceneState {
       removeIndexFrom(distance_errors, index);
     }
 
-    Point markerPredicted(int marker_index) const
-    {
-      if (_markers[marker_index].is_local) {
-        return box.global * _markers[marker_index].position;
-      }
-      else {
-        return _markers[marker_index].position;
-      }
-    }
+    Point markerPredicted(int marker_index) const;
 
   private:
     Markers _markers;

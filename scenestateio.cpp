@@ -260,7 +260,7 @@ static Transform makeTransform(const TaggedValue &tagged_value)
   Vec3 rotation = makeVec3(*rotation_ptr);
 
   setTransformTranslation(result, translation);
-  setTransformRotation(result, rotation*(M_PI/180));
+  setTransformRotationDeg(result, rotation);
   return result;
 }
 

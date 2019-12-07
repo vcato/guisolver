@@ -30,10 +30,11 @@ run_guisolver: guisolver
 DEFAULTSCENESTATE=defaultscenestate.o scenestate.o maketransform.o
 TAGGEDVALUEIO=taggedvalueio.o printindent.o streamparser.o stringutil.o
 SCENESTATEIO=scenestateio.o $(TAGGEDVALUEIO)
+SCENEERROR=sceneerror.o scenestate.o
 
 guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
   osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o $(DEFAULTSCENESTATE) \
-  sceneerror.o maketransform.o scenesolver.o optimize.o \
+  $(SCENEERROR) maketransform.o scenesolver.o optimize.o \
   qttreewidgetitem.o qtcombobox.o qtcombobox_moc.o \
   qtlineedit.o qtlineedit_moc.o qtslider.o qtslider.o \
   qtslider_moc.o qtspinbox.o qtspinbox_moc.o treevalues.o \
@@ -55,7 +56,7 @@ scenestateio_test: scenestateio_test.o $(DEFAULTSCENESTATE) $(SCENESTATEIO)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 scenesolver_test: scenesolver_test.o \
-  scenesolver.o maketransform.o sceneerror.o optimize.o
+  scenesolver.o maketransform.o $(SCENEERROR) optimize.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 optimize_test: optimize_test.o optimize.o

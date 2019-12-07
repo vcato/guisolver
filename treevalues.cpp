@@ -748,8 +748,7 @@ static bool
     Vec3 v = rotationVector(box_global.rotation());
     const TreePaths::XYZ& xyz_path = box_paths.rotation;
     setVectorValue(v, path, value*M_PI/180, xyz_path);
-    setTransformRotation(box_global, v);
-
+    setTransformRotationRad(box_global, v);
     return true;
   }
 
