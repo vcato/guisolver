@@ -296,3 +296,7 @@ values.
 * Right now, what would seem to make the most sense is having a context menu
   with a "Solve" toggle.  The menu could also have options to turn it into
   an expression.
+---
+The "Solve" toggle could hierarchically.
+* If you have Solve turned off for the box, then the translations and rotations
+  would all be not be solved.

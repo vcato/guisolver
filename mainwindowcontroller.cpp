@@ -453,12 +453,20 @@ void
 }
 
 
+template <typename T>
+static void appendTo(vector<T> &v, const vector<T> &n)
+{
+  v.insert(v.end(), n.begin(), n.end());
+}
+
+
 TreeWidget::MenuItems
   MainWindowController::Impl::contextMenuItemsForPath(
     MainWindowController &controller,
     const TreePath &path
   )
 {
+  TreeWidget::MenuItems menu_items;
   const TreePaths &tree_paths = controller.data.tree_paths;
 
   if (isScenePath(path, tree_paths)) {
@@ -472,10 +480,10 @@ TreeWidget::MenuItems
         Impl::addGlobalMarkerPressed(controller, path);
       };
 
-    return {
+    appendTo(menu_items,{
       {"Add Distance Error", add_distance_error_function },
       {"Add Marker", add_marker_error_function },
-    };
+    });
   }
 
   if (isBoxPath(path, tree_paths)) {
@@ -484,9 +492,9 @@ TreeWidget::MenuItems
         Impl::addLocalMarkerPressed(controller, path);
       };
 
-    return {
+    appendTo(menu_items,{
       {"Add Marker", add_marker_error_function}
-    };
+    });
   }
 
   {
@@ -500,9 +508,9 @@ TreeWidget::MenuItems
         Impl::removeMarkerPressed(controller, index);
       };
 
-      return {
+      appendTo(menu_items,{
         {"Remove Marker", remove_marker_function}
-      };
+      });
     }
   }
 
@@ -518,13 +526,13 @@ TreeWidget::MenuItems
           Impl::removeDistanceErrorPressed(controller, index);
         };
 
-      return {
+      appendTo(menu_items,{
         {"Remove Distance Error", remove_distance_error_function}
-      };
+      });
     }
   }
 
-  return {};
+  return menu_items;
 }
 
 
