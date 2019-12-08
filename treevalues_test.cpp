@@ -1,5 +1,6 @@
 #include "treevalues.hpp"
 
+#include <sstream>
 #include "defaultscenestate.hpp"
 #include "streamvector.hpp"
 #include "indicesof.hpp"

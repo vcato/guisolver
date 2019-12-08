@@ -1,8 +1,7 @@
 #include "scenestate.hpp"
 
+#include <sstream>
 #include "contains.hpp"
-#include "maketransform.hpp"
-#include "transformstate.hpp"
 
 using std::ostringstream;
 
@@ -55,15 +54,4 @@ MarkerIndex createMarkerInState(SceneState &state, bool is_local)
   MarkerIndex index = state.addMarker(newMarkerName(state, is_local));
   state.marker(index).is_local = is_local;
   return index;
-}
-
-
-Point SceneState::markerPredicted(int marker_index) const
-{
-  if (_markers[marker_index].is_local) {
-    return makeTransformFromState(box.global) * _markers[marker_index].position;
-  }
-  else {
-    return _markers[marker_index].position;
-  }
 }

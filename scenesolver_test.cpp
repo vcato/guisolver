@@ -9,6 +9,7 @@
 #include "eigenconv.hpp"
 #include "rotationvector.hpp"
 #include "transformstate.hpp"
+#include "positionstate.hpp"
 
 using std::cerr;
 
@@ -79,7 +80,7 @@ static MarkerIndex
   )
 {
   MarkerIndex marker_index = result.addUnnamedMarker();
-  result.marker(marker_index).position = local;
+  result.marker(marker_index).position = makeMarkerPosition(local);
   result.marker(marker_index).is_local = true;
   return marker_index;
 }
@@ -92,7 +93,7 @@ static MarkerIndex
   )
 {
   MarkerIndex marker_index = result.addUnnamedMarker();
-  result.marker(marker_index).position = local;
+  result.marker(marker_index).position = makeMarkerPosition(local);
   result.marker(marker_index).is_local = false;
   return marker_index;
 }

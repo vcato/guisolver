@@ -3,6 +3,7 @@
 #include "scenestate.hpp"
 #include "sequence.hpp"
 #include "indicesof.hpp"
+#include "markerpredicted.hpp"
 
 using std::cerr;
 using Vector3f = Eigen::Vector3f;
@@ -66,8 +67,8 @@ static void
 
   MarkerIndex start_marker_index = *distance_error.optional_start_marker_index;
   MarkerIndex end_marker_index = *distance_error.optional_end_marker_index;
-  Point start_predicted = scene_state.markerPredicted(start_marker_index);
-  Point end_predicted = scene_state.markerPredicted(end_marker_index);
+  Point start_predicted = markerPredicted(scene_state, start_marker_index);
+  Point end_predicted = markerPredicted(scene_state, end_marker_index);
   float distance = distanceBetween(start_predicted, end_predicted);
   float desired_distance = distance_error.desired_distance;
   float weight = distance_error.weight;

@@ -1,5 +1,6 @@
 #include "scenestateio.hpp"
 
+#include <sstream>
 #include "defaultscenestate.hpp"
 
 using std::istringstream;

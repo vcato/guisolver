@@ -7,6 +7,7 @@
 #include "globaltransform.hpp"
 #include "removeindexfrom.hpp"
 #include "transformstate.hpp"
+#include "positionstate.hpp"
 
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
@@ -26,7 +27,8 @@ static void
     const Scene &scene
   )
 {
-  state_marker.position = localTranslation(handles_marker.handle, scene);
+  state_marker.position =
+    makeMarkerPosition(localTranslation(handles_marker.handle, scene));
 }
 
 
@@ -95,10 +97,10 @@ static SceneHandles::Marker
   )
 {
   if (state_marker.is_local) {
-    return createSceneLocal(scene,box,state_marker.position);
+    return createSceneLocal(scene, box, makePoint(state_marker.position));
   }
   else {
-    return createSceneGlobal(scene,state_marker.position);
+    return createSceneGlobal(scene, makePoint(state_marker.position));
   }
 }
 
@@ -290,7 +292,7 @@ static void
     const SceneState::Marker &marker_state
   )
 {
-  scene.setTranslation(marker_handles.handle, marker_state.position);
+  scene.setTranslation(marker_handles.handle, makePoint(marker_state.position));
 }
 
 

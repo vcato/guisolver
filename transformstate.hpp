@@ -1,5 +1,11 @@
+#ifndef TRANSFORMSTATE_HPP_
+#define TRANSFORMSTATE_HPP_
+
+
 #include "scenestate.hpp"
 #include "rotationvector.hpp"
+#include "transform.hpp"
+#include "maketransform.hpp"
 
 
 inline SceneState::XYZ xyzState(const Point &p)
@@ -87,3 +93,6 @@ inline void setRotationValuesDeg(TransformState &result,const Vec3 &rotation)
 {
   result.rotation = xyzState(rotation);
 }
+
+
+#endif /* TRANSFORMSTATE_HPP_ */

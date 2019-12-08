@@ -2,8 +2,6 @@
 #define SCENESTATE_HPP_
 
 #include "vector.hpp"
-#include "point.hpp"
-#include "transform.hpp"
 #include "markerindex.hpp"
 #include "vector.hpp"
 #include "optional.hpp"
@@ -16,7 +14,6 @@ class SceneState {
     struct DistanceError;
     struct Transform;
     struct XYZ;
-    using Points = vector<Point>;
     using Markers = vector<Marker>;
     using DistanceErrors = vector<DistanceError>;
     using String = std::string;
@@ -29,7 +26,7 @@ class SceneState {
 
     struct Marker {
       using Name = String;
-      Point position;
+      XYZ position;
       bool is_local;
       Name name;
     };
@@ -101,8 +98,6 @@ class SceneState {
       removeIndexFrom(distance_errors, index);
     }
 
-    Point markerPredicted(int marker_index) const;
-
   private:
     Markers _markers;
 
@@ -129,6 +124,7 @@ class SceneState {
 using TransformState = SceneState::Transform;
 using TranslationState = SceneState::XYZ;
 using RotationState = SceneState::XYZ;
+using MarkerPosition = SceneState::XYZ;
 
 extern MarkerIndex createMarkerInState(SceneState &state, bool is_local);
 extern vector<SceneState::Marker::Name> markerNames(const SceneState &state);

@@ -24,7 +24,7 @@ static void
 static void
   createMarker(
     SceneState &state,
-    const Point &position,
+    const MarkerPosition &position,
     bool is_local
   )
 {
@@ -33,13 +33,14 @@ static void
 }
 
 
-static void createLocalMarker(SceneState &state, const Point &position)
+static void createLocalMarker(SceneState &state, const MarkerPosition &position)
 {
-  createMarker(state,position,/*is_local*/true);
+  createMarker(state, position, /*is_local*/true);
 }
 
 
-static void createGlobalMarker(SceneState &state, const Point &position)
+static void
+  createGlobalMarker(SceneState &state, const MarkerPosition &position)
 {
   createMarker(state,position,/*is_local*/false);
 }

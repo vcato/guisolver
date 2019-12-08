@@ -1,6 +1,7 @@
 #ifndef EIGENCONV_HPP_
 #define EIGENCONV_HPP_
 
+#include <Eigen/Dense>
 #include "vec3.hpp"
 #include "coordinateaxes.hpp"
 

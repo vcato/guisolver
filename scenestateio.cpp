@@ -7,6 +7,7 @@
 #include "maketransform.hpp"
 #include "indicesof.hpp"
 #include "transformstate.hpp"
+#include "positionstate.hpp"
 
 using std::ostream;
 using std::cerr;
@@ -298,7 +299,7 @@ static void
 
       if (position_ptr) {
         scene_state.marker(marker_index).position =
-          eigenVector3f(makeVec3(*position_ptr));
+          makeMarkerPosition(eigenVector3f(makeVec3(*position_ptr)));
       }
     }
   }
