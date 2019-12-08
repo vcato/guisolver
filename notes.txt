@@ -300,8 +300,3 @@ values.
 The "Solve" toggle could hierarchically.
 * If you have Solve turned off for the box, then the translations and rotations
   would all be not be solved.
----
-The tree widget will need support for toggles in the context menu.
-How do we get the new state of the toggle?
-* Well, presumably the value is the opposite of its current value, so maybe
-  we don't even need to know.

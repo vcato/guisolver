@@ -10,6 +10,8 @@
 #include "sceneobjects.hpp"
 #include "maketransform.hpp"
 
+#define ADD_SOLVE_TO_CONTEXT_MENU 0
+
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
 
@@ -460,6 +462,18 @@ static void appendTo(vector<T> &v, const vector<T> &n)
 }
 
 
+#if ADD_SOLVE_TO_CONTEXT_MENU
+static bool isValuePath(const TreePath &path, const TreePaths &tree_paths)
+{
+  if (path == tree_paths.box.translation.x) {
+    return true;
+  }
+
+  return false;
+}
+#endif
+
+
 TreeWidget::MenuItems
   MainWindowController::Impl::contextMenuItemsForPath(
     MainWindowController &controller,
@@ -531,6 +545,22 @@ TreeWidget::MenuItems
       });
     }
   }
+
+#if ADD_SOLVE_TO_CONTEXT_MENU
+  if (isValuePath(path, tree_paths)) {
+    auto solve_function =
+      [&controller,path](){
+        cerr << "In solve_function()\n";
+        flipSolveState(controller.data.scene_state, path);
+      };
+
+    bool checked_state = solveState(controller.data.scene_state, path);
+
+    appendTo(menu_items,{
+      {"Solve", solve_function, checked_state}
+    });
+  }
+#endif
 
   return menu_items;
 }
