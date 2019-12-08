@@ -10,8 +10,6 @@
 #include "sceneobjects.hpp"
 #include "maketransform.hpp"
 
-#define ADD_SOLVE_TO_CONTEXT_MENU 0
-
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
 
@@ -202,6 +200,9 @@ struct MainWindowController::Impl {
     );
 
   static void
+    handleSolveToggleChange(MainWindowController &, const TreePath &);
+
+  static void
     addDistanceErrorPressed(
       MainWindowController &controller,
       const TreePath &
@@ -312,6 +313,7 @@ void
 
     Scene &scene = data.scene;
     const SceneHandles &scene_handles = data.scene_handles;
+    updateErrorsInState(state);
     updateSceneObjects(scene, scene_handles, state);
     updateTreeValues(tree_widget, tree_paths, state);
   }
@@ -462,16 +464,123 @@ static void appendTo(vector<T> &v, const vector<T> &n)
 }
 
 
-#if ADD_SOLVE_TO_CONTEXT_MENU
-static bool isValuePath(const TreePath &path, const TreePaths &tree_paths)
+static void flip(bool &arg)
 {
-  if (path == tree_paths.box.translation.x) {
-    return true;
+  arg = !arg;
+}
+
+
+static const bool *
+  xyzSolveStatePtr(
+    const SceneState::XYZSolveFlags &xyz_solve_flags,
+    const TreePath &path,
+    const TreePaths::XYZ &xyz_paths
+  )
+{
+  if (path == xyz_paths.x) return &xyz_solve_flags.x;
+  if (path == xyz_paths.y) return &xyz_solve_flags.y;
+  if (path == xyz_paths.z) return &xyz_solve_flags.z;
+  return 0;
+}
+
+
+static const bool *
+  solveStatePtr(
+    const SceneState &scene_state,
+    const TreePath &path,
+    const TreePaths &tree_paths
+  )
+{
+  {
+    const TreePaths::XYZ &xyz_paths =
+      tree_paths.box.translation;
+
+    const SceneState::XYZSolveFlags &xyz_solve_flags =
+      scene_state.box.solve_flags.translation;
+
+    const bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
+
+    if (result_ptr) {
+      return result_ptr;
+    }
+  }
+  {
+    const TreePaths::XYZ &xyz_paths =
+      tree_paths.box.rotation;
+
+    const SceneState::XYZSolveFlags &xyz_solve_flags =
+      scene_state.box.solve_flags.rotation;
+
+    const bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
+
+    if (result_ptr) {
+      return result_ptr;
+    }
   }
 
-  return false;
+  return nullptr;
 }
-#endif
+
+
+static bool
+  solveState(
+    const SceneState &scene_state,
+    const TreePath &path,
+    const TreePaths &tree_paths
+  )
+{
+  const bool *solve_state_ptr = solveStatePtr(scene_state, path, tree_paths);
+
+  if (!solve_state_ptr) {
+    assert(false); // not implemented
+  }
+
+  return *solve_state_ptr;
+}
+
+
+static void
+  flipSolveState(
+    SceneState &scene_state,
+    const TreePath &path,
+    const TreePaths &tree_paths
+  )
+{
+  bool *solve_state_ptr =
+    const_cast<bool *>(solveStatePtr(scene_state, path, tree_paths));
+
+
+  if (!solve_state_ptr) {
+    assert(false); // not implemented
+  }
+
+  flip(*solve_state_ptr);
+}
+
+
+void
+  MainWindowController::Impl::handleSolveToggleChange(
+    MainWindowController &controller,
+    const TreePath &path
+  )
+{
+  SceneState &state = controller.data.scene_state;
+  TreeWidget &tree_widget = controller.data.tree_widget;
+  TreePaths &tree_paths = controller.data.tree_paths;
+  Scene &scene = controller.data.scene;
+  SceneHandles &scene_handles = controller.data.scene_handles;
+
+  flipSolveState(
+    state,
+    path,
+    controller.data.tree_paths
+  );
+
+  solveBoxPosition(state);
+  updateErrorsInState(state);
+  updateTreeValues(tree_widget, tree_paths, state);
+  updateSceneObjects(scene, scene_handles, state);
+}
 
 
 TreeWidget::MenuItems
@@ -546,21 +655,19 @@ TreeWidget::MenuItems
     }
   }
 
-#if ADD_SOLVE_TO_CONTEXT_MENU
-  if (isValuePath(path, tree_paths)) {
+  if (solveStatePtr(controller.data.scene_state, path, tree_paths)) {
     auto solve_function =
       [&controller,path](){
-        cerr << "In solve_function()\n";
-        flipSolveState(controller.data.scene_state, path);
+        Impl::handleSolveToggleChange(controller,path);
       };
 
-    bool checked_state = solveState(controller.data.scene_state, path);
+    bool checked_state =
+      solveState(controller.data.scene_state, path, tree_paths);
 
     appendTo(menu_items,{
       {"Solve", solve_function, checked_state}
     });
   }
-#endif
 
   return menu_items;
 }

@@ -297,10 +297,8 @@ values.
   with a "Solve" toggle.  The menu could also have options to turn it into
   an expression.
 ---
-The "Solve" toggle could work hierarchically.
-* If you have Solve turned off for the box, then the translations and rotations
-  would all be not be solved.
-* I wonder if it is better to have the solve flags be part of the individual
-  values or be separate.
-  * It seems like most things don't care about whether the solve flag is
-    set or not, so it's going to be easier to have it separate for now.
+It seems like if the solve flag is off on a property, that we should try to
+solve the other properties
+* Example: solve is off on the box Y translation, and we adjust the box Y
+  translation through the tree widget.  It seems like it should be solving
+  the other values.

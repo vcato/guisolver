@@ -37,9 +37,9 @@ class SceneState {
     };
 
     struct XYZSolveFlags {
-      float x = true;
-      float y = true;
-      float z = true;
+      bool x = true;
+      bool y = true;
+      bool z = true;
     };
 
     struct TransformSolveFlags {
