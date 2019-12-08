@@ -7,7 +7,8 @@
 #include "maketransform.hpp"
 #include "sceneerror.hpp"
 #include "eigenconv.hpp"
-
+#include "rotationvector.hpp"
+#include "transformstate.hpp"
 
 using std::cerr;
 
@@ -146,7 +147,7 @@ static Example example(RandomEngine &engine)
   // Then we can set the box global transform to some other random
   // transform.
 
-  scene_state.box.global = randomTransform(engine);
+  scene_state.box.global = transformState(randomTransform(engine));
   return result;
 }
 

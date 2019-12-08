@@ -6,6 +6,7 @@
 #include "indicesof.hpp"
 #include "globaltransform.hpp"
 #include "removeindexfrom.hpp"
+#include "transformstate.hpp"
 
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
@@ -50,7 +51,8 @@ void
   )
 {
   updateStateMarkerPositions(state, scene_handles.markers, scene);
-  state.box.global = globalTransform(scene, scene_handles.box);
+  Transform box_transform = globalTransform(scene, scene_handles.box);
+  state.box.global = transformState(box_transform);
 }
 
 
@@ -177,7 +179,7 @@ SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
   SceneHandles scene_handles;
   scene_handles.box = box_handle;
 
-  setTransform(box_handle, state.box.global, scene);
+  setTransform(box_handle, makeTransformFromState(state.box.global), scene);
 
   for (MarkerIndex marker_index : indicesOf(state.markers())) {
     createMarkerInScene(scene, scene_handles, state, marker_index);
@@ -215,7 +217,7 @@ static void
     const SceneState::Box &box_state
   )
 {
-  setTransform(box_handle, box_state.global, scene);
+  setTransform(box_handle, makeTransformFromState(box_state.global), scene);
 
   scene.setGeometryScale(
     box_handle, box_state.scale_x, box_state.scale_y, box_state.scale_z

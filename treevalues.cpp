@@ -10,6 +10,7 @@
 #include "startswith.hpp"
 #include "numericvaluelimits.hpp"
 #include "maketransform.hpp"
+#include "transformstate.hpp"
 
 using std::cerr;
 using std::string;
@@ -558,7 +559,7 @@ static void
   updateTranslationValues(
     TreeWidget &tree_widget,
     const TreePaths::Translation &translation_paths,
-    const Point &translation
+    const TranslationState &translation
   )
 {
   updateXYZValues(tree_widget, translation_paths, vec3(translation));
@@ -569,12 +570,10 @@ static void
   updateRotationValues(
     TreeWidget &tree_widget,
     const TreePaths::Rotation &rotation_paths,
-    const Eigen::Matrix3f &rotation
+    const RotationState &rotation
   )
 {
-  Vec3 r_rad = rotationVector(rotation);
-  Vec3 r_deg = r_rad * (180/M_PI);
-  updateXYZValues(tree_widget, rotation_paths, r_deg);
+  updateXYZValues(tree_widget, rotation_paths, rotationValuesDeg(rotation));
 }
 
 
@@ -605,18 +604,18 @@ void
     const SceneState &state
   )
 {
-  const Transform &box_global = state.box.global;
+  const TransformState &box_global = state.box.global;
 
   {
     const TreePaths::Translation &translation_paths =
       tree_paths.box.translation;
 
-    const Point &translation = box_global.translation();
+    const TranslationState &translation = translationStateOf(box_global);
     updateTranslationValues(tree_widget, translation_paths, translation);
   }
 
   {
-    const Eigen::Matrix3f &rotation = box_global.rotation();
+    const RotationState &rotation = rotationStateOf(box_global);
     const TreePaths::Rotation &rotation_paths = tree_paths.box.rotation;
     updateRotationValues(tree_widget, rotation_paths, rotation);
   }
@@ -707,7 +706,7 @@ static void
 
 static void
   setVectorValue(
-    Vec3 &v,
+    SceneState::XYZ &v,
     const TreePath &path,
     NumericValue value,
     const TreePaths::XYZ &xyz_path
@@ -728,27 +727,45 @@ static void
 }
 
 
+static void
+  setTranslationValue(
+    TransformState &box_global,
+    const TreePath &path,
+    NumericValue value,
+    const TreePaths::Translation &xyz_path
+  )
+{
+  setVectorValue(box_global.translation, path, value, xyz_path);
+}
+
+
+static void
+  setRotationValue(
+    TransformState &box_global,
+    const TreePath &path,
+    NumericValue value,
+    const TreePaths::Rotation &xyz_path
+  )
+{
+  setVectorValue(box_global.rotation, path, value, xyz_path);
+}
+
+
 static bool
   setTransformValue(
-    Transform &box_global,
+    TransformState &box_global,
     const TreePath &path,
     NumericValue value,
     const TreePaths::Box &box_paths
   )
 {
   if (startsWith(path,box_paths.translation.path)) {
-    Eigen::Vector3f v = box_global.translation();
-    const TreePaths::XYZ& xyz_path = box_paths.translation;
-    setVectorValue(v, path, value, xyz_path);
-    setTransformTranslation(box_global, vec3(v));
+    setTranslationValue(box_global, path, value, box_paths.translation);
     return true;
   }
 
   if (startsWith(path,box_paths.rotation.path)) {
-    Vec3 v = rotationVector(box_global.rotation());
-    const TreePaths::XYZ& xyz_path = box_paths.rotation;
-    setVectorValue(v, path, value*M_PI/180, xyz_path);
-    setTransformRotationRad(box_global, v);
+    setRotationValue(box_global, path, value, box_paths.rotation);
     return true;
   }
 
@@ -861,7 +878,7 @@ bool
   const TreePaths::Box &box_paths = tree_paths.box;
 
   if (startsWith(path,box_paths.path)) {
-    Transform box_global = scene_state.box.global;
+    TransformState box_global = scene_state.box.global;
 
     if (setTransformValue(box_global, path, value, box_paths)) {
       scene_state.box.global = box_global;

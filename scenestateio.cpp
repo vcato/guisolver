@@ -6,6 +6,7 @@
 #include "rotationvector.hpp"
 #include "maketransform.hpp"
 #include "indicesof.hpp"
+#include "transformstate.hpp"
 
 using std::ostream;
 using std::cerr;
@@ -48,21 +49,22 @@ static void createXYZChildren(TaggedValue &parent, const Vec3 &value)
 
 
 static TaggedValue &
-  createTransform(TaggedValue &result, const Transform &transform_state)
+  createTransform(
+    TaggedValue &result,
+    const TransformState &transform_state
+  )
 {
   auto &transform = create(result, "Transform");
   auto &parent = transform;
   {
     auto &translation = create(parent, "translation");
     auto &parent = translation;
-    createXYZChildren(parent, vec3(transform_state.translation()));
+    createXYZChildren(parent, translationValues(transform_state));
   }
   {
     auto &rotation = create(parent, "rotation");
     auto &parent = rotation;
-    auto &value = transform_state.rotation();
-    Vec3 r_rad = rotationVector(value);
-    Vec3 r_deg = r_rad * (180/M_PI);
+    Vec3 r_deg = rotationValuesDeg(transform_state);
     createXYZChildren(parent, r_deg);
   }
 
@@ -136,7 +138,7 @@ static TaggedValue makeTaggedValue(const SceneState &scene_state)
   TaggedValue result("Scene");
   {
     auto &parent = result;
-    const Transform &transform_state = scene_state.box.global;
+    const TransformState &transform_state = scene_state.box.global;
     TaggedValue &transform = createTransform(parent, transform_state);
     {
       auto &parent = transform;
@@ -240,9 +242,9 @@ static Vec3 makeVec3(const TaggedValue &tagged_value)
 }
 
 
-static Transform makeTransform(const TaggedValue &tagged_value)
+static TransformState makeTransform(const TaggedValue &tagged_value)
 {
-  Transform result;
+  TransformState result;
 
   const TaggedValue *translation_ptr = findChild(tagged_value, "translation");
 
@@ -259,8 +261,9 @@ static Transform makeTransform(const TaggedValue &tagged_value)
   Vec3 translation = makeVec3(*translation_ptr);
   Vec3 rotation = makeVec3(*rotation_ptr);
 
-  setTransformTranslation(result, translation);
-  setTransformRotationDeg(result, rotation);
+  setTranslationValues(result, translation);
+  setRotationValuesDeg(result, rotation);
+
   return result;
 }
 
@@ -303,7 +306,7 @@ static void
 
 
 static Optional<MarkerIndex>
-  findMarkerIndex( 
+  findMarkerIndex(
     const SceneState &scene_state,
     const SceneState::Marker::Name &name
   )

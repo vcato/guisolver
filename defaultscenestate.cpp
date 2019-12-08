@@ -3,6 +3,8 @@
 #include "scene.hpp"
 #include "maketransform.hpp"
 #include "contains.hpp"
+#include "rotationvector.hpp"
+#include "transformstate.hpp"
 
 using std::ostringstream;
 
@@ -64,8 +66,10 @@ SceneState defaultSceneState()
 {
   SceneState result;
 
-  result.box.global =
-    makeTransform(defaultBoxCoordinateAxes(),defaultBoxTranslation());
+  Transform default_box_transform =
+    makeTransform(defaultBoxCoordinateAxes(), defaultBoxTranslation());
+
+  result.box.global = transformState(default_box_transform);
 
   createLocalMarker(result,  {1,1,0});
   createLocalMarker(result,  {1,1,1});

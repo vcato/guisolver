@@ -305,7 +305,3 @@ The tree widget will need support for toggles in the context menu.
 How do we get the new state of the toggle?
 * Well, presumably the value is the opposite of its current value, so maybe
   we don't even need to know.
----
-Currently, the scene state has a Transform, but that doesn't make sense when
-we can toggle whether each component is solved, so it seems like we need
-a different data structure which represents the transform state.

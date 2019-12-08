@@ -14,10 +14,18 @@ class SceneState {
   public:
     struct Marker;
     struct DistanceError;
+    struct Transform;
+    struct XYZ;
     using Points = vector<Point>;
     using Markers = vector<Marker>;
     using DistanceErrors = vector<DistanceError>;
     using String = std::string;
+
+    struct XYZ {
+      float x = 0;
+      float y = 0;
+      float z = 0;
+    };
 
     struct Marker {
       using Name = String;
@@ -26,8 +34,13 @@ class SceneState {
       Name name;
     };
 
+    struct Transform {
+      XYZ translation;
+      XYZ rotation;
+    };
+
     struct Box {
-      Transform global = Transform::Identity();
+      Transform global;
       float scale_x =  5.0;
       float scale_y =  0.1;
       float scale_z = 10.0;
@@ -114,6 +127,10 @@ class SceneState {
     }
 };
 
+
+using TransformState = SceneState::Transform;
+using TranslationState = SceneState::XYZ;
+using RotationState = SceneState::XYZ;
 
 extern MarkerIndex createMarkerInState(SceneState &state, bool is_local);
 extern vector<SceneState::Marker::Name> markerNames(const SceneState &state);
