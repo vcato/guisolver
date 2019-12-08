@@ -78,9 +78,9 @@ static TaggedValue &
   auto &box = create(parent, "Box");
   {
     auto &parent = box;
-    create(parent, "scale_x", box_state.scale_x);
-    create(parent, "scale_y", box_state.scale_y);
-    create(parent, "scale_z", box_state.scale_z);
+    create(parent, "scale_x", box_state.scale.x);
+    create(parent, "scale_y", box_state.scale.y);
+    create(parent, "scale_z", box_state.scale.z);
   }
 
   return box;

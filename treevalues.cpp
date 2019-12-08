@@ -471,7 +471,7 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
   tree_widget.createNumericItem(
     box_scale_x_path,
     LabelProperties{"scale_x:"},
-    /*value*/scene_state.box.scale_x,
+    /*value*/scene_state.box.scale.x,
     /*minimum_value*/0,
     no_maximum
   );
@@ -479,7 +479,7 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
   tree_widget.createNumericItem(
     box_scale_y_path,
     LabelProperties{"scale_y:"},
-    /*value*/scene_state.box.scale_y,
+    /*value*/scene_state.box.scale.y,
     /*minimum_value*/0,
     no_maximum
   );
@@ -487,7 +487,7 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
   tree_widget.createNumericItem(
     box_scale_z_path,
     LabelProperties{"scale_z:"},
-    /*value*/scene_state.box.scale_z,
+    /*value*/scene_state.box.scale.z,
     /*minimum_value*/0,
     no_maximum
   );
@@ -887,12 +887,12 @@ bool
 
     if (startsWith(path, box_paths.geometry.path)) {
       SceneState::Box &box = scene_state.box;
-      Eigen::Vector3f v = {box.scale_x, box.scale_y, box.scale_z};
+      Eigen::Vector3f v = {box.scale.x, box.scale.y, box.scale.z};
       const TreePaths::XYZ& xyz_path = box_paths.geometry.scale;
       setVectorValue(v, path, value, xyz_path);
-      box.scale_x = v.x();
-      box.scale_y = v.y();
-      box.scale_z = v.z();
+      box.scale.x = v.x();
+      box.scale.y = v.y();
+      box.scale.z = v.z();
       return true;
     }
   }

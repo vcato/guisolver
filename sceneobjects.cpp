@@ -171,9 +171,9 @@ SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
 
   scene.setGeometryScale(
     box_handle,
-    state.box.scale_x,
-    state.box.scale_y,
-    state.box.scale_z
+    state.box.scale.x,
+    state.box.scale.y,
+    state.box.scale.z
   );
 
   SceneHandles scene_handles;
@@ -220,7 +220,10 @@ static void
   setTransform(box_handle, makeTransformFromState(box_state.global), scene);
 
   scene.setGeometryScale(
-    box_handle, box_state.scale_x, box_state.scale_y, box_state.scale_z
+    box_handle,
+    box_state.scale.x,
+    box_state.scale.y,
+    box_state.scale.z
   );
 }
 
