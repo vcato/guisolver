@@ -73,15 +73,6 @@ inline Vec3 rotationValuesDeg(const TransformState &transform_state)
 }
 
 
-inline Vec3 rotationValuesRad(const TransformState &t)
-{
-  float x = t.rotation.x*M_PI/180;
-  float y = t.rotation.y*M_PI/180;
-  float z = t.rotation.z*M_PI/180;
-  return {x,y,z};
-}
-
-
 inline void
   setTranslationValues(TransformState &result, const Vec3 &translation)
 {

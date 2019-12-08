@@ -36,9 +36,21 @@ class SceneState {
       XYZ rotation;
     };
 
+    struct XYZSolveFlags {
+      float x = true;
+      float y = true;
+      float z = true;
+    };
+
+    struct TransformSolveFlags {
+      XYZSolveFlags translation;
+      XYZSolveFlags rotation;
+    };
+
     struct Box {
       Transform global;
       XYZ scale = { 5.0, 0.1, 10.0 };
+      TransformSolveFlags solve_flags;
     };
 
     struct DistanceError {
@@ -55,7 +67,6 @@ class SceneState {
     float total_error = 0;
 
     const Markers &markers() const { return _markers; }
-
     Marker &marker(MarkerIndex index) { return _markers[index]; }
     const Marker &marker(MarkerIndex index) const { return _markers[index]; }
 

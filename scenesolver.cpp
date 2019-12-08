@@ -8,56 +8,115 @@
 #include "rotationvector.hpp"
 #include "transformstate.hpp"
 
-static vector<float> variables(const Vec3 &t)
+
+static void
+  getValue(vector<float> &variables, float value, float scale, bool solve)
 {
-  float x = t.x;
-  float y = t.y;
-  float z = t.z;
-  return {x,y,z};
+  if (solve) {
+    variables.push_back(value*scale);
+  }
 }
 
 
-static vector<float> concat(const vector<float> &a,const vector<float> &b)
+static void
+  updateValue(
+    float &value,
+    const vector<float> &variables,
+    size_t &i,
+    float inv_scale,
+    bool solve
+  )
 {
-  auto result = a;
-  result.insert(result.end(),b.begin(),b.end());
+  if (solve) {
+    value = variables[i++]*inv_scale;
+  }
+}
+
+
+static void
+  getVariables(
+    vector<float> &variables,
+    const SceneState::XYZ &xyz,
+    float scale,
+    const SceneState::XYZSolveFlags &solve_flags
+  )
+{
+  getValue(variables, xyz.x, scale, solve_flags.x);
+  getValue(variables, xyz.y, scale, solve_flags.y);
+  getValue(variables, xyz.z, scale, solve_flags.z);
+}
+
+
+static void
+  updateValues(
+    SceneState::XYZ &values,
+    const vector<float> &variables,
+    size_t &i,
+    float inv_scale,
+    const SceneState::XYZSolveFlags &solve_flags
+  )
+{
+  updateValue(values.x, variables, i, inv_scale, solve_flags.x);
+  updateValue(values.y, variables, i, inv_scale, solve_flags.y);
+  updateValue(values.z, variables, i, inv_scale, solve_flags.z);
+}
+
+
+static vector<float>
+  extractVariables(
+    const TransformState &transform_state,
+    const SceneState::TransformSolveFlags &solve_flags
+  )
+{
+  vector<float> result;
+
+  getVariables(
+    result, transform_state.rotation, M_PI/180, solve_flags.rotation
+  );
+
+  getVariables(result, transform_state.translation, 1, solve_flags.translation);
   return result;
 }
 
 
-static vector<float> extractVariables(const TransformState &t)
+static void
+  updateTransform(
+    TransformState &transform_state,
+    const vector<float> &variables,
+    const SceneState::TransformSolveFlags &solve_flags
+  )
 {
-  vector<float> rotation_variables = variables(rotationValuesRad(t));
-  vector<float> translation_variables = variables(translationValues(t));
-  return concat(rotation_variables, translation_variables);
-}
+  size_t i = 0;
 
+  updateValues(
+    transform_state.rotation, variables, i, 180/M_PI, solve_flags.rotation
+  );
 
-static TransformState makeTransform(const vector<float> &variables)
-{
-  float rx = variables[0];
-  float ry = variables[1];
-  float rz = variables[2];
-  float tx = variables[3];
-  float ty = variables[4];
-  float tz = variables[5];
-  float rx2 = rx*180/M_PI;
-  float ry2 = ry*180/M_PI;
-  float rz2 = rz*180/M_PI;
-  return {{tx, ty, tz}, {rx2, ry2, rz2}};
+  updateValues(
+    transform_state.translation, variables, i, 1, solve_flags.translation
+  );
+
+  assert(i == variables.size());
 }
 
 
 void solveBoxPosition(SceneState &scene_state)
 {
-  vector<float> variables = extractVariables(scene_state.box.global);
+  vector<float> variables =
+    extractVariables(scene_state.box.global, scene_state.box.solve_flags);
 
   auto f = [&]{
-    scene_state.box.global = makeTransform(variables);
+    updateTransform(
+      scene_state.box.global, variables, scene_state.box.solve_flags
+    );
+
     updateErrorsInState(scene_state);
     return sceneError(scene_state);
   };
 
   minimize(f, variables);
-  scene_state.box.global = makeTransform(variables);
+
+  updateTransform(
+    scene_state.box.global, variables, scene_state.box.solve_flags
+  );
 }

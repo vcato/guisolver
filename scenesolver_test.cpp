@@ -153,11 +153,31 @@ static Example example(RandomEngine &engine)
 }
 
 
-int main()
+static void testSolvingBoxTransform()
 {
   RandomEngine engine(/*seed*/1);
   SceneState scene_state = example(engine).scene_state;
   solveBoxPosition(scene_state);
   updateErrorsInState(scene_state);
   assert(sceneError(scene_state) < 0.002);
+}
+
+
+static void testSolvingBoxTransformWithoutXTranslation()
+{
+  RandomEngine engine(/*seed*/1);
+  SceneState scene_state = example(engine).scene_state;
+  float old_x_translation = scene_state.box.global.translation.x;
+  scene_state.box.solve_flags.translation.x = false;
+  solveBoxPosition(scene_state);
+  updateErrorsInState(scene_state);
+  assert(sceneError(scene_state) >= 0.002);
+  assert(scene_state.box.global.translation.x == old_x_translation);
+}
+
+
+int main()
+{
+  testSolvingBoxTransform();
+  testSolvingBoxTransformWithoutXTranslation();
 }
