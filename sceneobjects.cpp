@@ -216,7 +216,7 @@ static void
   updateBoxInScene(
     Scene &scene,
     const TransformHandle &box_handle,
-    const SceneState::Box &box_state
+    const SceneState::Body &box_state
   )
 {
   setTransform(box_handle, makeTransformFromState(box_state.global), scene);

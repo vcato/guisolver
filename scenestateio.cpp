@@ -74,7 +74,7 @@ static TaggedValue &
 
 
 static TaggedValue &
-  createBox(TaggedValue &parent, const SceneState::Box &box_state)
+  createBox(TaggedValue &parent, const SceneState::Body &box_state)
 {
   auto &box = create(parent, "Box");
   {

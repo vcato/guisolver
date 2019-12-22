@@ -300,3 +300,14 @@ values.
 It seems like the next step is to be able to add multiple transforms.
 
 * Right-click on an existing transform (or the scene) and do "Add Transform".
+*
+mainwindowcontroller.cpp:IMPLEMENT_ADD_TRANSFORM_IN_MAIN_WINDOW_CONTROLLER
+---
+We'll have to have a way to represent multiple transforms in the SceneState.
+We need a TransformIndex as a way to refer to different transforms.
+---
+We have a naming ambiguity between a Transform in the SceneState and
+a Transform meaning a certain kind of matrix.
+
+Seems like we need the concept of a Body, which incorporates the transform
+and the geometry and the children.

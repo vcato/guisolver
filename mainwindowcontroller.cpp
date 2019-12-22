@@ -10,6 +10,8 @@
 #include "sceneobjects.hpp"
 #include "maketransform.hpp"
 
+#define IMPLEMENT_ADD_TRANSFORM_IN_MAIN_WINDOW_CONTROLLER 0
+
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
 
@@ -130,7 +132,7 @@ static bool isScenePath(const TreePath &path, const TreePaths &tree_paths)
 }
 
 
-static bool isBoxPath(const TreePath &path, const TreePaths &tree_paths)
+static bool isTransformPath(const TreePath &path, const TreePaths &tree_paths)
 {
   return path == tree_paths.box.path;
 }
@@ -208,19 +210,14 @@ struct MainWindowController::Impl {
       const TreePath &
     );
 
-  static void addMarker(MainWindowController &controller, bool is_local);
+  static void addMarker(MainWindowController &, bool is_local);
+  static void addGlobalMarkerPressed(MainWindowController &, const TreePath &);
+  static void addLocalMarkerPressed(MainWindowController &, const TreePath &);
 
+#if IMPLEMENT_ADD_TRANSFORM_IN_MAIN_WINDOW_CONTROLLER
   static void
-    addGlobalMarkerPressed(
-      MainWindowController &controller,
-      const TreePath &
-    );
-
-  static void
-    addLocalMarkerPressed(
-      MainWindowController &controller,
-      const TreePath &
-    );
+  addTransformPressed(MainWindowController &, const TreePath &);
+#endif
 
   static void
     removeDistanceErrorPressed(
@@ -458,6 +455,7 @@ void
   Scene &scene = controller.data.scene;
   SceneHandles &scene_handles = controller.data.scene_handles;
   TreeWidget &tree_widget = controller.data.tree_widget;
+
   MarkerIndex marker_index = createMarkerInState(scene_state, is_local);
   createMarkerInScene(scene, scene_handles, scene_state, marker_index);
   createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
@@ -483,6 +481,20 @@ void
 {
   addMarker(controller, /*is_local*/true);
 }
+
+
+#if IMPLEMENT_ADD_TRANSFORM_IN_MAIN_WINDOW_CONTROLLER
+void
+MainWindowController::Impl::addTransformPressed(
+  MainWindowController &/*controller*/,
+  const TreePath &
+)
+{
+  TransformIndex index = createTransformInState(scene_state);
+  createTransformInScene(scene, scene_handles, scene_state, index);
+  createTransformInTree(tree_widget, tree_paths, scene_state, index);
+}
+#endif
 
 
 void
@@ -634,14 +646,22 @@ TreeWidget::MenuItems
     });
   }
 
-  if (isBoxPath(path, tree_paths)) {
-    auto add_marker_error_function =
+  if (isTransformPath(path, tree_paths)) {
+    auto add_marker_function =
       [&controller,path]{
         Impl::addLocalMarkerPressed(controller, path);
       };
 
+#if IMPLEMENT_ADD_TRANSFORM_IN_MAIN_WINDOW_CONTROLLER
+    auto add_transform_function =
+      [&controller,path]{ Impl::addTransformPressed(controller, path); };
+#endif
+
     appendTo(menu_items,{
-      {"Add Marker", add_marker_error_function}
+      {"Add Marker", add_marker_function},
+#if IMPLEMENT_ADD_TRANSFORM_IN_MAIN_WINDOW_CONTROLLER
+      {"Add Transform", add_transform_function}
+#endif
     });
   }
 

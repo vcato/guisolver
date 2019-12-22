@@ -47,7 +47,7 @@ class SceneState {
       XYZSolveFlags rotation;
     };
 
-    struct Box {
+    struct Body {
       Transform global;
       XYZ scale = { 5.0, 0.1, 10.0 };
       TransformSolveFlags solve_flags;
@@ -62,7 +62,7 @@ class SceneState {
       float error = 0;
     };
 
-    Box box;
+    Body box;
     DistanceErrors distance_errors;
     float total_error = 0;
 

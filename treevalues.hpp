@@ -53,6 +53,8 @@ extern void
     const TreePaths &tree_paths,
     const SceneState &scene_state
   );
+  // This updates the list of markers that are shown as possible values for
+  // the two markers of a distance error in the tree.
 
 
 extern bool

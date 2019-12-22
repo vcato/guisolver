@@ -886,7 +886,7 @@ bool
     }
 
     if (startsWith(path, box_paths.geometry.path)) {
-      SceneState::Box &box = scene_state.box;
+      SceneState::Body &box = scene_state.box;
       Eigen::Vector3f v = {box.scale.x, box.scale.y, box.scale.z};
       const TreePaths::XYZ& xyz_path = box_paths.geometry.scale;
       setVectorValue(v, path, value, xyz_path);
