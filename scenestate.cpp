@@ -55,3 +55,9 @@ MarkerIndex createMarkerInState(SceneState &state, bool is_local)
   state.marker(index).is_local = is_local;
   return index;
 }
+
+
+SceneState::SceneState()
+{
+  _bodies.resize(1);
+}

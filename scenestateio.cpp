@@ -139,11 +139,12 @@ static TaggedValue makeTaggedValue(const SceneState &scene_state)
   TaggedValue result("Scene");
   {
     auto &parent = result;
-    const TransformState &transform_state = scene_state.box.global;
+    const SceneState::Body &body_state = boxBodyState(scene_state);
+    const TransformState &transform_state = body_state.global;
     TaggedValue &transform = createTransform(parent, transform_state);
     {
       auto &parent = transform;
-      createBox(parent, scene_state.box);
+      createBox(parent, body_state);
 
       for (const SceneState::Marker &marker_state : scene_state.markers()) {
         if (marker_state.is_local) {
@@ -380,7 +381,7 @@ static SceneState makeSceneState(const TaggedValue &tagged_value)
   }
 
   SceneState result;
-  result.box.global = makeTransform(*transform_ptr);
+  boxBodyState(result).global = makeTransform(*transform_ptr);
   extractMarkers(result, *transform_ptr, /*is_local*/true);
   extractMarkers(result, tagged_value, /*is_local*/false);
   extractDistanceErrors(result, tagged_value);

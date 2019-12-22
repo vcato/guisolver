@@ -54,7 +54,7 @@ void
 {
   updateStateMarkerPositions(state, scene_handles.markers, scene);
   Transform box_transform = globalTransform(scene, scene_handles.box);
-  state.box.global = transformState(box_transform);
+  boxBodyState(state).global = transformState(box_transform);
 }
 
 
@@ -170,18 +170,19 @@ void
 SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
 {
   auto box_handle = scene.createBox();
+  const SceneState::Body &body_state = boxBodyState(state);
 
   scene.setGeometryScale(
     box_handle,
-    state.box.scale.x,
-    state.box.scale.y,
-    state.box.scale.z
+    body_state.scale.x,
+    body_state.scale.y,
+    body_state.scale.z
   );
 
   SceneHandles scene_handles;
   scene_handles.box = box_handle;
 
-  setTransform(box_handle, makeTransformFromState(state.box.global), scene);
+  setTransform(box_handle, makeTransformFromState(body_state.global), scene);
 
   for (MarkerIndex marker_index : indicesOf(state.markers())) {
     createMarkerInScene(scene, scene_handles, state, marker_index);
@@ -316,7 +317,7 @@ void
     const SceneState &state
   )
 {
-  updateBoxInScene(scene, scene_handles.box, state.box);
+  updateBoxInScene(scene, scene_handles.box, boxBodyState(state));
   updateMarkersInScene(scene, scene_handles.markers, state.markers());
   updateDistanceErrorsInScene(scene, scene_handles, state);
 }

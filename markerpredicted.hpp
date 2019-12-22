@@ -12,7 +12,7 @@ inline Point
   const Point &local = makePoint(marker.position);
 
   if (marker.is_local) {
-    return makeTransformFromState(scene_state.box.global) * local;
+    return makeTransformFromState(boxBodyState(scene_state).global) * local;
   }
   else {
     return local;

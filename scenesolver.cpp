@@ -102,12 +102,19 @@ static void
 
 void solveBoxPosition(SceneState &scene_state)
 {
+  SceneState::Body &body_state = boxBodyState(scene_state);
+
   vector<float> variables =
-    extractVariables(scene_state.box.global, scene_state.box.solve_flags);
+    extractVariables(
+      body_state.global,
+      body_state.solve_flags
+    );
 
   auto f = [&]{
     updateTransform(
-      scene_state.box.global, variables, scene_state.box.solve_flags
+      body_state.global,
+      variables,
+      body_state.solve_flags
     );
 
     updateErrorsInState(scene_state);
@@ -117,6 +124,8 @@ void solveBoxPosition(SceneState &scene_state)
   minimize(f, variables);
 
   updateTransform(
-    scene_state.box.global, variables, scene_state.box.solve_flags
+    body_state.global,
+    variables,
+    body_state.solve_flags
   );
 }

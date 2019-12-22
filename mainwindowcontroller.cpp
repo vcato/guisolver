@@ -307,12 +307,13 @@ static const bool *
     const TreePaths &tree_paths
   )
 {
+  const SceneState::Body &body_state = boxBodyState(scene_state);
   {
     const TreePaths::XYZ &xyz_paths =
       tree_paths.box.translation;
 
     const SceneState::XYZSolveFlags &xyz_solve_flags =
-      scene_state.box.solve_flags.translation;
+      body_state.solve_flags.translation;
 
     const bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
 
@@ -325,7 +326,7 @@ static const bool *
       tree_paths.box.rotation;
 
     const SceneState::XYZSolveFlags &xyz_solve_flags =
-      scene_state.box.solve_flags.rotation;
+      body_state.solve_flags.rotation;
 
     const bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
 

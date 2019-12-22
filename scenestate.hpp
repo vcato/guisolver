@@ -14,9 +14,12 @@ class SceneState {
     struct DistanceError;
     struct Transform;
     struct XYZ;
+    struct Body;
     using Markers = vector<Marker>;
+    using Bodies = vector<Body>;
     using DistanceErrors = vector<DistanceError>;
     using String = std::string;
+    using BodyIndex = int;
 
     struct XYZ {
       float x = 0;
@@ -62,13 +65,16 @@ class SceneState {
       float error = 0;
     };
 
-    Body box;
     DistanceErrors distance_errors;
     float total_error = 0;
+
+    SceneState();
 
     const Markers &markers() const { return _markers; }
     Marker &marker(MarkerIndex index) { return _markers[index]; }
     const Marker &marker(MarkerIndex index) const { return _markers[index]; }
+    Body &body(BodyIndex index) { return _bodies[index]; }
+    const Body &body(BodyIndex index) const { return _bodies[index]; }
 
     MarkerIndex addMarker(const String &name)
     {
@@ -111,6 +117,7 @@ class SceneState {
 
   private:
     Markers _markers;
+    Bodies _bodies;
 
     void
       _handleMarkerRemoved(
@@ -139,5 +146,19 @@ using MarkerPosition = SceneState::XYZ;
 
 extern MarkerIndex createMarkerInState(SceneState &state, bool is_local);
 extern vector<SceneState::Marker::Name> markerNames(const SceneState &state);
+
+
+inline SceneState::BodyIndex boxBodyIndex()
+{
+  return 0;
+}
+
+
+template <typename SceneState>
+inline auto &boxBodyState(SceneState &scene_state)
+{
+  return scene_state.body(boxBodyIndex());
+}
+
 
 #endif /* SCENESTATE_HPP_ */

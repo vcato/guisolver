@@ -148,7 +148,7 @@ static Example example(RandomEngine &engine)
   // Then we can set the box global transform to some other random
   // transform.
 
-  scene_state.box.global = transformState(randomTransform(engine));
+  boxBodyState(scene_state).global = transformState(randomTransform(engine));
   return result;
 }
 
@@ -167,12 +167,13 @@ static void testSolvingBoxTransformWithoutXTranslation()
 {
   RandomEngine engine(/*seed*/1);
   SceneState scene_state = example(engine).scene_state;
-  float old_x_translation = scene_state.box.global.translation.x;
-  scene_state.box.solve_flags.translation.x = false;
+  SceneState::Body &body_state = boxBodyState(scene_state);
+  float old_x_translation = body_state.global.translation.x;
+  body_state.solve_flags.translation.x = false;
   solveBoxPosition(scene_state);
   updateErrorsInState(scene_state);
   assert(sceneError(scene_state) >= 0.002);
-  assert(scene_state.box.global.translation.x == old_x_translation);
+  assert(body_state.global.translation.x == old_x_translation);
 }
 
 

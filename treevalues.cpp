@@ -468,10 +468,12 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
     box_geometry_path, LabelProperties{"[Box]"}
   );
 
+  const SceneState::Body &body_state = boxBodyState(scene_state);
+
   tree_widget.createNumericItem(
     box_scale_x_path,
     LabelProperties{"scale_x:"},
-    /*value*/scene_state.box.scale.x,
+    /*value*/body_state.scale.x,
     /*minimum_value*/0,
     no_maximum
   );
@@ -479,7 +481,7 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
   tree_widget.createNumericItem(
     box_scale_y_path,
     LabelProperties{"scale_y:"},
-    /*value*/scene_state.box.scale.y,
+    /*value*/body_state.scale.y,
     /*minimum_value*/0,
     no_maximum
   );
@@ -487,7 +489,7 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
   tree_widget.createNumericItem(
     box_scale_z_path,
     LabelProperties{"scale_z:"},
-    /*value*/scene_state.box.scale.z,
+    /*value*/body_state.scale.z,
     /*minimum_value*/0,
     no_maximum
   );
@@ -604,7 +606,7 @@ void
     const SceneState &state
   )
 {
-  const TransformState &box_global = state.box.global;
+  const TransformState &box_global = boxBodyState(state).global;
 
   {
     const TreePaths::Translation &translation_paths =
@@ -878,15 +880,16 @@ bool
   const TreePaths::Transform &box_paths = tree_paths.box;
 
   if (startsWith(path,box_paths.path)) {
-    TransformState box_global = scene_state.box.global;
+    SceneState::Body &body_state = boxBodyState(scene_state);
+    TransformState box_global = body_state.global;
 
     if (setTransformValue(box_global, path, value, box_paths)) {
-      scene_state.box.global = box_global;
+      body_state.global = box_global;
       return true;
     }
 
     if (startsWith(path, box_paths.geometry.path)) {
-      SceneState::Body &box = scene_state.box;
+      SceneState::Body &box = body_state;
       Eigen::Vector3f v = {box.scale.x, box.scale.y, box.scale.z};
       const TreePaths::XYZ& xyz_path = box_paths.geometry.scale;
       setVectorValue(v, path, value, xyz_path);
