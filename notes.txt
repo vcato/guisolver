@@ -296,9 +296,3 @@ values.
 * Right now, what would seem to make the most sense is having a context menu
   with a "Solve" toggle.  The menu could also have options to turn it into
   an expression.
----
-It seems like if the solve flag is off on a property, that we should try to
-solve the other properties
-* Example: solve is off on the box Y translation, and we adjust the box Y
-  translation through the tree widget.  It seems like it should be solving
-  the other values.

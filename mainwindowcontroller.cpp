@@ -289,6 +289,78 @@ void
 }
 
 
+static const bool *
+  xyzSolveStatePtr(
+    const SceneState::XYZSolveFlags &xyz_solve_flags,
+    const TreePath &path,
+    const TreePaths::XYZ &xyz_paths
+  )
+{
+  if (path == xyz_paths.x) return &xyz_solve_flags.x;
+  if (path == xyz_paths.y) return &xyz_solve_flags.y;
+  if (path == xyz_paths.z) return &xyz_solve_flags.z;
+  return 0;
+}
+
+
+static const bool *
+  solveStatePtr(
+    const SceneState &scene_state,
+    const TreePath &path,
+    const TreePaths &tree_paths
+  )
+{
+  {
+    const TreePaths::XYZ &xyz_paths =
+      tree_paths.box.translation;
+
+    const SceneState::XYZSolveFlags &xyz_solve_flags =
+      scene_state.box.solve_flags.translation;
+
+    const bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
+
+    if (result_ptr) {
+      return result_ptr;
+    }
+  }
+  {
+    const TreePaths::XYZ &xyz_paths =
+      tree_paths.box.rotation;
+
+    const SceneState::XYZSolveFlags &xyz_solve_flags =
+      scene_state.box.solve_flags.rotation;
+
+    const bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
+
+    if (result_ptr) {
+      return result_ptr;
+    }
+  }
+
+  return nullptr;
+}
+
+
+static bool
+  valueIsSolved(
+    const TreePath &path,
+    const SceneState &scene_state,
+    const TreePaths &tree_paths
+  )
+{
+  const bool *solve_state_ptr = solveStatePtr(scene_state, path, tree_paths);
+
+  if (!solve_state_ptr) {
+    // Value is not solvable, so it definitely isn't solved.
+    return false;
+  }
+
+  // Value is solvable, just have to see whether it is set to be solved
+  // or not.
+  return *solve_state_ptr;
+}
+
+
 void
   MainWindowController::Impl::handleTreeValueChanged(
     MainWindowController &controller,
@@ -303,11 +375,16 @@ void
   bool value_was_changed = setSceneStateValue(state, path, value, tree_paths);
 
   if (value_was_changed) {
-    bool is_box_transform_path =
-      startsWith(path, tree_paths.box.translation.path) ||
-      startsWith(path, tree_paths.box.rotation.path);
+    bool value_is_solved = valueIsSolved(path, state, tree_paths);
 
-    if (!is_box_transform_path) {
+    // If the value is solved, then we don't want to re-solve the box
+    // position immediately because that would give strange feedback to
+    // the user.  It would feel like they didn't have control of the value.
+    // However, if the value is not solved, then it makes sense to go ahead
+    // and solve the box position, since the user's value will not be
+    // affected.
+
+    if (!value_is_solved) {
       solveBoxPosition(state);
     }
 
@@ -467,58 +544,6 @@ static void appendTo(vector<T> &v, const vector<T> &n)
 static void flip(bool &arg)
 {
   arg = !arg;
-}
-
-
-static const bool *
-  xyzSolveStatePtr(
-    const SceneState::XYZSolveFlags &xyz_solve_flags,
-    const TreePath &path,
-    const TreePaths::XYZ &xyz_paths
-  )
-{
-  if (path == xyz_paths.x) return &xyz_solve_flags.x;
-  if (path == xyz_paths.y) return &xyz_solve_flags.y;
-  if (path == xyz_paths.z) return &xyz_solve_flags.z;
-  return 0;
-}
-
-
-static const bool *
-  solveStatePtr(
-    const SceneState &scene_state,
-    const TreePath &path,
-    const TreePaths &tree_paths
-  )
-{
-  {
-    const TreePaths::XYZ &xyz_paths =
-      tree_paths.box.translation;
-
-    const SceneState::XYZSolveFlags &xyz_solve_flags =
-      scene_state.box.solve_flags.translation;
-
-    const bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
-
-    if (result_ptr) {
-      return result_ptr;
-    }
-  }
-  {
-    const TreePaths::XYZ &xyz_paths =
-      tree_paths.box.rotation;
-
-    const SceneState::XYZSolveFlags &xyz_solve_flags =
-      scene_state.box.solve_flags.rotation;
-
-    const bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
-
-    if (result_ptr) {
-      return result_ptr;
-    }
-  }
-
-  return nullptr;
 }
 
 
