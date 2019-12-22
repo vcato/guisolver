@@ -76,7 +76,7 @@ struct TreePaths {
     explicit Scale(const XYZ &xyz_arg) : XYZ(xyz_arg) {}
   };
 
-  struct Box {
+  struct Transform {
     struct Geometry {
       TreePath path;
       Scale scale;
@@ -102,13 +102,13 @@ struct TreePaths {
     template <typename F>
     static void forEachMember(const F &f)
     {
-      f(&Box::path);
-      f(&Box::translation);
-      f(&Box::rotation);
-      f(&Box::geometry);
+      f(&Transform::path);
+      f(&Transform::translation);
+      f(&Transform::rotation);
+      f(&Transform::geometry);
     }
 
-    bool operator==(const Box &arg) const
+    bool operator==(const Transform &arg) const
     {
       return isEqual(*this, arg);
     }
@@ -142,7 +142,7 @@ struct TreePaths {
   };
 
   TreePath path;
-  Box box;
+  Transform box;
   Markers markers;
   DistanceErrors distance_errors;
   TreePath next_distance_error_path;

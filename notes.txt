@@ -296,3 +296,7 @@ values.
 * Right now, what would seem to make the most sense is having a context menu
   with a "Solve" toggle.  The menu could also have options to turn it into
   an expression.
+---
+It seems like the next step is to be able to add multiple transforms.
+
+* Right-click on an existing transform (or the scene) and do "Add Transform".

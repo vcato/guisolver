@@ -297,7 +297,8 @@ static void checkEqual(const FakeTreeItem &a,const FakeTreeItem &b)
 }
 
 
-static void checkEqual(const TreePaths::Box &a,const TreePaths::Box &b)
+static void
+checkEqual(const TreePaths::Transform &a,const TreePaths::Transform &b)
 {
   checkMembersEqual(a,b);
 }
@@ -305,8 +306,8 @@ static void checkEqual(const TreePaths::Box &a,const TreePaths::Box &b)
 
 static void
   checkEqual(
-    const TreePaths::Box::Geometry &a,
-    const TreePaths::Box::Geometry &b
+    const TreePaths::Transform::Geometry &a,
+    const TreePaths::Transform::Geometry &b
   )
 {
   checkMembersEqual(a,b);

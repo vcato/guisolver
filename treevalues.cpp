@@ -756,7 +756,7 @@ static bool
     TransformState &box_global,
     const TreePath &path,
     NumericValue value,
-    const TreePaths::Box &box_paths
+    const TreePaths::Transform &box_paths
   )
 {
   if (startsWith(path,box_paths.translation.path)) {
@@ -875,7 +875,7 @@ bool
     const TreePaths &tree_paths
   )
 {
-  const TreePaths::Box &box_paths = tree_paths.box;
+  const TreePaths::Transform &box_paths = tree_paths.box;
 
   if (startsWith(path,box_paths.path)) {
     TransformState box_global = scene_state.box.global;
