@@ -7,6 +7,7 @@
 #include "eigenconv.hpp"
 #include "rotationvector.hpp"
 #include "transformstate.hpp"
+#include "indicesof.hpp"
 
 
 static void
@@ -33,100 +34,88 @@ static void
 }
 
 
+template <typename XYZ, typename F>
 static void
-  getVariables(
-    vector<float> &variables,
-    const SceneState::XYZ &xyz,
-    float scale,
-    const SceneState::XYZSolveFlags &solve_flags
+  forEachXYZValue(
+    XYZ &xyz,
+    const SceneState::XYZSolveFlags &solve_flags,
+    const F &f
   )
 {
-  getValue(variables, xyz.x, scale, solve_flags.x);
-  getValue(variables, xyz.y, scale, solve_flags.y);
-  getValue(variables, xyz.z, scale, solve_flags.z);
+  f(xyz.x, solve_flags.x);
+  f(xyz.y, solve_flags.y);
+  f(xyz.z, solve_flags.z);
 }
 
 
+template <typename TransformState, typename F>
 static void
-  updateValues(
-    SceneState::XYZ &values,
-    const vector<float> &variables,
-    size_t &i,
-    float inv_scale,
-    const SceneState::XYZSolveFlags &solve_flags
-  )
-{
-  updateValue(values.x, variables, i, inv_scale, solve_flags.x);
-  updateValue(values.y, variables, i, inv_scale, solve_flags.y);
-  updateValue(values.z, variables, i, inv_scale, solve_flags.z);
-}
-
-
-static vector<float>
-  extractVariables(
-    const TransformState &transform_state,
-    const SceneState::TransformSolveFlags &solve_flags
-  )
-{
-  vector<float> result;
-
-  getVariables(
-    result, transform_state.rotation, M_PI/180, solve_flags.rotation
-  );
-
-  getVariables(result, transform_state.translation, 1, solve_flags.translation);
-  return result;
-}
-
-
-static void
-  updateTransform(
+  forEachTransformValue(
     TransformState &transform_state,
-    const vector<float> &variables,
-    const SceneState::TransformSolveFlags &solve_flags
-  )
+    const SceneState::TransformSolveFlags &solve_flags,
+    const F &f
+)
+{
+  {
+    float scale = M_PI/180;
+
+    forEachXYZValue(transform_state.rotation, solve_flags.rotation,
+      [&](auto &value, bool solve_flag){
+        f(value, solve_flag, scale);
+      }
+    );
+  }
+  {
+    float scale = 1;
+
+    forEachXYZValue(transform_state.translation, solve_flags.translation,
+      [&](auto &value, bool solve_flag){
+        f(value, solve_flag, scale);
+      }
+    );
+  }
+}
+
+
+template <typename SceneState, typename F>
+static void forEachSceneValue(SceneState &scene_state, const F &f)
+{
+  for (auto body_index : indicesOf(scene_state.bodies())) {
+    auto &body_state = scene_state.body(body_index);
+    forEachTransformValue(body_state.transform, body_state.solve_flags, f);
+  }
+}
+
+
+static void updateState(SceneState &scene_state, const vector<float> &variables)
 {
   size_t i = 0;
 
-  updateValues(
-    transform_state.rotation, variables, i, 180/M_PI, solve_flags.rotation
+  forEachSceneValue(scene_state,
+    [&](float &value, bool solve_flag, float scale){
+      updateValue(value, variables, i, 1/scale, solve_flag);
+    }
   );
-
-  updateValues(
-    transform_state.translation, variables, i, 1, solve_flags.translation
-  );
-
-  assert(i == variables.size());
 }
 
 
-void solveBoxPosition(SceneState &scene_state)
+void solveScene(SceneState &scene_state)
 {
-  BodyIndex body_index = boxBodyIndex();
-  SceneState::Body &body_state = scene_state.body(body_index);
+  vector<float> variables;
 
-  vector<float> variables =
-    extractVariables(
-      body_state.transform,
-      body_state.solve_flags
-    );
+  forEachSceneValue(scene_state,
+    [&](const float value, bool solve_flag, float scale)
+    {
+      getValue(variables, value, scale, solve_flag);
+    }
+  );
 
   auto f = [&]{
-    updateTransform(
-      body_state.transform,
-      variables,
-      body_state.solve_flags
-    );
-
+    updateState(scene_state, variables);
     updateErrorsInState(scene_state);
     return sceneError(scene_state);
   };
 
   minimize(f, variables);
-
-  updateTransform(
-    body_state.transform,
-    variables,
-    body_state.solve_flags
-  );
+  updateState(scene_state, variables);
 }

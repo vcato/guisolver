@@ -1,4 +1,4 @@
 #include "scenestate.hpp"
 #include "scenehandles.hpp"
 
-extern void solveBoxPosition(SceneState &);
+extern void solveScene(SceneState &);

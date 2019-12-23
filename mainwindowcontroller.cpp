@@ -26,7 +26,7 @@ static bool
   }
 
   Optional<BodyIndex> maybe_parent_body_index =
-   state.body(body_index).maybe_parent_index;
+    state.body(body_index).maybe_parent_index;
 
   if (!maybe_parent_body_index) {
     return false;
@@ -36,29 +36,69 @@ static bool
 }
 
 
+static bool anyFlagsAreSet(const SceneState::XYZSolveFlags &solve_flags)
+{
+  return solve_flags.x || solve_flags.y || solve_flags.z;
+}
+
+
+static bool anyFlagsAreSet(const SceneState::TransformSolveFlags &solve_flags)
+{
+  return
+    anyFlagsAreSet(solve_flags.translation) ||
+    anyFlagsAreSet(solve_flags.rotation);
+}
+
+
 static bool
-  movesWithBox(
+  bodyIsSolved(
+    BodyIndex body_index,
+    const SceneState &state
+  )
+{
+  const SceneState::Body &body_state = state.body(body_index);
+  return anyFlagsAreSet(body_state.solve_flags);
+}
+
+
+static bool bodyIsAffectedBySolve(BodyIndex body_index, const SceneState &state)
+{
+  if (bodyIsSolved(body_index, state)) {
+    return true;
+  }
+
+  Optional<BodyIndex> maybe_parent_index =
+    state.body(body_index).maybe_parent_index;
+
+  if (!maybe_parent_index) {
+    return false;
+  }
+
+  return bodyIsAffectedBySolve(*maybe_parent_index, state);
+}
+
+
+static bool
+  affectedBySolve(
     TransformHandle handle,
     const SceneHandles &scene_handles,
     const SceneState &state
   )
 {
+  // If the handle is for a body that is a child of the box, then it
+  // is going to be affected by the solve.
   for (auto i : indicesOf(state.bodies())) {
     if (handle == scene_handles.bodies[i]) {
-      if (hasAncestor(i, boxBodyIndex(), state)) {
-        return true;
-      }
+      return bodyIsAffectedBySolve(i, state);
     }
   }
 
-  MarkerIndex n_markers = state.markers().size();
-
-  for (MarkerIndex i=0; i!=n_markers; ++i) {
+  for (auto i : indicesOf(state.markers())) {
     if (handle == scene_handles.markers[i].handle) {
       Optional<BodyIndex> maybe_body_index = state.marker(i).maybe_body_index;
 
       if (maybe_body_index) {
-        return true;
+        return bodyIsAffectedBySolve(*maybe_body_index, state);
       }
     }
   }
@@ -298,10 +338,10 @@ void
   Optional<TransformHandle> th = scene.selectedObject();
   updateSceneStateFromSceneObjects(state, scene, scene_handles);
 
-  if (!th || !movesWithBox(*th,scene_handles,state)) {
+  if (!th || !affectedBySolve(*th,scene_handles,state)) {
     // If we're moving something that doesn't move with the box, then
     // we'll go ahead and update the box position.
-    solveBoxPosition(state);
+    solveScene(state);
   }
   else {
     // If we're moving something that moves with the box, then it will
@@ -327,7 +367,7 @@ void
   TreePaths &tree_paths = data.tree_paths;
 
   updateSceneStateFromSceneObjects(state, scene, scene_handles);
-  solveBoxPosition(state);
+  solveScene(state);
   updateErrorsInState(state);
   updateTreeValues(tree_widget, tree_paths, state);
   updateSceneObjects(scene, scene_handles, state);
@@ -394,8 +434,16 @@ static const bool *
     const TreePaths &tree_paths
   )
 {
-  BodyIndex body_index = boxBodyIndex();
-  return bodySolveStatePtr(scene_state, path, tree_paths, body_index);
+  for (auto body_index : indicesOf(scene_state.bodies())) {
+    const bool *solve_state_ptr =
+      bodySolveStatePtr(scene_state, path, tree_paths, body_index);
+
+    if (solve_state_ptr) {
+      return solve_state_ptr;
+    }
+  }
+
+  return nullptr;
 }
 
 
@@ -443,7 +491,7 @@ void
     // affected.
 
     if (!value_is_solved) {
-      solveBoxPosition(state);
+      solveScene(state);
     }
 
     Scene &scene = data.scene;
@@ -471,7 +519,7 @@ void
   const TreePaths &tree_paths = data.tree_paths;
   SceneState &scene_state = data.scene_state;
   setSceneStateEnumerationIndex(scene_state, path, value, tree_paths);
-  solveBoxPosition(scene_state);
+  solveScene(scene_state);
   updateErrorsInState(scene_state);
   updateSceneObjects(data.scene, data.scene_handles, scene_state);
   updateTreeValues(data.tree_widget, data.tree_paths, scene_state);
@@ -489,7 +537,7 @@ void
   SceneState &scene_state = controller.data.scene_state;
   TreeWidget &tree_widget = controller.data.tree_widget;
   TreePaths &tree_paths = controller.data.tree_paths;
-  SceneState::DistanceError &distance_error = scene_state.addDistanceError();
+  SceneState::DistanceError &distance_error = scene_state.createDistanceError();
   createDistanceErrorInScene(scene, scene_handles, distance_error);
 
   createDistanceErrorInTree(
@@ -602,7 +650,7 @@ void
   );
 
   scene_state.removeDistanceError(distance_error_index);
-  solveBoxPosition(scene_state);
+  solveScene(scene_state);
   updateTreeValues(tree_widget, tree_paths, scene_state);
   updateSceneObjects(scene, scene_handles, scene_state);
 }
@@ -693,7 +741,7 @@ void
     controller.data.tree_paths
   );
 
-  solveBoxPosition(state);
+  solveScene(state);
   updateErrorsInState(state);
   updateTreeValues(tree_widget, tree_paths, state);
   updateSceneObjects(scene, scene_handles, state);
@@ -884,7 +932,7 @@ MainWindowController::MainWindowController(
   SceneHandles &scene_handles = data.scene_handles;
   SceneState &state = data.scene_state;
   updateSceneStateFromSceneObjects(state, scene, scene_handles);
-  solveBoxPosition(state);
+  solveScene(state);
   updateErrorsInState(state);
   updateSceneObjects(scene, scene_handles, state);
   updateTreeValues(tree_widget, tree_paths, state);

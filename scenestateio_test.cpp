@@ -40,7 +40,7 @@ static void testWithAdditionalDistanceError()
 {
   SceneState state;
   createBodyInState(state, /*maybe_parent_index*/{});
-  SceneState::DistanceError &distance_error = state.addDistanceError();
+  SceneState::DistanceError &distance_error = state.createDistanceError();
   distance_error.weight = 2.5;
   distance_error.desired_distance = 3.5;
   testWith(state);

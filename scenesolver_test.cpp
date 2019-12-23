@@ -10,6 +10,7 @@
 #include "rotationvector.hpp"
 #include "transformstate.hpp"
 #include "positionstate.hpp"
+#include "indicesof.hpp"
 
 using std::cerr;
 
@@ -107,7 +108,7 @@ static void
 {
   MarkerIndex local_marker_index = addLocalMarkerTo(result, local);
   MarkerIndex global_marker_index = addGlobalMarkerTo(result, global);
-  SceneState::DistanceError &new_distance_error = result.addDistanceError();
+  SceneState::DistanceError &new_distance_error = result.createDistanceError();
   new_distance_error.optional_start_marker_index = local_marker_index;
   new_distance_error.optional_end_marker_index = global_marker_index;
 }
@@ -159,11 +160,26 @@ static Example makeExample(RandomEngine &engine)
 }
 
 
+static void clearAll(SceneState::XYZSolveFlags &flags)
+{
+  flags.x = false;
+  flags.y = false;
+  flags.z = false;
+}
+
+
+static void clearAll(SceneState::TransformSolveFlags &flags)
+{
+  clearAll(flags.translation);
+  clearAll(flags.rotation);
+}
+
+
 static void testSolvingBoxTransform()
 {
   RandomEngine engine(/*seed*/1);
   SceneState scene_state = makeExample(engine).scene_state;
-  solveBoxPosition(scene_state);
+  solveScene(scene_state);
   updateErrorsInState(scene_state);
   assert(sceneError(scene_state) < 0.002);
 }
@@ -177,10 +193,53 @@ static void testSolvingBoxTransformWithoutXTranslation()
   SceneState::Body &body_state = scene_state.body(example.body_index);
   float old_x_translation = body_state.transform.translation.x;
   body_state.solve_flags.translation.x = false;
-  solveBoxPosition(scene_state);
+  solveScene(scene_state);
   updateErrorsInState(scene_state);
   assert(sceneError(scene_state) >= 0.002);
   assert(body_state.transform.translation.x == old_x_translation);
+}
+
+
+static void testWithTwoBodies()
+{
+  SceneState scene_state;
+
+  BodyIndex body1_index =
+    scene_state.createBody(/*maybe_parent_index*/{});
+
+  BodyIndex body2_index =
+    scene_state.createBody(/*maybe_parent_index*/body1_index);
+
+  MarkerIndex global_marker_index = scene_state.createMarker("global");
+  MarkerIndex local_marker_index = scene_state.createMarker("global");
+
+  SceneState::DistanceError &distance_error_state =
+    scene_state.createDistanceError();
+
+  distance_error_state.optional_start_marker_index = global_marker_index;
+  distance_error_state.optional_end_marker_index = local_marker_index;
+
+  scene_state.marker(local_marker_index).maybe_body_index = body2_index;
+
+  for (auto body_index : indicesOf(scene_state.bodies())) {
+    clearAll(scene_state.body(body_index).solve_flags);
+  }
+
+  scene_state.body(body1_index).solve_flags.translation.x = true;
+  scene_state.body(body2_index).solve_flags.translation.y = true;
+  float desired_x = 2;
+  float desired_y = 3;
+  scene_state.marker(global_marker_index).position.x = desired_x;
+  scene_state.marker(global_marker_index).position.y = desired_y;
+  solveScene(scene_state);
+  float body1_x = scene_state.body(body1_index).transform.translation.x;
+  float body2_y = scene_state.body(body2_index).transform.translation.y;
+
+  float x_error = fabs(body1_x - desired_x);
+  float y_error = fabs(body2_y - desired_y);
+
+  assert(x_error < 1e-6);
+  assert(y_error < 1e-6);
 }
 
 
@@ -188,4 +247,5 @@ int main()
 {
   testSolvingBoxTransform();
   testSolvingBoxTransformWithoutXTranslation();
+  testWithTwoBodies();
 }

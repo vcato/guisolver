@@ -114,7 +114,7 @@ class SceneState {
       }
     }
 
-    DistanceError& addDistanceError()
+    DistanceError& createDistanceError()
     {
       distance_errors.emplace_back();
       return distance_errors.back();
