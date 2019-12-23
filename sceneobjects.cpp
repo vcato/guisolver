@@ -55,7 +55,7 @@ updateSceneStateFromSceneObjects(
   updateStateMarkerPositions(state, scene_handles.markers, scene);
 
   for (auto i : indicesOf(state.bodies())) {
-    state.body(i).global =
+    state.body(i).transform =
       transformState(globalTransform(scene, scene_handles.bodies[i]));
   }
 }
@@ -220,7 +220,7 @@ createBodyInScene(
 
   setTransform(
     transform_handle,
-    makeTransformFromState(body_state.global),
+    makeTransformFromState(body_state.transform),
     scene
   );
 }
@@ -269,7 +269,11 @@ static void
     const SceneState::Body &body_state
   )
 {
-  setTransform(body_transform_handle, makeTransformFromState(body_state.global), scene);
+  setTransform(
+    body_transform_handle,
+    makeTransformFromState(body_state.transform),
+    scene
+  );
 
   scene.setGeometryScale(
     body_transform_handle,

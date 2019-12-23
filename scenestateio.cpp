@@ -175,7 +175,7 @@ static void
   )
 {
   const SceneState::Body &body_state = scene_state.body(body_index);
-  const TransformState &transform_state = body_state.global;
+  const TransformState &transform_state = body_state.transform;
   TaggedValue &transform = createTransform(parent, transform_state);
   createBox(transform, body_state);
   createChildBodies(transform, scene_state, body_index);
@@ -442,7 +442,7 @@ static BodyIndex
   )
 {
   BodyIndex body_index = createBodyInState(result, maybe_parent_index);
-  result.body(body_index).global = makeTransform(tagged_value);
+  result.body(body_index).transform = makeTransform(tagged_value);
   extractBodies(result, tagged_value, body_index);
   return body_index;
 }

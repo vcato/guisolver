@@ -51,7 +51,7 @@ class SceneState {
     };
 
     struct Body {
-      Transform global;
+      Transform transform;
       XYZ scale = { 5.0, 0.1, 10.0 };
       TransformSolveFlags solve_flags;
       Optional<BodyIndex> maybe_parent_index;

@@ -154,7 +154,7 @@ static Example makeExample(RandomEngine &engine)
   // transform.
 
   SceneState::Body &body_state = scene_state.body(result.body_index);
-  body_state.global = transformState(randomTransform(engine));
+  body_state.transform = transformState(randomTransform(engine));
   return result;
 }
 
@@ -175,12 +175,12 @@ static void testSolvingBoxTransformWithoutXTranslation()
   Example example = makeExample(engine);
   SceneState scene_state = example.scene_state;
   SceneState::Body &body_state = scene_state.body(example.body_index);
-  float old_x_translation = body_state.global.translation.x;
+  float old_x_translation = body_state.transform.translation.x;
   body_state.solve_flags.translation.x = false;
   solveBoxPosition(scene_state);
   updateErrorsInState(scene_state);
   assert(sceneError(scene_state) >= 0.002);
-  assert(body_state.global.translation.x == old_x_translation);
+  assert(body_state.transform.translation.x == old_x_translation);
 }
 
 

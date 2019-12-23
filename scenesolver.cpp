@@ -107,13 +107,13 @@ void solveBoxPosition(SceneState &scene_state)
 
   vector<float> variables =
     extractVariables(
-      body_state.global,
+      body_state.transform,
       body_state.solve_flags
     );
 
   auto f = [&]{
     updateTransform(
-      body_state.global,
+      body_state.transform,
       variables,
       body_state.solve_flags
     );
@@ -125,7 +125,7 @@ void solveBoxPosition(SceneState &scene_state)
   minimize(f, variables);
 
   updateTransform(
-    body_state.global,
+    body_state.transform,
     variables,
     body_state.solve_flags
   );

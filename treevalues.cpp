@@ -691,7 +691,7 @@ updateBody(
   BodyIndex body_index
 )
 {
-  const TransformState &global = state.body(body_index).global;
+  const TransformState &global = state.body(body_index).transform;
   const TreePaths::Body &body_paths = tree_paths.bodies[body_index];
   {
     const TreePaths::Translation &translation_paths = body_paths.translation;
@@ -979,10 +979,10 @@ bool
 
     if (startsWith(path, body_paths.path)) {
       SceneState::Body &body_state = scene_state.body(body_index);
-      TransformState transform_state = body_state.global;
+      TransformState transform_state = body_state.transform;
 
       if (setTransformValue(transform_state, path, value, body_paths)) {
-        body_state.global = transform_state;
+        body_state.transform = transform_state;
         return true;
       }
 

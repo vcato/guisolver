@@ -16,7 +16,7 @@ inline Point
   if (maybe_body_index) {
     BodyIndex body_index = *maybe_body_index;
     const SceneState::Body &body_state = scene_state.body(body_index);
-    return makeTransformFromState(body_state.global) * local;
+    return makeTransformFromState(body_state.transform) * local;
   }
   else {
     return local;
