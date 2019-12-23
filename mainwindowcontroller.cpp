@@ -261,7 +261,7 @@ struct MainWindowController::Impl {
       const TreePath &
     );
 
-  static void addMarker(MainWindowController &, bool is_local);
+  static void addMarker(MainWindowController &, Optional<BodyIndex>);
   static void addGlobalMarkerPressed(MainWindowController &, const TreePath &);
   static void addLocalMarkerPressed(MainWindowController &, const TreePath &);
 
@@ -509,7 +509,7 @@ void
 void
   MainWindowController::Impl::addMarker(
     MainWindowController &controller,
-    bool is_local
+    Optional<BodyIndex> maybe_body_index
   )
 {
   TreePaths &tree_paths = controller.data.tree_paths;
@@ -517,12 +517,6 @@ void
   Scene &scene = controller.data.scene;
   SceneHandles &scene_handles = controller.data.scene_handles;
   TreeWidget &tree_widget = controller.data.tree_widget;
-  Optional<BodyIndex> maybe_body_index;
-
-  if (is_local) {
-    maybe_body_index = boxBodyIndex();
-  }
-
   MarkerIndex marker_index = createMarkerInState(scene_state, maybe_body_index);
   createMarkerInScene(scene, scene_handles, scene_state, marker_index);
   createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
@@ -536,7 +530,7 @@ void
     const TreePath &
   )
 {
-  addMarker(controller, /*is_local*/false);
+  addMarker(controller, /*maybe_body_index*/{});
 }
 
 
@@ -546,7 +540,7 @@ void
     const TreePath &/*path*/
   )
 {
-  addMarker(controller, /*is_local*/true);
+  addMarker(controller, /*maybe_body_index*/boxBodyIndex());
 }
 
 
