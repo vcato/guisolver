@@ -135,7 +135,7 @@ static void
 
 
 static Optional<BodyIndex>
-  maybeParentBodyIndex(const SceneState::Marker &marker_state)
+  maybeAttachedBodyIndex(const SceneState::Marker &marker_state)
 {
   if (marker_state.is_local) {
     return boxBodyIndex();
@@ -151,15 +151,42 @@ static void
     TaggedValue &parent,
     BodyIndex body_index,
     const SceneState &scene_state
+  );
+
+
+static void
+  createChildBodies(
+    TaggedValue &transform,
+    const SceneState &scene_state,
+    const Optional<BodyIndex> maybe_body_index
+  )
+{
+  for (BodyIndex other_body_index : indicesOf(scene_state.bodies())) {
+    const SceneState::Body &other_body_state =
+      scene_state.body(other_body_index);
+
+    if (other_body_state.maybe_parent_index == maybe_body_index) {
+      createBody(transform, other_body_index, scene_state);
+    }
+  }
+}
+
+
+static void
+  createBody(
+    TaggedValue &parent,
+    BodyIndex body_index,
+    const SceneState &scene_state
   )
 {
   const SceneState::Body &body_state = scene_state.body(body_index);
   const TransformState &transform_state = body_state.global;
   TaggedValue &transform = createTransform(parent, transform_state);
   createBox(transform, body_state);
+  createChildBodies(transform, scene_state, body_index);
 
   for (const SceneState::Marker &marker_state : scene_state.markers()) {
-    if (maybeParentBodyIndex(marker_state) == body_index) {
+    if (maybeAttachedBodyIndex(marker_state) == body_index) {
       createMarker(transform, marker_state);
     }
   }
@@ -169,24 +196,21 @@ static void
 static TaggedValue makeTaggedValue(const SceneState &scene_state)
 {
   TaggedValue result("Scene");
-  {
-    auto &parent = result;
-    BodyIndex body_index = boxBodyIndex();
-    createBody(parent, body_index, scene_state);
+  createChildBodies(result, scene_state, /*maybe_parent_index*/{});
 
-    for (const SceneState::Marker &marker_state : scene_state.markers()) {
-      if (!maybeParentBodyIndex(marker_state)) {
-        createMarker(parent, marker_state);
-      }
-    }
-
-    for (
-      const SceneState::DistanceError &distance_error_state
-      : scene_state.distance_errors
-    ) {
-      createDistanceError(parent, scene_state, distance_error_state);
+  for (const SceneState::Marker &marker_state : scene_state.markers()) {
+    if (!maybeAttachedBodyIndex(marker_state)) {
+      createMarker(result, marker_state);
     }
   }
+
+  for (
+    const SceneState::DistanceError &distance_error_state
+    : scene_state.distance_errors
+  ) {
+    createDistanceError(result, scene_state, distance_error_state);
+  }
+
   return result;
 }
 
@@ -292,37 +316,52 @@ static TransformState makeTransform(const TaggedValue &tagged_value)
 
 
 static void
+  createMarkerFromTaggedValue(
+    SceneState &scene_state,
+    const TaggedValue &tagged_value,
+    Optional<BodyIndex> maybe_parent_index
+  )
+{
+  bool is_local = (maybe_parent_index == boxBodyIndex());
+
+  Optional<StringValue> maybe_name =
+    findStringValue(tagged_value, "name");
+
+  Optional<MarkerIndex> maybe_marker_index;
+
+  if (maybe_name) {
+    maybe_marker_index = scene_state.createMarker(*maybe_name);
+  }
+  else {
+    assert(false);
+  }
+
+  assert(maybe_marker_index);
+  MarkerIndex marker_index = *maybe_marker_index;
+  scene_state.marker(marker_index).is_local = is_local;
+  const TaggedValue *position_ptr = findChild(tagged_value, "position");
+
+  if (position_ptr) {
+    scene_state.marker(marker_index).position =
+      makeMarkerPosition(eigenVector3f(makeVec3(*position_ptr)));
+  }
+}
+
+
+static void
   extractMarkers(
     SceneState &scene_state,
     const TaggedValue &tagged_value,
-    bool is_local
+    Optional<BodyIndex> maybe_parent_index
   )
 {
   for (auto &child_tagged_value : tagged_value.children) {
     if (child_tagged_value.tag == "Marker") {
-      Optional<StringValue> maybe_name =
-        findStringValue(child_tagged_value, "name");
-
-      Optional<MarkerIndex> maybe_marker_index;
-
-      if (maybe_name) {
-        maybe_marker_index = scene_state.createMarker(*maybe_name);
-      }
-      else {
-        assert(false);
-      }
-
-      assert(maybe_marker_index);
-      MarkerIndex marker_index = *maybe_marker_index;
-      scene_state.marker(marker_index).is_local = is_local;
-
-      const TaggedValue *position_ptr =
-        findChild(child_tagged_value, "position");
-
-      if (position_ptr) {
-        scene_state.marker(marker_index).position =
-          makeMarkerPosition(eigenVector3f(makeVec3(*position_ptr)));
-      }
+      createMarkerFromTaggedValue(
+        scene_state,
+        child_tagged_value,
+        maybe_parent_index
+      );
     }
   }
 }
@@ -393,24 +432,60 @@ static void
   }
 }
 
+
+static void
+  extractBodies(
+    SceneState &result,
+    const TaggedValue &tagged_value,
+    const Optional<BodyIndex> maybe_parent_index
+  );
+
+
+static BodyIndex
+  createBodyFromTaggedValue(
+    SceneState &result,
+    const TaggedValue &tagged_value,
+    const Optional<BodyIndex> maybe_parent_index
+  )
+{
+  BodyIndex body_index = createBodyInState(result, maybe_parent_index);
+  result.body(body_index).global = makeTransform(tagged_value);
+  extractBodies(result, tagged_value, body_index);
+  return body_index;
+}
+
+
+static void
+  extractBodies(
+    SceneState &result,
+    const TaggedValue &tagged_value,
+    const Optional<BodyIndex> maybe_parent_index
+  )
+{
+  for (auto &child_tagged_value : tagged_value.children) {
+    if (child_tagged_value.tag == "Transform") {
+      BodyIndex body_index =
+        createBodyFromTaggedValue(
+          result,
+          child_tagged_value,
+          maybe_parent_index
+        );
+
+      extractMarkers(result, child_tagged_value, body_index);
+    }
+  }
+}
+
+
 static SceneState makeSceneState(const TaggedValue &tagged_value)
 {
-  const TaggedValue *transform_ptr = findChild(tagged_value, "Transform");
-
-  if (!transform_ptr) {
-    assert(false);
-  }
-
   SceneState result;
-  BodyIndex body_index = createBodyInState(result, /*maybe_parent_index*/{});
-  SceneState::Body &body_state = result.body(body_index);
-  body_state.global = makeTransform(*transform_ptr);
-  extractMarkers(result, *transform_ptr, /*is_local*/true);
-  extractMarkers(result, tagged_value, /*is_local*/false);
+  Optional<BodyIndex> maybe_parent_index;
+  extractBodies(result, tagged_value, maybe_parent_index);
+  extractMarkers(result, tagged_value, maybe_parent_index);
   extractDistanceErrors(result, tagged_value);
   return result;
 }
-
 
 
 void printSceneStateOn(ostream &stream, const SceneState &state)

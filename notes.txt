@@ -304,5 +304,3 @@ Find special cases by looking for uses of boxBodyIndex().
 ---
 Looks like the next thing to do is generalize markers so they can be
 attached to arbitrary bodies.
----
-scenestateio_test.cpp:ADD_TEST

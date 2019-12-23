@@ -136,6 +136,19 @@ class Optional {
       }
     }
 
+    bool operator==(const Optional<T>& arg) const
+    {
+      if (!hasValue() && !arg.hasValue()) {
+        return true;
+      }
+
+      if (hasValue() && arg.hasValue()) {
+        return _value == arg._value;
+      }
+
+      return false;
+    }
+
   private:
     union {
       T _value;

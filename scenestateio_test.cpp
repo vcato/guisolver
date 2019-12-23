@@ -3,8 +3,6 @@
 #include <sstream>
 #include "defaultscenestate.hpp"
 
-#define ADD_TEST 0
-
 using std::istringstream;
 using std::ostringstream;
 using std::cerr;
@@ -49,22 +47,109 @@ static void testWithAdditionalDistanceError()
 }
 
 
-#if ADD_TEST
-static void testWithAdditionalTransform()
+static void testWithChildTransform()
 {
   SceneState state;
   BodyIndex body1_index = createBodyInState(state, /*maybe_parent_index*/{});
   createBodyInState(state, /*maybe_parent_index*/body1_index);
+  string state_string = sceneStateString(state);
+
+  string expected_string =
+    "Scene {\n"
+    "  Transform {\n"
+    "    translation {\n"
+    "      x: 0\n"
+    "      y: 0\n"
+    "      z: 0\n"
+    "    }\n"
+    "    rotation {\n"
+    "      x: 0\n"
+    "      y: 0\n"
+    "      z: 0\n"
+    "    }\n"
+    "    Box {\n"
+    "      scale_x: 5\n"
+    "      scale_y: 0.1\n"
+    "      scale_z: 10\n"
+    "    }\n"
+    "    Transform {\n"
+    "      translation {\n"
+    "        x: 0\n"
+    "        y: 0\n"
+    "        z: 0\n"
+    "      }\n"
+    "      rotation {\n"
+    "        x: 0\n"
+    "        y: 0\n"
+    "        z: 0\n"
+    "      }\n"
+    "      Box {\n"
+    "        scale_x: 5\n"
+    "        scale_y: 0.1\n"
+    "        scale_z: 10\n"
+    "      }\n"
+    "    }\n"
+    "  }\n"
+    "}\n";
+
+  assert(state_string == expected_string);
   testWith(state);
 }
-#endif
+
+
+static void testWithMultipleTransforms()
+{
+  string expected_string =
+    "Scene {\n"
+    "  Transform {\n"
+    "    translation {\n"
+    "      x: 0\n"
+    "      y: 0\n"
+    "      z: 0\n"
+    "    }\n"
+    "    rotation {\n"
+    "      x: 0\n"
+    "      y: 0\n"
+    "      z: 0\n"
+    "    }\n"
+    "    Box {\n"
+    "      scale_x: 5\n"
+    "      scale_y: 0.1\n"
+    "      scale_z: 10\n"
+    "    }\n"
+    "  }\n"
+    "  Transform {\n"
+    "    translation {\n"
+    "      x: 0\n"
+    "      y: 0\n"
+    "      z: 0\n"
+    "    }\n"
+    "    rotation {\n"
+    "      x: 0\n"
+    "      y: 0\n"
+    "      z: 0\n"
+    "    }\n"
+    "    Box {\n"
+    "      scale_x: 5\n"
+    "      scale_y: 0.1\n"
+    "      scale_z: 10\n"
+    "    }\n"
+    "  }\n"
+    "}\n";
+
+  SceneState state;
+  createBodyInState(state, /*maybe_parent_index*/{});
+  createBodyInState(state, /*maybe_parent_index*/{});
+  string state_string = sceneStateString(state);
+  assert(state_string == expected_string);
+  testWith(state);
+}
 
 
 int main()
 {
   testWith(defaultSceneState());
   testWithAdditionalDistanceError();
-#if ADD_TEST
-  testWithAdditionalTransform();
-#endif
+  testWithChildTransform();
+  testWithMultipleTransforms();
 }
