@@ -297,17 +297,12 @@ values.
   with a "Solve" toggle.  The menu could also have options to turn it into
   an expression.
 ---
-It seems like the next step is to be able to add multiple transforms.
-
-* Right-click on an existing transform (or the scene) and do "Add Transform".
-*
-mainwindowcontroller.cpp:IMPLEMENT_ADD_TRANSFORM_IN_MAIN_WINDOW_CONTROLLER
+If you add a marker to the box, then it should select the marker, and
+the marker should be visible in the tree.
 ---
-We'll have to have a way to represent multiple transforms in the SceneState.
-We need a TransformIndex as a way to refer to different transforms.
+Find special cases by looking for uses of boxBodyIndex().
 ---
-We have a naming ambiguity between a Transform in the SceneState and
-a Transform meaning a certain kind of matrix.
-
-Seems like we need the concept of a Body, which incorporates the transform
-and the geometry and the children.
+Looks like the next thing to do is generalize markers so they can be
+attached to arbitrary bodies.
+---
+Check that we can save and load scenes that have multiple transforms.

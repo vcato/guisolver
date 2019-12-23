@@ -277,7 +277,7 @@ static void showTreePaths(const string &name, const TreePaths &tree_paths)
 {
   cerr << name << ":\n";
   int indent_level = 1;
-  showPaths(tree.root_item, cerr, indent_level);
+  showPaths(tree_paths.root_item, cerr, indent_level);
 }
 #endif
 
@@ -298,7 +298,7 @@ static void checkEqual(const FakeTreeItem &a,const FakeTreeItem &b)
 
 
 static void
-checkEqual(const TreePaths::Transform &a,const TreePaths::Transform &b)
+checkEqual(const TreePaths::Body &a,const TreePaths::Body &b)
 {
   checkMembersEqual(a,b);
 }
@@ -306,8 +306,8 @@ checkEqual(const TreePaths::Transform &a,const TreePaths::Transform &b)
 
 static void
   checkEqual(
-    const TreePaths::Transform::Geometry &a,
-    const TreePaths::Transform::Geometry &b
+    const TreePaths::Body::Geometry &a,
+    const TreePaths::Body::Geometry &b
   )
 {
   checkMembersEqual(a,b);
@@ -441,10 +441,22 @@ static void testRemovingALocalMarker()
 }
 
 
+static void testAddingAChildBody()
+{
+  SceneState state = defaultSceneState();
+  FakeTreeWidget tree_widget;
+  TreePaths tree_paths = fillTree(tree_widget, state);
+  BodyIndex body_index = state.createBody(/*parent_body_index*/boxBodyIndex());
+  createBodyInTree(tree_widget, tree_paths, state, body_index);
+  checkTree(tree_widget, tree_paths, state);
+}
+
+
 int main()
 {
   testRemovingDistanceError();
   testAddingMarker();
   testRemovingAGlobalMarker();
   testRemovingALocalMarker();
+  testAddingAChildBody();
 }

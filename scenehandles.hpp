@@ -4,6 +4,7 @@
 #include "vector.hpp"
 #include "scene.hpp"
 #include "markerindex.hpp"
+#include "bodyindex.hpp"
 
 
 struct SceneHandles {
@@ -21,7 +22,7 @@ struct SceneHandles {
     Scene::LineHandle line;
   };
 
-  Scene::TransformHandle box;
+  vector<Scene::TransformHandle> bodies;
   Markers markers;
   DistanceErrors distance_errors;
 };

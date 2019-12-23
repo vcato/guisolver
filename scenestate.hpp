@@ -3,6 +3,7 @@
 
 #include "vector.hpp"
 #include "markerindex.hpp"
+#include "bodyindex.hpp"
 #include "vector.hpp"
 #include "optional.hpp"
 #include "removeindexfrom.hpp"
@@ -19,7 +20,6 @@ class SceneState {
     using Bodies = vector<Body>;
     using DistanceErrors = vector<DistanceError>;
     using String = std::string;
-    using BodyIndex = int;
 
     struct XYZ {
       float x = 0;
@@ -54,6 +54,7 @@ class SceneState {
       Transform global;
       XYZ scale = { 5.0, 0.1, 10.0 };
       TransformSolveFlags solve_flags;
+      Optional<BodyIndex> maybe_parent_index;
     };
 
     struct DistanceError {
@@ -71,12 +72,13 @@ class SceneState {
     SceneState();
 
     const Markers &markers() const { return _markers; }
+    const Bodies &bodies() const { return _bodies; }
     Marker &marker(MarkerIndex index) { return _markers[index]; }
     const Marker &marker(MarkerIndex index) const { return _markers[index]; }
     Body &body(BodyIndex index) { return _bodies[index]; }
     const Body &body(BodyIndex index) const { return _bodies[index]; }
 
-    MarkerIndex addMarker(const String &name)
+    MarkerIndex createMarker(const String &name)
     {
       MarkerIndex new_index = _markers.size();
       _markers.emplace_back();
@@ -84,9 +86,17 @@ class SceneState {
       return new_index;
     }
 
-    MarkerIndex addUnnamedMarker()
+    BodyIndex createBody(Optional<BodyIndex> maybe_parent_index)
     {
-      return addMarker("");
+      BodyIndex new_index = _bodies.size();
+      _bodies.emplace_back();
+      _bodies.back().maybe_parent_index = maybe_parent_index;
+      return new_index;
+    }
+
+    MarkerIndex createUnnamedMarker()
+    {
+      return createMarker("");
     }
 
     void removeMarker(MarkerIndex index_to_remove)
@@ -147,18 +157,8 @@ using MarkerPosition = SceneState::XYZ;
 extern MarkerIndex createMarkerInState(SceneState &state, bool is_local);
 extern vector<SceneState::Marker::Name> markerNames(const SceneState &state);
 
-
-inline SceneState::BodyIndex boxBodyIndex()
-{
-  return 0;
-}
-
-
-template <typename SceneState>
-inline auto &boxBodyState(SceneState &scene_state)
-{
-  return scene_state.body(boxBodyIndex());
-}
+extern BodyIndex
+  createBodyInState(SceneState &, Optional<BodyIndex> maybe_parent_index);
 
 
 #endif /* SCENESTATE_HPP_ */

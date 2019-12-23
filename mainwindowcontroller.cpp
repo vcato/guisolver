@@ -10,27 +10,51 @@
 #include "sceneobjects.hpp"
 #include "maketransform.hpp"
 
-#define IMPLEMENT_ADD_TRANSFORM_IN_MAIN_WINDOW_CONTROLLER 0
-
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
 
 
 static bool
-  movesWithBox(
-    TransformHandle handle,
-    const SceneHandles &setup,
+  hasAncestor(
+    BodyIndex body_index,
+    BodyIndex ancestor_body_index,
     const SceneState &state
   )
 {
-  if (handle == setup.box) {
+  if (body_index == ancestor_body_index) {
     return true;
+  }
+
+  Optional<BodyIndex> maybe_parent_body_index =
+   state.body(body_index).maybe_parent_index;
+
+  if (!maybe_parent_body_index) {
+    return false;
+  }
+
+  return hasAncestor(*maybe_parent_body_index, ancestor_body_index, state);
+}
+
+
+static bool
+  movesWithBox(
+    TransformHandle handle,
+    const SceneHandles &scene_handles,
+    const SceneState &state
+  )
+{
+  for (auto i : indicesOf(state.bodies())) {
+    if (handle == scene_handles.bodies[i]) {
+      if (hasAncestor(i, boxBodyIndex(), state)) {
+        return true;
+      }
+    }
   }
 
   MarkerIndex n_markers = state.markers().size();
 
   for (MarkerIndex i=0; i!=n_markers; ++i) {
-    if (handle == setup.markers[i].handle) {
+    if (handle == scene_handles.markers[i].handle) {
       if (state.marker(i).is_local) {
         return true;
       }
@@ -68,6 +92,33 @@ static void
 }
 
 
+template <typename F>
+static void
+  forEachTransformHandlePath(
+    const F &f,
+    const SceneHandles &scene_handles,
+    const TreePaths &tree_paths
+  )
+{
+  Optional<TransformHandle> maybe_object;
+
+  for (auto i : indicesOf(tree_paths.markers)) {
+    f(scene_handles.markers[i].handle, tree_paths.markers[i].path);
+  }
+
+  for (auto i : indicesOf(tree_paths.bodies)) {
+    f(scene_handles.bodies[i], tree_paths.bodies[i].path);
+  }
+
+  for (auto i : indicesOf(tree_paths.distance_errors)) {
+    f(
+      scene_handles.distance_errors[i].line,
+      tree_paths.distance_errors[i].path
+    );
+  }
+}
+
+
 static Optional<TransformHandle>
   sceneObjectForTreeItem(
     const TreePath &item_path,
@@ -75,25 +126,23 @@ static Optional<TransformHandle>
     const SceneHandles &scene_handles
   )
 {
-  Optional<TransformHandle> maybe_object;
+  TreePath matching_path;
+  Optional<TransformHandle> maybe_matching_handle;
 
-  for (auto i : indicesOf(tree_paths.markers)) {
-    if (startsWith(item_path, tree_paths.markers[i].path)) {
-      return scene_handles.markers[i].handle;
-    }
-  }
+  forEachTransformHandlePath(
+    [&](TransformHandle object_handle, const TreePath &object_path){
+      if (startsWith(item_path, object_path)) {
+        if (object_path.size() > matching_path.size()) {
+          matching_path = object_path;
+          maybe_matching_handle = object_handle;
+        }
+      }
+    },
+    scene_handles,
+    tree_paths
+  );
 
-  if (startsWith(item_path, tree_paths.box.path)) {
-    return scene_handles.box;
-  }
-
-  for (auto i : indicesOf(tree_paths.distance_errors)) {
-    if (startsWith(item_path, tree_paths.distance_errors[i].path)) {
-      return scene_handles.distance_errors[i].line;
-    }
-  }
-
-  return {};
+  return maybe_matching_handle;
 }
 
 
@@ -104,25 +153,19 @@ static Optional<TreePath>
     const SceneHandles &scene_handles
   )
 {
-  Optional<TreePath> maybe_tree_path;
+  Optional<TreePath> maybe_found_path;
 
-  if (scene_handles.box == handle) {
-    return tree_paths.box.path;
-  }
+  forEachTransformHandlePath(
+    [&](TransformHandle object_handle, const TreePath &object_path){
+      if (object_handle == handle) {
+        maybe_found_path = object_path;
+      }
+    },
+    scene_handles,
+    tree_paths
+  );
 
-  for (auto i : indicesOf(scene_handles.markers)) {
-    if (scene_handles.markers[i].handle == handle) {
-      return tree_paths.markers[i].path;
-    }
-  }
-
-  for (auto i : indicesOf(scene_handles.distance_errors)) {
-    if (scene_handles.distance_errors[i].line == handle) {
-      return tree_paths.distance_errors[i].path;
-    }
-  }
-
-  return {};
+  return maybe_found_path;
 }
 
 
@@ -134,7 +177,13 @@ static bool isScenePath(const TreePath &path, const TreePaths &tree_paths)
 
 static bool isTransformPath(const TreePath &path, const TreePaths &tree_paths)
 {
-  return path == tree_paths.box.path;
+  for (const TreePaths::Body &body_paths : tree_paths.bodies) {
+    if (body_paths.path == path) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 
@@ -214,10 +263,8 @@ struct MainWindowController::Impl {
   static void addGlobalMarkerPressed(MainWindowController &, const TreePath &);
   static void addLocalMarkerPressed(MainWindowController &, const TreePath &);
 
-#if IMPLEMENT_ADD_TRANSFORM_IN_MAIN_WINDOW_CONTROLLER
   static void
-  addTransformPressed(MainWindowController &, const TreePath &);
-#endif
+    addTransformPressed(MainWindowController &, const TreePath &);
 
   static void
     removeDistanceErrorPressed(
@@ -301,16 +348,17 @@ static const bool *
 
 
 static const bool *
-  solveStatePtr(
+  bodySolveStatePtr(
     const SceneState &scene_state,
     const TreePath &path,
-    const TreePaths &tree_paths
+    const TreePaths &tree_paths,
+    BodyIndex body_index
   )
 {
-  const SceneState::Body &body_state = boxBodyState(scene_state);
+  const SceneState::Body &body_state = scene_state.body(body_index);
+  const TreePaths::Body &body_paths = tree_paths.bodies[body_index];
   {
-    const TreePaths::XYZ &xyz_paths =
-      tree_paths.box.translation;
+    const TreePaths::XYZ &xyz_paths = body_paths.translation;
 
     const SceneState::XYZSolveFlags &xyz_solve_flags =
       body_state.solve_flags.translation;
@@ -322,8 +370,7 @@ static const bool *
     }
   }
   {
-    const TreePaths::XYZ &xyz_paths =
-      tree_paths.box.rotation;
+    const TreePaths::XYZ &xyz_paths = body_paths.rotation;
 
     const SceneState::XYZSolveFlags &xyz_solve_flags =
       body_state.solve_flags.rotation;
@@ -336,6 +383,18 @@ static const bool *
   }
 
   return nullptr;
+}
+
+
+static const bool *
+  solveStatePtr(
+    const SceneState &scene_state,
+    const TreePath &path,
+    const TreePaths &tree_paths
+  )
+{
+  BodyIndex body_index = boxBodyIndex();
+  return bodySolveStatePtr(scene_state, path, tree_paths, body_index);
 }
 
 
@@ -484,18 +543,38 @@ void
 }
 
 
-#if IMPLEMENT_ADD_TRANSFORM_IN_MAIN_WINDOW_CONTROLLER
+static BodyIndex
+  bodyIndexFromTreePath(const TreePath &path, const TreePaths &tree_paths)
+{
+  for (auto i : indicesOf(tree_paths.bodies)) {
+    if (tree_paths.bodies[i].path == path) {
+      return i;
+    }
+  }
+
+  assert(false);
+}
+
+
 void
 MainWindowController::Impl::addTransformPressed(
-  MainWindowController &/*controller*/,
-  const TreePath &
+  MainWindowController &controller,
+  const TreePath &parent_path
 )
 {
-  TransformIndex index = createTransformInState(scene_state);
-  createTransformInScene(scene, scene_handles, scene_state, index);
-  createTransformInTree(tree_widget, tree_paths, scene_state, index);
+  SceneState &scene_state = controller.data.scene_state;
+  Scene &scene = controller.data.scene;
+  SceneHandles &scene_handles = controller.data.scene_handles;
+  TreePaths &tree_paths = controller.data.tree_paths;
+  TreeWidget &tree_widget = controller.data.tree_widget;
+
+  BodyIndex parent_body_index =
+    bodyIndexFromTreePath(parent_path, tree_paths);
+
+  BodyIndex index = createBodyInState(scene_state, parent_body_index);
+  createBodyInScene(scene, scene_handles, scene_state, index);
+  createBodyInTree(tree_widget, tree_paths, scene_state, index);
 }
-#endif
 
 
 void
@@ -653,16 +732,12 @@ TreeWidget::MenuItems
         Impl::addLocalMarkerPressed(controller, path);
       };
 
-#if IMPLEMENT_ADD_TRANSFORM_IN_MAIN_WINDOW_CONTROLLER
     auto add_transform_function =
       [&controller,path]{ Impl::addTransformPressed(controller, path); };
-#endif
 
     appendTo(menu_items,{
       {"Add Marker", add_marker_function},
-#if IMPLEMENT_ADD_TRANSFORM_IN_MAIN_WINDOW_CONTROLLER
       {"Add Transform", add_transform_function}
-#endif
     });
   }
 
@@ -741,6 +816,9 @@ void
 
   if (maybe_object) {
     scene.selectObject(*maybe_object);
+  }
+  else {
+    cerr << "No scene object found\n";
   }
 }
 

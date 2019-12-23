@@ -3,6 +3,7 @@
 #include <sstream>
 #include "contains.hpp"
 
+
 using std::ostringstream;
 
 template <typename Name>
@@ -51,13 +52,19 @@ static SceneState::Marker::Name
 
 MarkerIndex createMarkerInState(SceneState &state, bool is_local)
 {
-  MarkerIndex index = state.addMarker(newMarkerName(state, is_local));
+  MarkerIndex index = state.createMarker(newMarkerName(state, is_local));
   state.marker(index).is_local = is_local;
   return index;
 }
 
 
+BodyIndex
+createBodyInState(SceneState &state, Optional<BodyIndex> maybe_parent_index)
+{
+  return state.createBody(maybe_parent_index);
+}
+
+
 SceneState::SceneState()
 {
-  _bodies.resize(1);
 }

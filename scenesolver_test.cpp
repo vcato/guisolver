@@ -79,7 +79,7 @@ static MarkerIndex
     const Point &local
   )
 {
-  MarkerIndex marker_index = result.addUnnamedMarker();
+  MarkerIndex marker_index = result.createUnnamedMarker();
   result.marker(marker_index).position = makeMarkerPosition(local);
   result.marker(marker_index).is_local = true;
   return marker_index;
@@ -92,7 +92,7 @@ static MarkerIndex
     const Point &local
   )
 {
-  MarkerIndex marker_index = result.addUnnamedMarker();
+  MarkerIndex marker_index = result.createUnnamedMarker();
   result.marker(marker_index).position = makeMarkerPosition(local);
   result.marker(marker_index).is_local = false;
   return marker_index;
@@ -117,6 +117,12 @@ static void
 namespace {
 struct Example {
   SceneState scene_state;
+  BodyIndex body_index;
+
+  Example()
+  : body_index(createBodyInState(scene_state, /*maybe_parent_index*/{}))
+  {
+  }
 
   void addDistanceError(const Point &local, const Point &global)
   {
@@ -126,7 +132,7 @@ struct Example {
 }
 
 
-static Example example(RandomEngine &engine)
+static Example makeExample(RandomEngine &engine)
 {
   Example result;
   SceneState &scene_state = result.scene_state;
@@ -148,7 +154,8 @@ static Example example(RandomEngine &engine)
   // Then we can set the box global transform to some other random
   // transform.
 
-  boxBodyState(scene_state).global = transformState(randomTransform(engine));
+  SceneState::Body &body_state = scene_state.body(result.body_index);
+  body_state.global = transformState(randomTransform(engine));
   return result;
 }
 
@@ -156,7 +163,7 @@ static Example example(RandomEngine &engine)
 static void testSolvingBoxTransform()
 {
   RandomEngine engine(/*seed*/1);
-  SceneState scene_state = example(engine).scene_state;
+  SceneState scene_state = makeExample(engine).scene_state;
   solveBoxPosition(scene_state);
   updateErrorsInState(scene_state);
   assert(sceneError(scene_state) < 0.002);
@@ -166,8 +173,9 @@ static void testSolvingBoxTransform()
 static void testSolvingBoxTransformWithoutXTranslation()
 {
   RandomEngine engine(/*seed*/1);
-  SceneState scene_state = example(engine).scene_state;
-  SceneState::Body &body_state = boxBodyState(scene_state);
+  Example example = makeExample(engine);
+  SceneState scene_state = example.scene_state;
+  SceneState::Body &body_state = scene_state.body(example.body_index);
   float old_x_translation = body_state.global.translation.x;
   body_state.solve_flags.translation.x = false;
   solveBoxPosition(scene_state);

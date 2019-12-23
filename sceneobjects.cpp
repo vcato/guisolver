@@ -46,15 +46,18 @@ static void
 
 
 void
-  updateSceneStateFromSceneObjects(
-    SceneState &state,
-    const Scene &scene,
-    const SceneHandles &scene_handles
-  )
+updateSceneStateFromSceneObjects(
+  SceneState &state,
+  const Scene &scene,
+  const SceneHandles &scene_handles
+)
 {
   updateStateMarkerPositions(state, scene_handles.markers, scene);
-  Transform box_transform = globalTransform(scene, scene_handles.box);
-  boxBodyState(state).global = transformState(box_transform);
+
+  for (auto i : indicesOf(state.bodies())) {
+    state.body(i).global =
+      transformState(globalTransform(scene, scene_handles.bodies[i]));
+  }
 }
 
 
@@ -66,9 +69,9 @@ static SceneHandles::Marker
   )
 {
   auto point = scene.createSphere(parent);
-  scene.setGeometryScale(point,0.1,0.1,0.1);
-  scene.setColor(point,0,0,1);
-  scene.setTranslation(point,position);
+  scene.setGeometryScale(point, 0.1, 0.1, 0.1);
+  scene.setColor(point, 0, 0, 1);
+  scene.setTranslation(point, position);
   SceneHandles::Marker marker_handles = SceneHandles::Marker{point};
   return marker_handles;
 }
@@ -83,24 +86,28 @@ static SceneHandles::Marker
   auto point = scene.createSphere();
   scene.setGeometryScale(point, 0.1, 0.1, 0.1);
   scene.setColor(point, 0, 1, 0);
-  scene.setTranslation(point,position);
+  scene.setTranslation(point, position);
   SceneHandles::Marker marker_handles = SceneHandles::Marker{point};
   return marker_handles;
 }
 
 
 static SceneHandles::Marker
-  createSceneMarker1(
+  createSceneMarker(
     Scene &scene,
     const SceneState::Marker &state_marker,
-    Scene::TransformHandle box
+    const SceneHandles &scene_handles
   )
 {
+  Point position = makePoint(state_marker.position);
+
   if (state_marker.is_local) {
-    return createSceneLocal(scene, box, makePoint(state_marker.position));
+    BodyIndex parent_body_index = boxBodyIndex();
+    TransformHandle box_handle = scene_handles.bodies[parent_body_index];
+    return createSceneLocal(scene, box_handle, position);
   }
   else {
-    return createSceneGlobal(scene, makePoint(state_marker.position));
+    return createSceneGlobal(scene, position);
   }
 }
 
@@ -111,7 +118,6 @@ static SceneHandles::DistanceError createDistanceErrorInScene1(Scene &scene)
   scene.setColor(line,1,0,0);
   return {line};
 }
-
 
 
 void
@@ -153,36 +159,78 @@ void
 
 
 void
-  createMarkerInScene(
-    Scene &scene,
-    SceneHandles &scene_handles,
-    const SceneState &state,
-    MarkerIndex marker_index
-  )
+createMarkerInScene(
+  Scene &scene,
+  SceneHandles &scene_handles,
+  const SceneState &state,
+  MarkerIndex marker_index
+)
 {
   const SceneState::Marker &state_marker = state.marker(marker_index);
-  TransformHandle box_handle = scene_handles.box;
   vector<SceneHandles::Marker> &marker_handles = scene_handles.markers;
-  marker_handles.push_back(createSceneMarker1(scene,state_marker,box_handle));
+  marker_handles.push_back(createSceneMarker(scene,state_marker,scene_handles));
 }
 
 
-SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
+static TransformHandle
+createBodyTransform(
+  const SceneState::Body &body_state,
+  Scene &scene,
+  const SceneHandles &scene_handles
+)
 {
-  auto box_handle = scene.createBox();
-  const SceneState::Body &body_state = boxBodyState(state);
+  if (body_state.maybe_parent_index) {
+    const BodyIndex parent_body_index = *body_state.maybe_parent_index;
+
+    TransformHandle parent_transform_handle =
+      scene_handles.bodies[parent_body_index];
+
+    return scene.createBox(parent_transform_handle);
+  }
+  else {
+    return scene.createBox();
+  }
+}
+
+
+void
+createBodyInScene(
+  Scene &scene,
+  SceneHandles &scene_handles,
+  const SceneState &state,
+  BodyIndex body_index
+)
+{
+  const SceneState::Body &body_state = state.body(body_index);
+
+  TransformHandle transform_handle =
+    createBodyTransform(body_state, scene, scene_handles);
 
   scene.setGeometryScale(
-    box_handle,
+    transform_handle,
     body_state.scale.x,
     body_state.scale.y,
     body_state.scale.z
   );
 
-  SceneHandles scene_handles;
-  scene_handles.box = box_handle;
+  assert(BodyIndex(scene_handles.bodies.size()) == body_index);
+  scene_handles.bodies.push_back(transform_handle);
 
-  setTransform(box_handle, makeTransformFromState(body_state.global), scene);
+  setTransform(
+    transform_handle,
+    makeTransformFromState(body_state.global),
+    scene
+  );
+}
+
+
+SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
+{
+  SceneHandles scene_handles;
+
+  for (BodyIndex body_index : indicesOf(state.bodies())) {
+    createBodyInScene(scene, scene_handles, state, body_index);
+  }
 
   for (MarkerIndex marker_index : indicesOf(state.markers())) {
     createMarkerInScene(scene, scene_handles, state, marker_index);
@@ -198,35 +246,34 @@ SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
 
 void destroySceneObjects(Scene &scene, const SceneHandles &scene_handles)
 {
-  for (const SceneHandles::Marker &marker : scene_handles.markers) {
+  for (const auto &marker : scene_handles.markers) {
     scene.destroyObject(marker.handle);
   }
 
-  for (
-    const SceneHandles::DistanceError &distance_error
-    : scene_handles.distance_errors
-  ) {
+  for (const auto &distance_error : scene_handles.distance_errors) {
     scene.destroyLine(distance_error.line);
   }
 
-  scene.destroyObject(scene_handles.box);
+  for (const auto &body : scene_handles.bodies) {
+    scene.destroyObject(body);
+  }
 }
 
 
 static void
-  updateBoxInScene(
+  updateBodyInScene(
     Scene &scene,
-    const TransformHandle &box_handle,
-    const SceneState::Body &box_state
+    const TransformHandle &body_transform_handle,
+    const SceneState::Body &body_state
   )
 {
-  setTransform(box_handle, makeTransformFromState(box_state.global), scene);
+  setTransform(body_transform_handle, makeTransformFromState(body_state.global), scene);
 
   scene.setGeometryScale(
-    box_handle,
-    box_state.scale.x,
-    box_state.scale.y,
-    box_state.scale.z
+    body_transform_handle,
+    body_state.scale.x,
+    body_state.scale.y,
+    body_state.scale.z
   );
 }
 
@@ -310,6 +357,20 @@ static void
 }
 
 
+static void
+updateBodiesInScene(
+  Scene &scene,
+  const SceneState &state,
+  const SceneHandles &scene_handles
+)
+{
+  for (auto body_index : indicesOf(state.bodies())) {
+    const TransformHandle body_handle = scene_handles.bodies[body_index];
+    updateBodyInScene(scene, body_handle, state.body(body_index));
+  }
+}
+
+
 void
   updateSceneObjects(
     Scene &scene,
@@ -317,7 +378,7 @@ void
     const SceneState &state
   )
 {
-  updateBoxInScene(scene, scene_handles.box, boxBodyState(state));
+  updateBodiesInScene(scene, state, scene_handles);
   updateMarkersInScene(scene, scene_handles.markers, state.markers());
   updateDistanceErrorsInScene(scene, scene_handles, state);
 }

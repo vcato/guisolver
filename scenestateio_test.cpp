@@ -39,6 +39,7 @@ static void testWith(const SceneState &state)
 static void test2()
 {
   SceneState state;
+  createBodyInState(state, /*maybe_parent_index*/{});
   SceneState::DistanceError &distance_error = state.addDistanceError();
   distance_error.weight = 2.5;
   distance_error.desired_distance = 3.5;

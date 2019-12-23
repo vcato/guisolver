@@ -3,15 +3,20 @@
 
 #include "treepath.hpp"
 #include "isequal.hpp"
+#include "bodyindex.hpp"
+
 
 struct TreePaths {
   struct Marker;
+  struct Body;
   struct DistanceError;
   using Markers = vector<Marker>;
+  using Bodies = vector<Body>;
   using DistanceErrors = vector<DistanceError>;
 
   TreePaths()
-  : markers()
+  : markers(),
+    bodies()
   {
   }
 
@@ -76,7 +81,7 @@ struct TreePaths {
     explicit Scale(const XYZ &xyz_arg) : XYZ(xyz_arg) {}
   };
 
-  struct Transform {
+  struct Body {
     struct Geometry {
       TreePath path;
       Scale scale;
@@ -97,18 +102,20 @@ struct TreePaths {
     TreePath path;
     Translation translation;
     Rotation rotation;
+    TreePath next_body_path;
+    TreePath next_marker_path;
     Geometry geometry;
 
     template <typename F>
     static void forEachMember(const F &f)
     {
-      f(&Transform::path);
-      f(&Transform::translation);
-      f(&Transform::rotation);
-      f(&Transform::geometry);
+      f(&Body::path);
+      f(&Body::translation);
+      f(&Body::rotation);
+      f(&Body::geometry);
     }
 
-    bool operator==(const Transform &arg) const
+    bool operator==(const Body &arg) const
     {
       return isEqual(*this, arg);
     }
@@ -142,19 +149,19 @@ struct TreePaths {
   };
 
   TreePath path;
-  Transform box;
   Markers markers;
+  Bodies bodies;
   DistanceErrors distance_errors;
   TreePath next_distance_error_path;
-  TreePath next_box_marker_path;
   TreePath next_scene_marker_path;
+  TreePath next_scene_body_path;
   TreePath total_error;
 
   template <typename F>
   static void forEachMember(const F &f)
   {
     f(&TreePaths::path);
-    f(&TreePaths::box);
+    f(&TreePaths::bodies);
     f(&TreePaths::markers);
     f(&TreePaths::distance_errors);
     // f(&TreePaths::next_distance_error_path);

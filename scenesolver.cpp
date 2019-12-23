@@ -102,7 +102,8 @@ static void
 
 void solveBoxPosition(SceneState &scene_state)
 {
-  SceneState::Body &body_state = boxBodyState(scene_state);
+  BodyIndex body_index = boxBodyIndex();
+  SceneState::Body &body_state = scene_state.body(body_index);
 
   vector<float> variables =
     extractVariables(

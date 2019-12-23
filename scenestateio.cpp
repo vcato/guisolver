@@ -89,7 +89,7 @@ static TaggedValue &
 
 
 static void
-  createMarker(TaggedValue &parent, const SceneState::Marker &marker_state)
+createMarker(TaggedValue &parent, const SceneState::Marker &marker_state)
 {
   auto &marker = create(parent, "Marker");
   {
@@ -139,7 +139,7 @@ static TaggedValue makeTaggedValue(const SceneState &scene_state)
   TaggedValue result("Scene");
   {
     auto &parent = result;
-    const SceneState::Body &body_state = boxBodyState(scene_state);
+    const SceneState::Body &body_state = scene_state.body(boxBodyIndex());
     const TransformState &transform_state = body_state.global;
     TaggedValue &transform = createTransform(parent, transform_state);
     {
@@ -285,7 +285,7 @@ static void
       Optional<MarkerIndex> maybe_marker_index;
 
       if (maybe_name) {
-        maybe_marker_index = scene_state.addMarker(*maybe_name);
+        maybe_marker_index = scene_state.createMarker(*maybe_name);
       }
       else {
         assert(false);
@@ -381,7 +381,9 @@ static SceneState makeSceneState(const TaggedValue &tagged_value)
   }
 
   SceneState result;
-  boxBodyState(result).global = makeTransform(*transform_ptr);
+  BodyIndex body_index = createBodyInState(result, /*maybe_parent_index*/{});
+  SceneState::Body &body_state = result.body(body_index);
+  body_state.global = makeTransform(*transform_ptr);
   extractMarkers(result, *transform_ptr, /*is_local*/true);
   extractMarkers(result, tagged_value, /*is_local*/false);
   extractDistanceErrors(result, tagged_value);

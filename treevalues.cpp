@@ -344,7 +344,13 @@ extern void
   handlePathRemoval(tree_paths, marker_path);
   updatePathAfterRemoval(tree_paths.next_distance_error_path, marker_path);
   updatePathAfterRemoval(tree_paths.next_scene_marker_path, marker_path);
-  updatePathAfterRemoval(tree_paths.next_box_marker_path, marker_path);
+
+  for (BodyIndex body_index : indicesOf(tree_paths.bodies)) {
+    updatePathAfterRemoval(
+      tree_paths.bodies[body_index].next_marker_path,
+      marker_path
+    );
+  }
 }
 
 
@@ -386,7 +392,7 @@ static string totalErrorLabel(float total_error)
 static TreePath &nextMarkerInsertionPoint(TreePaths &tree_paths, bool is_local)
 {
   if (is_local) {
-    return tree_paths.next_box_marker_path;
+    return tree_paths.bodies[boxBodyIndex()].next_marker_path;
   }
   else {
     return tree_paths.next_scene_marker_path;
@@ -423,55 +429,52 @@ void
 }
 
 
-TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
+static TreePaths::Body
+createBodyItem(
+  const TreePath &body_path,
+  const SceneState::Body &body_state,
+  TreeWidget &tree_widget
+)
 {
   const NumericValue no_maximum = noMaximumNumericValue();
-
-  TreePaths tree_paths;
-  TreePath scene_path = {0};
-  tree_widget.createVoidItem(scene_path,LabelProperties{"[Scene]"});
-  tree_paths.path = scene_path;
-
-  TreePath next_scene_child_path = childPath(scene_path, 0);
-  TreePath box_transform_path = next_scene_child_path;
-  ++next_scene_child_path.back();
+  TreePaths::Body body_paths;
+  TreePath transform_path = body_path;
 
   tree_widget.createVoidItem(
-    box_transform_path,LabelProperties{"[Transform]"}
+    transform_path, LabelProperties{"[Transform]"}
   );
 
-  TreePath box_path = {0,0};
-  TreePath box_translation_path = childPath(box_path,0);
-  TreePath box_rotation_path = childPath(box_path,1);
-  TreePath box_geometry_path = childPath(box_path, 2);
-  tree_paths.box.path = box_path;
+  TreePath translation_path = childPath(transform_path,0);
+  TreePath rotation_path = childPath(transform_path,1);
+  TreePath geometry_path = childPath(transform_path, 2);
+  TreePath next_body_path = childPath(transform_path, 3);
+  TreePath next_marker_path = childPath(transform_path, 3);
+  body_paths.path = body_path;
 
-  TreePath box_scale_x_path = childPath(box_geometry_path, 0);
-  TreePath box_scale_y_path = childPath(box_geometry_path, 1);
-  TreePath box_scale_z_path = childPath(box_geometry_path, 2);
+  TreePath scale_x_path = childPath(geometry_path, 0);
+  TreePath scale_y_path = childPath(geometry_path, 1);
+  TreePath scale_z_path = childPath(geometry_path, 2);
 
   tree_widget.createVoidItem(
-    box_translation_path,LabelProperties{"translation: []"}
+    translation_path,LabelProperties{"translation: []"}
   );
 
-  tree_paths.box.translation =
-    TreePaths::Translation(createXYZ(tree_widget, box_translation_path));
+  body_paths.translation =
+    TreePaths::Translation(createXYZ(tree_widget, translation_path));
 
   tree_widget.createVoidItem(
-    box_rotation_path,LabelProperties{"rotation: []"}
+    rotation_path,LabelProperties{"rotation: []"}
   );
 
-  tree_paths.box.rotation =
-    TreePaths::Rotation(createXYZ(tree_widget, box_rotation_path));
+  body_paths.rotation =
+    TreePaths::Rotation(createXYZ(tree_widget, rotation_path));
 
   tree_widget.createVoidItem(
-    box_geometry_path, LabelProperties{"[Box]"}
+    geometry_path, LabelProperties{"[Box]"}
   );
-
-  const SceneState::Body &body_state = boxBodyState(scene_state);
 
   tree_widget.createNumericItem(
-    box_scale_x_path,
+    scale_x_path,
     LabelProperties{"scale_x:"},
     /*value*/body_state.scale.x,
     /*minimum_value*/0,
@@ -479,7 +482,7 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
   );
 
   tree_widget.createNumericItem(
-    box_scale_y_path,
+    scale_y_path,
     LabelProperties{"scale_y:"},
     /*value*/body_state.scale.y,
     /*minimum_value*/0,
@@ -487,38 +490,118 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
   );
 
   tree_widget.createNumericItem(
-    box_scale_z_path,
+    scale_z_path,
     LabelProperties{"scale_z:"},
     /*value*/body_state.scale.z,
     /*minimum_value*/0,
     no_maximum
   );
 
-  tree_paths.box.geometry.path = box_geometry_path;
-  tree_paths.box.geometry.scale.x = box_scale_x_path;
-  tree_paths.box.geometry.scale.y = box_scale_y_path;
-  tree_paths.box.geometry.scale.z = box_scale_z_path;
+  body_paths.geometry.path = geometry_path;
+  body_paths.geometry.scale.x = scale_x_path;
+  body_paths.geometry.scale.y = scale_y_path;
+  body_paths.geometry.scale.z = scale_z_path;
 
-  tree_paths.next_distance_error_path = next_scene_child_path;
-  tree_paths.next_scene_marker_path = next_scene_child_path;
+  body_paths.next_body_path = next_body_path;
+  body_paths.next_marker_path = next_marker_path;
 
-  TreePath total_error_path = next_scene_child_path;
-  ++next_scene_child_path.back();
-  tree_paths.total_error = total_error_path;
+  return body_paths;
+}
 
-  tree_widget.createVoidItem(
-    total_error_path, LabelProperties{totalErrorLabel(0)}
+
+static void
+  createSceneBodyInTree(
+    const BodyIndex body_index,
+    TreePaths &tree_paths,
+    TreeWidget &tree_widget,
+    const SceneState &scene_state
+  )
+{
+  const TreePath body_path = tree_paths.next_scene_body_path;
+  assert(BodyIndex(tree_paths.bodies.size()) == body_index);
+  const SceneState::Body &body_state = scene_state.body(body_index);
+
+  tree_paths.bodies.push_back(
+    createBodyItem(body_path, body_state, tree_widget)
   );
 
-  {
-    TreePath &next_box_marker_path = tree_paths.next_box_marker_path;
-    next_box_marker_path = childPath(box_path, 3);
+  ++tree_paths.next_scene_body_path.back();
+  ++tree_paths.next_scene_marker_path.back();
+  ++tree_paths.next_distance_error_path.back();
+  ++tree_paths.total_error.back();
+}
 
-    for (auto marker_index : indicesOf(scene_state.markers())) {
-      createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
-    }
 
-    next_scene_child_path = tree_paths.next_scene_marker_path;
+static void
+  createChildBodyInTree(
+    const BodyIndex body_index,
+    TreePaths &tree_paths,
+    TreeWidget &tree_widget,
+    const SceneState &scene_state
+  )
+{
+  BodyIndex parent_body_index =
+    *scene_state.body(body_index).maybe_parent_index;
+
+  const TreePath body_path =
+    tree_paths.bodies[parent_body_index].next_body_path;
+
+  handlePathInsertion(tree_paths, body_path);
+
+  assert(BodyIndex(tree_paths.bodies.size()) == body_index);
+  const SceneState::Body &body_state = scene_state.body(body_index);
+
+  tree_paths.bodies.push_back(
+    createBodyItem(body_path, body_state, tree_widget)
+  );
+
+  ++tree_paths.bodies[parent_body_index].next_body_path.back();
+  ++tree_paths.bodies[parent_body_index].next_marker_path.back();
+}
+
+
+void
+createBodyInTree(
+  TreeWidget &tree_widget,
+  TreePaths &tree_paths,
+  const SceneState &scene_state,
+  BodyIndex body_index
+)
+{
+  const SceneState::Body &state_body = scene_state.body(body_index);
+
+  if (!state_body.maybe_parent_index) {
+    createSceneBodyInTree(body_index, tree_paths, tree_widget, scene_state);
+  }
+  else {
+    createChildBodyInTree(body_index, tree_paths, tree_widget, scene_state);
+  }
+}
+
+
+TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
+{
+  TreePaths tree_paths;
+  TreePath scene_path = {0};
+  tree_widget.createVoidItem(scene_path,LabelProperties{"[Scene]"});
+  tree_paths.path = scene_path;
+
+  TreePath next_scene_child_path = childPath(scene_path, 0);
+  tree_paths.next_distance_error_path = next_scene_child_path;
+  tree_paths.next_scene_marker_path = next_scene_child_path;
+  tree_paths.next_scene_body_path = next_scene_child_path;
+  tree_paths.total_error = next_scene_child_path;
+
+  tree_widget.createVoidItem(
+    tree_paths.total_error, LabelProperties{totalErrorLabel(0)}
+  );
+
+  for (auto body_index : indicesOf(scene_state.bodies())) {
+    createBodyInTree(tree_widget, tree_paths, scene_state, body_index);
+  }
+
+  for (auto marker_index : indicesOf(scene_state.markers())) {
+    createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
   }
 
   for (auto &state_distance_error : scene_state.distance_errors) {
@@ -580,21 +663,40 @@ static void
 
 
 static void
-  updateMarkers(
+  updateMarker(
+    MarkerIndex i,
     TreeWidget &tree_widget,
     const TreePaths::Markers &marker_paths,
     const SceneState::Markers &markers
   )
 {
-  assert(marker_paths.size() == markers.size());
-  int n_markers = marker_paths.size();
+  updateXYZValues(
+    tree_widget,
+    marker_paths[i].position,
+    vec3(markers[i].position)
+  );
+}
 
-  for (int i=0; i!=n_markers; ++i) {
-    updateXYZValues(
-      tree_widget,
-      marker_paths[i].position,
-      vec3(markers[i].position)
-    );
+
+static void
+updateBody(
+  TreeWidget &tree_widget,
+  const TreePaths &tree_paths,
+  const SceneState &state,
+  BodyIndex body_index
+)
+{
+  const TransformState &global = state.body(body_index).global;
+  const TreePaths::Body &body_paths = tree_paths.bodies[body_index];
+  {
+    const TreePaths::Translation &translation_paths = body_paths.translation;
+    const TranslationState &translation = translationStateOf(global);
+    updateTranslationValues(tree_widget, translation_paths, translation);
+  }
+  {
+    const TreePaths::Rotation &rotation_paths = body_paths.rotation;
+    const RotationState &rotation = rotationStateOf(global);
+    updateRotationValues(tree_widget, rotation_paths, rotation);
   }
 }
 
@@ -606,23 +708,13 @@ void
     const SceneState &state
   )
 {
-  const TransformState &box_global = boxBodyState(state).global;
-
-  {
-    const TreePaths::Translation &translation_paths =
-      tree_paths.box.translation;
-
-    const TranslationState &translation = translationStateOf(box_global);
-    updateTranslationValues(tree_widget, translation_paths, translation);
+  for (auto body_index : indicesOf(state.bodies())) {
+    updateBody(tree_widget, tree_paths, state, body_index);
   }
 
-  {
-    const RotationState &rotation = rotationStateOf(box_global);
-    const TreePaths::Rotation &rotation_paths = tree_paths.box.rotation;
-    updateRotationValues(tree_widget, rotation_paths, rotation);
+  for (auto i : indicesOf(state.markers())) {
+    updateMarker(i, tree_widget, tree_paths.markers, state.markers());
   }
-
-  updateMarkers(tree_widget, tree_paths.markers, state.markers());
 
   for (auto i : indicesOf(tree_paths.distance_errors)) {
     updateDistanceError(
@@ -758,7 +850,7 @@ static bool
     TransformState &box_global,
     const TreePath &path,
     NumericValue value,
-    const TreePaths::Transform &box_paths
+    const TreePaths::Body &box_paths
   )
 {
   if (startsWith(path,box_paths.translation.path)) {
@@ -877,27 +969,30 @@ bool
     const TreePaths &tree_paths
   )
 {
-  const TreePaths::Transform &box_paths = tree_paths.box;
+  for (auto body_index : indicesOf(tree_paths.bodies)) {
+    const TreePaths::Body &body_paths = tree_paths.bodies[body_index];
 
-  if (startsWith(path,box_paths.path)) {
-    SceneState::Body &body_state = boxBodyState(scene_state);
-    TransformState box_global = body_state.global;
+    if (startsWith(path, body_paths.path)) {
+      SceneState::Body &body_state = scene_state.body(body_index);
+      TransformState transform_state = body_state.global;
 
-    if (setTransformValue(box_global, path, value, box_paths)) {
-      body_state.global = box_global;
-      return true;
+      if (setTransformValue(transform_state, path, value, body_paths)) {
+        body_state.global = transform_state;
+        return true;
+      }
+
+      if (startsWith(path, body_paths.geometry.path)) {
+        SceneState::XYZ &scale = body_state.scale;
+        Eigen::Vector3f v = {scale.x, scale.y, scale.z};
+        const TreePaths::XYZ& xyz_path = body_paths.geometry.scale;
+        setVectorValue(v, path, value, xyz_path);
+        scale.x = v.x();
+        scale.y = v.y();
+        scale.z = v.z();
+        return true;
+      }
     }
 
-    if (startsWith(path, box_paths.geometry.path)) {
-      SceneState::Body &box = body_state;
-      Eigen::Vector3f v = {box.scale.x, box.scale.y, box.scale.z};
-      const TreePaths::XYZ& xyz_path = box_paths.geometry.scale;
-      setVectorValue(v, path, value, xyz_path);
-      box.scale.x = v.x();
-      box.scale.y = v.y();
-      box.scale.z = v.z();
-      return true;
-    }
   }
 
   {

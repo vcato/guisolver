@@ -66,11 +66,13 @@ static CoordinateAxes defaultBoxCoordinateAxes()
 SceneState defaultSceneState()
 {
   SceneState result;
+  BodyIndex body_index = createBodyInState(result, /*maybe_parent_index*/{});
+  assert(body_index == boxBodyIndex());
 
   Transform default_box_transform =
     makeTransform(defaultBoxCoordinateAxes(), defaultBoxTranslation());
 
-  boxBodyState(result).global = transformState(default_box_transform);
+  result.body(body_index).global = transformState(default_box_transform);
 
   createLocalMarker(result,  {1,1,0});
   createLocalMarker(result,  {1,1,1});

@@ -2,6 +2,7 @@
 #include "scenestate.hpp"
 #include "scene.hpp"
 
+
 extern SceneHandles createSceneObjects(const SceneState &state, Scene &scene);
 extern void destroySceneObjects(Scene &scene, const SceneHandles &);
 
@@ -41,9 +42,12 @@ extern void
   );
 
 extern void
-  createMarkerInScene(
-    Scene &scene,
-    SceneHandles &scene_handles,
+createMarkerInScene(Scene &, SceneHandles &, const SceneState &, MarkerIndex);
+
+void
+  createBodyInScene(
+    Scene &,
+    SceneHandles &,
     const SceneState &,
-    MarkerIndex
+    BodyIndex
   );

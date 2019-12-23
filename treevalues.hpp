@@ -33,6 +33,8 @@ void
     MarkerIndex marker_index
   );
 
+void createBodyInTree(TreeWidget &, TreePaths &, const SceneState &, BodyIndex);
+
 extern void
   removeDistanceErrorFromTree(
     int distance_error_index,
