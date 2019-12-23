@@ -134,27 +134,48 @@ static void
 }
 
 
+static Optional<BodyIndex>
+  maybeParentBodyIndex(const SceneState::Marker &marker_state)
+{
+  if (marker_state.is_local) {
+    return boxBodyIndex();
+  }
+  else {
+    return {};
+  }
+}
+
+
+static void
+  createBody(
+    TaggedValue &parent,
+    BodyIndex body_index,
+    const SceneState &scene_state
+  )
+{
+  const SceneState::Body &body_state = scene_state.body(body_index);
+  const TransformState &transform_state = body_state.global;
+  TaggedValue &transform = createTransform(parent, transform_state);
+  createBox(transform, body_state);
+
+  for (const SceneState::Marker &marker_state : scene_state.markers()) {
+    if (maybeParentBodyIndex(marker_state) == body_index) {
+      createMarker(transform, marker_state);
+    }
+  }
+}
+
+
 static TaggedValue makeTaggedValue(const SceneState &scene_state)
 {
   TaggedValue result("Scene");
   {
     auto &parent = result;
-    const SceneState::Body &body_state = scene_state.body(boxBodyIndex());
-    const TransformState &transform_state = body_state.global;
-    TaggedValue &transform = createTransform(parent, transform_state);
-    {
-      auto &parent = transform;
-      createBox(parent, body_state);
-
-      for (const SceneState::Marker &marker_state : scene_state.markers()) {
-        if (marker_state.is_local) {
-          createMarker(parent, marker_state);
-        }
-      }
-    }
+    BodyIndex body_index = boxBodyIndex();
+    createBody(parent, body_index, scene_state);
 
     for (const SceneState::Marker &marker_state : scene_state.markers()) {
-      if (!marker_state.is_local) {
+      if (!maybeParentBodyIndex(marker_state)) {
         createMarker(parent, marker_state);
       }
     }

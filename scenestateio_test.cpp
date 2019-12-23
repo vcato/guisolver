@@ -3,6 +3,8 @@
 #include <sstream>
 #include "defaultscenestate.hpp"
 
+#define ADD_TEST 0
+
 using std::istringstream;
 using std::ostringstream;
 using std::cerr;
@@ -36,7 +38,7 @@ static void testWith(const SceneState &state)
 }
 
 
-static void test2()
+static void testWithAdditionalDistanceError()
 {
   SceneState state;
   createBodyInState(state, /*maybe_parent_index*/{});
@@ -47,8 +49,22 @@ static void test2()
 }
 
 
+#if ADD_TEST
+static void testWithAdditionalTransform()
+{
+  SceneState state;
+  BodyIndex body1_index = createBodyInState(state, /*maybe_parent_index*/{});
+  createBodyInState(state, /*maybe_parent_index*/body1_index);
+  testWith(state);
+}
+#endif
+
+
 int main()
 {
   testWith(defaultSceneState());
-  test2();
+  testWithAdditionalDistanceError();
+#if ADD_TEST
+  testWithAdditionalTransform();
+#endif
 }
