@@ -11,3 +11,4 @@ scenesolver_test
 optional_test
 treevalues_test
 scenestateio_test
+markerpredicted_test
