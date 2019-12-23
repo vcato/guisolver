@@ -137,12 +137,7 @@ static void
 static Optional<BodyIndex>
   maybeAttachedBodyIndex(const SceneState::Marker &marker_state)
 {
-  if (marker_state.is_local) {
-    return boxBodyIndex();
-  }
-  else {
-    return {};
-  }
+  return marker_state.maybe_body_index;
 }
 
 
@@ -322,8 +317,6 @@ static void
     Optional<BodyIndex> maybe_parent_index
   )
 {
-  bool is_local = (maybe_parent_index == boxBodyIndex());
-
   Optional<StringValue> maybe_name =
     findStringValue(tagged_value, "name");
 
@@ -338,7 +331,7 @@ static void
 
   assert(maybe_marker_index);
   MarkerIndex marker_index = *maybe_marker_index;
-  scene_state.marker(marker_index).is_local = is_local;
+  scene_state.marker(marker_index).maybe_body_index = maybe_parent_index;
   const TaggedValue *position_ptr = findChild(tagged_value, "position");
 
   if (position_ptr) {

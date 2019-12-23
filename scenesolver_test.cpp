@@ -81,7 +81,7 @@ static MarkerIndex
 {
   MarkerIndex marker_index = result.createUnnamedMarker();
   result.marker(marker_index).position = makeMarkerPosition(local);
-  result.marker(marker_index).is_local = true;
+  result.marker(marker_index).maybe_body_index = boxBodyIndex();
   return marker_index;
 }
 
@@ -94,7 +94,6 @@ static MarkerIndex
 {
   MarkerIndex marker_index = result.createUnnamedMarker();
   result.marker(marker_index).position = makeMarkerPosition(local);
-  result.marker(marker_index).is_local = false;
   return marker_index;
 }
 

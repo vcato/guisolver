@@ -25,24 +25,24 @@ static void
   createMarker(
     SceneState &state,
     const MarkerPosition &position,
-    bool is_local
+    Optional<BodyIndex> maybe_body_index
   )
 {
-  MarkerIndex index = createMarkerInState(state, is_local);
+  MarkerIndex index = createMarkerInState(state, maybe_body_index);
   state.marker(index).position = position;
 }
 
 
 static void createLocalMarker(SceneState &state, const MarkerPosition &position)
 {
-  createMarker(state, position, /*is_local*/true);
+  createMarker(state, position, /*maybe_body_index*/boxBodyIndex());
 }
 
 
 static void
   createGlobalMarker(SceneState &state, const MarkerPosition &position)
 {
-  createMarker(state,position,/*is_local*/false);
+  createMarker(state,position, /*maybe_body_index*/{});
 }
 
 

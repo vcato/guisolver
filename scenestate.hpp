@@ -30,7 +30,7 @@ class SceneState {
     struct Marker {
       using Name = String;
       XYZ position;
-      bool is_local;
+      Optional<BodyIndex> maybe_body_index;
       Name name;
     };
 
@@ -154,7 +154,12 @@ using TranslationState = SceneState::XYZ;
 using RotationState = SceneState::XYZ;
 using MarkerPosition = SceneState::XYZ;
 
-extern MarkerIndex createMarkerInState(SceneState &state, bool is_local);
+extern MarkerIndex
+  createMarkerInState(
+    SceneState &state,
+    Optional<BodyIndex> maybe_body_index
+  );
+
 extern vector<SceneState::Marker::Name> markerNames(const SceneState &state);
 
 extern BodyIndex

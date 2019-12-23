@@ -55,7 +55,9 @@ static bool
 
   for (MarkerIndex i=0; i!=n_markers; ++i) {
     if (handle == scene_handles.markers[i].handle) {
-      if (state.marker(i).is_local) {
+      Optional<BodyIndex> maybe_body_index = state.marker(i).maybe_body_index;
+
+      if (maybe_body_index) {
         return true;
       }
     }
@@ -515,8 +517,13 @@ void
   Scene &scene = controller.data.scene;
   SceneHandles &scene_handles = controller.data.scene_handles;
   TreeWidget &tree_widget = controller.data.tree_widget;
+  Optional<BodyIndex> maybe_body_index;
 
-  MarkerIndex marker_index = createMarkerInState(scene_state, is_local);
+  if (is_local) {
+    maybe_body_index = boxBodyIndex();
+  }
+
+  MarkerIndex marker_index = createMarkerInState(scene_state, maybe_body_index);
   createMarkerInScene(scene, scene_handles, scene_state, marker_index);
   createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);

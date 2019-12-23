@@ -389,10 +389,14 @@ static string totalErrorLabel(float total_error)
 }
 
 
-static TreePath &nextMarkerInsertionPoint(TreePaths &tree_paths, bool is_local)
+static TreePath &
+  nextMarkerInsertionPoint(
+    TreePaths &tree_paths,
+    Optional<BodyIndex> maybe_body_index
+  )
 {
-  if (is_local) {
-    return tree_paths.bodies[boxBodyIndex()].next_marker_path;
+  if (maybe_body_index) {
+    return tree_paths.bodies[*maybe_body_index].next_marker_path;
   }
   else {
     return tree_paths.next_scene_marker_path;
@@ -410,14 +414,15 @@ void
 {
   const SceneState::Marker &state_marker = scene_state.marker(marker_index);
   assert(marker_index == MarkerIndex(tree_paths.markers.size()));
+  Optional<BodyIndex> maybe_body_index = state_marker.maybe_body_index;
 
   TreePath &insert_point =
-    nextMarkerInsertionPoint(tree_paths, state_marker.is_local);
+    nextMarkerInsertionPoint(tree_paths, maybe_body_index);
 
   TreePath marker_path = insert_point;
   ++insert_point.back();
 
-  if (!state_marker.is_local) {
+  if (!maybe_body_index) {
     ++tree_paths.next_distance_error_path.back();
   }
 

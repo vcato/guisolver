@@ -50,10 +50,15 @@ static SceneState::Marker::Name
 }
 
 
-MarkerIndex createMarkerInState(SceneState &state, bool is_local)
+MarkerIndex
+createMarkerInState(
+  SceneState &state,
+  Optional<BodyIndex> maybe_body_index
+)
 {
+  bool is_local = maybe_body_index.hasValue();
   MarkerIndex index = state.createMarker(newMarkerName(state, is_local));
-  state.marker(index).is_local = is_local;
+  state.marker(index).maybe_body_index = maybe_body_index;
   return index;
 }
 

@@ -101,8 +101,10 @@ static SceneHandles::Marker
 {
   Point position = makePoint(state_marker.position);
 
-  if (state_marker.is_local) {
-    BodyIndex parent_body_index = boxBodyIndex();
+  Optional<BodyIndex> maybe_body_index = state_marker.maybe_body_index;
+
+  if (maybe_body_index) {
+    BodyIndex parent_body_index = *maybe_body_index;
     TransformHandle box_handle = scene_handles.bodies[parent_body_index];
     return createSceneLocal(scene, box_handle, position);
   }
