@@ -301,6 +301,3 @@ If you add a marker to the box, then it should select the marker, and
 the marker should be visible in the tree.
 ---
 Find special cases by looking for uses of boxBodyIndex().
----
-Looks like the next thing to do is generalize markers so they can be
-attached to arbitrary bodies.

@@ -262,8 +262,7 @@ struct MainWindowController::Impl {
     );
 
   static void addMarker(MainWindowController &, Optional<BodyIndex>);
-  static void addGlobalMarkerPressed(MainWindowController &, const TreePath &);
-  static void addLocalMarkerPressed(MainWindowController &, const TreePath &);
+  static void addMarkerPressed(MainWindowController &, const TreePath &);
 
   static void
     addTransformPressed(MainWindowController &, const TreePath &);
@@ -524,26 +523,6 @@ void
 }
 
 
-void
-  MainWindowController::Impl::addGlobalMarkerPressed(
-    MainWindowController &controller,
-    const TreePath &
-  )
-{
-  addMarker(controller, /*maybe_body_index*/{});
-}
-
-
-void
-  MainWindowController::Impl::addLocalMarkerPressed(
-    MainWindowController &controller,
-    const TreePath &/*path*/
-  )
-{
-  addMarker(controller, /*maybe_body_index*/boxBodyIndex());
-}
-
-
 static BodyIndex
   bodyIndexFromTreePath(const TreePath &path, const TreePaths &tree_paths)
 {
@@ -554,6 +533,26 @@ static BodyIndex
   }
 
   assert(false);
+}
+
+
+void
+  MainWindowController::Impl::addMarkerPressed(
+    MainWindowController &controller,
+    const TreePath &path
+  )
+{
+  TreePaths &tree_paths = controller.data.tree_paths;
+
+  if (tree_paths.path == path) {
+    addMarker(controller, /*maybe_body_index*/{});
+  }
+  else {
+    Optional<BodyIndex> maybe_body_index =
+      bodyIndexFromTreePath(path, tree_paths);
+
+    addMarker(controller, maybe_body_index);
+  }
 }
 
 
@@ -718,7 +717,7 @@ TreeWidget::MenuItems
 
     auto add_marker_error_function =
       [&controller,path]{
-        Impl::addGlobalMarkerPressed(controller, path);
+        Impl::addMarkerPressed(controller, path);
       };
 
     appendTo(menu_items,{
@@ -730,7 +729,7 @@ TreeWidget::MenuItems
   if (isTransformPath(path, tree_paths)) {
     auto add_marker_function =
       [&controller,path]{
-        Impl::addLocalMarkerPressed(controller, path);
+        Impl::addMarkerPressed(controller, path);
       };
 
     auto add_transform_function =
