@@ -309,15 +309,24 @@ struct MainWindowController::Impl {
 
   static void
     removeDistanceErrorPressed(
-      MainWindowController &controller,
+      MainWindowController &,
       int distance_error_index
     );
 
   static void
     removeMarkerPressed(
-      MainWindowController &controller,
+      MainWindowController &,
       MarkerIndex
     );
+
+  static void
+    removeTransformPressed(
+      MainWindowController &,
+      const TreePath &
+    );
+
+  static void removeBody(MainWindowController::Data &, BodyIndex);
+  static void removeMarker(MainWindowController::Data &, MarkerIndex);
 };
 
 
@@ -657,6 +666,23 @@ void
 
 
 void
+MainWindowController::Impl::removeMarker(
+  MainWindowController::Data &data,
+  MarkerIndex marker_index
+)
+{
+  TreePaths &tree_paths = data.tree_paths;
+  TreeWidget &tree_widget = data.tree_widget;
+  SceneHandles &scene_handles = data.scene_handles;
+  SceneState &scene_state = data.scene_state;
+  Scene &scene = data.scene;
+  removeMarkerFromTree(marker_index, tree_paths, tree_widget);
+  removeMarkerFromScene(scene, scene_handles.markers, marker_index);
+  scene_state.removeMarker(marker_index);
+}
+
+
+void
   MainWindowController::Impl::removeMarkerPressed(
     MainWindowController &controller,
     MarkerIndex marker_index
@@ -664,12 +690,79 @@ void
 {
   TreePaths &tree_paths = controller.data.tree_paths;
   TreeWidget &tree_widget = controller.data.tree_widget;
-  Scene &scene = controller.data.scene;
-  SceneHandles &scene_handles = controller.data.scene_handles;
   SceneState &scene_state = controller.data.scene_state;
-  removeMarkerFromTree(marker_index, tree_paths, tree_widget);
-  removeMarkerFromScene(scene, scene_handles.markers, marker_index);
-  scene_state.removeMarker(marker_index);
+  removeMarker(controller.data, marker_index);
+  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+}
+
+
+void
+  MainWindowController::Impl::removeBody(
+    MainWindowController::Data &data,
+    BodyIndex body_index
+  )
+{
+  SceneState &scene_state = data.scene_state;
+
+  for (;;) {
+    bool a_body_was_removed = false;
+
+    for (BodyIndex other_body_index : indicesOf(scene_state.bodies())) {
+      if (scene_state.body(other_body_index).maybe_parent_index == body_index) {
+        removeBody(data, other_body_index);
+        a_body_was_removed = true;
+
+        if (other_body_index < body_index) {
+          --body_index;
+        }
+
+        break;
+      }
+    }
+
+    if (!a_body_was_removed) {
+      break;
+    }
+  }
+
+  for (;;) {
+    bool a_marker_was_removed = false;
+
+    for (auto marker_index : indicesOf(scene_state.markers())) {
+      if (scene_state.marker(marker_index).maybe_body_index == body_index) {
+        removeMarker(data, marker_index);
+        a_marker_was_removed = true;
+        break;
+      }
+    }
+
+    if (!a_marker_was_removed) {
+      break;
+    }
+  }
+
+  Scene &scene = data.scene;
+  SceneHandles &scene_handles = data.scene_handles;
+  TreePaths &tree_paths = data.tree_paths;
+  TreeWidget &tree_widget = data.tree_widget;
+  removeBodyFromScene(scene, scene_handles, scene_state, body_index);
+  removeBodyFromTree(tree_widget, tree_paths, scene_state, body_index);
+  scene_state.removeBody(body_index);
+}
+
+
+void
+  MainWindowController::Impl::removeTransformPressed(
+    MainWindowController &controller,
+    const TreePath &path
+  )
+{
+  Data &data = controller.data;
+  TreeWidget &tree_widget = data.tree_widget;
+  TreePaths &tree_paths = data.tree_paths;
+  SceneState &scene_state = data.scene_state;
+  BodyIndex body_index = bodyIndexFromTreePath(path, tree_paths);
+  removeBody(controller.data, body_index);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
 }
 
@@ -783,9 +876,15 @@ TreeWidget::MenuItems
     auto add_transform_function =
       [&controller,path]{ Impl::addTransformPressed(controller, path); };
 
+    auto remove_transform_function =
+      [&controller,path]{
+        Impl::removeTransformPressed(controller, path);
+      };
+
     appendTo(menu_items,{
       {"Add Marker", add_marker_function},
-      {"Add Transform", add_transform_function}
+      {"Add Transform", add_transform_function},
+      {"Remove Transform", remove_transform_function },
     });
   }
 

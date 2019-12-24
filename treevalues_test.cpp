@@ -285,6 +285,16 @@ static void showTreePaths(const string &name, const TreePaths &tree_paths)
 template <typename T>
 static void checkMembersEqual(const T &a,const T &b);
 
+static void checkEqual(size_t a,size_t b)
+{
+  if (a != b) {
+    cerr << "a: " << a << "\n";
+    cerr << "b: " << b << "\n";
+    assert(false);
+  }
+}
+
+
 static void checkEqual(const FakeTreeWidget &a,const FakeTreeWidget &b)
 {
   checkMembersEqual(a,b);
@@ -297,10 +307,27 @@ static void checkEqual(const FakeTreeItem &a,const FakeTreeItem &b)
 }
 
 
+template <typename T>
+static void checkEqual(const vector<T> &a,const vector<T> &b)
+{
+  if (a.size() != b.size()) {
+    cerr << "a.size() = " << a.size() << "\n";
+    cerr << "b.size() = " << b.size() << "\n";
+    assert(false);
+  }
+
+  for (auto index : indicesOf(a)) {
+    checkEqual(a[index], b[index]);
+  }
+}
+
+
 static void
 checkEqual(const TreePaths::Body &a,const TreePaths::Body &b)
 {
   checkMembersEqual(a,b);
+  checkEqual(a.next_marker_path, b.next_marker_path);
+  checkEqual(a.next_body_path, b.next_body_path);
 }
 
 
@@ -338,12 +365,6 @@ static void
 }
 
 
-static void checkEqual(const TreePaths &a,const TreePaths &b)
-{
-  checkMembersEqual(a,b);
-}
-
-
 static void checkEqual(const string &a,const string &b)
 {
   if (a != b) {
@@ -354,28 +375,12 @@ static void checkEqual(const string &a,const string &b)
 }
 
 
-static void checkEqual(size_t a,size_t b)
+static void checkEqual(const TreePaths &a,const TreePaths &b)
 {
-  if (a != b) {
-    cerr << "a: " << a << "\n";
-    cerr << "b: " << b << "\n";
-    assert(false);
-  }
-}
-
-
-template <typename T>
-static void checkEqual(const vector<T> &a,const vector<T> &b)
-{
-  if (a.size() != b.size()) {
-    cerr << "a.size() = " << a.size() << "\n";
-    cerr << "b.size() = " << b.size() << "\n";
-    assert(false);
-  }
-
-  for (auto index : indicesOf(a)) {
-    checkEqual(a[index], b[index]);
-  }
+  checkMembersEqual(a,b);
+  checkEqual(a.next_distance_error_path, b.next_distance_error_path);
+  checkEqual(a.next_scene_marker_path, b.next_scene_marker_path);
+  checkEqual(a.next_scene_body_path, b.next_scene_body_path);
 }
 
 
@@ -452,6 +457,39 @@ static void testAddingAChildBody()
 }
 
 
+static void testRemovingAGlobalBody()
+{
+  SceneState state;
+  FakeTreeWidget tree_widget;
+  BodyIndex body1_index = state.createBody(/*maybe_parent_body_index*/{});
+  state.createBody(/*maybe_parent_body_index*/{});
+  state.createMarker("global");
+  TreePaths tree_paths = fillTree(tree_widget, state);
+  removeBodyFromTree(tree_widget, tree_paths, state, body1_index);
+  state.removeBody(body1_index);
+  checkTree(tree_widget, tree_paths, state);
+}
+
+
+static void testRemovingAChildBody()
+{
+  SceneState state;
+  FakeTreeWidget tree_widget;
+
+  BodyIndex parent_body_index =
+    state.createBody(/*maybe_parent_body_index*/{});
+
+  BodyIndex body1_index = state.createBody(parent_body_index);
+  state.createBody(parent_body_index);
+  MarkerIndex marker_index = state.createMarker("global");
+  state.marker(marker_index).maybe_body_index = parent_body_index;
+  TreePaths tree_paths = fillTree(tree_widget, state);
+  removeBodyFromTree(tree_widget, tree_paths, state, body1_index);
+  state.removeBody(body1_index);
+  checkTree(tree_widget, tree_paths, state);
+}
+
+
 int main()
 {
   testRemovingDistanceError();
@@ -459,4 +497,6 @@ int main()
   testRemovingAGlobalMarker();
   testRemovingALocalMarker();
   testAddingAChildBody();
+  testRemovingAGlobalBody();
+  testRemovingAChildBody();
 }

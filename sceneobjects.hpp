@@ -51,3 +51,11 @@ void
     const SceneState &,
     BodyIndex
   );
+
+void
+  removeBodyFromScene(
+    Scene &,
+    SceneHandles &,
+    const SceneState &,
+    BodyIndex
+  );

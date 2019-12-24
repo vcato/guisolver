@@ -584,6 +584,38 @@ createBodyInTree(
 }
 
 
+void
+  removeBodyFromTree(
+    TreeWidget &tree_widget,
+    TreePaths &tree_paths,
+    const SceneState &/*scene_state*/,
+    BodyIndex body_index
+  )
+{
+  // TreePaths::Markers &markers = tree_paths.markers;
+  TreePath body_path = tree_paths.bodies[body_index].path;
+  tree_widget.removeItem(body_path);
+  removeIndexFrom(tree_paths.bodies, body_index);
+  handlePathRemoval(tree_paths, body_path);
+
+  updatePathAfterRemoval(tree_paths.next_distance_error_path, body_path);
+  updatePathAfterRemoval(tree_paths.next_scene_marker_path, body_path);
+  updatePathAfterRemoval(tree_paths.next_scene_body_path, body_path);
+
+  for (BodyIndex body_index : indicesOf(tree_paths.bodies)) {
+    updatePathAfterRemoval(
+      tree_paths.bodies[body_index].next_marker_path,
+      body_path
+    );
+
+    updatePathAfterRemoval(
+      tree_paths.bodies[body_index].next_body_path,
+      body_path
+    );
+  }
+}
+
+
 TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
 {
   TreePaths tree_paths;

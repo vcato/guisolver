@@ -114,6 +114,14 @@ class SceneState {
       }
     }
 
+    bool bodyHasChildren(BodyIndex body_index) const;
+
+    void removeBody(BodyIndex index_to_remove)
+    {
+      assert(!bodyHasChildren(index_to_remove));
+      removeIndexFrom(_bodies, index_to_remove);
+    }
+
     DistanceError& createDistanceError()
     {
       distance_errors.emplace_back();
@@ -164,6 +172,5 @@ extern vector<SceneState::Marker::Name> markerNames(const SceneState &state);
 
 extern BodyIndex
   createBodyInState(SceneState &, Optional<BodyIndex> maybe_parent_index);
-
 
 #endif /* SCENESTATE_HPP_ */

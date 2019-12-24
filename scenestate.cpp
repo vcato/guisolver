@@ -2,6 +2,7 @@
 
 #include <sstream>
 #include "contains.hpp"
+#include "indicesof.hpp"
 
 
 using std::ostringstream;
@@ -72,4 +73,24 @@ createBodyInState(SceneState &state, Optional<BodyIndex> maybe_parent_index)
 
 SceneState::SceneState()
 {
+}
+
+
+bool SceneState::bodyHasChildren(BodyIndex body_index) const
+{
+  const SceneState &state = *this;
+
+  for (auto other_body_index : indicesOf(state.bodies())) {
+    if (state.body(other_body_index).maybe_parent_index == body_index) {
+      return true;
+    }
+  }
+
+  for (auto marker_index : indicesOf(state.markers())) {
+    if (state.marker(marker_index).maybe_body_index == body_index) {
+      return true;
+    }
+  }
+
+  return false;
 }

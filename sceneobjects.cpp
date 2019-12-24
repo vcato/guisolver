@@ -226,6 +226,20 @@ createBodyInScene(
 }
 
 
+void
+removeBodyFromScene(
+  Scene &scene,
+  SceneHandles &scene_handles,
+  const SceneState &state,
+  BodyIndex body_index
+)
+{
+  assert(!state.bodyHasChildren(body_index));
+  scene.destroyObject(scene_handles.bodies[body_index]);
+  removeIndexFrom(scene_handles.bodies, body_index);
+}
+
+
 SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
 {
   SceneHandles scene_handles;

@@ -666,9 +666,12 @@ QTreeWidgetItem&
 
 void QtTreeWidget::removeItem(const TreePath &path)
 {
+  assert(!_ignore_selelection_changed);
+  _ignore_selelection_changed = true;
   auto parent_path = parentPath(path);
   auto child_index = path.back();
   ::removeChildItem(itemFromPath(parent_path),child_index);
+  _ignore_selelection_changed = false;
 }
 
 
