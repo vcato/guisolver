@@ -14,6 +14,7 @@ run_unit_tests: \
   osgutil_test.pass \
   transform_test.pass \
   markerpredicted_test.pass \
+  scenestatetaggedvalue_test.pass \
   scenestateio_test.pass \
   scenesolver_test.pass \
   optimize_test.pass \
@@ -31,7 +32,10 @@ run_guisolver: guisolver
 
 DEFAULTSCENESTATE=defaultscenestate.o scenestate.o maketransform.o
 TAGGEDVALUEIO=taggedvalueio.o printindent.o streamparser.o stringutil.o
-SCENESTATEIO=scenestateio.o $(TAGGEDVALUEIO)
+
+SCENESTATEIO=scenestateio.o taggedvalue.o scenestatetaggedvalue.o\
+  $(TAGGEDVALUEIO)
+
 SCENEERROR=sceneerror.o scenestate.o
 
 guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
@@ -58,6 +62,10 @@ transform_test: transform_test.o maketransform.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 markerpredicted_test: markerpredicted_test.o scenestate.o maketransform.o
+	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
+
+scenestatetaggedvalue_test: scenestatetaggedvalue_test.o scenestate.o \
+  scenestatetaggedvalue.o taggedvalue.o $(TAGGEDVALUEIO)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 scenestateio_test: scenestateio_test.o $(DEFAULTSCENESTATE) $(SCENESTATEIO)

@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include "primaryvalue.hpp"
+#include "optional.hpp"
 
 
 struct TaggedValue {
@@ -31,5 +32,21 @@ struct TaggedValue {
   }
 };
 
+
+extern const TaggedValue *
+  findChild(const TaggedValue &tagged_value, const TaggedValue::Tag &tag);
+
+
+extern Optional<NumericValue>
+  findNumericValue(
+    const TaggedValue &tagged_value,
+    const TaggedValue::Tag &child_name
+  );
+
+extern Optional<StringValue>
+  findStringValue(
+    const TaggedValue &tagged_value,
+    const TaggedValue::Tag &child_name
+  );
 
 #endif /* TAGGEDVALUE_HPP_ */

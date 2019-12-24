@@ -302,5 +302,4 @@ the marker should be visible in the tree.
 ---
 Find special cases by looking for uses of boxBodyIndex().
 ---
-If we move a body using the spin box in the tree, it doesn't solve other
-bodies.
+The solve flags aren't being stored in the scene.
