@@ -36,60 +36,68 @@ static bool
 }
 
 
-static bool anyFlagsAreSet(const SceneState::XYZSolveFlags &solve_flags)
+template <typename XYZSolveFlags, typename F>
+static void forEachSolveFlagInXYZ(XYZSolveFlags &solve_flags, const F &f)
 {
-  return solve_flags.x || solve_flags.y || solve_flags.z;
+  f(solve_flags.x);
+  f(solve_flags.y);
+  f(solve_flags.z);
 }
 
 
-static bool anyFlagsAreSet(const SceneState::TransformSolveFlags &solve_flags)
+template <typename TransformSolveFlags, typename F>
+static void
+forEachSolveFlagInTransform(TransformSolveFlags &solve_flags, const F &f)
 {
-  return
-    anyFlagsAreSet(solve_flags.translation) ||
-    anyFlagsAreSet(solve_flags.rotation);
+  forEachSolveFlagInXYZ(solve_flags.translation, f);
+  forEachSolveFlagInXYZ(solve_flags.rotation, f);
 }
 
 
-static bool
-  bodyIsSolved(
+template <typename F>
+static bool anyFlagsAreSet(const F &for_each_function)
+{
+  bool any_are_set = false;
+  for_each_function([&](bool arg){ if (arg) any_are_set = true; });
+  return any_are_set;
+}
+
+
+template <typename SceneState, typename F>
+static void
+  forEachSolveFlagAffectingBody(
     BodyIndex body_index,
-    const SceneState &state
+    SceneState &state,
+    const F &f
   )
 {
-  const SceneState::Body &body_state = state.body(body_index);
-  return anyFlagsAreSet(body_state.solve_flags);
-}
-
-
-static bool bodyIsAffectedBySolve(BodyIndex body_index, const SceneState &state)
-{
-  if (bodyIsSolved(body_index, state)) {
-    return true;
-  }
+  forEachSolveFlagInTransform(state.body(body_index).solve_flags, f);
 
   Optional<BodyIndex> maybe_parent_index =
     state.body(body_index).maybe_parent_index;
 
   if (!maybe_parent_index) {
-    return false;
+    return;
   }
 
-  return bodyIsAffectedBySolve(*maybe_parent_index, state);
+  return forEachSolveFlagAffectingBody(*maybe_parent_index, state, f);
 }
 
 
-static bool
-  affectedBySolve(
-    TransformHandle handle,
-    const SceneHandles &scene_handles,
-    const SceneState &state
-  )
+template <typename SceneState, typename F>
+static void
+forEachSolveFlagAffectingHandle(
+  TransformHandle handle,
+  const SceneHandles &scene_handles,
+  SceneState &state,
+  const F &f
+)
 {
   // If the handle is for a body that is a child of the box, then it
   // is going to be affected by the solve.
   for (auto i : indicesOf(state.bodies())) {
     if (handle == scene_handles.bodies[i]) {
-      return bodyIsAffectedBySolve(i, state);
+      forEachSolveFlagAffectingBody(i, state, f);
     }
   }
 
@@ -98,12 +106,10 @@ static bool
       Optional<BodyIndex> maybe_body_index = state.marker(i).maybe_body_index;
 
       if (maybe_body_index) {
-        return bodyIsAffectedBySolve(*maybe_body_index, state);
+        forEachSolveFlagAffectingBody(*maybe_body_index, state, f);
       }
     }
   }
-
-  return false;
 }
 
 
@@ -347,15 +353,35 @@ void
   Optional<TransformHandle> th = scene.selectedObject();
   updateSceneStateFromSceneObjects(state, scene, scene_handles);
 
-  if (!th || !affectedBySolve(*th,scene_handles,state)) {
-    // If we're moving something that doesn't move with the box, then
-    // we'll go ahead and update the box position.
-    solveScene(state);
+  vector<bool> old_flags;
+
+  // Disable any transforms that would move the handle and remember the
+  // old state.
+
+  forEachSolveFlagAffectingHandle(
+    *th, scene_handles, state,
+    [&](bool &arg){
+      old_flags.push_back(arg);
+      arg = false;
+    }
+  );
+
+  solveScene(state);
+
+  // Restore the old solve states.
+  {
+    vector<bool>::const_iterator iter = old_flags.begin();
+
+    forEachSolveFlagAffectingHandle(
+      *th, scene_handles, state,
+      [&](bool &arg){
+        arg = *iter++;
+      }
+    );
+
+    assert(iter == old_flags.end());
   }
-  else {
-    // If we're moving something that moves with the box, then it will
-    // be confusing if we try to update the box position.
-  }
+
 
   updateErrorsInState(state);
   updateTreeValues(tree_widget, tree_paths, state);
@@ -625,10 +651,16 @@ MainWindowController::Impl::addTransformPressed(
   TreePaths &tree_paths = controller.data.tree_paths;
   TreeWidget &tree_widget = controller.data.tree_widget;
 
-  BodyIndex parent_body_index =
-    bodyIndexFromTreePath(parent_path, tree_paths);
+  Optional<BodyIndex> maybe_parent_body_index;
 
-  BodyIndex index = createBodyInState(scene_state, parent_body_index);
+  if (parent_path == tree_paths.path) {
+    // Adding a transform to the scene.
+  }
+  else {
+     maybe_parent_body_index = bodyIndexFromTreePath(parent_path, tree_paths);
+  }
+
+  BodyIndex index = createBodyInState(scene_state, maybe_parent_body_index);
   createBodyInScene(scene, scene_handles, scene_state, index);
   createBodyInTree(tree_widget, tree_paths, scene_state, index);
 }
@@ -856,14 +888,18 @@ TreeWidget::MenuItems
         Impl::addDistanceErrorPressed(controller, path);
       };
 
-    auto add_marker_error_function =
+    auto add_marker_function =
       [&controller,path]{
         Impl::addMarkerPressed(controller, path);
       };
 
+    auto add_transform_function =
+      [&controller,path]{ Impl::addTransformPressed(controller, path); };
+
     appendTo(menu_items,{
       {"Add Distance Error", add_distance_error_function },
-      {"Add Marker", add_marker_error_function },
+      {"Add Marker", add_marker_function },
+      {"Add Transform", add_transform_function },
     });
   }
 

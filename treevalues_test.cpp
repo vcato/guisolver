@@ -446,6 +446,17 @@ static void testRemovingALocalMarker()
 }
 
 
+static void testAddingASceneBody()
+{
+  SceneState state = defaultSceneState();
+  FakeTreeWidget tree_widget;
+  TreePaths tree_paths = fillTree(tree_widget, state);
+  BodyIndex body_index = state.createBody(/*maybe_parent_body_index*/{});
+  createBodyInTree(tree_widget, tree_paths, state, body_index);
+  checkTree(tree_widget, tree_paths, state);
+}
+
+
 static void testAddingAChildBody()
 {
   SceneState state = defaultSceneState();
@@ -496,6 +507,7 @@ int main()
   testAddingMarker();
   testRemovingAGlobalMarker();
   testRemovingALocalMarker();
+  testAddingASceneBody();
   testAddingAChildBody();
   testRemovingAGlobalBody();
   testRemovingAChildBody();

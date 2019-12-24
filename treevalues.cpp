@@ -526,6 +526,8 @@ static void
   assert(BodyIndex(tree_paths.bodies.size()) == body_index);
   const SceneState::Body &body_state = scene_state.body(body_index);
 
+  handlePathInsertion(tree_paths, body_path);
+
   tree_paths.bodies.push_back(
     createBodyItem(body_path, body_state, tree_widget)
   );
@@ -533,7 +535,6 @@ static void
   ++tree_paths.next_scene_body_path.back();
   ++tree_paths.next_scene_marker_path.back();
   ++tree_paths.next_distance_error_path.back();
-  ++tree_paths.total_error.back();
 }
 
 
