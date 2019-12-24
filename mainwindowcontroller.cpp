@@ -409,9 +409,42 @@ void
 }
 
 
-static const bool *
+namespace {
+
+
+template<typename T>
+struct AsConst {
+  using type = const T;
+};
+
+
+template <typename T>
+using AsConst_t = typename AsConst<T>::type;
+
+
+template<typename T, typename Like>
+struct MatchConst {
+  using type = T;
+};
+
+
+template <typename T, typename Like>
+struct MatchConst<T, const Like> {
+  using type = AsConst_t<T>;
+};
+
+
+template <typename T, typename Like>
+using MatchConst_t = typename MatchConst<T,Like>::type;
+
+
+}
+
+
+template <typename XYZSolveFlags>
+static MatchConst_t<bool, XYZSolveFlags> *
   xyzSolveStatePtr(
-    const SceneState::XYZSolveFlags &xyz_solve_flags,
+    XYZSolveFlags &xyz_solve_flags,
     const TreePath &path,
     const TreePaths::XYZ &xyz_paths
   )
@@ -419,27 +452,26 @@ static const bool *
   if (path == xyz_paths.x) return &xyz_solve_flags.x;
   if (path == xyz_paths.y) return &xyz_solve_flags.y;
   if (path == xyz_paths.z) return &xyz_solve_flags.z;
-  return 0;
+  return nullptr;
 }
 
 
-static const bool *
+template <typename SceneState>
+static MatchConst_t<bool, SceneState> *
   bodySolveStatePtr(
-    const SceneState &scene_state,
+    SceneState &scene_state,
     const TreePath &path,
     const TreePaths &tree_paths,
     BodyIndex body_index
   )
 {
-  const SceneState::Body &body_state = scene_state.body(body_index);
+  using Bool = MatchConst_t<bool, SceneState>;
+  auto &body_state = scene_state.body(body_index);
   const TreePaths::Body &body_paths = tree_paths.bodies[body_index];
   {
     const TreePaths::XYZ &xyz_paths = body_paths.translation;
-
-    const SceneState::XYZSolveFlags &xyz_solve_flags =
-      body_state.solve_flags.translation;
-
-    const bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
+    auto &xyz_solve_flags = body_state.solve_flags.translation;
+    Bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
 
     if (result_ptr) {
       return result_ptr;
@@ -447,11 +479,8 @@ static const bool *
   }
   {
     const TreePaths::XYZ &xyz_paths = body_paths.rotation;
-
-    const SceneState::XYZSolveFlags &xyz_solve_flags =
-      body_state.solve_flags.rotation;
-
-    const bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
+    auto &xyz_solve_flags = body_state.solve_flags.rotation;
+    Bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
 
     if (result_ptr) {
       return result_ptr;
@@ -462,15 +491,16 @@ static const bool *
 }
 
 
-static const bool *
+template <typename SceneState>
+static auto*
   solveStatePtr(
-    const SceneState &scene_state,
+    SceneState &scene_state,
     const TreePath &path,
     const TreePaths &tree_paths
   )
 {
   for (auto body_index : indicesOf(scene_state.bodies())) {
-    const bool *solve_state_ptr =
+    auto *solve_state_ptr =
       bodySolveStatePtr(scene_state, path, tree_paths, body_index);
 
     if (solve_state_ptr) {
@@ -478,27 +508,8 @@ static const bool *
     }
   }
 
-  return nullptr;
-}
-
-
-static bool
-  valueIsSolved(
-    const TreePath &path,
-    const SceneState &scene_state,
-    const TreePaths &tree_paths
-  )
-{
-  const bool *solve_state_ptr = solveStatePtr(scene_state, path, tree_paths);
-
-  if (!solve_state_ptr) {
-    // Value is not solvable, so it definitely isn't solved.
-    return false;
-  }
-
-  // Value is solvable, just have to see whether it is set to be solved
-  // or not.
-  return *solve_state_ptr;
+  return
+    decltype(bodySolveStatePtr(scene_state, path, tree_paths, 0))(nullptr);
 }
 
 
@@ -516,17 +527,23 @@ void
   bool value_was_changed = setSceneStateValue(state, path, value, tree_paths);
 
   if (value_was_changed) {
-    bool value_is_solved = valueIsSolved(path, state, tree_paths);
+    {
+      bool *solve_state_ptr = solveStatePtr(state, path, tree_paths);
+      Optional<bool> maybe_old_state;
 
-    // If the value is solved, then we don't want to re-solve the box
-    // position immediately because that would give strange feedback to
-    // the user.  It would feel like they didn't have control of the value.
-    // However, if the value is not solved, then it makes sense to go ahead
-    // and solve the box position, since the user's value will not be
-    // affected.
+      // Turn off the solve state of the value that is being changed, so that
+      // it doesn't give strange feedback to the user.
 
-    if (!value_is_solved) {
+      if (solve_state_ptr) {
+        maybe_old_state = *solve_state_ptr;
+        *solve_state_ptr = false;
+      }
+
       solveScene(state);
+
+      if (solve_state_ptr) {
+        *solve_state_ptr = *maybe_old_state;
+      }
     }
 
     Scene &scene = data.scene;
