@@ -10,6 +10,7 @@ all:
 
 run_unit_tests: \
   optional_test.pass \
+  taggedvalueio_test.pass \
   osgutil_test.pass \
   transform_test.pass \
   markerpredicted_test.pass \
@@ -45,6 +46,9 @@ guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 optional_test: optional_test.o osgutil.o
+	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
+
+taggedvalueio_test: taggedvalueio_test.o $(TAGGEDVALUEIO)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 osgutil_test: osgutil_test.o osgutil.o

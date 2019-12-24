@@ -302,7 +302,5 @@ the marker should be visible in the tree.
 ---
 Find special cases by looking for uses of boxBodyIndex().
 ---
-If we save a scene and reload it, it doesn't seem to remember the poses
-of the transforms.
-* I'm not sure if it isn't saving them properly, or it isn't restoring
-  them properly, but it seems more like they aren't being restored.
+If we move a body using the spin box in the tree, it doesn't solve other
+bodies.

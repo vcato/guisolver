@@ -99,7 +99,9 @@ static Optional<PrimaryValue> scanPrimaryValue(StreamParser &parser)
       // a quoted string above.
   }
 
-  if (isdigit(parser.word[0])) {
+  char first_char = parser.word[0];
+
+  if (isdigit(first_char) || first_char=='-') {
     NumericValue value;
     istringstream value_stream(parser.word);
     value_stream >> value;
