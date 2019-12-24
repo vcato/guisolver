@@ -43,6 +43,12 @@ extern Optional<NumericValue>
     const TaggedValue::Tag &child_name
   );
 
+extern Optional<bool>
+  findBoolValue(
+    const TaggedValue &tagged_value,
+    const TaggedValue::Tag &child_name
+  );
+
 extern Optional<StringValue>
   findStringValue(
     const TaggedValue &tagged_value,

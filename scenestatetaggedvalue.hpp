@@ -26,9 +26,14 @@ extern void
 extern void
   extractDistanceErrors(SceneState &result, const TaggedValue &tagged_value);
 
-
 extern SceneState
   makeSceneStateFromTaggedValue(const TaggedValue &tagged_value);
 
-
 extern TaggedValue makeTaggedValue(const SceneState &scene_state);
+
+extern void
+  createBodyTaggedValue(
+    TaggedValue &parent,
+    BodyIndex body_index,
+    const SceneState &scene_state
+  );

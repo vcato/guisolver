@@ -8,12 +8,17 @@ using std::istringstream;
 using std::cerr;
 
 
-int main()
+static void testCreatingABodyFromATaggedValue()
 {
   const char *text =
     "Transform {\n"
     "  translation {\n"
-    "    x: 0\n"
+    "    x: 0 {\n"
+    "      solve: false\n"
+    "    }\n"
+    "    y: 0 {\n"
+    "      solve: true\n"
+    "    }\n"
     "    y: 0\n"
     "    z: 0\n"
     "  }\n"
@@ -45,4 +50,46 @@ int main()
   assert(state.body(0).scale.x == 1);
   assert(state.body(0).scale.y == 2.5);
   assert(state.body(0).scale.z == 3.5);
+  assert(state.body(0).solve_flags.translation.x == false);
+  assert(state.body(0).solve_flags.translation.y == true);
+}
+
+
+static void testBody()
+{
+  Optional<TaggedValue> maybe_transform_tagged_value;
+
+  {
+    SceneState scene_state;
+    BodyIndex body_index = scene_state.createBody(/*maybe_parent_index*/{});
+    scene_state.body(body_index).solve_flags.translation.y = false;
+
+    TaggedValue tagged_value("root");
+    createBodyTaggedValue(tagged_value, body_index, scene_state);
+
+    const TaggedValue *transform_tagged_value_ptr =
+      findChild(tagged_value, "Transform");
+
+    assert(transform_tagged_value_ptr);
+    maybe_transform_tagged_value = *transform_tagged_value_ptr;
+  }
+  {
+    SceneState scene_state;
+
+    BodyIndex body_index =
+      createBodyFromTaggedValue(
+        scene_state,
+        *maybe_transform_tagged_value,
+        /*maybe_parent_index*/{}
+      );
+
+    assert(scene_state.body(body_index).solve_flags.translation.y == false);
+  }
+}
+
+
+int main()
+{
+  testCreatingABodyFromATaggedValue();
+  testBody();
 }

@@ -19,6 +19,17 @@ static NumericValue
 }
 
 
+static bool
+  boolValueOr(
+    const TaggedValue &tagged_value,
+    const TaggedValue::Tag &child_name,
+    bool default_value
+  )
+{
+  return findBoolValue(tagged_value, child_name).valueOr(default_value);
+}
+
+
 static Vec3 makeVec3FromTaggedValue(const TaggedValue &tagged_value)
 {
   NumericValue x = numericValueOr(tagged_value, "x", 0);
@@ -56,6 +67,59 @@ makeTransformFromTaggedValue(const TaggedValue &tagged_value)
 }
 
 
+static bool
+  solveFlagFor(
+    const TaggedValue &xyz_tagged_value,
+    const string &child_name
+  )
+{
+  const TaggedValue *child_ptr = findChild(xyz_tagged_value, child_name);
+
+  if (!child_ptr) {
+    assert(false); // not implemented
+  }
+
+  return boolValueOr(*child_ptr, "solve", true);
+}
+
+
+static SceneState::XYZSolveFlags
+  makeXYZSolveFlagsFromTaggeDvalue(
+    const TaggedValue &tagged_value,
+    const string &child_name
+  )
+{
+  const TaggedValue *child_ptr = findChild(tagged_value, child_name);
+
+  if (!child_ptr) {
+    assert(false); // not implemented
+  }
+
+  SceneState::XYZSolveFlags flags;
+
+  flags.x = solveFlagFor(*child_ptr, "x");
+  flags.y = solveFlagFor(*child_ptr, "y");
+  flags.z = solveFlagFor(*child_ptr, "z");
+
+  return flags;
+}
+
+
+static SceneState::TransformSolveFlags
+  makeSolveFlagsFromTaggedValue(const TaggedValue &tagged_value)
+{
+  SceneState::TransformSolveFlags result;
+
+  result.translation =
+    makeXYZSolveFlagsFromTaggeDvalue(tagged_value, "translation");
+
+  result.rotation =
+    makeXYZSolveFlagsFromTaggeDvalue(tagged_value, "rotation");
+
+  return result;
+}
+
+
 BodyIndex
   createBodyFromTaggedValue(
     SceneState &result,
@@ -68,7 +132,9 @@ BodyIndex
   result.body(body_index).transform =
     makeTransformFromTaggedValue(tagged_value);
 
-#if 1
+  result.body(body_index).solve_flags =
+    makeSolveFlagsFromTaggedValue(tagged_value);
+
   const TaggedValue *box_ptr = findChild(tagged_value, "Box");
 
   if (box_ptr) {
@@ -77,7 +143,6 @@ BodyIndex
     result.body(body_index).scale.z = numericValueOr(*box_ptr, "scale_z", 1);
   }
 
-#endif
   extractBodies(result, tagged_value, body_index);
   return body_index;
 }
@@ -259,32 +324,95 @@ static TaggedValue &
 }
 
 
-static void createXYZChildren(TaggedValue &parent, const Vec3 &value)
+static TaggedValue &
+  create(TaggedValue &parent, const string &tag, bool value)
 {
-  create(parent, "x", value.x);
-  create(parent, "y", value.y);
-  create(parent, "z", value.z);
+  parent.children.push_back(TaggedValue(tag));
+  TaggedValue &result = parent.children.back();
+
+  if (value) {
+    result.value = EnumerationValue{"true"};
+  }
+  else {
+    result.value = EnumerationValue{"false"};
+  }
+
+  return result;
+}
+
+
+static const bool *
+maybeSolveFlag(
+  const SceneState::XYZSolveFlags *xyz_solve_flags_ptr,
+  bool SceneState::XYZSolveFlags::*member_ptr
+)
+{
+  if (!xyz_solve_flags_ptr) {
+    return nullptr;
+  }
+
+  return &(xyz_solve_flags_ptr->*member_ptr);
+}
+
+
+static void
+  create2(
+    TaggedValue &parent,
+    const string &member_name,
+    NumericValue value,
+    const bool *solve_flag_ptr
+  )
+{
+  TaggedValue &tagged_value = create(parent, member_name, value);
+
+  if (solve_flag_ptr) {
+    if (!*solve_flag_ptr) {
+      create(tagged_value, "solve", *solve_flag_ptr);
+    }
+  }
+}
+
+
+static void
+  createXYZChildren(
+    TaggedValue &parent,
+    const Vec3 &value,
+    const SceneState::XYZSolveFlags *xyz_flags_ptr
+  )
+{
+  using Flags = SceneState::XYZSolveFlags;
+  create2(parent, "x", value.x, maybeSolveFlag(xyz_flags_ptr, &Flags::x));
+  create2(parent, "y", value.y, maybeSolveFlag(xyz_flags_ptr, &Flags::y));
+  create2(parent, "z", value.z, maybeSolveFlag(xyz_flags_ptr, &Flags::z));
 }
 
 
 static TaggedValue &
   createTransform(
-    TaggedValue &result,
-    const TransformState &transform_state
+    TaggedValue &parent,
+    const TransformState &transform_state,
+    const SceneState::TransformSolveFlags &solve_flags
   )
 {
-  auto &transform = create(result, "Transform");
-  auto &parent = transform;
+  auto &transform = create(parent, "Transform");
   {
-    auto &translation = create(parent, "translation");
-    auto &parent = translation;
-    createXYZChildren(parent, translationValues(transform_state));
-  }
-  {
-    auto &rotation = create(parent, "rotation");
-    auto &parent = rotation;
-    Vec3 r_deg = rotationValuesDeg(transform_state);
-    createXYZChildren(parent, r_deg);
+    auto &parent = transform;
+    {
+      auto &translation = create(parent, "translation");
+      auto &parent = translation;
+
+      createXYZChildren(
+        parent,
+        translationValues(transform_state),
+        &solve_flags.translation
+      );
+    }
+    {
+      auto &rotation = create(parent, "rotation");
+      auto &parent = rotation;
+      Vec3 r_deg = rotationValuesDeg(transform_state);
+      createXYZChildren(parent, r_deg, &solve_flags.rotation);
+    }
   }
 
   return transform;
@@ -314,7 +442,11 @@ createMarker(TaggedValue &parent, const SceneState::Marker &marker_state)
     auto &parent = marker;
     create(parent, "name", marker_state.name);
     TaggedValue &position = create(parent, "position");
-    createXYZChildren(position, vec3(marker_state.position));
+    createXYZChildren(
+      position,
+      vec3(marker_state.position),
+      /*solve_flags_ptr*/0
+    );
   }
 }
 
@@ -360,14 +492,6 @@ static Optional<BodyIndex>
 
 
 static void
-  createBodyTaggedValue(
-    TaggedValue &parent,
-    BodyIndex body_index,
-    const SceneState &scene_state
-  );
-
-
-static void
   createChildBodies(
     TaggedValue &transform,
     const SceneState &scene_state,
@@ -385,7 +509,7 @@ static void
 }
 
 
-static void
+void
   createBodyTaggedValue(
     TaggedValue &parent,
     BodyIndex body_index,
@@ -394,7 +518,10 @@ static void
 {
   const SceneState::Body &body_state = scene_state.body(body_index);
   const TransformState &transform_state = body_state.transform;
-  TaggedValue &transform = createTransform(parent, transform_state);
+
+  TaggedValue &transform =
+    createTransform(parent, transform_state, body_state.solve_flags);
+
   createBox(transform, body_state);
   createChildBodies(transform, scene_state, body_index);
 
@@ -426,5 +553,3 @@ TaggedValue makeTaggedValue(const SceneState &scene_state)
 
   return result;
 }
-
-
