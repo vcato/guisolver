@@ -307,7 +307,7 @@ struct MainWindowController::Impl {
       const TreePath &
     );
 
-  static void addMarker(MainWindowController &, Optional<BodyIndex>);
+  static MarkerIndex addMarker(MainWindowController &, Optional<BodyIndex>);
   static void addMarkerPressed(MainWindowController &, const TreePath &);
 
   static void
@@ -605,7 +605,7 @@ void
 }
 
 
-void
+MarkerIndex
   MainWindowController::Impl::addMarker(
     MainWindowController &controller,
     Optional<BodyIndex> maybe_body_index
@@ -620,6 +620,7 @@ void
   createMarkerInScene(scene, scene_handles, scene_state, marker_index);
   createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+  return marker_index;
 }
 
 
@@ -643,16 +644,24 @@ void
   )
 {
   TreePaths &tree_paths = controller.data.tree_paths;
+  Optional<BodyIndex> maybe_body_index;
+
 
   if (tree_paths.path == path) {
-    addMarker(controller, /*maybe_body_index*/{});
+    // The marker is on the scene.
   }
   else {
-    Optional<BodyIndex> maybe_body_index =
-      bodyIndexFromTreePath(path, tree_paths);
-
-    addMarker(controller, maybe_body_index);
+    maybe_body_index = bodyIndexFromTreePath(path, tree_paths);
   }
+
+  MarkerIndex marker_index = addMarker(controller, maybe_body_index);
+  Data &data = controller.data;
+
+  data.tree_widget.selectItem(
+    data.tree_paths.markers[marker_index].path
+  );
+
+  handleTreeSelectionChanged(controller);
 }
 
 
@@ -899,15 +908,15 @@ TreeWidget::MenuItems
   TreeWidget::MenuItems menu_items;
   const TreePaths &tree_paths = controller.data.tree_paths;
 
+  auto add_marker_function =
+    [&controller,path]{
+      Impl::addMarkerPressed(controller, path);
+    };
+
   if (isScenePath(path, tree_paths)) {
     auto add_distance_error_function =
       [&controller,path]{
         Impl::addDistanceErrorPressed(controller, path);
-      };
-
-    auto add_marker_function =
-      [&controller,path]{
-        Impl::addMarkerPressed(controller, path);
       };
 
     auto add_body_function =
@@ -921,11 +930,6 @@ TreeWidget::MenuItems
   }
 
   if (isTransformPath(path, tree_paths)) {
-    auto add_marker_function =
-      [&controller,path]{
-        Impl::addMarkerPressed(controller, path);
-      };
-
     auto add_body_function =
       [&controller,path]{ Impl::addBodyPressed(controller, path); };
 
