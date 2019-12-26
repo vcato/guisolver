@@ -446,7 +446,7 @@ createBodyItem(
   TreePath transform_path = body_path;
 
   tree_widget.createVoidItem(
-    transform_path, LabelProperties{"[Transform]"}
+    transform_path, LabelProperties{"[Body]"}
   );
 
   TreePath translation_path = childPath(transform_path,0);

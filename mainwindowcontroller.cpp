@@ -916,7 +916,7 @@ TreeWidget::MenuItems
     appendTo(menu_items,{
       {"Add Distance Error", add_distance_error_function },
       {"Add Marker", add_marker_function },
-      {"Add Transform", add_transform_function },
+      {"Add Body", add_transform_function },
     });
   }
 
@@ -936,8 +936,8 @@ TreeWidget::MenuItems
 
     appendTo(menu_items,{
       {"Add Marker", add_marker_function},
-      {"Add Transform", add_transform_function},
-      {"Remove Transform", remove_transform_function },
+      {"Add Body", add_transform_function},
+      {"Remove Body", remove_transform_function },
     });
   }
 
