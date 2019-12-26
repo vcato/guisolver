@@ -686,9 +686,14 @@ MainWindowController::Impl::addBodyPressed(
      maybe_parent_body_index = bodyIndexFromTreePath(parent_path, tree_paths);
   }
 
-  BodyIndex index = createBodyInState(scene_state, maybe_parent_body_index);
-  createBodyInScene(scene, scene_handles, scene_state, index);
-  createBodyInTree(tree_widget, tree_paths, scene_state, index);
+  BodyIndex body_index =
+    createBodyInState(scene_state, maybe_parent_body_index);
+
+  createBodyInScene(scene, scene_handles, scene_state, body_index);
+  createBodyInTree(tree_widget, tree_paths, scene_state, body_index);
+
+  tree_widget.selectItem(tree_paths.bodies[body_index].path);
+  handleTreeSelectionChanged(controller);
 }
 
 

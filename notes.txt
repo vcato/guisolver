@@ -296,6 +296,3 @@ values.
 * Right now, what would seem to make the most sense is having a context menu
   with a "Solve" toggle.  The menu could also have options to turn it into
   an expression.
----
-If you add a marker to the box, then it should select the marker, and
-the marker should be visible in the tree.
