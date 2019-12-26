@@ -7,6 +7,7 @@
 #include <osg/ShapeDrawable>
 #include <osg/Material>
 #include <osgManipulator/TranslateAxisDragger>
+#include <osgManipulator/TrackballDragger>
 #include <osgViewer/View>
 #include <osgViewer/ViewerEventHandlers>
 #include <osg/io_utils>
@@ -24,6 +25,17 @@ using TransformHandle = Scene::TransformHandle;
 
 using TranslateAxisDraggerPtr =
   osg::ref_ptr<osgManipulator::TranslateAxisDragger>;
+
+using TrackballDraggerPtr =
+  osg::ref_ptr<osgManipulator::TrackballDragger>;
+
+
+namespace {
+enum class DraggerType {
+  translate,
+  rotate
+};
+}
 
 
 namespace {
@@ -312,7 +324,7 @@ struct OSGScene::Impl::DraggerCallback : osgManipulator::DraggerCallback {
 
 // Dragger that maintains its size relative to the screen
 static NodePtr
-  createScreenRelativeDragger(
+  createScreenRelativeTranslateDragger(
     MatrixTransformPtr transform_ptr,
     osgManipulator::DraggerCallback &
   )
@@ -347,26 +359,61 @@ static NodePtr
 }
 
 
-// Dragger that changes size based on the transform it is modifying.
+// Dragger that maintains its size relative to the screen
+static NodePtr
+  createScreenRelativeRotateDragger(
+    MatrixTransformPtr /*transform_ptr*/,
+    osgManipulator::DraggerCallback &
+  )
+{
+  assert(false); // not implemented
+}
+
+
 static NodePtr
   createObjectRelativeDragger(
     MatrixTransformPtr transform_ptr,
+    DraggerType dragger_type,
     osgManipulator::DraggerCallback &dragger_callback
   )
 {
-  TranslateAxisDraggerPtr dragger_ptr =
-    new osgManipulator::TranslateAxisDragger();
-  dragger_ptr->setupDefaultGeometry();
-  assert(dragger_ptr->getNumChildren()==3);
-  float thickness = 4;
-  scaleAxisXY(dragger_ptr->getChild(0),thickness);
-  scaleAxisXY(dragger_ptr->getChild(1),thickness);
-  scaleAxisXY(dragger_ptr->getChild(2),thickness);
-  dragger_ptr->setHandleEvents(true);
+  osg::ref_ptr<osgManipulator::Dragger> dragger_ptr;
+
+  switch (dragger_type) {
+    case DraggerType::translate:
+      {
+        TranslateAxisDraggerPtr translate_dragger_ptr =
+          new osgManipulator::TranslateAxisDragger();
+
+        translate_dragger_ptr->setupDefaultGeometry();
+        assert(translate_dragger_ptr->getNumChildren()==3);
+        float thickness = 4;
+        scaleAxisXY(translate_dragger_ptr->getChild(0),thickness);
+        scaleAxisXY(translate_dragger_ptr->getChild(1),thickness);
+        scaleAxisXY(translate_dragger_ptr->getChild(2),thickness);
+        dragger_ptr = translate_dragger_ptr;
+      }
+      break;
+    case DraggerType::rotate:
+      {
+        TrackballDraggerPtr rotate_dragger_ptr =
+          new osgManipulator::TrackballDragger();
+
+        rotate_dragger_ptr->setupDefaultGeometry();
+        dragger_ptr = rotate_dragger_ptr;
+      }
+      break;
+  }
+
   assert(isDragger(dragger_ptr));
-  dragger_ptr->addTransformUpdating(transform_ptr);
-  dragger_ptr->setMatrix(osg::Matrix::scale(2,2,2)*transform_ptr->getMatrix());
-  dragger_ptr->addDraggerCallback(&dragger_callback);
+  {
+    osgManipulator::Dragger &dragger = *dragger_ptr;
+    dragger.setHandleEvents(true);
+    dragger.addTransformUpdating(transform_ptr);
+    dragger.setMatrix(osg::Matrix::scale(2,2,2)*transform_ptr->getMatrix());
+    dragger.addDraggerCallback(&dragger_callback);
+  }
+
   return dragger_ptr;
 }
 
@@ -375,15 +422,37 @@ static NodePtr
   createDragger(
     MatrixTransformPtr transform_ptr,
     bool screen_relative,
+    DraggerType dragger_type,
     osgManipulator::DraggerCallback &dragger_callback
   )
 {
-  if (screen_relative) {
-    return createScreenRelativeDragger(transform_ptr,dragger_callback);
+  switch (dragger_type) {
+    case DraggerType::translate:
+      if (screen_relative) {
+        return
+          createScreenRelativeTranslateDragger(transform_ptr,dragger_callback);
+      }
+      else {
+        return
+          createObjectRelativeDragger(
+            transform_ptr, DraggerType::translate, dragger_callback
+          );
+      }
+    case DraggerType::rotate:
+      if (screen_relative) {
+        return
+          createScreenRelativeRotateDragger(transform_ptr, dragger_callback);
+      }
+      else {
+        return
+          createObjectRelativeDragger(
+            transform_ptr, DraggerType::rotate, dragger_callback
+          );
+      }
   }
-  else {
-    return createObjectRelativeDragger(transform_ptr,dragger_callback);
-  }
+
+  assert(false); // shouldn't happen
+  return nullptr;
 }
 
 
@@ -391,6 +460,7 @@ static void
   addDraggerTo(
     MatrixTransformPtr transform_ptr,
     bool screen_relative,
+    DraggerType dragger_type,
     osgManipulator::DraggerCallback &dragger_callback
   )
 {
@@ -404,7 +474,9 @@ static void
   parent.addChild(group_ptr);
 
   NodePtr dragger_ptr =
-    createDragger(transform_ptr,screen_relative,dragger_callback);
+    createDragger(
+      transform_ptr, screen_relative, dragger_type, dragger_callback
+    );
 
   group_ptr->addChild(transform_ptr);
   group_ptr->addChild(dragger_ptr);
@@ -554,23 +626,53 @@ void
 }
 
 
-void
-  OSGScene::SelectionHandler::attachDraggerTo(osg::Node *new_selected_node_ptr)
+void OSGScene::SelectionHandler::removeExistingDraggers()
 {
-  if (_dragger_node_ptr) {
-    removeDraggerFrom(&transformParentOf(_dragger_node_ptr));
-    _dragger_node_ptr = 0;
+  if (_translate_dragger_node_ptr) {
+    removeDraggerFrom(&transformParentOf(_translate_dragger_node_ptr));
+    _translate_dragger_node_ptr = 0;
   }
+}
 
-  _dragger_node_ptr = new_selected_node_ptr;
 
-  if (_dragger_node_ptr) {
+void
+OSGScene::SelectionHandler::attachTranslateDraggerTo(
+  osg::Node *new_selected_node_ptr
+)
+{
+  assert(!_translate_dragger_node_ptr);
+  _translate_dragger_node_ptr = new_selected_node_ptr;
+
+  if (_translate_dragger_node_ptr) {
     osg::ref_ptr<osgManipulator::DraggerCallback> dc =
       new Impl::DraggerCallback(scene);
 
     addDraggerTo(
-      &transformParentOf(_dragger_node_ptr),
+      &transformParentOf(_translate_dragger_node_ptr),
       use_screen_relative_dragger,
+      DraggerType::translate,
+      *dc
+    );
+  }
+}
+
+
+void
+OSGScene::SelectionHandler::attachRotateDraggerTo(
+  osg::Node *new_selected_node_ptr
+)
+{
+  assert(!_rotate_dragger_node_ptr);
+  _rotate_dragger_node_ptr = new_selected_node_ptr;
+
+  if (_rotate_dragger_node_ptr) {
+    osg::ref_ptr<osgManipulator::DraggerCallback> dc =
+      new Impl::DraggerCallback(scene);
+
+    addDraggerTo(
+      &transformParentOf(_rotate_dragger_node_ptr),
+      use_screen_relative_dragger,
+      DraggerType::rotate,
       *dc
     );
   }
@@ -1129,36 +1231,47 @@ Optional<TransformHandle> OSGScene::selectedObject() const
 void OSGScene::SelectionHandler::selectNode(osg::Node *node_ptr)
 {
   changeSelectedNodeTo(node_ptr);
+  osg::Node *dragger_node_ptr = nullptr;
 
   if (!node_ptr || !nodeIsLine(*node_ptr)) {
-    attachDraggerTo(node_ptr);
+    dragger_node_ptr = node_ptr;
   }
-  else {
-    attachDraggerTo(nullptr);
-  }
+
+  removeExistingDraggers();
+
+#if 1
+  attachTranslateDraggerTo(dragger_node_ptr);
+#else
+  attachRotateDraggerTo(dragger_node_ptr);
+#endif
 }
 
 
 void OSGScene::SelectionHandler::setDraggerPosition(const Point &p)
 {
-  MatrixTransformPtr transform_ptr = &transformParentOf(_dragger_node_ptr);
-{
-  // * parent               * parent
-  //   * group                * transform
-  //     * transform   ->
-  //     * dragger
-  osg::Group &group = parentOf(*transform_ptr);
-  assert(group.getNumChildren()==2);
-  NodePtr dragger_node_ptr = group.getChild(1);
-  using TranslateAxisDragger = osgManipulator::TranslateAxisDragger;
+  if (_translate_dragger_node_ptr) {
+    osg::MatrixTransform &transform =
+      transformParentOf(_translate_dragger_node_ptr);
 
-  auto dragger_ptr =
-    dynamic_cast<TranslateAxisDragger *>(dragger_node_ptr.get());
+    // * parent               * parent
+    //   * group                * transform
+    //     * transform   ->
+    //     * dragger
+    osg::Group &group = parentOf(transform);
+    assert(group.getNumChildren()==2);
+    NodePtr dragger_node_ptr = group.getChild(1);
+    using TranslateAxisDragger = osgManipulator::TranslateAxisDragger;
 
-  assert(dragger_ptr);
+    auto dragger_ptr =
+      dynamic_cast<TranslateAxisDragger *>(dragger_node_ptr.get());
 
-  ::setTranslation(*dragger_ptr, p.x(), p.y(), p.z());
-}
+    assert(dragger_ptr);
+
+    ::setTranslation(*dragger_ptr, p.x(), p.y(), p.z());
+  }
+  else {
+    cerr << "setDraggerPosition: no dragger\n";
+  }
 }
 
 

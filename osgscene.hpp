@@ -58,11 +58,14 @@ class OSGScene : public Scene {
 
       private:
         osg::Node *_selected_node_ptr = nullptr;
-        osg::Node *_dragger_node_ptr = nullptr;
+        osg::Node *_translate_dragger_node_ptr = nullptr;
+        osg::Node *_rotate_dragger_node_ptr = nullptr;
         osg::Vec3 _old_color;
 
         void nodeClicked(osg::Node *) override;
-        void attachDraggerTo(osg::Node *);
+        void removeExistingDraggers();
+        void attachTranslateDraggerTo(osg::Node *);
+        void attachRotateDraggerTo(osg::Node *);
         void changeSelectedNodeTo(osg::Node *);
     };
 
