@@ -296,7 +296,3 @@ values.
 * Right now, what would seem to make the most sense is having a context menu
   with a "Solve" toggle.  The menu could also have options to turn it into
   an expression.
----
-Rotate is too slow
-* Should just have one digit of precision.
-* Need TreeWidget::createNumericItem should have a precision option.
