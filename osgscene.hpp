@@ -39,7 +39,9 @@ class OSGScene : public Scene {
     void setEndPoint(LineHandle,Point) override;
     Point worldPoint(Point p,TransformHandle t) const override;
     Optional<TransformHandle> selectedObject() const override;
-    void selectObject(TransformHandle) override;
+    void selectObject(TransformHandle handle) override;
+    Optional<LineHandle> maybeLine(TransformHandle handle) const override;
+    void attachDraggerToSelectedNode(DraggerType) override;
 
     GraphicsWindowPtr createGraphicsWindow(ViewType view_type);
 
@@ -51,9 +53,10 @@ class OSGScene : public Scene {
         bool use_screen_relative_dragger = false;
         OSGScene &scene;
 
-        SelectionHandler(OSGScene &scene_arg);
-        void setDraggerPosition(const Point &p);
-        void selectNode(osg::Node *node_ptr);
+        SelectionHandler(OSGScene &);
+        void updateDraggerPosition();
+        void selectNodeWithoutDragger(osg::Node *);
+        void attachDragger(DraggerType);
         osg::Node *selectedNodePtr() const { return _selected_node_ptr; }
 
       private:
@@ -64,8 +67,9 @@ class OSGScene : public Scene {
 
         void nodeClicked(osg::Node *) override;
         void removeExistingDraggers();
-        void attachTranslateDraggerTo(osg::Node *);
-        void attachRotateDraggerTo(osg::Node *);
+        void attachDragger(osg::Node &, DraggerType);
+        void attachTranslateDraggerTo(osg::Node &);
+        void attachRotateDraggerTo(osg::Node &);
         void changeSelectedNodeTo(osg::Node *);
     };
 

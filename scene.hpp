@@ -12,6 +12,11 @@ struct Scene {
   using Point = ::Point;
   using Vector = Vec3;
 
+  enum class DraggerType {
+    translate,
+    rotate
+  };
+
   struct TransformHandle {
     size_t index;
 
@@ -56,6 +61,9 @@ struct Scene {
   virtual Point worldPoint(Point local,TransformHandle) const = 0;
   virtual Optional<TransformHandle> selectedObject() const = 0;
   virtual void selectObject(TransformHandle) = 0;
+
+  virtual Optional<LineHandle> maybeLine(TransformHandle) const = 0;
+  virtual void attachDraggerToSelectedNode(DraggerType) = 0;
 
   std::function<void()> changing_callback;
   std::function<void()> changed_callback;

@@ -276,6 +276,12 @@ struct MainWindowController::Impl {
   static void handleSceneChanging(MainWindowController &);
   static void handleSceneChanged(MainWindowController &);
   static void handleTreeSelectionChanged(MainWindowController &controller);
+
+  static bool isRotateItem(const TreePath &, const TreePaths &);
+
+  static void
+    attachProperDraggerToSelectedObject(MainWindowController &controller);
+
   static void handleSceneSelectionChanged(MainWindowController &controller);
 
   static void
@@ -1010,6 +1016,45 @@ TreeWidget::MenuItems
 }
 
 
+bool
+  MainWindowController::Impl::isRotateItem(
+    const TreePath &path,
+    const TreePaths &tree_paths
+  )
+{
+  for (auto i : indicesOf(tree_paths.bodies)) {
+    if (startsWith(path, tree_paths.bodies[i].rotation.path)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+void
+  MainWindowController::Impl::attachProperDraggerToSelectedObject(
+    MainWindowController &controller
+  )
+{
+  Scene &scene = controller.data.scene;
+  TreeWidget &tree_widget = controller.data.tree_widget;
+  TreePaths &tree_paths = controller.data.tree_paths;
+
+  Optional<Scene::LineHandle> maybe_line_handle =
+    scene.maybeLine(*scene.selectedObject());
+
+  if (!maybe_line_handle) {
+    if (isRotateItem(*tree_widget.selectedItem(), tree_paths)) {
+      scene.attachDraggerToSelectedNode(Scene::DraggerType::rotate);
+    }
+    else {
+      scene.attachDraggerToSelectedNode(Scene::DraggerType::translate);
+    }
+  }
+}
+
+
 void
   MainWindowController::Impl::handleTreeSelectionChanged(
     MainWindowController &controller
@@ -1032,6 +1077,7 @@ void
 
   if (maybe_object) {
     scene.selectObject(*maybe_object);
+    attachProperDraggerToSelectedObject(controller);
   }
   else {
     cerr << "No scene object found\n";
@@ -1072,6 +1118,8 @@ void
   else {
     cerr << "No tree item for scene object.\n";
   }
+
+  attachProperDraggerToSelectedObject(controller);
 }
 
 

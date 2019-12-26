@@ -227,7 +227,7 @@ osg::Matrix
 }
 
 
-void setScale(osg::Matrix &m,const osg::Vec3f &new_scale)
+void setScale(osg::Matrix &m, const osg::Vec3f &new_scale)
 {
   osg::Vec3f translation;
   osg::Quat rotation;

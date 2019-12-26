@@ -299,5 +299,3 @@ values.
 ---
 Rotate is too slow
 * Should just have one digit of precision.
----
-Need a rotate handle.
