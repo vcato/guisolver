@@ -149,6 +149,13 @@ int main(int argc,char** argv)
   createGraphicsWindow(splitter, scene);
   MainWindowController controller(scene_state, scene, tree_widget);
 
+  QtSlot new_slot(
+    [&](){
+      scene_state = SceneState();
+      controller.notifySceneStateChanged();
+    }
+  );
+
   QtSlot save_slot(
     [&](){
       Optional<string> maybe_path = askForSavePath(/*parent*/main_window);
@@ -179,8 +186,10 @@ int main(int argc,char** argv)
   {
     QMenuBar &menu_bar = *main_window.menuBar();
     QMenu &file_menu = *menu_bar.addMenu("File");
+    QAction &new_action = *file_menu.addAction("New...");
     QAction &open_action = *file_menu.addAction("Open...");
     QAction &save_action = *file_menu.addAction("Save...");
+    new_slot.connectSignal(new_action, SIGNAL(triggered()));
     save_slot.connectSignal(save_action, SIGNAL(triggered()));
     open_slot.connectSignal(open_action, SIGNAL(triggered()));
   }
