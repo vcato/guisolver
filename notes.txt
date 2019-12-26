@@ -299,7 +299,3 @@ values.
 ---
 If you add a marker to the box, then it should select the marker, and
 the marker should be visible in the tree.
----
-Find special cases by looking for uses of boxBodyIndex().
----
-The solve flags aren't being stored in the scene.

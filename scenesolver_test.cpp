@@ -75,42 +75,16 @@ static Point localizePoint(const Point &global,const Transform &transform)
 
 
 static MarkerIndex
-  addLocalMarkerTo(
-    SceneState &result,
-    const Point &local
-  )
-{
-  MarkerIndex marker_index = result.createUnnamedMarker();
-  result.marker(marker_index).position = makeMarkerPosition(local);
-  result.marker(marker_index).maybe_body_index = boxBodyIndex();
-  return marker_index;
-}
-
-
-static MarkerIndex
-  addGlobalMarkerTo(
-    SceneState &result,
-    const Point &local
-  )
-{
-  MarkerIndex marker_index = result.createUnnamedMarker();
-  result.marker(marker_index).position = makeMarkerPosition(local);
-  return marker_index;
-}
-
-
-static void
-  addDistanceErrorTo(
+  addMarkerTo(
     SceneState &result,
     const Point &local,
-    const Point &global
+    Optional<BodyIndex> maybe_body_index = {}
   )
 {
-  MarkerIndex local_marker_index = addLocalMarkerTo(result, local);
-  MarkerIndex global_marker_index = addGlobalMarkerTo(result, global);
-  SceneState::DistanceError &new_distance_error = result.createDistanceError();
-  new_distance_error.optional_start_marker_index = local_marker_index;
-  new_distance_error.optional_end_marker_index = global_marker_index;
+  MarkerIndex marker_index = result.createUnnamedMarker();
+  result.marker(marker_index).position = makeMarkerPosition(local);
+  result.marker(marker_index).maybe_body_index = maybe_body_index;
+  return marker_index;
 }
 
 
@@ -126,7 +100,16 @@ struct Example {
 
   void addDistanceError(const Point &local, const Point &global)
   {
-    addDistanceErrorTo(scene_state, local, global);
+    MarkerIndex local_marker_index =
+      addMarkerTo(scene_state, local, body_index);
+
+    MarkerIndex global_marker_index = addMarkerTo(scene_state, global);
+
+    SceneState::DistanceError &new_distance_error =
+      scene_state.createDistanceError();
+
+    new_distance_error.optional_start_marker_index = local_marker_index;
+    new_distance_error.optional_end_marker_index = global_marker_index;
   }
 };
 }

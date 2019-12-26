@@ -33,9 +33,14 @@ static void
 }
 
 
-static void createLocalMarker(SceneState &state, const MarkerPosition &position)
+static void
+  createLocalMarker(
+    SceneState &state,
+    const MarkerPosition &position,
+    BodyIndex body_index
+  )
 {
-  createMarker(state, position, /*maybe_body_index*/boxBodyIndex());
+  createMarker(state, position, body_index);
 }
 
 
@@ -67,16 +72,15 @@ SceneState defaultSceneState()
 {
   SceneState result;
   BodyIndex body_index = createBodyInState(result, /*maybe_parent_index*/{});
-  assert(body_index == boxBodyIndex());
 
   Transform default_box_transform =
     makeTransform(defaultBoxCoordinateAxes(), defaultBoxTranslation());
 
   result.body(body_index).transform = transformState(default_box_transform);
 
-  createLocalMarker(result,  {1,1,0});
-  createLocalMarker(result,  {1,1,1});
-  createLocalMarker(result,  {0,1,1});
+  createLocalMarker(result,  {1,1,0}, body_index);
+  createLocalMarker(result,  {1,1,1}, body_index);
+  createLocalMarker(result,  {0,1,1}, body_index);
   createGlobalMarker(result, {1,2,0});
   createGlobalMarker(result, {1,2,1});
   createGlobalMarker(result, {0,2,1});

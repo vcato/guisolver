@@ -5,5 +5,7 @@
 
 extern SceneState defaultSceneState();
 
+inline BodyIndex boxBodyIndex() { return 0; }
+
 
 #endif /* DEFAULTSCENESTATE_HPP_ */

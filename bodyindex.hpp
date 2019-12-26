@@ -5,10 +5,4 @@
 using BodyIndex = int;
 
 
-inline BodyIndex boxBodyIndex()
-{
-  return 0;
-}
-
-
 #endif /* BODYINDEX_HPP_ */
