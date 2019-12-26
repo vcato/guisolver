@@ -17,6 +17,13 @@ using Quaternion = Eigen::Quaternion<float>;
 using RandomEngine = std::mt19937;
 
 
+static SceneState::DistanceError& createDistanceError(SceneState &scene_state)
+{
+  DistanceErrorIndex index = scene_state.createDistanceError();
+  return scene_state.distance_errors[index];
+}
+
+
 static BodyIndex
   createBodyIn(SceneState &scene_state, Optional<BodyIndex> maybe_parent_index)
 {
@@ -128,7 +135,7 @@ struct Example {
     MarkerIndex global_marker_index = addMarkerTo(scene_state, global);
 
     SceneState::DistanceError &new_distance_error =
-      scene_state.createDistanceError();
+      createDistanceError(scene_state);
 
     new_distance_error.optional_start_marker_index = local_marker_index;
     new_distance_error.optional_end_marker_index = global_marker_index;
@@ -218,7 +225,7 @@ static void testWithTwoBodies()
   MarkerIndex local_marker_index = scene_state.createMarker("global");
 
   SceneState::DistanceError &distance_error_state =
-    scene_state.createDistanceError();
+    createDistanceError(scene_state);
 
   distance_error_state.optional_start_marker_index = global_marker_index;
   distance_error_state.optional_end_marker_index = local_marker_index;

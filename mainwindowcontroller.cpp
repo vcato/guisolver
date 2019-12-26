@@ -589,8 +589,12 @@ void
   SceneState &scene_state = controller.data.scene_state;
   TreeWidget &tree_widget = controller.data.tree_widget;
   TreePaths &tree_paths = controller.data.tree_paths;
-  SceneState::DistanceError &distance_error = scene_state.createDistanceError();
-  createDistanceErrorInScene(scene, scene_handles, distance_error);
+  DistanceErrorIndex index = scene_state.createDistanceError();
+
+  SceneState::DistanceError &distance_error =
+    scene_state.distance_errors[index];
+
+  createDistanceErrorInScene(scene, scene_handles, scene_state, index);
 
   createDistanceErrorInTree(
     distance_error,
@@ -598,6 +602,8 @@ void
     tree_paths,
     scene_state
   );
+
+  tree_widget.selectItem(tree_paths.distance_errors[index].path);
 
   updateErrorsInState(scene_state);
   updateSceneObjects(scene, scene_handles, scene_state);

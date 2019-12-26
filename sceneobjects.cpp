@@ -114,7 +114,7 @@ static SceneHandles::Marker
 }
 
 
-static SceneHandles::DistanceError createDistanceErrorInScene1(Scene &scene)
+static SceneHandles::DistanceError createDistanceError(Scene &scene)
 {
   LineHandle line = scene.createLine(scene.top());
   scene.setColor(line,1,0,0);
@@ -123,16 +123,22 @@ static SceneHandles::DistanceError createDistanceErrorInScene1(Scene &scene)
 
 
 void
-  createDistanceErrorInScene(
-    Scene &scene,
-    SceneHandles &scene_handles,
-    const SceneState::DistanceError &
-  )
+createDistanceErrorInScene(
+  Scene &scene,
+  SceneHandles &scene_handles,
+  const SceneState &/*scene_state*/,
+  DistanceErrorIndex index
+)
 {
   vector<SceneHandles::DistanceError> &distance_error_handles =
     scene_handles.distance_errors;
 
-  distance_error_handles.push_back(createDistanceErrorInScene1(scene));
+  if (index != DistanceErrorIndex(distance_error_handles.size())) {
+    assert(false); // not implemented
+  }
+  else {
+    distance_error_handles.push_back(createDistanceError(scene));
+  }
 }
 
 
@@ -244,16 +250,16 @@ SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
 {
   SceneHandles scene_handles;
 
-  for (BodyIndex body_index : indicesOf(state.bodies())) {
-    createBodyInScene(scene, scene_handles, state, body_index);
+  for (BodyIndex i : indicesOf(state.bodies())) {
+    createBodyInScene(scene, scene_handles, state, i);
   }
 
-  for (MarkerIndex marker_index : indicesOf(state.markers())) {
-    createMarkerInScene(scene, scene_handles, state, marker_index);
+  for (MarkerIndex i : indicesOf(state.markers())) {
+    createMarkerInScene(scene, scene_handles, state, i);
   }
 
-  for (auto &distance_error : state.distance_errors) {
-    createDistanceErrorInScene(scene, scene_handles, distance_error);
+  for (DistanceErrorIndex i : indicesOf(state.distance_errors)) {
+    createDistanceErrorInScene(scene, scene_handles, state, i);
   }
 
   return scene_handles;

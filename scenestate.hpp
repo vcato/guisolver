@@ -4,6 +4,7 @@
 #include "vector.hpp"
 #include "markerindex.hpp"
 #include "bodyindex.hpp"
+#include "distanceerrorindex.hpp"
 #include "vector.hpp"
 #include "optional.hpp"
 #include "removeindexfrom.hpp"
@@ -127,10 +128,11 @@ class SceneState {
       removeIndexFrom(_bodies, index_to_remove);
     }
 
-    DistanceError& createDistanceError()
+    DistanceErrorIndex createDistanceError()
     {
+      DistanceErrorIndex index = distance_errors.size();
       distance_errors.emplace_back();
-      return distance_errors.back();
+      return index;
     }
 
     void removeDistanceError(int index)

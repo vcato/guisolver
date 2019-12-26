@@ -36,9 +36,10 @@ extern void
 
 extern void
   createDistanceErrorInScene(
-    Scene &scene,
+    Scene &,
     SceneHandles &,
-    const SceneState::DistanceError &
+    const SceneState &,
+    DistanceErrorIndex
   );
 
 extern void

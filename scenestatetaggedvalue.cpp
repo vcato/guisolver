@@ -242,8 +242,10 @@ void
 {
   for (auto &child_tagged_value : tagged_value.children) {
     if (child_tagged_value.tag == "DistanceError") {
+      DistanceErrorIndex index = result.createDistanceError();
+
       SceneState::DistanceError &distance_error_state =
-        result.createDistanceError();
+        result.distance_errors[index];
 
       {
         Optional<StringValue> maybe_start_marker_name =
