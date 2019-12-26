@@ -277,8 +277,11 @@ static osg::ref_ptr<osg::Group> createGroup()
 
 static void scaleAxisXY(osg::Node *x_axis_node,float scale_factor)
 {
-  osg::MatrixTransform *x_axis_transform = x_axis_node->asTransform()->asMatrixTransform();
-  x_axis_transform->setMatrix(osg::Matrix::scale(scale_factor,scale_factor,1)*x_axis_transform->getMatrix());
+  osg::MatrixTransform *x_axis_transform =
+    x_axis_node->asTransform()->asMatrixTransform();
+
+  osg::Matrixd scale = osg::Matrix::scale(scale_factor, scale_factor, 1);
+  x_axis_transform->setMatrix(scale*x_axis_transform->getMatrix());
 }
 
 
@@ -670,8 +673,7 @@ static osg::ref_ptr<osg::ShapeDrawable> createBoxDrawable()
 }
 
 
-static osg::MatrixTransform &
-  addTransformToGroup(osg::Group &parent)
+static osg::MatrixTransform &addTransformToGroup(osg::Group &parent)
 {
   MatrixTransformPtr transform_ptr = createMatrixTransform();
   osg::MatrixTransform &matrix_transform = *transform_ptr;
@@ -995,9 +997,14 @@ void OSGScene::setGeometryScale(TransformHandle handle,float x,float y,float z)
 
 void OSGScene::setTranslation(TransformHandle handle,Point p)
 {
-  ::setTranslation(
-    parentTransform(Impl::geometryTransform(*this,handle)),p.x(),p.y(),p.z()
-  );
+  osg::MatrixTransform &parent_transform =
+    parentTransform(Impl::geometryTransform(*this,handle));
+
+  ::setTranslation(parent_transform, p.x(), p.y(), p.z());
+
+  if (Impl::selectedTransform(*this) == handle) {
+    selection_handler.setDraggerPosition(p);
+  }
 }
 
 
@@ -1129,6 +1136,29 @@ void OSGScene::SelectionHandler::selectNode(osg::Node *node_ptr)
   else {
     attachDraggerTo(nullptr);
   }
+}
+
+
+void OSGScene::SelectionHandler::setDraggerPosition(const Point &p)
+{
+  MatrixTransformPtr transform_ptr = &transformParentOf(_dragger_node_ptr);
+{
+  // * parent               * parent
+  //   * group                * transform
+  //     * transform   ->
+  //     * dragger
+  osg::Group &group = parentOf(*transform_ptr);
+  assert(group.getNumChildren()==2);
+  NodePtr dragger_node_ptr = group.getChild(1);
+  using TranslateAxisDragger = osgManipulator::TranslateAxisDragger;
+
+  auto dragger_ptr =
+    dynamic_cast<TranslateAxisDragger *>(dragger_node_ptr.get());
+
+  assert(dragger_ptr);
+
+  ::setTranslation(*dragger_ptr, p.x(), p.y(), p.z());
+}
 }
 
 

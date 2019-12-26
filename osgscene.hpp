@@ -52,6 +52,7 @@ class OSGScene : public Scene {
         OSGScene &scene;
 
         SelectionHandler(OSGScene &scene_arg);
+        void setDraggerPosition(const Point &p);
         void selectNode(osg::Node *node_ptr);
         osg::Node *selectedNodePtr() const { return _selected_node_ptr; }
 
