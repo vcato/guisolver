@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <memory>
 #include <QApplication>
 #include <QMainWindow>
 #include <QMenuBar>
@@ -10,6 +11,7 @@
 #include "qttreewidget.hpp"
 #include "qtlayout.hpp"
 #include "qtslot.hpp"
+#include "qtsplitter.hpp"
 #include "mainwindowcontroller.hpp"
 #include "optional.hpp"
 #include "defaultscenestate.hpp"
@@ -20,9 +22,45 @@ using std::string;
 using std::ostream;
 using std::ofstream;
 using std::ifstream;
+using std::unique_ptr;
+using std::make_unique;
 
 
-static void createGraphicsWindow(QBoxLayout &layout, OSGScene &scene)
+namespace {
+struct ParentWidgetRef {
+  struct ParentInterface {
+    virtual void addWidget(QWidget &) = 0;
+  };
+
+  template <typename T>
+  struct Parent : ParentInterface {
+    T &parent;
+
+    Parent(T& parent) : parent(parent) {}
+
+    void addWidget(QWidget &widget) override
+    {
+      parent.addWidget(&widget);
+    }
+  };
+
+  template <typename T>
+  ParentWidgetRef(T &arg)
+  : parent_ptr(make_unique<Parent<T>>(arg))
+  {
+  }
+
+  void addWidget(QWidget &widget)
+  {
+    parent_ptr->addWidget(widget);
+  }
+
+  unique_ptr<ParentInterface> parent_ptr;
+};
+}
+
+
+static void createGraphicsWindow(ParentWidgetRef parent, OSGScene &scene)
 {
   GraphicsWindowPtr graphics_window_ptr =
     scene.createGraphicsWindow(ViewType::free);
@@ -32,7 +70,7 @@ static void createGraphicsWindow(QBoxLayout &layout, OSGScene &scene)
     // a size that is much smaller than 640x480, but if we don't set the default
     // size at all, then it ends up collapsing to 0 size.
 
-  layout.addWidget(graphics_window_ptr->getGLWidget());
+  parent.addWidget(*graphics_window_ptr->getGLWidget());
 }
 
 
@@ -105,12 +143,10 @@ int main(int argc,char** argv)
   OSGScene scene;
   SceneState scene_state(defaultSceneState());
 
-  QWidget central_widget;
-  main_window.setCentralWidget(&central_widget);
-
-  QBoxLayout &layout = createLayout<QHBoxLayout>(central_widget);
-  QtTreeWidget &tree_widget = createWidget<QtTreeWidget>(layout);
-  createGraphicsWindow(layout, scene);
+  QSplitter splitter;
+  main_window.setCentralWidget(&splitter);
+  QtTreeWidget &tree_widget = createWidget<QtTreeWidget>(splitter);
+  createGraphicsWindow(splitter, scene);
   MainWindowController controller(scene_state, scene, tree_widget);
 
   QtSlot save_slot(

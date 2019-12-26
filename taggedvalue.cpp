@@ -6,7 +6,7 @@ using std::cerr;
 
 
 const TaggedValue *
-  findChild(const TaggedValue &tagged_value, const TaggedValue::Tag &tag)
+findChild(const TaggedValue &tagged_value, const TaggedValue::Tag &tag)
 {
   for (auto &child : tagged_value.children) {
     if (child.tag == tag) {
@@ -19,10 +19,10 @@ const TaggedValue *
 
 
 Optional<NumericValue>
-  findNumericValue(
-    const TaggedValue &tagged_value,
-    const TaggedValue::Tag &child_name
-  )
+findNumericValue(
+  const TaggedValue &tagged_value,
+  const TaggedValue::Tag &child_name
+)
 {
   const TaggedValue *x_ptr = findChild(tagged_value, child_name);
 
@@ -39,18 +39,16 @@ Optional<NumericValue>
 
 
 Optional<bool>
-  findBoolValue(
-    const TaggedValue &tagged_value,
-    const TaggedValue::Tag &child_name
-  )
+findBoolValue(
+  const TaggedValue &tagged_value,
+  const TaggedValue::Tag &child_name
+)
 {
   const TaggedValue *x_ptr = findChild(tagged_value, child_name);
 
   if (!x_ptr) {
     return {};
   }
-
-  printTaggedValueOn(cerr, tagged_value);
 
   if (!x_ptr->value.isEnumeration()) {
     return {};
@@ -88,5 +86,3 @@ Optional<StringValue>
 
   return x_ptr->value.asString();
 }
-
-
