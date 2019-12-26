@@ -311,7 +311,7 @@ struct MainWindowController::Impl {
   static void addMarkerPressed(MainWindowController &, const TreePath &);
 
   static void
-    addTransformPressed(MainWindowController &, const TreePath &);
+    addBodyPressed(MainWindowController &, const TreePath &);
 
   static void
     removeDistanceErrorPressed(
@@ -657,7 +657,7 @@ void
 
 
 void
-MainWindowController::Impl::addTransformPressed(
+MainWindowController::Impl::addBodyPressed(
   MainWindowController &controller,
   const TreePath &parent_path
 )
@@ -910,13 +910,13 @@ TreeWidget::MenuItems
         Impl::addMarkerPressed(controller, path);
       };
 
-    auto add_transform_function =
-      [&controller,path]{ Impl::addTransformPressed(controller, path); };
+    auto add_body_function =
+      [&controller,path]{ Impl::addBodyPressed(controller, path); };
 
     appendTo(menu_items,{
       {"Add Distance Error", add_distance_error_function },
       {"Add Marker", add_marker_function },
-      {"Add Body", add_transform_function },
+      {"Add Body", add_body_function },
     });
   }
 
@@ -926,8 +926,8 @@ TreeWidget::MenuItems
         Impl::addMarkerPressed(controller, path);
       };
 
-    auto add_transform_function =
-      [&controller,path]{ Impl::addTransformPressed(controller, path); };
+    auto add_body_function =
+      [&controller,path]{ Impl::addBodyPressed(controller, path); };
 
     auto remove_transform_function =
       [&controller,path]{
@@ -936,7 +936,7 @@ TreeWidget::MenuItems
 
     appendTo(menu_items,{
       {"Add Marker", add_marker_function},
-      {"Add Body", add_transform_function},
+      {"Add Body", add_body_function},
       {"Remove Body", remove_transform_function },
     });
   }
