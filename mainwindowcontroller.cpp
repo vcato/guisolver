@@ -690,7 +690,7 @@ MainWindowController::Impl::addBodyPressed(
     createBodyInState(
       scene_state,
       maybe_parent_body_index,
-      SceneState::defaultBodyScale()
+      /*scale*/{1,1,1}
     );
 
   createBodyInScene(scene, scene_handles, scene_state, body_index);

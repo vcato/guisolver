@@ -50,11 +50,6 @@ class SceneState {
       XYZSolveFlags rotation;
     };
 
-    static XYZ defaultBodyScale()
-    {
-      return { 5.0, 0.1, 10.0 };
-    }
-
     struct Body {
       Body(XYZ scale) : scale(scale) {}
       Transform transform;
