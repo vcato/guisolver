@@ -17,29 +17,44 @@ using std::string;
 using LabelProperties = TreeWidget::LabelProperties;
 
 
-static TreePaths::XYZ
-  createXYZ(TreeWidget &tree_widget, const TreePath &parent_path)
+static void
+  createNumericItem(
+    TreeWidget &tree_widget,
+    const TreePath &path,
+    const string &label,
+    int digits_of_precision
+  )
 {
   const NumericValue no_minimum = noMinimumNumericValue();
   const NumericValue no_maximum = noMaximumNumericValue();
 
+  tree_widget.createNumericItem(
+    path,
+    LabelProperties{label},
+    /*value*/0,
+    no_minimum,
+    no_maximum,
+    digits_of_precision
+  );
+}
+
+
+static TreePaths::XYZ
+  createXYZ(
+    TreeWidget &tree_widget,
+    const TreePath &parent_path,
+    int digits_of_precision = 2
+  )
+{
   TreePaths::XYZ xyz_paths;
   xyz_paths.path = parent_path;
   xyz_paths.x = childPath(parent_path,0);
   xyz_paths.y = childPath(parent_path,1);
   xyz_paths.z = childPath(parent_path,2);
 
-  tree_widget.createNumericItem(
-    xyz_paths.x,LabelProperties{"x:"},0,no_minimum, no_maximum
-  );
-
-  tree_widget.createNumericItem(
-    xyz_paths.y,LabelProperties{"y:"},0,no_minimum, no_maximum
-  );
-
-  tree_widget.createNumericItem(
-    xyz_paths.z,LabelProperties{"z:"},0,no_minimum, no_maximum
-  );
+  createNumericItem(tree_widget, xyz_paths.x, "x:", digits_of_precision);
+  createNumericItem(tree_widget, xyz_paths.y, "y:", digits_of_precision);
+  createNumericItem(tree_widget, xyz_paths.z, "z:", digits_of_precision);
 
   return xyz_paths;
 }
@@ -472,7 +487,9 @@ createBodyItem(
   );
 
   body_paths.rotation =
-    TreePaths::Rotation(createXYZ(tree_widget, rotation_path));
+    TreePaths::Rotation(
+      createXYZ(tree_widget, rotation_path, /*digits_of_precision*/1)
+    );
 
   tree_widget.createVoidItem(
     geometry_path, LabelProperties{"[Box]"}

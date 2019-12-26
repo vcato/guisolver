@@ -116,7 +116,8 @@ struct FakeTreeWidget : TreeWidget {
       const LabelProperties &label_properties,
       NumericValue value,
       NumericValue minimum_value,
-      NumericValue maximum_value
+      NumericValue maximum_value,
+      int /*digits_of_precision*/
     ) override
   {
     createItem(

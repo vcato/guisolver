@@ -36,7 +36,8 @@ struct TreeWidget {
       const LabelProperties &,
       NumericValue value,
       NumericValue minimum_value,
-      NumericValue maximum_value
+      NumericValue maximum_value,
+      int digits_of_precision = 2
     ) = 0;
 
   virtual void

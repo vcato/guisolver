@@ -299,3 +299,4 @@ values.
 ---
 Rotate is too slow
 * Should just have one digit of precision.
+* Need TreeWidget::createNumericItem should have a precision option.

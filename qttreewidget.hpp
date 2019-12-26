@@ -31,7 +31,8 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
         const LabelProperties &,
         const NumericValue value,
         const NumericValue minimum_value,
-        const NumericValue maximum_value
+        const NumericValue maximum_value,
+        int digits_of_precision
       ) override;
 
     void
@@ -118,7 +119,8 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
         const LabelProperties &,
         NumericValue value,
         NumericValue minimum_value,
-        NumericValue maximum_value
+        NumericValue maximum_value,
+        int digits_of_precision
       );
 
     void

@@ -222,7 +222,8 @@ void
     const LabelProperties &label_properties,
     const NumericValue value,
     const NumericValue minimum_value,
-    const NumericValue maximum_value
+    const NumericValue maximum_value,
+    int digits_of_precision
   )
 {
   TreePath parent_path = parentPath(new_item_path);
@@ -248,7 +249,8 @@ void
       label_properties,
       value,
       minimum_value,
-      maximum_value
+      maximum_value,
+      digits_of_precision
     );
   }
 }
@@ -339,15 +341,19 @@ void
     const LabelProperties &label_properties,
     NumericValue value,
     NumericValue minimum_value,
-    NumericValue maximum_value
+    NumericValue maximum_value,
+    int digits_of_precision
   )
 {
   QtTreeWidget &tree_widget = *this;
   QTreeWidgetItem &item = ::insertChildItem(parent_item,child_index);
+
   QtSpinBox &spin_box =
     tree_widget.createItemWidget<QtSpinBox>(item,label_properties);
+
   spin_box.setMinimum(minimum_value);
   spin_box.setMaximum(maximum_value);
+  spin_box.setDecimals(digits_of_precision);
   spin_box.setValue(value);
   Impl::setupSpinBox(*this,spin_box,item);
 }

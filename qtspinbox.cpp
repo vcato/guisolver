@@ -60,6 +60,20 @@ void QtSpinBox::focusOutEvent(QFocusEvent *)
 }
 
 
+static float toleranceForPrecision(int n_digits_of_precision)
+{
+  if (n_digits_of_precision == 2) {
+    return 0.005;
+  }
+  else if (n_digits_of_precision == 1) {
+    return 0.05;
+  }
+  else {
+    assert(false); // not implemented
+  }
+}
+
+
 void QtSpinBox::setValue(Value arg)
 {
   assert(!ignore_signals);
@@ -67,8 +81,10 @@ void QtSpinBox::setValue(Value arg)
   QDoubleSpinBox::setValue(arg);
   ignore_signals = false;
   float delta = std::abs(arg - value());
+  int n_digits_of_precision = decimals();
+  float tolerance = toleranceForPrecision(n_digits_of_precision);
 
-  if (delta > .005) {
+  if (delta > tolerance) {
     cerr << "arg: " << arg << "\n";
     cerr << "QtSpinBox::value(): " << value() << "\n";
     cerr << "delta: " << delta << "\n";
