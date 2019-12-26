@@ -50,9 +50,15 @@ class SceneState {
       XYZSolveFlags rotation;
     };
 
+    static XYZ defaultBodyScale()
+    {
+      return { 5.0, 0.1, 10.0 };
+    }
+
     struct Body {
+      Body(XYZ scale) : scale(scale) {}
       Transform transform;
-      XYZ scale = { 5.0, 0.1, 10.0 };
+      XYZ scale;
       TransformSolveFlags solve_flags;
       Optional<BodyIndex> maybe_parent_index;
     };
@@ -86,10 +92,14 @@ class SceneState {
       return new_index;
     }
 
-    BodyIndex createBody(Optional<BodyIndex> maybe_parent_index)
+    BodyIndex
+      createBody(
+        Optional<BodyIndex> maybe_parent_index,
+        XYZ scale
+      )
     {
       BodyIndex new_index = _bodies.size();
-      _bodies.emplace_back();
+      _bodies.emplace_back(scale);
       _bodies.back().maybe_parent_index = maybe_parent_index;
       return new_index;
     }
@@ -171,6 +181,10 @@ extern MarkerIndex
 extern vector<SceneState::Marker::Name> markerNames(const SceneState &state);
 
 extern BodyIndex
-  createBodyInState(SceneState &, Optional<BodyIndex> maybe_parent_index);
+  createBodyInState(
+    SceneState &,
+    Optional<BodyIndex> maybe_parent_index,
+    const SceneState::XYZ &scale
+  );
 
 #endif /* SCENESTATE_HPP_ */

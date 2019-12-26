@@ -39,7 +39,7 @@ static void testWith(const SceneState &state)
 static void testWithAdditionalDistanceError()
 {
   SceneState state;
-  createBodyInState(state, /*maybe_parent_index*/{});
+  createBodyInState(state, /*maybe_parent_index*/{}, /*scale*/{1,1,1});
   SceneState::DistanceError &distance_error = state.createDistanceError();
   distance_error.weight = 2.5;
   distance_error.desired_distance = 3.5;
@@ -50,8 +50,13 @@ static void testWithAdditionalDistanceError()
 static void testWithChildTransform()
 {
   SceneState state;
-  BodyIndex body1_index = createBodyInState(state, /*maybe_parent_index*/{});
-  createBodyInState(state, /*maybe_parent_index*/body1_index);
+
+  SceneState::XYZ scale = { 5, 0.1, 10 };
+
+  BodyIndex body1_index =
+    createBodyInState(state, /*maybe_parent_index*/{}, scale);
+
+  createBodyInState(state, /*maybe_parent_index*/body1_index, scale);
   string state_string = sceneStateString(state);
 
   string expected_string =
@@ -138,8 +143,9 @@ static void testWithMultipleTransforms()
     "}\n";
 
   SceneState state;
-  createBodyInState(state, /*maybe_parent_index*/{});
-  createBodyInState(state, /*maybe_parent_index*/{});
+  SceneState::XYZ box_scale = {5, 0.1, 10};
+  createBodyInState(state, /*maybe_parent_index*/{}, box_scale);
+  createBodyInState(state, /*maybe_parent_index*/{}, box_scale);
   string state_string = sceneStateString(state);
   assert(state_string == expected_string);
   testWith(state);

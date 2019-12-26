@@ -217,6 +217,23 @@ struct FakeTreeWidget : TreeWidget {
 }
 
 
+static BodyIndex
+createBodyIn(SceneState &scene_state, Optional<BodyIndex> maybe_parent_index)
+{
+  return
+    scene_state.createBody(
+      maybe_parent_index,
+      /*scale*/{1,1,1}
+    );
+}
+
+
+static BodyIndex createGlobalBodyIn(SceneState &scene_state)
+{
+  return createBodyIn(scene_state, /*maybe_parent_index*/{});
+}
+
+
 static void testRemovingDistanceError()
 {
   SceneState state = defaultSceneState();
@@ -451,7 +468,7 @@ static void testAddingASceneBody()
   SceneState state = defaultSceneState();
   FakeTreeWidget tree_widget;
   TreePaths tree_paths = fillTree(tree_widget, state);
-  BodyIndex body_index = state.createBody(/*maybe_parent_body_index*/{});
+  BodyIndex body_index = createGlobalBodyIn(state);
   createBodyInTree(tree_widget, tree_paths, state, body_index);
   checkTree(tree_widget, tree_paths, state);
 }
@@ -462,7 +479,10 @@ static void testAddingAChildBody()
   SceneState state = defaultSceneState();
   FakeTreeWidget tree_widget;
   TreePaths tree_paths = fillTree(tree_widget, state);
-  BodyIndex body_index = state.createBody(/*parent_body_index*/boxBodyIndex());
+
+  BodyIndex body_index =
+    createBodyIn(state, /*parent_body_index*/boxBodyIndex());
+
   createBodyInTree(tree_widget, tree_paths, state, body_index);
   checkTree(tree_widget, tree_paths, state);
 }
@@ -472,8 +492,8 @@ static void testRemovingAGlobalBody()
 {
   SceneState state;
   FakeTreeWidget tree_widget;
-  BodyIndex body1_index = state.createBody(/*maybe_parent_body_index*/{});
-  state.createBody(/*maybe_parent_body_index*/{});
+  BodyIndex body1_index = createGlobalBodyIn(state);
+  createGlobalBodyIn(state);
   state.createMarker("global");
   TreePaths tree_paths = fillTree(tree_widget, state);
   removeBodyFromTree(tree_widget, tree_paths, state, body1_index);
@@ -486,12 +506,9 @@ static void testRemovingAChildBody()
 {
   SceneState state;
   FakeTreeWidget tree_widget;
-
-  BodyIndex parent_body_index =
-    state.createBody(/*maybe_parent_body_index*/{});
-
-  BodyIndex body1_index = state.createBody(parent_body_index);
-  state.createBody(parent_body_index);
+  BodyIndex parent_body_index = createGlobalBodyIn(state);
+  BodyIndex body1_index = createBodyIn(state, parent_body_index);
+  createBodyIn(state, parent_body_index);
   MarkerIndex marker_index = state.createMarker("global");
   state.marker(marker_index).maybe_body_index = parent_body_index;
   TreePaths tree_paths = fillTree(tree_widget, state);

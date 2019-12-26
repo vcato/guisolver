@@ -13,10 +13,21 @@
 #include "indicesof.hpp"
 
 using std::cerr;
-
-
 using Quaternion = Eigen::Quaternion<float>;
 using RandomEngine = std::mt19937;
+
+
+static BodyIndex
+  createBodyIn(SceneState &scene_state, Optional<BodyIndex> maybe_parent_index)
+{
+  return scene_state.createBody(maybe_parent_index, /*scale*/{1,1,1});
+}
+
+
+static BodyIndex createGlobalBodyIn(SceneState &scene_state)
+{
+  return createBodyIn(scene_state, /*maybe_parent_index*/{});
+}
 
 
 static float randomFloat(float begin, float end, RandomEngine &engine)
@@ -93,8 +104,19 @@ struct Example {
   SceneState scene_state;
   BodyIndex body_index;
 
+  static BodyIndex createBody(SceneState &scene_state)
+  {
+    return
+      createBodyInState(
+        scene_state,
+        /*maybe_parent_index*/{},
+        /*scale*/{1,1,1}
+      );
+  }
+
   Example()
-  : body_index(createBodyInState(scene_state, /*maybe_parent_index*/{}))
+  : scene_state(),
+    body_index(createBody(scene_state))
   {
   }
 
@@ -187,11 +209,10 @@ static void testWithTwoBodies()
 {
   SceneState scene_state;
 
-  BodyIndex body1_index =
-    scene_state.createBody(/*maybe_parent_index*/{});
+  BodyIndex body1_index = createGlobalBodyIn(scene_state);
 
   BodyIndex body2_index =
-    scene_state.createBody(/*maybe_parent_index*/body1_index);
+    createBodyIn(scene_state, /*maybe_parent_index*/body1_index);
 
   MarkerIndex global_marker_index = scene_state.createMarker("global");
   MarkerIndex local_marker_index = scene_state.createMarker("global");

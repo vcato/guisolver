@@ -8,6 +8,22 @@ using std::istringstream;
 using std::cerr;
 
 
+static BodyIndex
+  createBodyIn(
+    SceneState &scene_state,
+    Optional<BodyIndex> maybe_parent_index
+  )
+{
+  return scene_state.createBody(maybe_parent_index, /*scale*/{1,1,1});
+}
+
+
+static BodyIndex createGlobalBodyIn(SceneState &scene_state)
+{
+  return createBodyIn(scene_state, /*maybe_parent_index*/{});
+}
+
+
 static void testCreatingABodyFromATaggedValue()
 {
   const char *text =
@@ -61,7 +77,8 @@ static void testBody()
 
   {
     SceneState scene_state;
-    BodyIndex body_index = scene_state.createBody(/*maybe_parent_index*/{});
+
+    BodyIndex body_index = createGlobalBodyIn(scene_state);
     scene_state.body(body_index).solve_flags.translation.y = false;
 
     TaggedValue tagged_value("root");

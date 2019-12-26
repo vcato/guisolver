@@ -127,7 +127,8 @@ BodyIndex
     const Optional<BodyIndex> maybe_parent_index
   )
 {
-  BodyIndex body_index = createBodyInState(result, maybe_parent_index);
+  BodyIndex body_index =
+    createBodyInState(result, maybe_parent_index, {1,1,1});
 
   result.body(body_index).transform =
     makeTransformFromTaggedValue(tagged_value);

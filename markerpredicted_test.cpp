@@ -1,6 +1,19 @@
 #include "markerpredicted.hpp"
 
 
+static BodyIndex
+  createBodyIn(SceneState &scene_state, Optional<BodyIndex> maybe_parent_index)
+{
+  return scene_state.createBody(maybe_parent_index, /*scale*/{1,1,1});
+}
+
+
+static BodyIndex createGlobalBodyIn(SceneState &scene_state)
+{
+  return createBodyIn(scene_state, /*maybe_parent_index*/{});
+}
+
+
 static void testWithGlobalMarkerAtOrigin()
 {
   SceneState scene_state;
@@ -13,12 +26,11 @@ static void testWithGlobalMarkerAtOrigin()
 static void testWithHierarchy()
 {
   SceneState scene_state;
-  BodyIndex body1_index = scene_state.createBody(/*maybe_parent_index*/{});
-
+  BodyIndex body1_index = createGlobalBodyIn(scene_state);
   scene_state.body(body1_index).transform.translation.y = 1;
 
   BodyIndex body2_index =
-    scene_state.createBody(/*maybe_parent_index*/body1_index);
+    createBodyIn(scene_state, /*parent_index*/body1_index);
 
   scene_state.body(body2_index).transform.translation.y = 2;
 

@@ -71,7 +71,13 @@ static CoordinateAxes defaultBoxCoordinateAxes()
 SceneState defaultSceneState()
 {
   SceneState result;
-  BodyIndex body_index = createBodyInState(result, /*maybe_parent_index*/{});
+
+  BodyIndex body_index =
+    createBodyInState(
+      result,
+      /*maybe_parent_index*/{},
+      SceneState::defaultBodyScale()
+    );
 
   Transform default_box_transform =
     makeTransform(defaultBoxCoordinateAxes(), defaultBoxTranslation());

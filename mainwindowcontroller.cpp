@@ -687,7 +687,11 @@ MainWindowController::Impl::addBodyPressed(
   }
 
   BodyIndex body_index =
-    createBodyInState(scene_state, maybe_parent_body_index);
+    createBodyInState(
+      scene_state,
+      maybe_parent_body_index,
+      SceneState::defaultBodyScale()
+    );
 
   createBodyInScene(scene, scene_handles, scene_state, body_index);
   createBodyInTree(tree_widget, tree_paths, scene_state, body_index);
@@ -918,14 +922,14 @@ TreeWidget::MenuItems
       Impl::addMarkerPressed(controller, path);
     };
 
+  auto add_body_function =
+    [&controller,path]{ Impl::addBodyPressed(controller, path); };
+
   if (isScenePath(path, tree_paths)) {
     auto add_distance_error_function =
       [&controller,path]{
         Impl::addDistanceErrorPressed(controller, path);
       };
-
-    auto add_body_function =
-      [&controller,path]{ Impl::addBodyPressed(controller, path); };
 
     appendTo(menu_items,{
       {"Add Distance Error", add_distance_error_function },
@@ -935,9 +939,6 @@ TreeWidget::MenuItems
   }
 
   if (isTransformPath(path, tree_paths)) {
-    auto add_body_function =
-      [&controller,path]{ Impl::addBodyPressed(controller, path); };
-
     auto remove_transform_function =
       [&controller,path]{
         Impl::removeTransformPressed(controller, path);
