@@ -15,27 +15,82 @@
 using std::cerr;
 using std::string;
 using LabelProperties = TreeWidget::LabelProperties;
+static int defaultDigitsOfPrecision() { return 2; }
 
 
-static void
-  createNumericItem(
-    TreeWidget &tree_widget,
-    const TreePath &path,
+namespace {
+struct ItemAdder {
+  const TreePath &parent_path;
+  TreeWidget &tree_widget;
+  int n_children = 0;
+
+  TreePath
+    addNumeric(
+      const string &label,
+      NumericValue value,
+      NumericValue minimum_value,
+      int digits_of_precision = defaultDigitsOfPrecision()
+    )
+  {
+    TreePath child_path = childPath(parent_path, n_children);
+
+    tree_widget.createNumericItem(
+      child_path,
+      LabelProperties{label},
+      value,
+      minimum_value,
+      noMaximumNumericValue(),
+      digits_of_precision
+    );
+
+    ++n_children;
+    return child_path;
+  }
+
+  TreePath addVoid(const string &label)
+  {
+    TreePath child_path = childPath(parent_path, n_children);
+    tree_widget.createVoidItem(child_path, LabelProperties{label});
+    ++n_children;
+    return child_path;
+  }
+
+  TreePath
+  addEnumeration(
     const string &label,
-    int digits_of_precision
+    const TreeWidget::EnumerationOptions &options,
+    int value
   )
-{
-  const NumericValue no_minimum = noMinimumNumericValue();
-  const NumericValue no_maximum = noMaximumNumericValue();
+  {
+    TreePath child_path = childPath(parent_path,n_children);
 
-  tree_widget.createNumericItem(
-    path,
-    LabelProperties{label},
-    /*value*/0,
-    no_minimum,
-    no_maximum,
-    digits_of_precision
-  );
+    tree_widget.createEnumerationItem(
+      child_path, LabelProperties{label}, options, value
+    );
+
+    ++n_children;
+    return child_path;
+  }
+};
+}
+
+
+namespace {
+struct AddNumericItemFunction {
+  ItemAdder &adder;
+  NumericValue minimum_value = noMinimumNumericValue();
+  int digits_of_precision = defaultDigitsOfPrecision();
+
+  AddNumericItemFunction(ItemAdder &adder)
+  : adder(adder)
+  {
+  }
+
+  TreePath operator()(const string &label, NumericValue value)
+  {
+    return adder.addNumeric(label, value, minimum_value, digits_of_precision);
+  }
+};
 }
 
 
@@ -43,18 +98,18 @@ static TreePaths::XYZ
   createXYZ(
     TreeWidget &tree_widget,
     const TreePath &parent_path,
-    int digits_of_precision = 2
+    int digits_of_precision = defaultDigitsOfPrecision()
   )
 {
   TreePaths::XYZ xyz_paths;
   xyz_paths.path = parent_path;
-  xyz_paths.x = childPath(parent_path,0);
-  xyz_paths.y = childPath(parent_path,1);
-  xyz_paths.z = childPath(parent_path,2);
+  ItemAdder adder{parent_path, tree_widget};
+  AddNumericItemFunction add(adder);
+  add.digits_of_precision = digits_of_precision;
 
-  createNumericItem(tree_widget, xyz_paths.x, "x:", digits_of_precision);
-  createNumericItem(tree_widget, xyz_paths.y, "y:", digits_of_precision);
-  createNumericItem(tree_widget, xyz_paths.z, "z:", digits_of_precision);
+  xyz_paths.x = add("x:", 0);
+  xyz_paths.y = add("y:", 0);
+  xyz_paths.z = add("z:", 0);
 
   return xyz_paths;
 }
@@ -68,17 +123,14 @@ static TreePaths::Marker
   )
 {
   tree_widget.createVoidItem(path,LabelProperties{"[Marker]"});
+  ItemAdder adder{path, tree_widget};
+  adder.addVoid("name: \"" + name + "\"");
+  TreePath position_path = adder.addVoid("position: []");
 
-  tree_widget.createVoidItem(
-    childPath(path,0),LabelProperties{"name: \"" + name + "\""}
-  );
+  TreePaths::Position position_paths =
+    TreePaths::Position(createXYZ(tree_widget, position_path));
 
-  tree_widget.createVoidItem(childPath(path,1),LabelProperties{"position: []"});
-
-  TreePaths::Position position_path =
-    TreePaths::Position(createXYZ(tree_widget, childPath(path,1)));
-
-  TreePaths::Marker marker_paths = {path, position_path};
+  TreePaths::Marker marker_paths = {path, position_paths};
   return marker_paths;
 }
 
@@ -149,54 +201,35 @@ TreePaths::DistanceError
     state_distance_error.optional_end_marker_index;
 
   tree_widget.createVoidItem(path,LabelProperties{"[DistanceError]"});
-  TreePath start_path = childPath(path,0);
-  TreePath end_path = childPath(path,1);
-  TreePath distance_path = childPath(path,2);
-  TreePath desired_distance_path = childPath(path,3);
-  TreePath weight_path = childPath(path,4);
-  TreePath error_path = childPath(path,5);
-  LabelProperties start_label = {"start:"};
-  LabelProperties end_label = {"end:"};
-  LabelProperties distance_label = {"distance:"};
-  LabelProperties desired_distance_label = {"desired_distance:"};
-  LabelProperties weight_label = {"weight:"};
-  LabelProperties error_label = {"error:"};
+
   TreeWidget::EnumerationOptions marker_options =
     markerEnumerationOptions(state_markers);
 
-  tree_widget.createEnumerationItem(
-    start_path,
-    start_label,
-    marker_options,
-    enumerationValueFromMarkerIndex(optional_start_index)
-  );
+  ItemAdder adder{path, tree_widget};
 
-  tree_widget.createEnumerationItem(
-    end_path,
-    end_label,
-    marker_options,
-    enumerationValueFromMarkerIndex(optional_end_index)
-  );
+  TreePath start_path =
+    adder.addEnumeration(
+      "start:",
+      marker_options,
+      enumerationValueFromMarkerIndex(optional_start_index)
+    );
 
-  tree_widget.createVoidItem(distance_path, distance_label);
+  TreePath end_path =
+    adder.addEnumeration(
+      "end:",
+      marker_options,
+      enumerationValueFromMarkerIndex(optional_end_index)
+    );
 
-  tree_widget.createNumericItem(
-    desired_distance_path,
-    desired_distance_label,
-    /*value*/0,
-    /*minimum_value*/0,
-    /*maximum_value*/noMaximumNumericValue()
-  );
+  TreePath distance_path = adder.addVoid("distance:");
 
-  tree_widget.createNumericItem(
-    weight_path,
-    weight_label,
-    /*value*/1,
-    /*minimum_value*/0,
-    /*maximum_value*/noMaximumNumericValue()
-  );
+  TreePath desired_distance_path =
+    adder.addNumeric("desired_distance:", 0, /*minimum_value*/0);
 
-  tree_widget.createVoidItem(error_path, error_label);
+  TreePath weight_path =
+    adder.addNumeric("weight:", 1, /*minimum_value*/0);
+
+  TreePath error_path = adder.addVoid("error:");
 
   return
     TreePaths::DistanceError{
@@ -456,73 +489,40 @@ createBodyItem(
   TreeWidget &tree_widget
 )
 {
-  const NumericValue no_maximum = noMaximumNumericValue();
   TreePaths::Body body_paths;
-  TreePath transform_path = body_path;
 
-  tree_widget.createVoidItem(
-    transform_path, LabelProperties{"[Body]"}
-  );
+  tree_widget.createVoidItem(body_path, LabelProperties{"[Body]"});
 
-  TreePath translation_path = childPath(transform_path,0);
-  TreePath rotation_path = childPath(transform_path,1);
-  TreePath geometry_path = childPath(transform_path, 2);
-  TreePath next_body_path = childPath(transform_path, 3);
-  TreePath next_marker_path = childPath(transform_path, 3);
+  ItemAdder adder{body_path, tree_widget};
+
+  TreePath translation_path = adder.addVoid("translation: []");
+  TreePath rotation_path    = adder.addVoid("rotation: []");
+  TreePath geometry_path    = adder.addVoid("[Box]");
+
+  TreePath next_body_path = childPath(body_path, adder.n_children);
+  TreePath next_marker_path = childPath(body_path, adder.n_children);
   body_paths.path = body_path;
-
-  TreePath scale_x_path = childPath(geometry_path, 0);
-  TreePath scale_y_path = childPath(geometry_path, 1);
-  TreePath scale_z_path = childPath(geometry_path, 2);
-
-  tree_widget.createVoidItem(
-    translation_path,LabelProperties{"translation: []"}
-  );
 
   body_paths.translation =
     TreePaths::Translation(createXYZ(tree_widget, translation_path));
-
-  tree_widget.createVoidItem(
-    rotation_path,LabelProperties{"rotation: []"}
-  );
 
   body_paths.rotation =
     TreePaths::Rotation(
       createXYZ(tree_widget, rotation_path, /*digits_of_precision*/1)
     );
 
-  tree_widget.createVoidItem(
-    geometry_path, LabelProperties{"[Box]"}
-  );
-
-  tree_widget.createNumericItem(
-    scale_x_path,
-    LabelProperties{"scale_x:"},
-    /*value*/body_state.scale.x,
-    /*minimum_value*/0,
-    no_maximum
-  );
-
-  tree_widget.createNumericItem(
-    scale_y_path,
-    LabelProperties{"scale_y:"},
-    /*value*/body_state.scale.y,
-    /*minimum_value*/0,
-    no_maximum
-  );
-
-  tree_widget.createNumericItem(
-    scale_z_path,
-    LabelProperties{"scale_z:"},
-    /*value*/body_state.scale.z,
-    /*minimum_value*/0,
-    no_maximum
-  );
-
   body_paths.geometry.path = geometry_path;
-  body_paths.geometry.scale.x = scale_x_path;
-  body_paths.geometry.scale.y = scale_y_path;
-  body_paths.geometry.scale.z = scale_z_path;
+
+  {
+    ItemAdder geometry_adder{geometry_path, tree_widget};
+    TreePath scale_path = geometry_adder.addVoid("scale: []");
+    ItemAdder scale_adder{scale_path, tree_widget};
+    AddNumericItemFunction add(scale_adder);
+    add.minimum_value = 0;
+    body_paths.geometry.scale.x = add("x:", body_state.scale.x);
+    body_paths.geometry.scale.y = add("y:", body_state.scale.y);
+    body_paths.geometry.scale.z = add("z:", body_state.scale.z);
+  }
 
   body_paths.next_body_path = next_body_path;
   body_paths.next_marker_path = next_marker_path;
