@@ -278,6 +278,7 @@ struct MainWindowController::Impl {
   static void handleTreeSelectionChanged(MainWindowController &controller);
 
   static bool isRotateItem(const TreePath &, const TreePaths &);
+  static bool isScaleItem(const TreePath &, const TreePaths &);
 
   static void
     attachProperDraggerToSelectedObject(MainWindowController &controller);
@@ -1032,6 +1033,22 @@ bool
 }
 
 
+bool
+  MainWindowController::Impl::isScaleItem(
+    const TreePath &path,
+    const TreePaths &tree_paths
+  )
+{
+  for (auto i : indicesOf(tree_paths.bodies)) {
+    if (startsWith(path, tree_paths.bodies[i].geometry.path)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
 void
   MainWindowController::Impl::attachProperDraggerToSelectedObject(
     MainWindowController &controller
@@ -1047,6 +1064,9 @@ void
   if (!maybe_line_handle) {
     if (isRotateItem(*tree_widget.selectedItem(), tree_paths)) {
       scene.attachDraggerToSelectedNode(Scene::DraggerType::rotate);
+    }
+    else if (isScaleItem(*tree_widget.selectedItem(), tree_paths)) {
+      scene.attachDraggerToSelectedNode(Scene::DraggerType::scale);
     }
     else {
       scene.attachDraggerToSelectedNode(Scene::DraggerType::translate);

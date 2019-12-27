@@ -718,6 +718,17 @@ static void
 
 
 static void
+  updateScaleValues(
+    TreeWidget &tree_widget,
+    const TreePaths::XYZ &scale_paths,
+    const SceneState::XYZ &scale
+  )
+{
+  updateXYZValues(tree_widget, scale_paths, vec3(scale));
+}
+
+
+static void
   updateMarker(
     MarkerIndex i,
     TreeWidget &tree_widget,
@@ -752,6 +763,11 @@ updateBody(
     const TreePaths::Rotation &rotation_paths = body_paths.rotation;
     const RotationState &rotation = rotationStateOf(global);
     updateRotationValues(tree_widget, rotation_paths, rotation);
+  }
+  {
+    const TreePaths::XYZ &scale_paths = body_paths.geometry.scale;
+    const SceneState::XYZ &scale = state.body(body_index).scale;
+    updateScaleValues(tree_widget, scale_paths, scale);
   }
 }
 

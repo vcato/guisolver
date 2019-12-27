@@ -1,6 +1,7 @@
 #include "osgutil.hpp"
 
 #include <cassert>
+#include <iostream>
 #include <osg/Geometry>
 #include <osg/Geode>
 #include <osg/Material>
@@ -9,7 +10,9 @@
 #include <osgGA/TrackballManipulator>
 #include "osgselectionhandler.hpp"
 
+using std::cerr;
 typedef osg::ref_ptr<osg::Geode> GeodePtr;
+
 
 namespace {
 struct HomePosition {
@@ -198,9 +201,15 @@ osg::MatrixTransform &parentTransform(osg::MatrixTransform &t)
 
 const osg::MatrixTransform &parentTransform(const osg::MatrixTransform &t)
 {
-  const osg::Node *parent2_ptr = t.getParent(0);
-  assert(parent2_ptr);
-  const osg::Transform *transform2_ptr = parent2_ptr->asTransform();
+  const osg::Node *parent_ptr = t.getParent(0);
+  assert(parent_ptr);
+  const osg::Transform *transform2_ptr = parent_ptr->asTransform();
+
+  if (!transform2_ptr) {
+    cerr << "Parent of " << t.getName() << " is not a transform\n";
+    cerr << "  it is a " << parent_ptr->className() << "\n";
+  }
+
   assert(transform2_ptr);
   const osg::MatrixTransform *matrix2_transform_ptr =
     transform2_ptr->asMatrixTransform();

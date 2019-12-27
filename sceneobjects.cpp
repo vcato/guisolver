@@ -4,7 +4,6 @@
 #include "settransform.hpp"
 #include "maketransform.hpp"
 #include "indicesof.hpp"
-#include "globaltransform.hpp"
 #include "removeindexfrom.hpp"
 #include "transformstate.hpp"
 #include "positionstate.hpp"
@@ -45,6 +44,21 @@ static void
 }
 
 
+static SceneState::XYZ scaleState(const Vec3 &v)
+{
+  return {v.x, v.y, v.z};
+}
+
+
+static Transform
+localTransform(const Scene &scene, Scene::TransformHandle transform_id)
+{
+  Point translation = scene.translation(transform_id);
+  CoordinateAxes coordinate_axes = scene.coordinateAxes(transform_id);
+  return makeTransform(coordinate_axes, translation);
+}
+
+
 void
 updateSceneStateFromSceneObjects(
   SceneState &state,
@@ -55,8 +69,10 @@ updateSceneStateFromSceneObjects(
   updateStateMarkerPositions(state, scene_handles.markers, scene);
 
   for (auto i : indicesOf(state.bodies())) {
-    state.body(i).transform =
-      transformState(globalTransform(scene, scene_handles.bodies[i]));
+    const TransformHandle body_handle = scene_handles.bodies[i];
+    SceneState::Body &body_state = state.body(i);
+    body_state.transform = transformState(localTransform(scene, body_handle));
+    body_state.scale = scaleState(scene.geometryScale(body_handle));
   }
 }
 

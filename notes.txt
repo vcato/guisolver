@@ -296,3 +296,8 @@ values.
 * Right now, what would seem to make the most sense is having a context menu
   with a "Solve" toggle.  The menu could also have options to turn it into
   an expression.
+---
+Need to be able to duplicate bodies.
+---
+Dragger::setIntersectionMask() may be useful in ignoring the edges of
+the scale dragger instead of constraining the translations.

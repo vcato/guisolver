@@ -30,6 +30,7 @@ class OSGScene : public Scene {
     void
       setGeometryScale(TransformHandle handle,float x,float y,float z) override;
 
+    Vec3 geometryScale(TransformHandle) const override;
     void setTranslation(TransformHandle,Point) override;
     Point translation(TransformHandle) const override;
     void setCoordinateAxes(TransformHandle,const CoordinateAxes &) override;
@@ -61,8 +62,12 @@ class OSGScene : public Scene {
 
       private:
         osg::Node *_selected_node_ptr = nullptr;
+
+        // These are Geodes.
         osg::Node *_translate_dragger_node_ptr = nullptr;
         osg::Node *_rotate_dragger_node_ptr = nullptr;
+        osg::Node *_scale_dragger_node_ptr = nullptr;
+
         osg::Vec3 _old_color;
 
         void nodeClicked(osg::Node *) override;
@@ -70,10 +75,13 @@ class OSGScene : public Scene {
         void attachDragger(osg::Node &, DraggerType);
         void attachTranslateDraggerTo(osg::Node &);
         void attachRotateDraggerTo(osg::Node &);
+        void attachScaleDraggerTo(osg::Node &);
         void changeSelectedNodeTo(osg::Node *);
     };
 
     vector<osg::MatrixTransform *> transform_ptrs;
+      // These are the geometry transforms for each handle.
+
     const MatrixTransformPtr top_node_ptr;
     const TransformHandle top_handle;
     osgViewer::CompositeViewer composite_viewer;

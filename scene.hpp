@@ -14,7 +14,8 @@ struct Scene {
 
   enum class DraggerType {
     translate,
-    rotate
+    rotate,
+    scale
   };
 
   struct TransformHandle {
@@ -48,6 +49,7 @@ struct Scene {
   TransformHandle createBox() { return createBox(top()); }
 
   virtual void setGeometryScale(TransformHandle,float x,float y,float z) = 0;
+  virtual Vec3 geometryScale(TransformHandle) const = 0;
 
   virtual void
     setCoordinateAxes(TransformHandle id,const CoordinateAxes &axes) = 0;
