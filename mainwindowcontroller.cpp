@@ -9,6 +9,7 @@
 #include "indicesof.hpp"
 #include "sceneobjects.hpp"
 #include "maketransform.hpp"
+#include "matchconst.hpp"
 
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
@@ -413,38 +414,6 @@ void
   updateErrorsInState(state);
   updateTreeValues(tree_widget, tree_paths, state);
   updateSceneObjects(scene, scene_handles, state);
-}
-
-
-namespace {
-
-
-template<typename T>
-struct AsConst {
-  using type = const T;
-};
-
-
-template <typename T>
-using AsConst_t = typename AsConst<T>::type;
-
-
-template<typename T, typename Like>
-struct MatchConst {
-  using type = T;
-};
-
-
-template <typename T, typename Like>
-struct MatchConst<T, const Like> {
-  using type = AsConst_t<T>;
-};
-
-
-template <typename T, typename Like>
-using MatchConst_t = typename MatchConst<T,Like>::type;
-
-
 }
 
 
