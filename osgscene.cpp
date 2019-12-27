@@ -131,6 +131,49 @@ struct ScaleDragger : osgManipulator::TabBoxDragger {
 }
 
 
+class OSGScene::SelectionHandler : public OSGSelectionHandler {
+  public:
+    bool use_screen_relative_dragger = false;
+    OSGScene &scene;
+
+    SelectionHandler(OSGScene &);
+    void updateDraggerPosition();
+    void selectNodeWithoutDragger(osg::Node *);
+    void attachDragger(DraggerType);
+    osg::Node *selectedNodePtr() const { return _selected_node_ptr; }
+
+  private:
+    osg::Node *_selected_node_ptr = nullptr;
+
+    // These are Geodes.
+    osg::Node *_translate_dragger_node_ptr = nullptr;
+    osg::Node *_rotate_dragger_node_ptr = nullptr;
+    osg::Node *_scale_dragger_node_ptr = nullptr;
+
+    osg::Vec3 _old_color;
+
+    void nodeClicked(osg::Node *) override;
+    void removeExistingDraggers();
+    void attachDragger(osg::Node &, DraggerType);
+    void attachTranslateDraggerTo(osg::Node &);
+    void attachRotateDraggerTo(osg::Node &);
+    void attachScaleDraggerTo(osg::Node &);
+    void changeSelectedNodeTo(osg::Node *);
+};
+
+
+OSGScene::SelectionHandler &OSGScene::selectionHandler()
+{
+  return *_selection_handler_ptr;
+}
+
+
+const OSGScene::SelectionHandler &OSGScene::selectionHandler() const
+{
+  return *_selection_handler_ptr;
+}
+
+
 struct OSGScene::Impl {
   struct DraggerCallback;
 
@@ -259,13 +302,13 @@ ViewPtr
   osg::ref_ptr<osgViewer::View> view(new osgViewer::View);
   setupCamera(view->getCamera(),graphics_window_ptr);
   view->addEventHandler(new osgViewer::StatsHandler);
-  view->addEventHandler(new OSGPickHandler(view,&scene.selection_handler));
+  view->addEventHandler(new OSGPickHandler(view,&scene.selectionHandler()));
 
   osg::ref_ptr<osgGA::CameraManipulator> manipulator_ptr =
     createCameraManipulator(view_type);
 
   view->setCameraManipulator(manipulator_ptr);
-  scene.composite_viewer.addView(view);
+  scene._composite_viewer.addView(view);
   return view;
 }
 
@@ -276,8 +319,8 @@ GraphicsWindowPtr OSGScene::createGraphicsWindow(ViewType view_type)
   Impl::setupViewInGraphicsWindow(window_ptr,view_type,*this);
   osgViewer::GraphicsWindow::Views views;
   window_ptr->getViews(views);
-  assert(top_node_ptr);
-  views.front()->setSceneData(&*top_node_ptr);
+  assert(_top_node_ptr);
+  views.front()->setSceneData(&*_top_node_ptr);
   return window_ptr;
 }
 
@@ -610,7 +653,7 @@ Optional<size_t>
   osg::MatrixTransform &transform = geometryTransformOf(&node);
   size_t index = 0;
 
-  for (osg::MatrixTransform *transform_ptr : scene.transform_ptrs) {
+  for (osg::MatrixTransform *transform_ptr : scene._transform_ptrs) {
     if (transform_ptr == &transform) {
       return index;
     }
@@ -626,7 +669,7 @@ Optional<size_t>
 Optional<TransformHandle>
   OSGScene::Impl::selectedTransform(const OSGScene &scene)
 {
-  osg::Node *node_ptr = scene.selection_handler.selectedNodePtr();
+  osg::Node *node_ptr = scene.selectionHandler().selectedNodePtr();
 
   if (!node_ptr) {
     return {};
@@ -901,7 +944,7 @@ void OSGScene::SelectionHandler::nodeClicked(osg::Node *new_selected_node_ptr)
 
 void OSGScene::attachDraggerToSelectedNode(DraggerType dragger_type)
 {
-  selection_handler.attachDragger(dragger_type);
+  selectionHandler().attachDragger(dragger_type);
 }
 
 
@@ -1077,28 +1120,31 @@ static void addFloorTo(osg::MatrixTransform &matrix_transform)
 
 
 OSGScene::OSGScene()
-: top_node_ptr(createMatrixTransform()),
-  top_handle(Impl::makeHandle(*this,addTransformToGroup(*top_node_ptr))),
-  selection_handler(*this)
+: _top_node_ptr(createMatrixTransform()),
+  _top_handle(Impl::makeHandle(*this,addTransformToGroup(*_top_node_ptr))),
+  _selection_handler_ptr(new SelectionHandler(*this))
 {
-  osg::MatrixTransform &node = *top_node_ptr;
+  osg::MatrixTransform &node = *_top_node_ptr;
 
   osg::MatrixTransform &geometry_transform =
-    Impl::geometryTransform(*this, top_handle);
+    Impl::geometryTransform(*this, _top_handle);
 
   addFloorTo(geometry_transform);
   setRotatation(node,worldRotation());
   node.getOrCreateStateSet()->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
 
   // disable the default setting of viewer.done() by pressing Escape.
-  composite_viewer.setKeyEventSetsDone(0);
-  composite_viewer.setThreadingModel(composite_viewer.SingleThreaded);
+  _composite_viewer.setKeyEventSetsDone(0);
+  _composite_viewer.setThreadingModel(_composite_viewer.SingleThreaded);
 
   // This causes paintEvent to be called regularly.
-  timer.interval_in_milliseconds = 10;
-  timer.callback = [this]{ composite_viewer.frame(); };
-  timer.start();
+  _timer.interval_in_milliseconds = 10;
+  _timer.callback = [this]{ _composite_viewer.frame(); };
+  _timer.start();
 }
+
+
+OSGScene::~OSGScene() = default;
 
 
 static osg::Geode&
@@ -1160,12 +1206,12 @@ void
     osg::MatrixTransform &geometry_transform
   )
 {
-  if (scene.selection_handler.selectedNodePtr()) {
+  if (scene.selectionHandler().selectedNodePtr()) {
     osg::Group &selected_geometry_transform =
-      parentOf(*scene.selection_handler.selectedNodePtr());
+      parentOf(*scene.selectionHandler().selectedNodePtr());
 
     if (&geometry_transform == &selected_geometry_transform) {
-      scene.selection_handler.selectNodeWithoutDragger(nullptr);
+      scene.selectionHandler().selectNodeWithoutDragger(nullptr);
     }
   }
 
@@ -1216,7 +1262,7 @@ void OSGScene::destroyLine(LineHandle handle)
     Impl::geometryTransform(*this, handle);
 
   Impl::destroyGeometryTransform(*this, geometry_transform);
-  transform_ptrs[handle.index] = 0;
+  _transform_ptrs[handle.index] = 0;
 }
 
 
@@ -1226,7 +1272,7 @@ void OSGScene::destroyObject(TransformHandle handle)
     Impl::geometryTransform(*this, handle);
 
   Impl::destroyGeometryTransform(*this, geometry_transform);
-  transform_ptrs[handle.index] = 0;
+  _transform_ptrs[handle.index] = 0;
 }
 
 
@@ -1236,8 +1282,8 @@ osg::MatrixTransform&
     const TransformHandle &handle
   )
 {
-  assert(scene.transform_ptrs[handle.index]);
-  return *scene.transform_ptrs[handle.index];
+  assert(scene._transform_ptrs[handle.index]);
+  return *scene._transform_ptrs[handle.index];
 }
 
 
@@ -1247,8 +1293,8 @@ const osg::MatrixTransform&
     const TransformHandle &handle
   )
 {
-  assert(scene.transform_ptrs[handle.index]);
-  return *scene.transform_ptrs[handle.index];
+  assert(scene._transform_ptrs[handle.index]);
+  return *scene._transform_ptrs[handle.index];
 }
 
 
@@ -1320,14 +1366,14 @@ size_t
     osg::MatrixTransform &transform
   )
 {
-  assert(!contains(scene.transform_ptrs,&transform));
-  size_t index = findNull(scene.transform_ptrs);
+  assert(!contains(scene._transform_ptrs,&transform));
+  size_t index = findNull(scene._transform_ptrs);
 
-  if (index == scene.transform_ptrs.size()) {
-    scene.transform_ptrs.push_back(&transform);
+  if (index == scene._transform_ptrs.size()) {
+    scene._transform_ptrs.push_back(&transform);
   }
   else {
-    scene.transform_ptrs[index] = &transform;
+    scene._transform_ptrs[index] = &transform;
   }
 
   return index;
@@ -1375,7 +1421,7 @@ auto
 
 auto OSGScene::top() const -> TransformHandle
 {
-  return top_handle;
+  return _top_handle;
 }
 
 
@@ -1387,7 +1433,7 @@ auto OSGScene::worldPoint(Point p,TransformHandle t) const -> Point
       {p.x(),p.y(),p.z()}
     );
 
-  osg::Vec3f v2 = ::localPoint(*top_node_ptr,v1);
+  osg::Vec3f v2 = ::localPoint(*_top_node_ptr,v1);
   return {v2.x(),v2.y(),v2.z()};
 }
 
@@ -1520,7 +1566,7 @@ void OSGScene::selectObject(TransformHandle handle)
 {
   osg::Node *node_ptr = Impl::geometryTransform(*this,handle).getChild(0);
   assert(node_ptr);
-  selection_handler.selectNodeWithoutDragger(node_ptr);
+  selectionHandler().selectNodeWithoutDragger(node_ptr);
 }
 
 
@@ -1544,7 +1590,7 @@ void OSGScene::setTranslation(TransformHandle handle, Point p)
   ::setTranslation(parent_transform, p.x(), p.y(), p.z());
 
   if (Impl::selectedTransform(*this) == handle) {
-    selection_handler.updateDraggerPosition();
+    selectionHandler().updateDraggerPosition();
   }
 }
 
@@ -1561,7 +1607,7 @@ void
   ::setCoordinateAxes(Impl::transform(*this, handle),x,y,z);
 
   if (Impl::selectedTransform(*this) == handle) {
-    selection_handler.updateDraggerPosition();
+    selectionHandler().updateDraggerPosition();
   }
 }
 
