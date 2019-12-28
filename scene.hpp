@@ -50,8 +50,9 @@ struct Scene {
   virtual void destroyLine(LineHandle) = 0;
   virtual void destroyObject(TransformHandle) = 0;
   virtual void setGeometryScale(TransformHandle, const Vec3 &) = 0;
-  virtual void setGeometryCenter(TransformHandle, const Vec3 &) = 0;
+  virtual void setGeometryCenter(TransformHandle, const Point &) = 0;
   virtual Vec3 geometryScale(TransformHandle) const = 0;
+  virtual Point geometryCenter(TransformHandle) const = 0;
   virtual void setCoordinateAxes(TransformHandle,const CoordinateAxes &) = 0;
   virtual CoordinateAxes coordinateAxes(TransformHandle) const = 0;
   virtual void setTranslation(TransformHandle,Point) = 0;

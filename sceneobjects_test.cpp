@@ -13,7 +13,7 @@ struct FakeScene : Scene {
 
   struct Body {
     TransformIndex parent_index;
-    Vec3 geometry_center = {0,0,0};
+    Point geometry_center = {0,0,0};
   };
 
   using Bodies = map<TransformIndex, Body>;
@@ -87,12 +87,17 @@ struct FakeScene : Scene {
   {
   }
 
-  void setGeometryCenter(TransformHandle handle,const Vec3 &center) override
+  void setGeometryCenter(TransformHandle handle,const Point &center) override
   {
     bodies[handle.index].geometry_center = center;
   }
 
   virtual Vec3 geometryScale(TransformHandle) const
+  {
+    assert(false); // not needed
+  }
+
+  virtual Point geometryCenter(TransformHandle) const
   {
     assert(false); // not needed
   }
@@ -158,7 +163,7 @@ struct FakeScene : Scene {
 }
 
 
-static Vec3
+static Point
 sceneGeometryCenter(
   BodyIndex index,
   const FakeScene &scene,
@@ -177,7 +182,7 @@ int main()
 {
   FakeScene scene;
 
-  Vec3 center = { 1.5, 2.5, 3.5};
+  Point center = { 1.5, 2.5, 3.5};
   SceneState state;
   BodyIndex parent_index = state.createBody(/*parent*/{});
   BodyIndex child_index = state.createBody(parent_index);

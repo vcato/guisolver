@@ -34,6 +34,12 @@ inline Vec3 vec3(const SceneState::XYZ &arg)
 }
 
 
+inline Point point(const SceneState::XYZ &arg)
+{
+  return {arg.x, arg.y, arg.z};
+}
+
+
 inline Transform makeTransformFromState(const SceneState::Transform &arg)
 {
   Transform box_global = Transform::Identity();

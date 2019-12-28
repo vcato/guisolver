@@ -28,8 +28,9 @@ class OSGScene : public Scene {
     void destroyLine(LineHandle) override;
     void destroyObject(TransformHandle) override;
     void setGeometryScale(TransformHandle handle,const Vec3 &) override;
-    void setGeometryCenter(TransformHandle handle,const Vec3 &) override;
+    void setGeometryCenter(TransformHandle handle,const Point &) override;
     Vec3 geometryScale(TransformHandle) const override;
+    Point geometryCenter(TransformHandle) const override;
     void setTranslation(TransformHandle,Point) override;
     Point translation(TransformHandle) const override;
     void setCoordinateAxes(TransformHandle,const CoordinateAxes &) override;

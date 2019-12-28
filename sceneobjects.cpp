@@ -44,12 +44,6 @@ static void
 }
 
 
-static SceneState::XYZ scaleState(const Vec3 &v)
-{
-  return {v.x, v.y, v.z};
-}
-
-
 static Transform
 localTransform(const Scene &scene, Scene::TransformHandle transform_id)
 {
@@ -72,7 +66,8 @@ updateSceneStateFromSceneObjects(
     const TransformHandle body_handle = scene_handles.bodies[i];
     SceneState::Body &body_state = state.body(i);
     body_state.transform = transformState(localTransform(scene, body_handle));
-    body_state.geometry.scale = scaleState(scene.geometryScale(body_handle));
+    body_state.geometry.scale = xyzState(scene.geometryScale(body_handle));
+    body_state.geometry.center = xyzState(scene.geometryCenter(body_handle));
   }
 }
 
@@ -235,7 +230,7 @@ static void
   );
 
   scene.setGeometryCenter(
-    body_transform_handle, vec3(body_state.geometry.center)
+    body_transform_handle, point(body_state.geometry.center)
   );
 }
 

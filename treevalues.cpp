@@ -734,17 +734,6 @@ static void
 
 
 static void
-  updateScaleValues(
-    TreeWidget &tree_widget,
-    const TreePaths::XYZ &scale_paths,
-    const SceneState::XYZ &scale
-  )
-{
-  updateXYZValues(tree_widget, scale_paths, vec3(scale));
-}
-
-
-static void
   updateMarker(
     MarkerIndex i,
     TreeWidget &tree_widget,
@@ -768,7 +757,8 @@ updateBody(
   BodyIndex body_index
 )
 {
-  const TransformState &global = state.body(body_index).transform;
+  const SceneState::Body &body_state = state.body(body_index);
+  const TransformState &global = body_state.transform;
   const TreePaths::Body &body_paths = tree_paths.bodies[body_index];
   {
     const TreePaths::Translation &translation_paths = body_paths.translation;
@@ -782,8 +772,13 @@ updateBody(
   }
   {
     const TreePaths::XYZ &scale_paths = body_paths.geometry.scale;
-    const SceneState::XYZ &scale = state.body(body_index).geometry.scale;
-    updateScaleValues(tree_widget, scale_paths, scale);
+    const SceneState::XYZ &scale = body_state.geometry.scale;
+    updateXYZValues(tree_widget, scale_paths, vec3(scale));
+  }
+  {
+    const TreePaths::XYZ &center_paths = body_paths.geometry.center;
+    const SceneState::XYZ &center = body_state.geometry.center;
+    updateXYZValues(tree_widget, center_paths, vec3(center));
   }
 }
 

@@ -17,11 +17,6 @@
 #include "contains.hpp"
 #include "matchconst.hpp"
 
-namespace {
-struct ScaleDragger;
-}
-
-
 using std::cerr;
 using std::string;
 using DraggerType = Scene::DraggerType;
@@ -32,6 +27,7 @@ using AutoTransformPtr = osg::ref_ptr<osg::AutoTransform>;
 using DraggerPtr = osg::ref_ptr<osgManipulator::Dragger>;
 using TransformHandle = Scene::TransformHandle;
 using LineHandle = Scene::LineHandle;
+using ScaleDragger = osgManipulator::TabBoxDragger;
 
 using TranslateAxisDraggerPtr =
   osg::ref_ptr<osgManipulator::TranslateAxisDragger>;
@@ -86,48 +82,6 @@ struct LineDrawable : osg::Geometry {
     line_geometry.setColorArray(color_array.get());
     line_geometry.setColorBinding(osg::Geometry::BIND_PER_PRIMITIVE_SET);
     line_geometry.addPrimitiveSet(new osg::DrawArrays(GL_LINES,0,2));
-  }
-};
-}
-
-
-namespace {
-struct ScaleDragger : osgManipulator::TabBoxDragger {
-  struct Constraint : osgManipulator::Constraint {
-    using TranslateInLineCommand = osgManipulator::TranslateInLineCommand;
-    using TranslateInPlaneCommand = osgManipulator::TranslateInPlaneCommand;
-
-    bool constrain(osgManipulator::Scale1DCommand& command) const override
-    {
-      command.setScaleCenter(0);
-      return true;
-    }
-
-    bool constrain(osgManipulator::Scale2DCommand& command) const override
-    {
-      command.setScaleCenter({0,0});
-      return true;
-    }
-
-    bool constrain(TranslateInLineCommand& command) const override
-    {
-      command.setTranslation({0,0,0});
-      return true;
-    }
-
-    bool constrain(TranslateInPlaneCommand& command) const override
-    {
-      command.setTranslation({0,0,0});
-      return true;
-    }
-  };
-
-  osg::ref_ptr<Constraint> constraint_ptr;
-
-  ScaleDragger()
-  : constraint_ptr(new Constraint)
-  {
-    addConstraint(constraint_ptr);
   }
 };
 }
@@ -553,13 +507,6 @@ static DraggerPtr
       {
         ScaleDraggerPtr scale_dragger_ptr = new ScaleDragger;
         scale_dragger_ptr->setupDefaultGeometry();
-
-        handle_command_mask =
-          HandleCommandMask(
-            HandleCommandMask::HANDLE_SCALED_1D |
-            HandleCommandMask::HANDLE_SCALED_2D
-          );
-
         dragger_ptr = scale_dragger_ptr;
       }
       break;
@@ -1350,12 +1297,12 @@ void OSGScene::setGeometryScale(TransformHandle handle,const Vec3 &v)
 }
 
 
-void OSGScene::setGeometryCenter(TransformHandle handle,const Vec3 &v)
+void OSGScene::setGeometryCenter(TransformHandle handle,const Point &v)
 {
   osg::MatrixTransform &geometry_transform =
     Impl::geometryTransformForHandle(*this, handle);
 
-  ::setTranslation(geometry_transform, v);
+  ::setTranslation(geometry_transform, {v.x(), v.y(), v.z()});
 
   if (Impl::selectedTransform(*this) == handle) {
     selectionHandler().updateDraggerPosition();
@@ -1366,6 +1313,12 @@ void OSGScene::setGeometryCenter(TransformHandle handle,const Vec3 &v)
 Vec3 OSGScene::geometryScale(TransformHandle handle) const
 {
   return ::scale(Impl::geometryTransformForHandle(*this, handle));
+}
+
+
+Point OSGScene::geometryCenter(TransformHandle handle) const
+{
+  return ::translation(Impl::geometryTransformForHandle(*this, handle));
 }
 
 
