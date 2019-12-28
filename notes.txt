@@ -303,6 +303,3 @@ Seems like it would make sense to be able to select two markers and then
 create a distance error between them.  I'm not sure what the interaction
 here is though.  The most intuitive thing seems to be right-clicking
 on the 3D view and having a context menu which says "Add Distance Error".
----
-When first loading a scene, the distance errors aren't displayed properly
-in the 3D view.
