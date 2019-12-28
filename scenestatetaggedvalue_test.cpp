@@ -14,7 +14,7 @@ static BodyIndex
     Optional<BodyIndex> maybe_parent_index
   )
 {
-  return scene_state.createBody(maybe_parent_index, /*scale*/{1,1,1});
+  return scene_state.createBody(maybe_parent_index);
 }
 
 
@@ -44,9 +44,11 @@ static void testCreatingABodyFromATaggedValue()
     "    z: 2.99252e-05\n"
     "  }\n"
     "  Box {\n"
-    "    scale_x: 1\n"
-    "    scale_y: 2.5\n"
-    "    scale_z: 3.5\n"
+    "    scale {\n"
+    "      x: 1\n"
+    "      y: 2.5\n"
+    "      z: 3.5\n"
+    "    }\n"
     "  }\n"
     "}\n";
 

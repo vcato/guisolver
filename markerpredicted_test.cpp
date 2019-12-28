@@ -4,7 +4,7 @@
 static BodyIndex
   createBodyIn(SceneState &scene_state, Optional<BodyIndex> maybe_parent_index)
 {
-  return scene_state.createBody(maybe_parent_index, /*scale*/{1,1,1});
+  return scene_state.createBody(maybe_parent_index);
 }
 
 

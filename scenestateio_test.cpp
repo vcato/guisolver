@@ -39,7 +39,7 @@ static void testWith(const SceneState &state)
 static void testWithAdditionalDistanceError()
 {
   SceneState state;
-  createBodyInState(state, /*maybe_parent_index*/{}, /*scale*/{1,1,1});
+  createBodyInState(state, /*maybe_parent_index*/{});
   DistanceErrorIndex index = state.createDistanceError();
   SceneState::DistanceError &distance_error = state.distance_errors[index];
   distance_error.weight = 2.5;
@@ -54,10 +54,13 @@ static void testWithChildTransform()
 
   SceneState::XYZ scale = { 5, 0.1, 10 };
 
-  BodyIndex body1_index =
-    createBodyInState(state, /*maybe_parent_index*/{}, scale);
+  BodyIndex body1_index = createBodyInState(state, /*maybe_parent_index*/{});
+  state.body(body1_index).scale = scale;
 
-  createBodyInState(state, /*maybe_parent_index*/body1_index, scale);
+  BodyIndex body2_index =
+    createBodyInState(state, /*maybe_parent_index*/body1_index);
+
+  state.body(body2_index).scale = scale;
   string state_string = sceneStateString(state);
 
   string expected_string =
@@ -74,9 +77,11 @@ static void testWithChildTransform()
     "      z: 0\n"
     "    }\n"
     "    Box {\n"
-    "      scale_x: 5\n"
-    "      scale_y: 0.1\n"
-    "      scale_z: 10\n"
+    "      scale {\n"
+    "        x: 5\n"
+    "        y: 0.1\n"
+    "        z: 10\n"
+    "      }\n"
     "    }\n"
     "    Transform {\n"
     "      translation {\n"
@@ -90,9 +95,11 @@ static void testWithChildTransform()
     "        z: 0\n"
     "      }\n"
     "      Box {\n"
-    "        scale_x: 5\n"
-    "        scale_y: 0.1\n"
-    "        scale_z: 10\n"
+    "        scale {\n"
+    "          x: 5\n"
+    "          y: 0.1\n"
+    "          z: 10\n"
+    "        }\n"
     "      }\n"
     "    }\n"
     "  }\n"
@@ -119,9 +126,11 @@ static void testWithMultipleTransforms()
     "      z: 0\n"
     "    }\n"
     "    Box {\n"
-    "      scale_x: 5\n"
-    "      scale_y: 0.1\n"
-    "      scale_z: 10\n"
+    "      scale {\n"
+    "        x: 5\n"
+    "        y: 0.1\n"
+    "        z: 10\n"
+    "      }\n"
     "    }\n"
     "  }\n"
     "  Transform {\n"
@@ -136,17 +145,21 @@ static void testWithMultipleTransforms()
     "      z: 0\n"
     "    }\n"
     "    Box {\n"
-    "      scale_x: 5\n"
-    "      scale_y: 0.1\n"
-    "      scale_z: 10\n"
+    "      scale {\n"
+    "        x: 5\n"
+    "        y: 0.1\n"
+    "        z: 10\n"
+    "      }\n"
     "    }\n"
     "  }\n"
     "}\n";
 
   SceneState state;
   SceneState::XYZ box_scale = {5, 0.1, 10};
-  createBodyInState(state, /*maybe_parent_index*/{}, box_scale);
-  createBodyInState(state, /*maybe_parent_index*/{}, box_scale);
+  BodyIndex box1_index = createBodyInState(state, /*maybe_parent_index*/{});
+  state.body(box1_index).scale = box_scale;
+  BodyIndex box2_index = createBodyInState(state, /*maybe_parent_index*/{});
+  state.body(box2_index).scale = box_scale;
   string state_string = sceneStateString(state);
   assert(state_string == expected_string);
   testWith(state);

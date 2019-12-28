@@ -669,11 +669,7 @@ MainWindowController::Impl::addBodyPressed(
   }
 
   BodyIndex body_index =
-    createBodyInState(
-      scene_state,
-      maybe_parent_body_index,
-      /*scale*/{1,1,1}
-    );
+    createBodyInState(scene_state, maybe_parent_body_index);
 
   createBodyInScene(scene, scene_handles, scene_state, body_index);
   createBodyInTree(tree_widget, tree_paths, scene_state, body_index);
@@ -1167,14 +1163,15 @@ MainWindowController::MainWindowController(
 }
 
 
-void MainWindowController::notifySceneStateChanged()
+void MainWindowController::replaceSceneStateWith(const SceneState &new_state)
 {
   Scene &scene = data.scene;
   SceneHandles &scene_handles = data.scene_handles;
   TreeWidget &tree_widget = data.tree_widget;
   SceneState &scene_state = data.scene_state;
-  destroySceneObjects(scene, scene_handles);
+  destroySceneObjects(scene, scene_state, scene_handles);
   clearTree(tree_widget, data.tree_paths);
+  scene_state = new_state;
   scene_handles = createSceneObjects(scene_state, scene);
   data.tree_paths = fillTree(tree_widget, scene_state);
 }

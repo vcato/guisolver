@@ -127,8 +127,7 @@ BodyIndex
     const Optional<BodyIndex> maybe_parent_index
   )
 {
-  BodyIndex body_index =
-    createBodyInState(result, maybe_parent_index, {1,1,1});
+  BodyIndex body_index = createBodyInState(result, maybe_parent_index);
 
   result.body(body_index).transform =
     makeTransformFromTaggedValue(tagged_value);
@@ -139,9 +138,18 @@ BodyIndex
   const TaggedValue *box_ptr = findChild(tagged_value, "Box");
 
   if (box_ptr) {
-    result.body(body_index).scale.x = numericValueOr(*box_ptr, "scale_x", 1);
-    result.body(body_index).scale.y = numericValueOr(*box_ptr, "scale_y", 1);
-    result.body(body_index).scale.z = numericValueOr(*box_ptr, "scale_z", 1);
+    const TaggedValue *scale_ptr = findChild(*box_ptr, "scale");
+
+    if (scale_ptr) {
+      result.body(body_index).scale.x = numericValueOr(*scale_ptr, "x", 1);
+      result.body(body_index).scale.y = numericValueOr(*scale_ptr, "y", 1);
+      result.body(body_index).scale.z = numericValueOr(*scale_ptr, "z", 1);
+    }
+    else {
+      result.body(body_index).scale.x = numericValueOr(*box_ptr, "scale_x", 1);
+      result.body(body_index).scale.y = numericValueOr(*box_ptr, "scale_y", 1);
+      result.body(body_index).scale.z = numericValueOr(*box_ptr, "scale_z", 1);
+    }
   }
 
   extractBodies(result, tagged_value, body_index);
@@ -428,9 +436,13 @@ static TaggedValue &
   auto &box = create(parent, "Box");
   {
     auto &parent = box;
-    create(parent, "scale_x", box_state.scale.x);
-    create(parent, "scale_y", box_state.scale.y);
-    create(parent, "scale_z", box_state.scale.z);
+    auto &scale = create(parent, "scale");
+    {
+      auto &parent = scale;
+      create(parent, "x", box_state.scale.x);
+      create(parent, "y", box_state.scale.y);
+      create(parent, "z", box_state.scale.z);
+    }
   }
 
   return box;

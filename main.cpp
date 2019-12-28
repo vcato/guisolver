@@ -151,8 +151,7 @@ int main(int argc,char** argv)
 
   QtSlot new_slot(
     [&](){
-      scene_state = SceneState();
-      controller.notifySceneStateChanged();
+      controller.replaceSceneStateWith(SceneState());
     }
   );
 
@@ -177,8 +176,9 @@ int main(int argc,char** argv)
         // Cancelled
       }
       else {
-        loadScene(scene_state, *maybe_path);
-        controller.notifySceneStateChanged();
+        SceneState new_scene_state;
+        loadScene(new_scene_state, *maybe_path);
+        controller.replaceSceneStateWith(new_scene_state);
       }
     }
   );

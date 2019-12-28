@@ -19,7 +19,8 @@ struct Scene {
   };
 
   struct TransformHandle {
-    size_t index;
+    using Index = size_t;
+    Index index;
 
     friend std::ostream&
       operator<<(std::ostream &stream, const TransformHandle &transform_handle)
@@ -38,22 +39,19 @@ struct Scene {
     LineHandle(size_t index) : TransformHandle{index} {}
   };
 
+  std::function<void()> changing_callback;
+  std::function<void()> changed_callback;
+  std::function<void()> selection_changed_callback;
+
   virtual TransformHandle top() const = 0;
   virtual TransformHandle createSphere(TransformHandle parent) = 0;
   virtual TransformHandle createBox(TransformHandle parent) = 0;
   virtual LineHandle createLine(TransformHandle parent) = 0;
   virtual void destroyLine(LineHandle) = 0;
   virtual void destroyObject(TransformHandle) = 0;
-
-  TransformHandle createSphere() { return createSphere(top()); }
-  TransformHandle createBox() { return createBox(top()); }
-
   virtual void setGeometryScale(TransformHandle,float x,float y,float z) = 0;
   virtual Vec3 geometryScale(TransformHandle) const = 0;
-
-  virtual void
-    setCoordinateAxes(TransformHandle id,const CoordinateAxes &axes) = 0;
-
+  virtual void setCoordinateAxes(TransformHandle,const CoordinateAxes &) = 0;
   virtual CoordinateAxes coordinateAxes(TransformHandle) const = 0;
   virtual void setTranslation(TransformHandle,Point) = 0;
   virtual Point translation(TransformHandle) const = 0;
@@ -63,13 +61,12 @@ struct Scene {
   virtual Point worldPoint(Point local,TransformHandle) const = 0;
   virtual Optional<TransformHandle> selectedObject() const = 0;
   virtual void selectObject(TransformHandle) = 0;
-
   virtual Optional<LineHandle> maybeLine(TransformHandle) const = 0;
   virtual void attachDraggerToSelectedNode(DraggerType) = 0;
 
-  std::function<void()> changing_callback;
-  std::function<void()> changed_callback;
-  std::function<void()> selection_changed_callback;
+  TransformHandle createSphere() { return createSphere(top()); }
+  TransformHandle createBox() { return createBox(top()); }
+
 };
 
 #endif /* SCENE_HPP_ */

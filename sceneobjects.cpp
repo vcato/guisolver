@@ -282,7 +282,64 @@ SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
 }
 
 
-void destroySceneObjects(Scene &scene, const SceneHandles &scene_handles)
+template <typename F>
+static void
+forEachChild(
+  Optional<BodyIndex> maybe_parent_index,
+  const SceneState &scene_state,
+  const F &f
+)
+{
+  for (BodyIndex body_index : indicesOf(scene_state.bodies())) {
+    if (scene_state.body(body_index).maybe_parent_index == maybe_parent_index) {
+      f(body_index);
+    }
+  }
+}
+
+
+static void
+destroyBody(
+  BodyIndex body_index,
+  Scene &scene,
+  const SceneState &scene_state,
+  const SceneHandles &scene_handles
+);
+
+
+static void
+destroyChildrenOf(
+  Optional<BodyIndex> maybe_parent_index,
+  Scene &scene,
+  const SceneState &scene_state,
+  const SceneHandles &scene_handles
+)
+{
+  forEachChild(maybe_parent_index, scene_state, [&](BodyIndex child_index){
+    destroyBody(child_index, scene, scene_state, scene_handles);
+  });
+}
+
+
+static void
+destroyBody(
+  BodyIndex body_index,
+  Scene &scene,
+  const SceneState &scene_state,
+  const SceneHandles &scene_handles
+)
+{
+  destroyChildrenOf(body_index, scene, scene_state, scene_handles);
+  scene.destroyObject(scene_handles.bodies[body_index]);
+}
+
+
+void
+destroySceneObjects(
+  Scene &scene,
+  const SceneState &scene_state,
+  const SceneHandles &scene_handles
+)
 {
   for (const auto &marker : scene_handles.markers) {
     scene.destroyObject(marker.handle);
@@ -292,9 +349,7 @@ void destroySceneObjects(Scene &scene, const SceneHandles &scene_handles)
     scene.destroyLine(distance_error.line);
   }
 
-  for (const auto &body : scene_handles.bodies) {
-    scene.destroyObject(body);
-  }
+  destroyChildrenOf({}, scene, scene_state, scene_handles);
 }
 
 

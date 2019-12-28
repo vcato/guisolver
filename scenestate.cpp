@@ -67,11 +67,10 @@ createMarkerInState(
 BodyIndex
 createBodyInState(
   SceneState &state,
-  Optional<BodyIndex> maybe_parent_index,
-  const SceneState::XYZ &scale
+  Optional<BodyIndex> maybe_parent_index
 )
 {
-  return state.createBody(maybe_parent_index, scale);
+  return state.createBody(maybe_parent_index);
 }
 
 

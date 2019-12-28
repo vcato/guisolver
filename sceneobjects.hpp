@@ -4,7 +4,13 @@
 
 
 extern SceneHandles createSceneObjects(const SceneState &state, Scene &scene);
-extern void destroySceneObjects(Scene &scene, const SceneHandles &);
+
+extern void
+  destroySceneObjects(
+    Scene &scene,
+    const SceneState &state,
+    const SceneHandles &
+  );
 
 extern void
   updateSceneStateFromSceneObjects(
