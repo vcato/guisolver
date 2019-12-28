@@ -17,6 +17,11 @@
 #include "contains.hpp"
 #include "matchconst.hpp"
 
+namespace {
+struct ScaleDragger;
+}
+
+
 using std::cerr;
 using std::string;
 using DraggerType = Scene::DraggerType;
@@ -27,7 +32,6 @@ using AutoTransformPtr = osg::ref_ptr<osg::AutoTransform>;
 using DraggerPtr = osg::ref_ptr<osgManipulator::Dragger>;
 using TransformHandle = Scene::TransformHandle;
 using LineHandle = Scene::LineHandle;
-using ScaleDragger = osgManipulator::TabBoxDragger;
 
 using TranslateAxisDraggerPtr =
   osg::ref_ptr<osgManipulator::TranslateAxisDragger>;
@@ -36,6 +40,30 @@ using TrackballDraggerPtr =
   osg::ref_ptr<osgManipulator::TrackballDragger>;
 
 using ScaleDraggerPtr = osg::ref_ptr<ScaleDragger>;
+
+namespace {
+struct ScaleDragger : osgManipulator::TabBoxDragger {
+  bool
+    handle(
+      const osgManipulator::PointerInfo& pi,
+      const osgGA::GUIEventAdapter& ea,
+      osgGA::GUIActionAdapter& aa
+    ) override
+  {
+    // Prevent the dragger from being activated if we're holding down
+    // the ALT key, since we want that to be reserved for view manipulation.
+
+    if (ea.getEventType() == osgGA::GUIEventAdapter::PUSH) {
+      if ((ea.getModKeyMask() & osgGA::GUIEventAdapter::MODKEY_ALT) != 0) {
+        return false;
+      }
+    }
+
+    return osgManipulator::TabBoxDragger::handle(pi, ea, aa);
+  }
+};
+}
+
 
 namespace {
 struct ShapeParams {
@@ -516,6 +544,11 @@ static DraggerPtr
 
   {
     osgManipulator::Dragger &dragger = *dragger_ptr;
+
+    dragger.setActivationMouseButtonMask(
+      osgGA::GUIEventAdapter::LEFT_MOUSE_BUTTON
+    );
+
     dragger.setHandleEvents(true);
     dragger.addTransformUpdating(&transform_updating, handle_command_mask);
     dragger.setMatrix(draggerMatrix(transform_updating, dragger_type));

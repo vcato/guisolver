@@ -77,11 +77,11 @@ typedef osgGA::TrackballManipulator ManipulatorBase;
 
 
 namespace {
-struct Manipulator : ManipulatorBase
+struct CameraManipulator : ManipulatorBase
 {
   bool disable_rotate;
 
-  Manipulator() : disable_rotate(false) { }
+  CameraManipulator() : disable_rotate(false) { }
 
   virtual bool
     handle(
@@ -90,14 +90,18 @@ struct Manipulator : ManipulatorBase
     )
   {
     // Disable view manipulation unless we're holding down the ALT key.
-    if (ea.getEventType()==osgGA::GUIEventAdapter::DRAG) {
+    auto event_type = ea.getEventType();
+
+    if (event_type == ea.PUSH || event_type == ea.DRAG) {
       if (disable_rotate && ea.getButtonMask() & ea.LEFT_MOUSE_BUTTON) {
         return false;
       }
-      if (!(ea.getModKeyMask() & osgGA::GUIEventAdapter::MODKEY_ALT)) {
+
+      if (!(ea.getModKeyMask() & ea.MODKEY_ALT)) {
         return false;
       }
     }
+
     return ManipulatorBase::handle(ea,us);
   }
 };
@@ -145,7 +149,7 @@ static HomePosition homePosition(ViewType view_type)
 
 static void
   configureCameraManipatulator(
-    Manipulator &manipulator,
+    CameraManipulator &manipulator,
     const ViewParams &params
   )
 {
@@ -175,7 +179,7 @@ static ViewParams viewParams(ViewType view_type)
 
 CameraManipulatorPtr createCameraManipulator(ViewType view_type)
 {
-  osg::ref_ptr<Manipulator> manipulator_ptr(new Manipulator);
+  osg::ref_ptr<CameraManipulator> manipulator_ptr(new CameraManipulator);
   configureCameraManipatulator(*manipulator_ptr,viewParams(view_type));
   return manipulator_ptr;
 }
