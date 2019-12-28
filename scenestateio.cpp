@@ -8,7 +8,7 @@ using std::ostream;
 
 void printSceneStateOn(ostream &stream, const SceneState &state)
 {
-  printTaggedValueOn(stream, makeTaggedValue(state), /*indent*/0);
+  printTaggedValueOn(stream, makeTaggedValueForSceneState(state), /*indent*/0);
 }
 
 

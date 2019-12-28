@@ -536,7 +536,7 @@ void
 }
 
 
-TaggedValue makeTaggedValue(const SceneState &scene_state)
+TaggedValue makeTaggedValueForSceneState(const SceneState &scene_state)
 {
   TaggedValue result("Scene");
   createChildBodies(result, scene_state, /*maybe_parent_index*/{});

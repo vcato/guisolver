@@ -309,3 +309,6 @@ on the 3D view and having a context menu which says "Add Distance Error".
 ---
 It seems like there's no reason to restrict boxes to be at the origin.
 We could have a translation property for a box.
+* Have a "center" for the box.
+---
+Change the file format so that it has "scale" instead of "scale_x".

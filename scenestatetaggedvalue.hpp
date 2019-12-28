@@ -29,7 +29,7 @@ extern void
 extern SceneState
   makeSceneStateFromTaggedValue(const TaggedValue &tagged_value);
 
-extern TaggedValue makeTaggedValue(const SceneState &scene_state);
+extern TaggedValue makeTaggedValueForSceneState(const SceneState &scene_state);
 
 extern void
   createBodyTaggedValue(
