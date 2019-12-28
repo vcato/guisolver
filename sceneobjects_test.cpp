@@ -1,9 +1,7 @@
 #include "sceneobjects.hpp"
 
 #include <map>
-
-#define ADD_TEST 1
-
+#include "transformstate.hpp"
 
 using std::map;
 
@@ -12,11 +10,18 @@ namespace {
 struct FakeScene : Scene {
   using TransformIndex = TransformHandle::Index;
   TransformHandle top_handle = {0};
-  map<TransformIndex, TransformIndex> parent_map;
+
+  struct Body {
+    TransformIndex parent_index;
+    Vec3 geometry_center = {0,0,0};
+  };
+
+  using Bodies = map<TransformIndex, Body>;
+  Bodies bodies;
 
   bool indexIsUsed(TransformIndex i) const
   {
-    return parent_map.count(i) != 0;
+    return bodies.count(i) != 0;
   }
 
   TransformIndex firstUnusedIndex() const
@@ -34,8 +39,8 @@ struct FakeScene : Scene {
   {
     int count = 0;
 
-    for (auto item : parent_map) {
-      TransformIndex next_parent_index = item.second;
+    for (auto item : bodies) {
+      TransformIndex next_parent_index = item.second.parent_index;
 
       if (next_parent_index == handle.index) {
         ++count;
@@ -58,7 +63,7 @@ struct FakeScene : Scene {
   virtual TransformHandle createBox(TransformHandle parent)
   {
     TransformHandle new_handle = {firstUnusedIndex()};
-    parent_map[new_handle.index] = parent.index;
+    bodies[new_handle.index].parent_index = parent.index;
     return new_handle;
   }
 
@@ -75,12 +80,16 @@ struct FakeScene : Scene {
   virtual void destroyObject(TransformHandle handle)
   {
     assert(nChildren(handle) == 0);
-    parent_map.erase(handle.index);
+    bodies.erase(handle.index);
   }
 
-  virtual void
-  setGeometryScale(TransformHandle,float /*x*/,float /*y*/,float /*z*/)
+  void setGeometryScale(TransformHandle,const Vec3 &) override
   {
+  }
+
+  void setGeometryCenter(TransformHandle handle,const Vec3 &center) override
+  {
+    bodies[handle.index].geometry_center = center;
   }
 
   virtual Vec3 geometryScale(TransformHandle) const
@@ -149,14 +158,32 @@ struct FakeScene : Scene {
 }
 
 
+static Vec3
+sceneGeometryCenter(
+  BodyIndex index,
+  const FakeScene &scene,
+  const SceneHandles &scene_handles
+)
+{
+  const FakeScene::Bodies::const_iterator iter =
+    scene.bodies.find(scene_handles.bodies[index].index);
+
+  assert(iter != scene.bodies.end());
+  return iter->second.geometry_center;
+}
+
+
 int main()
 {
   FakeScene scene;
 
+  Vec3 center = { 1.5, 2.5, 3.5};
   SceneState state;
   BodyIndex parent_index = state.createBody(/*parent*/{});
-  /*BodyIndex child_index =*/ state.createBody(parent_index);
+  BodyIndex child_index = state.createBody(parent_index);
+  state.body(child_index).geometry.center = xyzState(center);
   SceneHandles scene_handles = createSceneObjects(state, scene);
+  assert(sceneGeometryCenter(child_index, scene, scene_handles) == center);
   destroySceneObjects(scene, state, scene_handles);
-  assert(scene.parent_map.empty());
+  assert(scene.bodies.empty());
 }

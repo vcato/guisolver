@@ -72,7 +72,7 @@ updateSceneStateFromSceneObjects(
     const TransformHandle body_handle = scene_handles.bodies[i];
     SceneState::Body &body_state = state.body(i);
     body_state.transform = transformState(localTransform(scene, body_handle));
-    body_state.scale = scaleState(scene.geometryScale(body_handle));
+    body_state.geometry.scale = scaleState(scene.geometryScale(body_handle));
   }
 }
 
@@ -85,7 +85,7 @@ static SceneHandles::Marker
   )
 {
   auto point = scene.createSphere(parent);
-  scene.setGeometryScale(point, 0.1, 0.1, 0.1);
+  scene.setGeometryScale(point, {0.1, 0.1, 0.1});
   scene.setColor(point, 0, 0, 1);
   scene.setTranslation(point, position);
   SceneHandles::Marker marker_handles = SceneHandles::Marker{point};
@@ -100,7 +100,7 @@ static SceneHandles::Marker
   )
 {
   auto point = scene.createSphere();
-  scene.setGeometryScale(point, 0.1, 0.1, 0.1);
+  scene.setGeometryScale(point, {0.1, 0.1, 0.1});
   scene.setColor(point, 0, 1, 0);
   scene.setTranslation(point, position);
   SceneHandles::Marker marker_handles = SceneHandles::Marker{point};
@@ -217,6 +217,29 @@ createBodyTransform(
 }
 
 
+static void
+  updateBodyInScene(
+    Scene &scene,
+    const TransformHandle &body_transform_handle,
+    const SceneState::Body &body_state
+  )
+{
+  setTransform(
+    body_transform_handle,
+    makeTransformFromState(body_state.transform),
+    scene
+  );
+
+  scene.setGeometryScale(
+    body_transform_handle, vec3(body_state.geometry.scale)
+  );
+
+  scene.setGeometryCenter(
+    body_transform_handle, vec3(body_state.geometry.center)
+  );
+}
+
+
 void
 createBodyInScene(
   Scene &scene,
@@ -230,21 +253,9 @@ createBodyInScene(
   TransformHandle transform_handle =
     createBodyTransform(body_state, scene, scene_handles);
 
-  scene.setGeometryScale(
-    transform_handle,
-    body_state.scale.x,
-    body_state.scale.y,
-    body_state.scale.z
-  );
-
   assert(BodyIndex(scene_handles.bodies.size()) == body_index);
   scene_handles.bodies.push_back(transform_handle);
-
-  setTransform(
-    transform_handle,
-    makeTransformFromState(body_state.transform),
-    scene
-  );
+  updateBodyInScene(scene, transform_handle, body_state);
 }
 
 
@@ -350,28 +361,6 @@ destroySceneObjects(
   }
 
   destroyChildrenOf({}, scene, scene_state, scene_handles);
-}
-
-
-static void
-  updateBodyInScene(
-    Scene &scene,
-    const TransformHandle &body_transform_handle,
-    const SceneState::Body &body_state
-  )
-{
-  setTransform(
-    body_transform_handle,
-    makeTransformFromState(body_state.transform),
-    scene
-  );
-
-  scene.setGeometryScale(
-    body_transform_handle,
-    body_state.scale.x,
-    body_state.scale.y,
-    body_state.scale.z
-  );
 }
 
 

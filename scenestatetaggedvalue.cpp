@@ -120,6 +120,17 @@ static SceneState::TransformSolveFlags
 }
 
 
+static SceneState::XYZ
+  xyzValueOr(const TaggedValue &tv, const Vec3 &default_value)
+{
+  SceneState::XYZ result;
+  result.x = numericValueOr(tv, "x", default_value.x);
+  result.y = numericValueOr(tv, "y", default_value.y);
+  result.z = numericValueOr(tv, "z", default_value.z);
+  return result;
+}
+
+
 BodyIndex
   createBodyFromTaggedValue(
     SceneState &result,
@@ -138,17 +149,33 @@ BodyIndex
   const TaggedValue *box_ptr = findChild(tagged_value, "Box");
 
   if (box_ptr) {
-    const TaggedValue *scale_ptr = findChild(*box_ptr, "scale");
+    const TaggedValue &box = *box_ptr;
+    {
+      const TaggedValue *scale_ptr = findChild(box, "scale");
+      const Vec3 default_scale = {1,1,1};
 
-    if (scale_ptr) {
-      result.body(body_index).scale.x = numericValueOr(*scale_ptr, "x", 1);
-      result.body(body_index).scale.y = numericValueOr(*scale_ptr, "y", 1);
-      result.body(body_index).scale.z = numericValueOr(*scale_ptr, "z", 1);
+      if (scale_ptr) {
+        result.body(body_index).geometry.scale =
+          xyzValueOr(*scale_ptr, default_scale);
+      }
+      else {
+        result.body(body_index).geometry.scale.x =
+          numericValueOr(box, "scale_x", default_scale.x);
+
+        result.body(body_index).geometry.scale.y =
+          numericValueOr(box, "scale_y", default_scale.y);
+
+        result.body(body_index).geometry.scale.z =
+          numericValueOr(box, "scale_z", default_scale.z);
+      }
     }
-    else {
-      result.body(body_index).scale.x = numericValueOr(*box_ptr, "scale_x", 1);
-      result.body(body_index).scale.y = numericValueOr(*box_ptr, "scale_y", 1);
-      result.body(body_index).scale.z = numericValueOr(*box_ptr, "scale_z", 1);
+    {
+      const TaggedValue *center_ptr = findChild(box, "center");
+
+      if (center_ptr) {
+        result.body(body_index).geometry.center =
+          xyzValueOr(*center_ptr, {0,0,0});
+      }
     }
   }
 
@@ -388,13 +415,32 @@ static void
   createXYZChildren(
     TaggedValue &parent,
     const Vec3 &value,
-    const SceneState::XYZSolveFlags *xyz_flags_ptr
+    const SceneState::XYZSolveFlags *xyz_flags_ptr = 0
   )
 {
   using Flags = SceneState::XYZSolveFlags;
   create2(parent, "x", value.x, maybeSolveFlag(xyz_flags_ptr, &Flags::x));
   create2(parent, "y", value.y, maybeSolveFlag(xyz_flags_ptr, &Flags::y));
   create2(parent, "z", value.z, maybeSolveFlag(xyz_flags_ptr, &Flags::z));
+}
+
+
+static void
+  createXYZChildren(
+    TaggedValue &parent,
+    const SceneState::XYZ &xyz
+  )
+{
+  createXYZChildren(parent, vec3(xyz));
+}
+
+
+static TaggedValue &
+create(TaggedValue &parent, const string &tag, const SceneState::XYZ &xyz)
+{
+  TaggedValue &tagged_value = create(parent, tag);
+  createXYZChildren(tagged_value, xyz);
+  return tagged_value;
 }
 
 
@@ -434,17 +480,8 @@ static TaggedValue &
   createBox(TaggedValue &parent, const SceneState::Body &box_state)
 {
   auto &box = create(parent, "Box");
-  {
-    auto &parent = box;
-    auto &scale = create(parent, "scale");
-    {
-      auto &parent = scale;
-      create(parent, "x", box_state.scale.x);
-      create(parent, "y", box_state.scale.y);
-      create(parent, "z", box_state.scale.z);
-    }
-  }
-
+  create(box, "scale", box_state.geometry.scale);
+  create(box, "center", box_state.geometry.center);
   return box;
 }
 
@@ -453,16 +490,8 @@ static void
 createMarker(TaggedValue &parent, const SceneState::Marker &marker_state)
 {
   auto &marker = create(parent, "Marker");
-  {
-    auto &parent = marker;
-    create(parent, "name", marker_state.name);
-    TaggedValue &position = create(parent, "position");
-    createXYZChildren(
-      position,
-      vec3(marker_state.position),
-      /*solve_flags_ptr*/0
-    );
-  }
+  create(marker, "name", marker_state.name);
+  create(marker, "position", marker_state.position);
 }
 
 

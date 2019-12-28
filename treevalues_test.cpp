@@ -17,7 +17,16 @@ namespace {
 struct FakeTreeItem {
   LabelText label_text;
   string value_string;
+  Optional<NumericValue> maybe_numeric_value;
   vector<FakeTreeItem> children;
+
+  FakeTreeItem() = default;
+
+  FakeTreeItem(LabelText label_text, string value_string)
+  : label_text(std::move(label_text)),
+    value_string(std::move(value_string))
+  {
+  }
 
   template <typename F>
   static void forEachMember(const F &f)
@@ -73,8 +82,9 @@ struct FakeTreeWidget : TreeWidget {
     return stream.str();
   }
 
+  template <typename Item>
   static Item &
-    item(Item &parent_item,const TreePath &path, size_t path_index = 0)
+    item(Item &parent_item, const TreePath &path, size_t path_index = 0)
   {
     if (path_index == path.size()) {
       return parent_item;
@@ -85,7 +95,10 @@ struct FakeTreeWidget : TreeWidget {
 
   Item root_item;
 
-  void
+  const Item &item(const TreePath &path) const { return item(root_item, path); }
+  Item &item(const TreePath &path)             { return item(root_item, path); }
+
+  Item &
     createItem(
       const TreePath &new_item_path,
       const LabelProperties &label_properties,
@@ -93,12 +106,14 @@ struct FakeTreeWidget : TreeWidget {
     )
   {
     const LabelText &label_text = label_properties.text;
-    Item &parent_item = item(root_item, parentPath(new_item_path));
+    Item &parent_item = item(parentPath(new_item_path));
 
     parent_item.children.emplace(
       parent_item.children.begin() + new_item_path.back(),
-      Item{label_text, value_string, {}}
+      Item{label_text, value_string}
     );
+
+    return parent_item.children.back();
   }
 
   void
@@ -120,11 +135,14 @@ struct FakeTreeWidget : TreeWidget {
       int /*digits_of_precision*/
     ) override
   {
-    createItem(
-      new_item_path,
-      label_properties,
-      numericValueText(value, minimum_value, maximum_value)
-    );
+    Item &new_item =
+      createItem(
+        new_item_path,
+        label_properties,
+        numericValueText(value, minimum_value, maximum_value)
+      );
+
+    new_item.maybe_numeric_value = value;
   }
 
   void
@@ -165,11 +183,11 @@ struct FakeTreeWidget : TreeWidget {
 
   void
     setItemNumericValue(
-      const TreePath &,
-      NumericValue
+      const TreePath &path,
+      NumericValue value
     ) override
   {
-    assert(false); // not implemented
+    item(path).maybe_numeric_value = value;
   }
 
   void setItemLabel(const TreePath &,const std::string &) override
@@ -184,7 +202,7 @@ struct FakeTreeWidget : TreeWidget {
       const EnumerationOptions &options
     ) override
   {
-    FakeTreeItem &item = this->item(root_item, path);
+    FakeTreeItem &item = this->item(path);
     item.value_string = enumerationValueText(value, options);
   }
 
@@ -195,7 +213,7 @@ struct FakeTreeWidget : TreeWidget {
 
   void removeItem(const TreePath &path) override
   {
-    Item &parent_item = item(root_item, parentPath(path));
+    Item &parent_item = item(parentPath(path));
     removeIndexFrom(parent_item.children, path.back());
   }
 
@@ -228,6 +246,40 @@ createBodyIn(SceneState &scene_state, Optional<BodyIndex> maybe_parent_index)
 static BodyIndex createGlobalBodyIn(SceneState &scene_state)
 {
   return createBodyIn(scene_state, /*maybe_parent_index*/{});
+}
+
+
+template <typename F>
+static void
+forEachTreeItemPath(const FakeTreeItem &item, const TreePath &path, const F &f)
+{
+  f(path);
+
+  for (TreeItemIndex child_index: indicesOf(item.children)) {
+    forEachTreeItemPath(
+      item.children[child_index],
+      childPath(path, child_index),
+      f
+    );
+  }
+}
+
+
+template <typename F>
+static void
+forEachItemInTreeWithNumericValue(const FakeTreeWidget &tree_widget, const F &f)
+{
+  forEachTreeItemPath(
+    tree_widget.root_item,
+    /*path*/{},
+    [&](const TreePath &path){
+      const FakeTreeItem &item = tree_widget.item(path);
+
+      if (item.maybe_numeric_value) {
+        f(path, *item.maybe_numeric_value);
+      }
+    }
+  );
 }
 
 
@@ -515,6 +567,28 @@ static void testRemovingAChildBody()
 }
 
 
+static void testChangingNumericValues()
+{
+  SceneState test_state;
+  test_state.createBody(/*parent*/{});
+  FakeTreeWidget tree_widget;
+  TreePaths tree_paths = fillTree(tree_widget, test_state);
+
+  auto adjust_item_value_function =
+    [&](TreePath path, NumericValue value){
+      tree_widget.setItemNumericValue(path, value + 1);
+
+      bool value_was_changed =
+        setSceneStateValue(test_state, path, value, tree_paths);
+
+      assert(value_was_changed);
+    };
+
+  forEachItemInTreeWithNumericValue(tree_widget, adjust_item_value_function);
+  checkTree(tree_widget, tree_paths, test_state);
+}
+
+
 int main()
 {
   testRemovingDistanceError();
@@ -525,4 +599,5 @@ int main()
   testAddingAChildBody();
   testRemovingAGlobalBody();
   testRemovingAChildBody();
+  testChangingNumericValues();
 }

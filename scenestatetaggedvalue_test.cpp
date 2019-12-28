@@ -49,6 +49,11 @@ static void testCreatingABodyFromATaggedValue()
     "      y: 2.5\n"
     "      z: 3.5\n"
     "    }\n"
+    "    center {\n"
+    "      x: 1.5\n"
+    "      y: 2.5\n"
+    "      z: 3.5\n"
+    "    }\n"
     "  }\n"
     "}\n";
 
@@ -65,9 +70,12 @@ static void testCreatingABodyFromATaggedValue()
   );
 
   assert(state.bodies().size() == 1);
-  assert(state.body(0).scale.x == 1);
-  assert(state.body(0).scale.y == 2.5);
-  assert(state.body(0).scale.z == 3.5);
+  assert(state.body(0).geometry.scale.x == 1);
+  assert(state.body(0).geometry.scale.y == 2.5);
+  assert(state.body(0).geometry.scale.z == 3.5);
+  assert(state.body(0).geometry.center.x == 1.5);
+  assert(state.body(0).geometry.center.y == 2.5);
+  assert(state.body(0).geometry.center.z == 3.5);
   assert(state.body(0).solve_flags.translation.x == false);
   assert(state.body(0).solve_flags.translation.y == true);
 }
@@ -82,6 +90,7 @@ static void testBody()
 
     BodyIndex body_index = createGlobalBodyIn(scene_state);
     scene_state.body(body_index).solve_flags.translation.y = false;
+    scene_state.body(body_index).geometry.center.y = 2.5;
 
     TaggedValue tagged_value("root");
     createBodyTaggedValue(tagged_value, body_index, scene_state);
@@ -103,6 +112,7 @@ static void testBody()
       );
 
     assert(scene_state.body(body_index).solve_flags.translation.y == false);
+    assert(scene_state.body(body_index).geometry.center.y == 2.5);
   }
 }
 

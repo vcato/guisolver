@@ -95,9 +95,10 @@ struct AddNumericItemFunction {
 
 
 static TreePaths::XYZ
-  createXYZ(
+  createXYZChildren(
     TreeWidget &tree_widget,
     const TreePath &parent_path,
+    const SceneState::XYZ &value,
     int digits_of_precision = defaultDigitsOfPrecision()
   )
 {
@@ -107,9 +108,9 @@ static TreePaths::XYZ
   AddNumericItemFunction add(adder);
   add.digits_of_precision = digits_of_precision;
 
-  xyz_paths.x = add("x:", 0);
-  xyz_paths.y = add("y:", 0);
-  xyz_paths.z = add("z:", 0);
+  xyz_paths.x = add("x:", value.x);
+  xyz_paths.y = add("y:", value.y);
+  xyz_paths.z = add("z:", value.z);
 
   return xyz_paths;
 }
@@ -128,7 +129,7 @@ static TreePaths::Marker
   TreePath position_path = adder.addVoid("position: []");
 
   TreePaths::Position position_paths =
-    TreePaths::Position(createXYZ(tree_widget, position_path));
+    TreePaths::Position(createXYZChildren(tree_widget, position_path, {0,0,0}));
 
   TreePaths::Marker marker_paths = {path, position_paths};
   return marker_paths;
@@ -482,6 +483,14 @@ void
 }
 
 
+static TreePaths::XYZ
+addXYZ(ItemAdder &adder, const string &label, const SceneState::XYZ &xyz)
+{
+  TreePath path = adder.addVoid(label);
+  return createXYZChildren(adder.tree_widget, path, xyz);
+}
+
+
 static TreePaths::Body
 createBodyItem(
   const TreePath &body_path,
@@ -504,24 +513,31 @@ createBodyItem(
   body_paths.path = body_path;
 
   body_paths.translation =
-    TreePaths::Translation(createXYZ(tree_widget, translation_path));
+    TreePaths::Translation(
+      createXYZChildren(tree_widget, translation_path, {0,0,0})
+    );
 
   body_paths.rotation =
     TreePaths::Rotation(
-      createXYZ(tree_widget, rotation_path, /*digits_of_precision*/1)
+      createXYZChildren(
+        tree_widget,
+        rotation_path,
+        {0,0,0},
+        /*digits_of_precision*/1
+      )
     );
 
   body_paths.geometry.path = geometry_path;
 
   {
-    ItemAdder geometry_adder{geometry_path, tree_widget};
-    TreePath scale_path = geometry_adder.addVoid("scale: []");
-    ItemAdder scale_adder{scale_path, tree_widget};
-    AddNumericItemFunction add(scale_adder);
-    add.minimum_value = 0;
-    body_paths.geometry.scale.x = add("x:", body_state.scale.x);
-    body_paths.geometry.scale.y = add("y:", body_state.scale.y);
-    body_paths.geometry.scale.z = add("z:", body_state.scale.z);
+    ItemAdder adder{geometry_path, tree_widget};
+    TreePaths::Body::Geometry &geometry_paths = body_paths.geometry;
+    const SceneState::Geometry &geometry_state = body_state.geometry;
+
+    geometry_paths.scale =
+      TreePaths::Scale(addXYZ(adder, "scale: []", geometry_state.scale));
+
+    geometry_paths.center = addXYZ(adder, "center: []", geometry_state.center);
   }
 
   body_paths.next_body_path = next_body_path;
@@ -766,7 +782,7 @@ updateBody(
   }
   {
     const TreePaths::XYZ &scale_paths = body_paths.geometry.scale;
-    const SceneState::XYZ &scale = state.body(body_index).scale;
+    const SceneState::XYZ &scale = state.body(body_index).geometry.scale;
     updateScaleValues(tree_widget, scale_paths, scale);
   }
 }
@@ -846,30 +862,7 @@ void
 }
 
 
-static void
-  setVectorValue(
-    Eigen::Vector3f &v,
-    const TreePath &path,
-    NumericValue value,
-    const TreePaths::XYZ &xyz_path
-  )
-{
-  if (path == xyz_path.x) {
-    v.x() = value;
-  }
-  else if (path == xyz_path.y) {
-    v.y() = value;
-  }
-  else if (path == xyz_path.z) {
-    v.z() = value;
-  }
-  else {
-    assert(false);
-  }
-}
-
-
-static void
+static bool
   setVectorValue(
     SceneState::XYZ &v,
     const TreePath &path,
@@ -879,16 +872,21 @@ static void
 {
   if (path == xyz_path.x) {
     v.x = value;
+    return true;
   }
-  else if (path == xyz_path.y) {
+
+  if (path == xyz_path.y) {
     v.y = value;
+    return true;
   }
-  else if (path == xyz_path.z) {
+
+  if (path == xyz_path.z) {
     v.z = value;
+    return true;
   }
-  else {
-    assert(false);
-  }
+
+  assert(false); // not implemented
+  return false;
 }
 
 
@@ -947,8 +945,8 @@ static bool
   )
 {
   if (startsWith(path,marker_path.position.path)) {
-    setVectorValue(marker_state.position, path, value, marker_path.position);
-    return true;
+    return
+      setVectorValue(marker_state.position, path, value, marker_path.position);
   }
 
   return false;
@@ -1053,14 +1051,27 @@ bool
       }
 
       if (startsWith(path, body_paths.geometry.path)) {
-        SceneState::XYZ &scale = body_state.scale;
-        Eigen::Vector3f v = {scale.x, scale.y, scale.z};
-        const TreePaths::XYZ& xyz_path = body_paths.geometry.scale;
-        setVectorValue(v, path, value, xyz_path);
-        scale.x = v.x();
-        scale.y = v.y();
-        scale.z = v.z();
-        return true;
+        SceneState::Geometry &geometry_state =
+          body_state.geometry;
+
+        const TreePaths::Body::Geometry &geometry_paths =
+          body_paths.geometry;
+
+        if (startsWith(path, geometry_paths.scale.path)) {
+          return
+            setVectorValue(
+              geometry_state.scale, path, value, geometry_paths.scale
+            );
+        }
+        else if (startsWith(path, geometry_paths.center.path)) {
+          return
+            setVectorValue(
+              geometry_state.center, path, value, geometry_paths.center
+            );
+        }
+        else {
+          assert(false); // not implemented
+        }
       }
     }
 

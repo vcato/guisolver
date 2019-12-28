@@ -24,6 +24,23 @@ struct TreeWidget {
     Optional<bool> optional_checked_state = {};
   };
 
+  std::function<void(const TreePath &,NumericValue)>
+    spin_box_item_value_changed_callback;
+
+  std::function<void()> selection_changed_callback;
+
+  std::function<void(const TreePath &,int index)>
+    enumeration_item_index_changed_callback;
+
+  std::function<void(const TreePath &,int index)>
+    slider_item_value_changed_callback;
+
+  std::function<void(const TreePath &,const std::string &value)>
+    line_edit_item_value_changed_callback;
+
+  std::function<vector<MenuItem>(const TreePath &)>
+    context_menu_items_callback;
+
   virtual void
     createVoidItem(
       const TreePath &new_item_path,
@@ -82,23 +99,6 @@ struct TreeWidget {
   virtual void selectItem(const TreePath &path) = 0;
   virtual void removeItem(const TreePath &path) = 0;
   virtual Optional<TreePath> selectedItem() const = 0;
-
-  std::function<void(const TreePath &,NumericValue)>
-    spin_box_item_value_changed_callback;
-
-  std::function<void()> selection_changed_callback;
-
-  std::function<void(const TreePath &,int index)>
-    enumeration_item_index_changed_callback;
-
-  std::function<void(const TreePath &,int index)>
-    slider_item_value_changed_callback;
-
-  std::function<void(const TreePath &,const std::string &value)>
-    line_edit_item_value_changed_callback;
-
-  std::function<vector<MenuItem>(const TreePath &)>
-    context_menu_items_callback;
 };
 
 #endif /* TREEWIDGET_HPP_ */

@@ -51,10 +51,15 @@ class SceneState {
       XYZSolveFlags rotation;
     };
 
+    struct Geometry {
+      XYZ scale = {1,1,1};
+      XYZ center = {0,0,0};
+    };
+
     struct Body {
       Body() = default;
       Transform transform;
-      XYZ scale = {1,1,1};
+      Geometry geometry;
       TransformSolveFlags solve_flags;
       Optional<BodyIndex> maybe_parent_index;
     };

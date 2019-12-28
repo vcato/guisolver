@@ -9,6 +9,11 @@ struct Vec3 {
   : x(x_arg), y(y_arg), z(z_arg)
   {
   }
+
+  bool operator==(const Vec3 &arg) const
+  {
+    return x==arg.x && y==arg.y && z==arg.z;
+  }
 };
 
 

@@ -85,12 +85,14 @@ struct TreePaths {
     struct Geometry {
       TreePath path;
       Scale scale;
+      XYZ center;
 
       template <typename F>
       static void forEachMember(const F &f)
       {
         f(&Geometry::path);
         f(&Geometry::scale);
+        f(&Geometry::center);
       }
 
       bool operator==(const Geometry &arg) const

@@ -55,12 +55,12 @@ static void testWithChildTransform()
   SceneState::XYZ scale = { 5, 0.1, 10 };
 
   BodyIndex body1_index = createBodyInState(state, /*maybe_parent_index*/{});
-  state.body(body1_index).scale = scale;
+  state.body(body1_index).geometry.scale = scale;
 
   BodyIndex body2_index =
     createBodyInState(state, /*maybe_parent_index*/body1_index);
 
-  state.body(body2_index).scale = scale;
+  state.body(body2_index).geometry.scale = scale;
   string state_string = sceneStateString(state);
 
   string expected_string =
@@ -82,6 +82,11 @@ static void testWithChildTransform()
     "        y: 0.1\n"
     "        z: 10\n"
     "      }\n"
+    "      center {\n"
+    "        x: 0\n"
+    "        y: 0\n"
+    "        z: 0\n"
+    "      }\n"
     "    }\n"
     "    Transform {\n"
     "      translation {\n"
@@ -99,6 +104,11 @@ static void testWithChildTransform()
     "          x: 5\n"
     "          y: 0.1\n"
     "          z: 10\n"
+    "        }\n"
+    "        center {\n"
+    "          x: 0\n"
+    "          y: 0\n"
+    "          z: 0\n"
     "        }\n"
     "      }\n"
     "    }\n"
@@ -131,6 +141,11 @@ static void testWithMultipleTransforms()
     "        y: 0.1\n"
     "        z: 10\n"
     "      }\n"
+    "      center {\n"
+    "        x: 0\n"
+    "        y: 0\n"
+    "        z: 0\n"
+    "      }\n"
     "    }\n"
     "  }\n"
     "  Transform {\n"
@@ -150,6 +165,11 @@ static void testWithMultipleTransforms()
     "        y: 0.1\n"
     "        z: 10\n"
     "      }\n"
+    "      center {\n"
+    "        x: 0\n"
+    "        y: 0\n"
+    "        z: 0\n"
+    "      }\n"
     "    }\n"
     "  }\n"
     "}\n";
@@ -157,9 +177,9 @@ static void testWithMultipleTransforms()
   SceneState state;
   SceneState::XYZ box_scale = {5, 0.1, 10};
   BodyIndex box1_index = createBodyInState(state, /*maybe_parent_index*/{});
-  state.body(box1_index).scale = box_scale;
+  state.body(box1_index).geometry.scale = box_scale;
   BodyIndex box2_index = createBodyInState(state, /*maybe_parent_index*/{});
-  state.body(box2_index).scale = box_scale;
+  state.body(box2_index).geometry.scale = box_scale;
   string state_string = sceneStateString(state);
   assert(state_string == expected_string);
   testWith(state);

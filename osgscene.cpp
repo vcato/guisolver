@@ -1082,10 +1082,10 @@ struct LineShapeParams : ShapeParams {
 
 
 static void
-  setTranslation(osg::MatrixTransform &transform,float x,float y,float z)
+  setTranslation(osg::MatrixTransform &transform,const Vec3 &v)
 {
   osg::Matrix m = transform.getMatrix();
-  m.setTrans(x,y,z);
+  m.setTrans(v.x, v.y, v.z);
   transform.setMatrix(m);
 }
 
@@ -1333,12 +1333,29 @@ LineDrawable& OSGScene::Impl::lineDrawable(OSGScene &scene,LineHandle handle)
 }
 
 
-void OSGScene::setGeometryScale(TransformHandle handle,float x,float y,float z)
+void OSGScene::setGeometryScale(TransformHandle handle,const Vec3 &v)
 {
+  float x = v.x;
+  float y = v.y;
+  float z = v.z;
+
   osg::MatrixTransform &geometry_transform =
     Impl::geometryTransformForHandle(*this, handle);
 
   ::setScale(geometry_transform, x, y, z);
+
+  if (Impl::selectedTransform(*this) == handle) {
+    selectionHandler().updateDraggerPosition();
+  }
+}
+
+
+void OSGScene::setGeometryCenter(TransformHandle handle,const Vec3 &v)
+{
+  osg::MatrixTransform &geometry_transform =
+    Impl::geometryTransformForHandle(*this, handle);
+
+  ::setTranslation(geometry_transform, v);
 
   if (Impl::selectedTransform(*this) == handle) {
     selectionHandler().updateDraggerPosition();
@@ -1623,7 +1640,7 @@ void OSGScene::setTranslation(TransformHandle handle, Point p)
   osg::MatrixTransform &parent_transform =
     parentTransform(Impl::geometryTransformForHandle(*this,handle));
 
-  ::setTranslation(parent_transform, p.x(), p.y(), p.z());
+  ::setTranslation(parent_transform, {p.x(), p.y(), p.z()});
 
   if (Impl::selectedTransform(*this) == handle) {
     selectionHandler().updateDraggerPosition();
