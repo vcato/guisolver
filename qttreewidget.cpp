@@ -334,6 +334,18 @@ void
 }
 
 
+static float
+singleStepForDigitsOfPrecision(int n_digits_of_precision)
+{
+  if (n_digits_of_precision == 2) {
+    return 0.1;
+  }
+  else {
+    return 1;
+  }
+}
+
+
 void
   QtTreeWidget::createSpinBoxItem(
     QTreeWidgetItem &parent_item,
@@ -354,6 +366,7 @@ void
   spin_box.setMinimum(minimum_value);
   spin_box.setMaximum(maximum_value);
   spin_box.setDecimals(digits_of_precision);
+  spin_box.setSingleStep(singleStepForDigitsOfPrecision(digits_of_precision));
   spin_box.setValue(value);
   Impl::setupSpinBox(*this,spin_box,item);
 }
