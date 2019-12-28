@@ -299,12 +299,10 @@ values.
 ---
 Need to be able to duplicate bodies.
 ---
-Dragger::setIntersectionMask() may be useful in ignoring the edges of
-the scale dragger instead of constraining the translations.
----
 Seems like it would make sense to be able to select two markers and then
 create a distance error between them.  I'm not sure what the interaction
 here is though.  The most intuitive thing seems to be right-clicking
 on the 3D view and having a context menu which says "Add Distance Error".
 ---
-We can still move the translate/scale manipulator if we have alt pressed.
+When first loading a scene, the distance errors aren't displayed properly
+in the 3D view.
