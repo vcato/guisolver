@@ -310,10 +310,21 @@ on the 3D view and having a context menu which says "Add Distance Error".
 It seems like there's no reason to restrict boxes to be at the origin.
 We could have a translation property for a box.
 ---
-Make the scale of a box be a group instead of separate scale_x, scale_y,
-scale_z parameters.
----
 Clicking on a spin box in the tree doesn't select the item.
+* The idea of having a widget as part of an item is probably wrong.
+  * It seems like delegates are the proper thing to use, but I'm not sure
+    if it gives the behavior I would like.
+    * Can we enable delegates for multpile items?  For example, if I have
+      a toggle button, I'd like those toggles to be visible even if the item
+      isn't selected.
+      * Yes, we can tell the item to create a persistent editor.  We can
+        do this on all the items, or we can create and destroy the editors
+        when items are expanded and collapsed.
+  * The way to get the spin box to pass the items through is to set the
+    mousePressEvent() to call the base class, but then call ignore on the
+    event.  We also have to set up a filter on the line edit.
 ---
-The scale dragger size needs to be updated when we change the scale using
-the tree.
+I've created a prototype in ~/dev/qt/tree_delegate, showing how we can create
+widgets as needed.  The layout behavior seems better.  There's also some
+tricks to make it where we can get events to pass through so that interacting
+with the widgets still causes the items to be selected.

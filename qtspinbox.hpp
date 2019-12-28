@@ -30,6 +30,7 @@ class QtSpinBox
   private:
     bool ignore_signals = false;
 
+    void mousePressEvent(QMouseEvent *) override;
     void wheelEvent(QWheelEvent *) override;
     void focusInEvent(QFocusEvent *) override;
     void focusOutEvent(QFocusEvent *) override;

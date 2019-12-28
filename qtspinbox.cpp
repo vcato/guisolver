@@ -4,8 +4,24 @@
 #include <cmath>
 #include <iostream>
 #include <QWheelEvent>
+#include <QLineEdit>
 
 using std::cerr;
+
+
+namespace {
+struct PassThroughMouseButtonPresses : QObject {
+  bool eventFilter(QObject *, QEvent *event_ptr) override
+  {
+    if (event_ptr->type() == QEvent::MouseButtonPress) {
+      event_ptr->ignore();
+    }
+
+    return false;
+  }
+};
+}
+
 
 
 QtSpinBox::QtSpinBox()
@@ -17,6 +33,11 @@ QtSpinBox::QtSpinBox()
   );
 
   setSingleStep(0.1);
+
+  lineEdit()->installEventFilter(new PassThroughMouseButtonPresses);
+    // This is so that if we click on the line edit in the spin box, the
+    // button press event will pass through to the tree item so it
+    // will be selected.
 }
 
 
@@ -41,22 +62,45 @@ void QtSpinBox::wheelEvent(QWheelEvent *event_ptr)
 
   if (!hasFocus()) {
     event_ptr->ignore();
+    // Don't allow wheel events to take the focus so that we don't
+    // inadvertantly change the spin box value while scrolling the
+    // tree with the mouse wheel.
   }
   else {
     QDoubleSpinBox::wheelEvent(event_ptr);
+    // If we've explicitly focused the spin box by clicking on it, then
+    // allow the wheel events to be used.
   }
 }
 
 
-void QtSpinBox::focusInEvent(QFocusEvent *)
+void QtSpinBox::mousePressEvent(QMouseEvent *event_ptr)
 {
-  setFocusPolicy(Qt::WheelFocus);
+  QDoubleSpinBox::mousePressEvent(event_ptr);
+
+  event_ptr->ignore();
+    // Mark the event as ignored (instead of handled), so that it will
+    // pass through to the tree and select the item.
 }
 
 
-void QtSpinBox::focusOutEvent(QFocusEvent *)
+void QtSpinBox::focusInEvent(QFocusEvent *event_ptr)
 {
+  QDoubleSpinBox::focusInEvent(event_ptr);
+
+  setFocusPolicy(Qt::WheelFocus);
+    // One the user clicks on the widget, we have to turn on WheelFocus so that
+    // the mouse wheel events will be recognized.
+}
+
+
+void QtSpinBox::focusOutEvent(QFocusEvent *event_ptr)
+{
+  QDoubleSpinBox::focusOutEvent(event_ptr);
+
   setFocusPolicy(Qt::StrongFocus);
+    // Go back to strong focus if this widget loses focus so that the mouse
+    // wheel won't cause this widget to gain focus.
 }
 
 
