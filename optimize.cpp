@@ -4,15 +4,33 @@
 #include <iostream>
 #include <debug/vector>
 
-
 using __gnu_debug::vector;
 using std::cerr;
 
 
-static float optimizeVar(const FunctionInterface &f,float &var)
+const float min_step = 0.001;
+
+
+static bool reduceStep(float &step)
+{
+  if (step > min_step) {
+    step /= 2;
+
+    if (step < min_step) {
+      step = min_step;
+    }
+
+    return true;
+  }
+  else {
+    return false;;
+  }
+}
+
+
+static float optimizeVar(const FunctionInterface &f, float &var)
 {
   float error = f();
-  float min_step = 0.001;
   float step = min_step;
 
   for (;;) {
@@ -28,14 +46,7 @@ static float optimizeVar(const FunctionInterface &f,float &var)
     var = old_var;
 
     if (forward_error >= error && reverse_error >= error) {
-      if (step > min_step) {
-        step /= 2;
-
-        if (step < min_step) {
-          step = min_step;
-        }
-      }
-      else {
+      if (!reduceStep(step)) {
         break;
       }
     }
