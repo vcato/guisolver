@@ -186,25 +186,74 @@ int enumerationValueFromMarkerIndex(Optional<MarkerIndex> maybe_marker_index)
 }
 
 
-TreePaths::DistanceError
-  createDistanceErrorInTree1(
-    TreeWidget &tree_widget,
-    TreePaths &/*tree_paths*/,
-    const TreePath &path,
-    const SceneState::Markers &state_markers,
-    const SceneState::DistanceError &state_distance_error
-  )
+static string
+markerName(
+  const Optional<MarkerIndex> &maybe_marker_index,
+  const SceneState::Markers &state_markers
+)
 {
+  string result = "";
+
+  if (maybe_marker_index) {
+    result = state_markers[*maybe_marker_index].name;
+  }
+
+  return result;
+}
+
+
+static string
+distanceErrorLabel(
+  const SceneState::DistanceError &distance_error_state,
+  const SceneState::Markers &marker_states
+)
+{
+  string label = "[DistanceError]";
+
   Optional<MarkerIndex> optional_start_index =
-    state_distance_error.optional_start_marker_index;
+    distance_error_state.optional_start_marker_index;
 
   Optional<MarkerIndex> optional_end_index =
-    state_distance_error.optional_end_marker_index;
+    distance_error_state.optional_end_marker_index;
 
-  tree_widget.createVoidItem(path,LabelProperties{"[DistanceError]"});
+  string start_marker_name = markerName(optional_start_index, marker_states);
+  string end_marker_name = markerName(optional_end_index, marker_states);
+
+  if (start_marker_name != "" && end_marker_name != "") {
+    label += " " + start_marker_name + " <-> " + end_marker_name;
+  }
+  else if (start_marker_name != "") {
+    label += " " + start_marker_name;
+  }
+  else if (end_marker_name != "") {
+    label += " " + end_marker_name;
+  }
+
+  return label;
+}
+
+
+static TreePaths::DistanceError
+createDistanceErrorInTree1(
+  TreeWidget &tree_widget,
+  TreePaths &/*tree_paths*/,
+  const TreePath &path,
+  const SceneState::Markers &marker_states,
+  const SceneState::DistanceError &distance_error_state
+)
+{
+  Optional<MarkerIndex> optional_start_index =
+    distance_error_state.optional_start_marker_index;
+
+  Optional<MarkerIndex> optional_end_index =
+    distance_error_state.optional_end_marker_index;
+
+  string label = distanceErrorLabel(distance_error_state, marker_states);
+
+  tree_widget.createVoidItem(path,LabelProperties{label});
 
   TreeWidget::EnumerationOptions marker_options =
-    markerEnumerationOptions(state_markers);
+    markerEnumerationOptions(marker_states);
 
   ItemAdder adder{path, tree_widget};
 
@@ -405,11 +454,23 @@ extern void
 
 static void
   updateDistanceError(
+    DistanceErrorIndex distance_error_index,
     TreeWidget &tree_widget,
-    const TreePaths::DistanceError &distance_error_paths,
-    const SceneState::DistanceError &distance_error_state
+    const TreePaths &tree_paths,
+    const SceneState &scene_state
   )
 {
+  const TreePaths::DistanceError &distance_error_paths =
+    tree_paths.distance_errors[distance_error_index];
+
+  const SceneState::DistanceError &distance_error_state =
+    scene_state.distance_errors[distance_error_index];
+
+  tree_widget.setItemLabel(
+    distance_error_paths.path,
+    distanceErrorLabel(distance_error_state, scene_state.markers())
+  );
+
   {
     std::ostringstream label_stream;
 
@@ -799,11 +860,7 @@ void
   }
 
   for (auto i : indicesOf(tree_paths.distance_errors)) {
-    updateDistanceError(
-      tree_widget,
-      tree_paths.distance_errors[i],
-      state.distance_errors[i]
-    );
+    updateDistanceError(i, tree_widget, tree_paths, state);
   }
 
   tree_widget.setItemLabel(
@@ -852,6 +909,11 @@ void
 
     tree_widget.setItemEnumerationValue(
       end_path, end_value, marker_options
+    );
+
+    tree_widget.setItemLabel(
+      distance_error_paths.path,
+      distanceErrorLabel(distance_error_state, scene_state.markers())
     );
   }
 }

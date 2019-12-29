@@ -190,9 +190,9 @@ struct FakeTreeWidget : TreeWidget {
     item(path).maybe_numeric_value = value;
   }
 
-  void setItemLabel(const TreePath &,const std::string &) override
+  void setItemLabel(const TreePath &path,const std::string &label) override
   {
-    assert(false); // not implemented
+    item(path).label_text = label;
   }
 
   void
@@ -329,16 +329,6 @@ static void
 
 
 #if 0
-static void showTree(const string &name, const FakeTreeWidget &tree)
-{
-  cerr << name << ":\n";
-  int indent_level = 1;
-  showItem(tree.root_item, cerr, indent_level);
-}
-#endif
-
-
-#if 0
 static void showTreePaths(const string &name, const TreePaths &tree_paths)
 {
   cerr << name << ":\n";
@@ -457,6 +447,16 @@ static void checkMembersEqual(const T &a,const T &b)
     checkEqual(a.*member_ptr, b.*member_ptr);
   });
 }
+
+
+#if 0
+static void showTree(const string &name, const FakeTreeWidget &tree)
+{
+  cerr << name << ":\n";
+  int indent_level = 1;
+  showItem(tree.root_item, cerr, indent_level);
+}
+#endif
 
 
 static void
