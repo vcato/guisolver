@@ -28,9 +28,8 @@ static bool reduceStep(float &step)
 }
 
 
-static float optimizeVar(const FunctionInterface &f, float &var)
+static float optimizeVar(const FunctionInterface &f, float &var, float error)
 {
-  float error = f();
   float step = min_step;
 
   for (;;) {
@@ -73,17 +72,15 @@ float minimizeImpl(const FunctionInterface &f,vector<float> &variables)
   float error = f();
 
   for (;;) {
-    float new_error = error;
+    float error_before_optimizing = error;
 
     for (auto &variable : variables) {
-      new_error = optimizeVar(f,variable);
+      error = optimizeVar(f,variable,error);
     }
 
-    if (new_error == error) {
+    if (error == error_before_optimizing) {
       break;
     }
-
-    error = new_error;
   }
 
   return error;
