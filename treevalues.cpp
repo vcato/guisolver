@@ -123,7 +123,7 @@ static TreePaths::Marker
     const string &name
   )
 {
-  tree_widget.createVoidItem(path,LabelProperties{"[Marker]"});
+  tree_widget.createVoidItem(path,LabelProperties{"[Marker] " + name});
   ItemAdder adder{path, tree_widget};
   adder.addVoid("name: \"" + name + "\"");
   TreePath position_path = adder.addVoid("position: []");
