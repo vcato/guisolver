@@ -244,8 +244,18 @@ static void testWithTwoBodies()
   float x_error = fabs(body1_x - desired_x);
   float y_error = fabs(body2_y - desired_y);
 
-  assert(x_error < 1e-6);
-  assert(y_error < 1e-6);
+  float tolerance = 1e-5;
+
+  if (x_error >= tolerance) {
+    cerr << "x_error: " << x_error << "\n";
+  }
+
+  if (y_error >= tolerance) {
+    cerr << "y_error: " << y_error << "\n";
+  }
+
+  assert(x_error <= tolerance);
+  assert(y_error <= tolerance);
 }
 
 

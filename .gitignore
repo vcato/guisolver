@@ -3,6 +3,7 @@
 .*.swp
 *_moc.cpp
 *.pass
+extra
 guisolver
 osgutil_test
 transform_test

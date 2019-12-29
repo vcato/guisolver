@@ -10,7 +10,6 @@ using std::fabs;
 
 int main()
 {
-
   vector<float> variables(1,0);
 
   auto f = [&]{
@@ -20,6 +19,14 @@ int main()
   };
 
   float result = minimize(f,variables);
-  assert(fabs(variables[0]-2) < 1e-6);
+  float delta = fabs(variables[0]-2);
+  float tolerance = 3e-4;
+
+  if (delta > tolerance) {
+    cerr << "delta: " << delta << "\n";
+    cerr << "tolerance: " << tolerance << "\n";
+  }
+
+  assert(delta <= tolerance);
   assert(result == 1);
 }

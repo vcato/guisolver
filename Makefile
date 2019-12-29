@@ -39,10 +39,11 @@ SCENESTATEIO=scenestateio.o taggedvalue.o scenestatetaggedvalue.o\
 
 SCENEERROR=sceneerror.o scenestate.o
 SCENEOBJECTS=sceneobjects.o maketransform.o settransform.o scenestate.o
+OPTIMIZE=optimize.o
 
 guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
   osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o $(DEFAULTSCENESTATE) \
-  $(SCENEERROR) scenesolver.o optimize.o \
+  $(SCENEERROR) scenesolver.o $(OPTIMIZE) \
   qttreewidgetitem.o qtcombobox.o qtcombobox_moc.o \
   qtlineedit.o qtlineedit_moc.o qtslider.o qtslider.o \
   qtslider_moc.o qtspinbox.o qtspinbox_moc.o treevalues.o \
@@ -74,10 +75,10 @@ scenestateio_test: scenestateio_test.o $(DEFAULTSCENESTATE) $(SCENESTATEIO)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 scenesolver_test: scenesolver_test.o \
-  scenesolver.o maketransform.o $(SCENEERROR) optimize.o
+  scenesolver.o maketransform.o $(SCENEERROR) $(OPTIMIZE)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
-optimize_test: optimize_test.o optimize.o
+optimize_test: optimize_test.o $(OPTIMIZE)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 treevalues_test: treevalues_test.o $(DEFAULTSCENESTATE) treevalues.o \

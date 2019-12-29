@@ -1,9 +1,5 @@
 #include "vector.hpp"
-
-
-struct FunctionInterface {
-  virtual float operator()() const = 0;
-};
+#include "functioninterface.hpp"
 
 
 extern float

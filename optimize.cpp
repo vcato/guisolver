@@ -2,11 +2,11 @@
 
 #include <cassert>
 #include <iostream>
+#include "vector"
 #include <debug/vector>
 
-using __gnu_debug::vector;
 using std::cerr;
-
+using std::string;
 
 const float min_step = 0.001;
 
