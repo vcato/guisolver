@@ -6,5 +6,3 @@ here is though.  The most intuitive thing seems to be right-clicking
 on the 3D view and having a context menu which says "Add Distance Error".
 ---
 Need a way to see the names of markers without expanding the item.
----
-The solve flags should be off by default.
