@@ -14,26 +14,35 @@ it as a child of another body at the same global location.
   * Select another body
   * paste child global
 * notes
-  * this seems like the fewest operations and it also has the advantage that
-    we could potentially select multiple source bodies and multiple target
+  * we could potentially select multiple source bodies and multiple target
     bodies and create a copy of each source on each target
-  * to be able to paste a child either locally or globally, we'll have to
-    remember the parent global transform.
-  * one interesting thought is that you could always paste another body
-    that places the body at the same global position, then the user could
-    bake the transform into the children and remove the body if they wanted
-    to preserve the global position, or just remove the body if they didn't.
   * we can reparent a body by
-    * select a body
-    * cut
-    * select another body
-    * paste child global
+    * steps
+      * select a body
+      * cut
+      * select another body
+      * paste child global
+    * We lose any distance errors that are not children of the body this way.
+      * If we support having distance errors that are children of bodies, then
+        this wouldn't be as big of a problem.
   * having duplicate instead of copy seems a bit better, since we can't
     easily make several copies of a body onto the same parent using just copy
     and paste child global, but we can easily copy a body onto another
     body by using duplicate, cut and paste child global
 ---
-Make removing a body actually be a cut.
-* I think we should be extracting a tagged value for the body instead of
-  a copy of the Body object and the related Markers.  This helps us abstract
-  the way the scene is storing the data.
+If we cut a body and paste it, we lose the distance errors.
+* We could potentially remember the distance errors that are connected.
+  * This might be nice, because we could
+* We could allow distance errors to be children of a body.
+  * This seems like a good alternative.
+  * For this to work without having objects reference later objects, we
+    would need to move the markers so that they appear before the bodies.
+    * Scene
+      * [Marker] global1
+      * [Body]
+        * [Marker] local1
+        * [DistanceError] local1 <-> global1
+* We could have a different way of moving a body that doesn't involve removing
+  it first.
+---
+Make markers appear before bodies in the scene.

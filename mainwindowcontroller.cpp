@@ -296,6 +296,11 @@ struct MainWindowController::Impl {
   {
   }
 
+  static bool clipboardIsEmpty(const Data &data)
+  {
+    return data.clipboard_tagged_value.children.empty();
+  }
+
   static Impl &impl(MainWindowController &controller)
   {
     assert(controller.impl_ptr);
@@ -386,6 +391,9 @@ struct MainWindowController::Impl {
       const TreePath &
     );
 
+  static void
+    pasteGlobalPressed(MainWindowController &controller, const TreePath &path);
+
   static MarkerIndex addMarker(MainWindowController &, Optional<BodyIndex>);
   static void addMarkerPressed(MainWindowController &, const TreePath &);
   static void addBodyPressed(MainWindowController &, const TreePath &);
@@ -410,7 +418,7 @@ struct MainWindowController::Impl {
     );
 
   static void
-    removeBodyPressed(
+    cutBodyPressed(
       MainWindowController &,
       const TreePath &
     );
@@ -711,6 +719,18 @@ static BodyIndex
 }
 
 
+static Optional<BodyIndex>
+maybeBodyIndexFromTreePath(const TreePath &path, const TreePaths &tree_paths)
+{
+  if (tree_paths.path == path) {
+    return {};
+  }
+
+  return bodyIndexFromTreePath(path, tree_paths);
+
+}
+
+
 void
   MainWindowController::Impl::addMarkerPressed(
     MainWindowController &controller,
@@ -719,18 +739,47 @@ void
 {
   Data &data = Impl::data(controller);
   TreePaths &tree_paths = data.tree_paths;
-  Optional<BodyIndex> maybe_body_index;
 
-
-  if (tree_paths.path == path) {
-    // The marker is on the scene.
-  }
-  else {
-    maybe_body_index = bodyIndexFromTreePath(path, tree_paths);
-  }
+  Optional<BodyIndex> maybe_body_index =
+    maybeBodyIndexFromTreePath(path, tree_paths);;
 
   MarkerIndex marker_index = addMarker(controller, maybe_body_index);
   selectMarker(marker_index, data);
+}
+
+
+void
+MainWindowController::Impl::pasteGlobalPressed(
+  MainWindowController &controller,
+  const TreePath &path
+)
+{
+  Data &data = Impl::data(controller);
+  SceneState &scene_state = data.scene_state;
+
+  Optional<BodyIndex> maybe_parent_body_index =
+    maybeBodyIndexFromTreePath(path, data.tree_paths);
+
+  BodyIndex new_body_index =
+    createBodyFromTaggedValue(
+      scene_state,
+      data.clipboard_tagged_value.children[0],
+      maybe_parent_body_index
+    );
+
+  SceneState::Body &body_state = scene_state.body(new_body_index);
+  Transform body_transform = makeTransformFromState(body_state.transform);
+
+  Transform parent_global_transform =
+    globalTransform(maybe_parent_body_index, scene_state);
+
+  body_transform = data.clipboard_transform*body_transform;
+  body_transform = parent_global_transform.inverse()*body_transform;
+  body_state.transform = transformState(body_transform);
+
+  createBodyInTree(new_body_index, data);
+  createBodyInScene(new_body_index, data);
+  selectBody(new_body_index, data);
 }
 
 
@@ -941,7 +990,7 @@ void MainWindowController::Impl::removeBody(Data &data, BodyIndex body_index)
 
 
 void
-  MainWindowController::Impl::removeBodyPressed(
+  MainWindowController::Impl::cutBodyPressed(
     MainWindowController &controller,
     const TreePath &path
   )
@@ -952,9 +1001,14 @@ void
   SceneState &scene_state = data.scene_state;
   BodyIndex body_index = bodyIndexFromTreePath(path, tree_paths);
 
+  Optional<BodyIndex> maybe_parent_body_index =
+    scene_state.body(body_index).maybe_parent_index;
+
   data.clipboard_tagged_value.children.clear();
   createBodyTaggedValue(data.clipboard_tagged_value, body_index, scene_state);
-  data.clipboard_transform = globalTransform(body_index, scene_state);
+
+  data.clipboard_transform =
+    globalTransform(maybe_parent_body_index, scene_state);
 
   removeBody(data, body_index);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
@@ -1048,6 +1102,11 @@ TreeWidget::MenuItems
   auto add_body_function =
     [&controller,path]{ Impl::addBodyPressed(controller, path); };
 
+  auto paste_global_function =
+    [&controller,path]{
+      Impl::pasteGlobalPressed(controller, path);
+    };
+
   if (isScenePath(path, tree_paths)) {
     auto add_distance_error_function =
       [&controller,path]{
@@ -1059,12 +1118,18 @@ TreeWidget::MenuItems
       {"Add Marker", add_marker_function },
       {"Add Body", add_body_function },
     });
+
+    if (!clipboardIsEmpty(data)) {
+      appendTo(menu_items,{
+        {"Paste Global", paste_global_function}
+      });
+    }
   }
 
   if (isBodyPath(path, tree_paths)) {
-    auto remove_body_function =
+    auto cut_body_function =
       [&controller,path]{
-        Impl::removeBodyPressed(controller, path);
+        Impl::cutBodyPressed(controller, path);
       };
 
     auto duplicate_body_function =
@@ -1073,9 +1138,15 @@ TreeWidget::MenuItems
     appendTo(menu_items,{
       {"Add Marker", add_marker_function},
       {"Add Body", add_body_function},
-      {"Remove", remove_body_function },
+      {"Cut", cut_body_function },
       {"Duplicate", duplicate_body_function },
     });
+
+    if (!clipboardIsEmpty(data)) {
+      appendTo(menu_items,{
+        {"Paste Global", paste_global_function}
+      });
+    }
   }
 
   {

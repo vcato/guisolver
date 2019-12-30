@@ -591,7 +591,11 @@ createBodyItem(
 
   body_paths.translation =
     TreePaths::Translation(
-      createXYZChildren(tree_widget, translation_path, {0,0,0})
+      createXYZChildren(
+        tree_widget,
+        translation_path,
+        body_state.transform.translation
+      )
     );
 
   body_paths.rotation =
@@ -599,7 +603,7 @@ createBodyItem(
       createXYZChildren(
         tree_widget,
         rotation_path,
-        {0,0,0},
+        body_state.transform.rotation,
         /*digits_of_precision*/1
       )
     );

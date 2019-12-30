@@ -35,10 +35,12 @@ markerPredicted(const SceneState &scene_state, MarkerIndex marker_index)
 
 
 inline Transform
-globalTransform(BodyIndex body_index, const SceneState &scene_state)
+globalTransform(
+  Optional<BodyIndex> maybe_body_index,
+  const SceneState &scene_state
+)
 {
   Transform transform = Transform::Identity();
-  Optional<BodyIndex> maybe_body_index = body_index;
 
   while (maybe_body_index) {
     const SceneState::Body &body_state = scene_state.body(*maybe_body_index);
