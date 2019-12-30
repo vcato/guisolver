@@ -3,7 +3,7 @@
 
 
 extern void
-  extractBodies(
+  createChildBodiesInSceneState(
     SceneState &result,
     const TaggedValue &tagged_value,
     const Optional<BodyIndex> maybe_parent_index
@@ -17,14 +17,17 @@ extern BodyIndex
   );
 
 extern void
-  extractMarkers(
+  createChildMarkersInSceneState(
     SceneState &scene_state,
     const TaggedValue &tagged_value,
     Optional<BodyIndex> maybe_parent_index
   );
 
 extern void
-  extractDistanceErrors(SceneState &result, const TaggedValue &tagged_value);
+  createDistanceErrorsInSceneState(
+    SceneState &result,
+    const TaggedValue &tagged_value
+  );
 
 extern SceneState
   makeSceneStateFromTaggedValue(const TaggedValue &tagged_value);

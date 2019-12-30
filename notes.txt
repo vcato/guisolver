@@ -3,3 +3,39 @@ Seems like it would make sense to be able to select two markers and then
 create a distance error between them.  I'm not sure what the interaction
 here is though.  The most intuitive thing seems to be right-clicking
 on the 3D view and having a context menu which says "Add Distance Error".
+---
+I'd like to be able to take an existing body and create another version of
+it as a child of another body at the same global location.
+
+* steps
+  * Select a body
+  * duplicate
+  * cut
+  * Select another body
+  * paste child global
+* notes
+  * this seems like the fewest operations and it also has the advantage that
+    we could potentially select multiple source bodies and multiple target
+    bodies and create a copy of each source on each target
+  * to be able to paste a child either locally or globally, we'll have to
+    remember the parent global transform.
+  * one interesting thought is that you could always paste another body
+    that places the body at the same global position, then the user could
+    bake the transform into the children and remove the body if they wanted
+    to preserve the global position, or just remove the body if they didn't.
+  * we can reparent a body by
+    * select a body
+    * cut
+    * select another body
+    * paste child global
+  * having duplicate instead of copy seems a bit better, since we can't
+    easily make several copies of a body onto the same parent using just copy
+    and paste child global, but we can easily copy a body onto another
+    body by using duplicate, cut and paste child global
+---
+Make removing a body actually be a cut.
+* I think we should be extracting a tagged value for the body instead of
+  a copy of the Body object and the related Markers.  This helps us abstract
+  the way the scene is storing the data.
+* When pasting the body back into the scene using the tagged value, we'll have
+  to take renaming the markers into consideration.

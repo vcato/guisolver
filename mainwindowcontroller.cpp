@@ -377,7 +377,7 @@ struct MainWindowController::Impl {
     );
 
   static void
-    removeTransformPressed(
+    removeBodyPressed(
       MainWindowController &,
       const TreePath &
     );
@@ -908,7 +908,7 @@ void
 
 
 void
-  MainWindowController::Impl::removeTransformPressed(
+  MainWindowController::Impl::removeBodyPressed(
     MainWindowController &controller,
     const TreePath &path
   )
@@ -1028,9 +1028,9 @@ TreeWidget::MenuItems
   }
 
   if (isBodyPath(path, tree_paths)) {
-    auto remove_transform_function =
+    auto remove_body_function =
       [&controller,path]{
-        Impl::removeTransformPressed(controller, path);
+        Impl::removeBodyPressed(controller, path);
       };
 
     auto duplicate_body_function =
@@ -1039,7 +1039,7 @@ TreeWidget::MenuItems
     appendTo(menu_items,{
       {"Add Marker", add_marker_function},
       {"Add Body", add_body_function},
-      {"Remove", remove_transform_function },
+      {"Remove", remove_body_function },
       {"Duplicate", duplicate_body_function },
     });
   }
