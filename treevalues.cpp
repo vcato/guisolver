@@ -120,7 +120,8 @@ static TreePaths::Marker
   createMarker(
     TreeWidget &tree_widget,
     const TreePath &path,
-    const string &name
+    const string &name,
+    const SceneState::XYZ &position
   )
 {
   tree_widget.createVoidItem(path,LabelProperties{"[Marker] " + name});
@@ -129,7 +130,9 @@ static TreePaths::Marker
   TreePath position_path = adder.addVoid("position: []");
 
   TreePaths::Position position_paths =
-    TreePaths::Position(createXYZChildren(tree_widget, position_path, {0,0,0}));
+    TreePaths::Position(
+      createXYZChildren(tree_widget, position_path, position)
+    );
 
   TreePaths::Marker marker_paths = {path, position_paths};
   return marker_paths;
@@ -539,7 +542,9 @@ void
   handlePathInsertion(tree_paths, marker_path);
 
   tree_paths.markers.push_back(
-    createMarker(tree_widget, marker_path, state_marker.name)
+    createMarker(
+      tree_widget, marker_path, state_marker.name, state_marker.position
+    )
   );
 }
 
