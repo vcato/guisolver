@@ -12,7 +12,7 @@ scenesolver_test
 optional_test
 treevalues_test
 scenestateio_test
-markerpredicted_test
+globaltransform_test
 taggedvalueio_test
 scenestatetaggedvalue_test
 sceneobjects_test

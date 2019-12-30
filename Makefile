@@ -13,7 +13,7 @@ run_unit_tests: \
   taggedvalueio_test.pass \
   osgutil_test.pass \
   transform_test.pass \
-  markerpredicted_test.pass \
+  globaltransform_test.pass \
   scenestatetaggedvalue_test.pass \
   scenestateio_test.pass \
   scenesolver_test.pass \
@@ -65,7 +65,7 @@ osgutil_test: osgutil_test.o osgutil.o
 transform_test: transform_test.o maketransform.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
-markerpredicted_test: markerpredicted_test.o scenestate.o maketransform.o
+globaltransform_test: globaltransform_test.o scenestate.o maketransform.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 scenestatetaggedvalue_test: scenestatetaggedvalue_test.o \
@@ -77,7 +77,8 @@ scenestateio_test: scenestateio_test.o scenestate.o \
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 scenesolver_test: scenesolver_test.o \
-  scenesolver.o maketransform.o randomtransform.o $(SCENEERROR) $(OPTIMIZE)
+  scenesolver.o maketransform.o randomtransform.o randompoint.o \
+  $(SCENEERROR) $(OPTIMIZE)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 optimize_test: optimize_test.o $(OPTIMIZE)

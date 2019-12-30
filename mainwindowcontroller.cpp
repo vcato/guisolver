@@ -11,6 +11,7 @@
 #include "maketransform.hpp"
 #include "matchconst.hpp"
 #include "scenestatetaggedvalue.hpp"
+#include "globaltransform.hpp"
 
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
@@ -481,7 +482,6 @@ void
 
     assert(iter == old_flags.end());
   }
-
 
   updateErrorsInState(state);
   updateTreeValues(tree_widget, tree_paths, state);
@@ -954,13 +954,7 @@ void
 
   data.clipboard_tagged_value.children.clear();
   createBodyTaggedValue(data.clipboard_tagged_value, body_index, scene_state);
-
-#if 0
-  data.clipboard_transform =
-    bodyGlobalTransform(
-      scene_state.body(body_index).maybe_parent_index, scene_state
-    );
-#endif
+  data.clipboard_transform = globalTransform(body_index, scene_state);
 
   removeBody(data, body_index);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);

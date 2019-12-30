@@ -1,4 +1,8 @@
-#include "markerpredicted.hpp"
+#include "globaltransform.hpp"
+
+#include "randomengine.hpp"
+#include "randomtransform.hpp"
+#include "randompoint.hpp"
 
 #define ADD_TEST 0
 
@@ -53,18 +57,26 @@ static void testGlobalTransform()
   // The marker predicted position on a body should be the same as the
   // local with the global transform of the body applied.
 
+  SceneState scene_state;
   BodyIndex body1_index = scene_state.createBody();
   BodyIndex body2_index = scene_state.createBody(body1_index);
-  scene_state.body(body1_index).transform = randomTransform();
-  scene_state.body(body2_index).transform = randomTransform();
-  scene_state.createMarker(body2_index);
-  scene_sate.marker(marker_index).position = randomPosition();
 
-  Point local = scene_state.marker(marker_index).position;
+  scene_state.body(body1_index).transform =
+    transformState(randomTransform(engine));
+
+  scene_state.body(body2_index).transform =
+    transformState(randomTransform(engine));
+
+  MarkerIndex marker_index = scene_state.createMarker(body2_index);
+
+  scene_state.marker(marker_index).position =
+    makeMarkerPosition(randomPoint(engine));
+
+  Point local = point(scene_state.marker(marker_index).position);
 
   assertNear(
     markerPredicted(scene_state, marker_index),
-    bodyGlobalTransform(body_index, scene_state)*local
+    bodyGlobalTransform(body2_index, scene_state)*local
   );
 }
 #endif
