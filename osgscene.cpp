@@ -19,6 +19,7 @@
 
 namespace {
 struct ScaleDragger;
+struct TranslateDragger;
 }
 
 
@@ -33,12 +34,10 @@ using DraggerPtr = osg::ref_ptr<osgManipulator::Dragger>;
 using TransformHandle = Scene::TransformHandle;
 using LineHandle = Scene::LineHandle;
 
-using TranslateAxisDraggerPtr =
-  osg::ref_ptr<osgManipulator::TranslateAxisDragger>;
-
 using TrackballDraggerPtr =
   osg::ref_ptr<osgManipulator::TrackballDragger>;
 
+using TranslateDraggerPtr = osg::ref_ptr<TranslateDragger>;
 using ScaleDraggerPtr = osg::ref_ptr<ScaleDragger>;
 
 namespace {
@@ -60,6 +59,30 @@ struct ScaleDragger : osgManipulator::TabBoxDragger {
     }
 
     return osgManipulator::TabBoxDragger::handle(pi, ea, aa);
+  }
+};
+}
+
+
+namespace {
+struct TranslateDragger : osgManipulator::TranslateAxisDragger {
+  bool
+    handle(
+      const osgManipulator::PointerInfo& pi,
+      const osgGA::GUIEventAdapter& ea,
+      osgGA::GUIActionAdapter& aa
+    ) override
+  {
+    // Prevent the dragger from being activated if we're holding down
+    // the ALT key, since we want that to be reserved for view manipulation.
+
+    if (ea.getEventType() == osgGA::GUIEventAdapter::PUSH) {
+      if ((ea.getModKeyMask() & osgGA::GUIEventAdapter::MODKEY_ALT) != 0) {
+        return false;
+      }
+    }
+
+    return osgManipulator::TranslateAxisDragger::handle(pi, ea, aa);
   }
 };
 }
@@ -407,16 +430,14 @@ struct OSGScene::Impl::DraggerCallback : osgManipulator::DraggerCallback {
 
 
 // Dragger that maintains its size relative to the screen
-static TranslateAxisDraggerPtr
+static TranslateDraggerPtr
   createScreenRelativeTranslateDragger(
     MatrixTransformPtr transform_ptr,
     osgManipulator::DraggerCallback &
   )
 {
-  using TranslateAxisDragger = osgManipulator::TranslateAxisDragger;
-  TranslateAxisDraggerPtr parent_dragger_ptr(new TranslateAxisDragger);
-  TranslateAxisDraggerPtr dragger_ptr =
-    new osgManipulator::TranslateAxisDragger();
+  TranslateDraggerPtr parent_dragger_ptr(new TranslateDragger);
+  TranslateDraggerPtr dragger_ptr = new TranslateDragger();
   dragger_ptr->setParentDragger(parent_dragger_ptr);
   dragger_ptr->setupDefaultGeometry();
   assert(dragger_ptr->getNumChildren()==3);
@@ -510,9 +531,7 @@ static DraggerPtr
   switch (dragger_type) {
     case DraggerType::translate:
       {
-        TranslateAxisDraggerPtr translate_dragger_ptr =
-          new osgManipulator::TranslateAxisDragger();
-
+        TranslateDraggerPtr translate_dragger_ptr = new TranslateDragger();
         translate_dragger_ptr->setupDefaultGeometry();
         assert(translate_dragger_ptr->getNumChildren()==3);
         float thickness = 4;
