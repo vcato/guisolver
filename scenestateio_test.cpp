@@ -39,7 +39,8 @@ static void testWith(const SceneState &state)
 static void testWithAdditionalDistanceError()
 {
   SceneState state;
-  createBodyInState(state, /*maybe_parent_index*/{});
+  BodyIndex body_index = createBodyInState(state, /*maybe_parent_index*/{});
+  setAll(state.body(body_index).solve_flags, true);
   DistanceErrorIndex index = state.createDistanceError();
   SceneState::DistanceError &distance_error = state.distance_errors[index];
   distance_error.weight = 2.5;
@@ -51,15 +52,12 @@ static void testWithAdditionalDistanceError()
 static void testWithChildTransform()
 {
   SceneState state;
-
   SceneState::XYZ scale = { 5, 0.1, 10 };
-
-  BodyIndex body1_index = createBodyInState(state, /*maybe_parent_index*/{});
+  BodyIndex body1_index = createBodyInState(state, /*parent*/{});
+  setAll(state.body(body1_index).solve_flags, true);
   state.body(body1_index).geometry.scale = scale;
-
-  BodyIndex body2_index =
-    createBodyInState(state, /*maybe_parent_index*/body1_index);
-
+  BodyIndex body2_index = createBodyInState(state, /*parent*/body1_index);
+  setAll(state.body(body2_index).solve_flags, true);
   state.body(body2_index).geometry.scale = scale;
   string state_string = sceneStateString(state);
 
@@ -177,8 +175,10 @@ static void testWithMultipleTransforms()
   SceneState state;
   SceneState::XYZ box_scale = {5, 0.1, 10};
   BodyIndex box1_index = createBodyInState(state, /*maybe_parent_index*/{});
+  setAll(state.body(box1_index).solve_flags, true);
   state.body(box1_index).geometry.scale = box_scale;
   BodyIndex box2_index = createBodyInState(state, /*maybe_parent_index*/{});
+  setAll(state.body(box2_index).solve_flags, true);
   state.body(box2_index).geometry.scale = box_scale;
   string state_string = sceneStateString(state);
   assert(state_string == expected_string);

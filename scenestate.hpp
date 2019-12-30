@@ -41,9 +41,9 @@ class SceneState {
     };
 
     struct XYZSolveFlags {
-      bool x = true;
-      bool y = true;
-      bool z = true;
+      bool x = false;
+      bool y = false;
+      bool z = false;
     };
 
     struct TransformSolveFlags {
@@ -93,13 +93,7 @@ class SceneState {
       return new_index;
     }
 
-    BodyIndex createBody(Optional<BodyIndex> maybe_parent_index)
-    {
-      BodyIndex new_index = _bodies.size();
-      _bodies.emplace_back();
-      _bodies.back().maybe_parent_index = maybe_parent_index;
-      return new_index;
-    }
+    BodyIndex createBody(Optional<BodyIndex> maybe_parent_index);
 
     MarkerIndex createUnnamedMarker()
     {
@@ -179,9 +173,20 @@ extern MarkerIndex
 extern vector<SceneState::Marker::Name> markerNames(const SceneState &state);
 
 extern BodyIndex
-  createBodyInState(
-    SceneState &,
-    Optional<BodyIndex> maybe_parent_index
-  );
+  createBodyInState(SceneState &, Optional<BodyIndex> maybe_parent_index);
+
+inline void setAll(SceneState::XYZSolveFlags &flags, bool value)
+{
+  flags.x = value;
+  flags.y = value;
+  flags.z = value;
+}
+
+inline void setAll(SceneState::TransformSolveFlags &flags, bool state)
+{
+  setAll(flags.translation, state);
+  setAll(flags.rotation, state);
+}
+
 
 #endif /* SCENESTATE_HPP_ */

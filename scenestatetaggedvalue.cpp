@@ -139,6 +139,7 @@ BodyIndex
   )
 {
   BodyIndex body_index = createBodyInState(result, maybe_parent_index);
+  setAll(result.body(body_index).solve_flags, true);
 
   result.body(body_index).transform =
     makeTransformFromTaggedValue(tagged_value);

@@ -113,7 +113,11 @@ struct Example {
 
   static BodyIndex createBody(SceneState &scene_state)
   {
-    return createBodyInState(scene_state, /*maybe_parent_index*/{});
+    BodyIndex result =
+      createBodyInState(scene_state, /*maybe_parent_index*/{});
+
+    setAll(scene_state.body(result).solve_flags, true);
+    return result;
   }
 
   Example()
@@ -167,18 +171,9 @@ static Example makeExample(RandomEngine &engine)
 }
 
 
-static void clearAll(SceneState::XYZSolveFlags &flags)
-{
-  flags.x = false;
-  flags.y = false;
-  flags.z = false;
-}
-
-
 static void clearAll(SceneState::TransformSolveFlags &flags)
 {
-  clearAll(flags.translation);
-  clearAll(flags.rotation);
+  setAll(flags, false);
 }
 
 

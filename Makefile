@@ -33,8 +33,9 @@ run_guisolver: guisolver
 
 DEFAULTSCENESTATE=defaultscenestate.o scenestate.o maketransform.o
 TAGGEDVALUEIO=taggedvalueio.o printindent.o streamparser.o stringutil.o
+SCENESTATETAGGEDVALUE=scenestatetaggedvalue.o scenestate.o
 
-SCENESTATEIO=scenestateio.o taggedvalue.o scenestatetaggedvalue.o\
+SCENESTATEIO=scenestateio.o taggedvalue.o $(SCENESTATETAGGEDVALUE) \
   $(TAGGEDVALUEIO)
 
 SCENEERROR=sceneerror.o scenestate.o
@@ -67,11 +68,12 @@ transform_test: transform_test.o maketransform.o
 markerpredicted_test: markerpredicted_test.o scenestate.o maketransform.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
-scenestatetaggedvalue_test: scenestatetaggedvalue_test.o scenestate.o \
-  scenestatetaggedvalue.o taggedvalue.o $(TAGGEDVALUEIO)
+scenestatetaggedvalue_test: scenestatetaggedvalue_test.o \
+  $(SCENESTATETAGGEDVALUE) taggedvalue.o $(TAGGEDVALUEIO)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
-scenestateio_test: scenestateio_test.o $(DEFAULTSCENESTATE) $(SCENESTATEIO)
+scenestateio_test: scenestateio_test.o scenestate.o \
+  $(DEFAULTSCENESTATE) $(SCENESTATEIO)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 scenesolver_test: scenesolver_test.o \

@@ -14,7 +14,9 @@ static BodyIndex
     Optional<BodyIndex> maybe_parent_index
   )
 {
-  return scene_state.createBody(maybe_parent_index);
+  BodyIndex body_index = scene_state.createBody(maybe_parent_index);
+  setAll(scene_state.body(body_index).solve_flags, true);
+  return body_index;
 }
 
 

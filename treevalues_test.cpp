@@ -239,7 +239,9 @@ struct FakeTreeWidget : TreeWidget {
 static BodyIndex
 createBodyIn(SceneState &scene_state, Optional<BodyIndex> maybe_parent_index)
 {
-  return scene_state.createBody(maybe_parent_index);
+  BodyIndex body_index = scene_state.createBody(maybe_parent_index);
+  setAll(scene_state.body(body_index).solve_flags, true);
+  return body_index;
 }
 
 
@@ -570,7 +572,8 @@ static void testRemovingAChildBody()
 static void testChangingNumericValues()
 {
   SceneState test_state;
-  test_state.createBody(/*parent*/{});
+  BodyIndex body_index = test_state.createBody(/*parent*/{});
+  setAll(test_state.body(body_index).solve_flags, true);
   FakeTreeWidget tree_widget;
   TreePaths tree_paths = fillTree(tree_widget, test_state);
 

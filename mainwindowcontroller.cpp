@@ -671,6 +671,7 @@ MainWindowController::Impl::addBodyPressed(
   BodyIndex body_index =
     createBodyInState(scene_state, maybe_parent_body_index);
 
+  setAll(scene_state.body(body_index).solve_flags, true);
   createBodyInScene(scene, scene_handles, scene_state, body_index);
   createBodyInTree(tree_widget, tree_paths, scene_state, body_index);
 

@@ -65,10 +65,7 @@ createMarkerInState(
 
 
 BodyIndex
-createBodyInState(
-  SceneState &state,
-  Optional<BodyIndex> maybe_parent_index
-)
+createBodyInState(SceneState &state, Optional<BodyIndex> maybe_parent_index)
 {
   return state.createBody(maybe_parent_index);
 }
@@ -96,4 +93,14 @@ bool SceneState::bodyHasChildren(BodyIndex body_index) const
   }
 
   return false;
+}
+
+
+BodyIndex
+SceneState::createBody(Optional<BodyIndex> maybe_parent_index)
+{
+  BodyIndex new_index = _bodies.size();
+  _bodies.emplace_back();
+  _bodies.back().maybe_parent_index = maybe_parent_index;
+  return new_index;
 }
