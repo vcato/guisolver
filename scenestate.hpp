@@ -98,6 +98,13 @@ class SceneState {
     MarkerIndex duplicateMarker(MarkerIndex);
 
     BodyIndex createBody(Optional<BodyIndex> maybe_parent_index);
+
+    BodyIndex
+      duplicateBodyOnto(
+        Optional<BodyIndex> maybe_target_parent_body_index,
+        BodyIndex source_body_index
+      );
+
     BodyIndex duplicateBody(BodyIndex);
 
     MarkerIndex createUnnamedMarker()
@@ -186,6 +193,18 @@ inline void setAll(SceneState::TransformSolveFlags &flags, bool state)
   setAll(flags.translation, state);
   setAll(flags.rotation, state);
 }
+
+extern vector<MarkerIndex>
+  indicesOfMarkersOnBody(
+    Optional<BodyIndex> maybe_body_index,
+    const SceneState &scene_state
+  );
+
+extern vector<BodyIndex>
+  indicesOfChildBodies(
+    Optional<BodyIndex> maybe_body_index,
+    const SceneState &scene_state
+  );
 
 
 #endif /* SCENESTATE_HPP_ */

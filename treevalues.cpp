@@ -699,6 +699,14 @@ createBodyInTree(
   else {
     createChildBodyInTree(body_index, tree_paths, tree_widget, scene_state);
   }
+
+  for (auto marker_index : indicesOfMarkersOnBody(body_index, scene_state)) {
+    createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
+  }
+
+  for (auto child_body_index : indicesOfChildBodies(body_index, scene_state)) {
+    createBodyInTree(tree_widget, tree_paths, scene_state, child_body_index);
+  }
 }
 
 
@@ -751,11 +759,11 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
     tree_paths.total_error, LabelProperties{totalErrorLabel(0)}
   );
 
-  for (auto body_index : indicesOf(scene_state.bodies())) {
+  for (auto body_index : indicesOfChildBodies({}, scene_state)) {
     createBodyInTree(tree_widget, tree_paths, scene_state, body_index);
   }
 
-  for (auto marker_index : indicesOf(scene_state.markers())) {
+  for (auto marker_index : indicesOfMarkersOnBody({}, scene_state)) {
     createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
   }
 

@@ -295,6 +295,14 @@ createBodyInScene(
   assert(BodyIndex(scene_handles.bodies.size()) == body_index);
   scene_handles.bodies.push_back(transform_handle);
   updateBodyInScene(scene, transform_handle, body_state);
+
+  for (auto marker_index : indicesOfMarkersOnBody(body_index, state)) {
+    createMarkerInScene(scene, scene_handles, state, marker_index);
+  }
+
+  for (auto child_body_index : indicesOfChildBodies(body_index, state)) {
+    createBodyInScene(scene, scene_handles, state, child_body_index);
+  }
 }
 
 
@@ -316,12 +324,12 @@ SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
 {
   SceneHandles scene_handles;
 
-  for (BodyIndex i : indicesOf(state.bodies())) {
-    createBodyInScene(scene, scene_handles, state, i);
+  for (auto body_index : indicesOfChildBodies({}, state)) {
+    createBodyInScene(scene, scene_handles, state, body_index);
   }
 
-  for (MarkerIndex i : indicesOf(state.markers())) {
-    createMarkerInScene(scene, scene_handles, state, i);
+  for (auto marker_index : indicesOfMarkersOnBody({}, state)) {
+    createMarkerInScene(scene, scene_handles, state, marker_index);
   }
 
   for (DistanceErrorIndex i : indicesOf(state.distance_errors)) {
