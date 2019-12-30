@@ -1,8 +1,9 @@
-Need to be able to duplicate bodies.
 ---
 Seems like it would make sense to be able to select two markers and then
 create a distance error between them.  I'm not sure what the interaction
 here is though.  The most intuitive thing seems to be right-clicking
 on the 3D view and having a context menu which says "Add Distance Error".
 ---
-Need a way to see the names of markers without expanding the item.
+Need to be able to duplicate bodies.
+---
+Need a way to duplicate markers.

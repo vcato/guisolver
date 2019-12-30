@@ -941,7 +941,7 @@ TreeWidget::MenuItems
       };
 
       appendTo(menu_items,{
-        {"Remove Marker", remove_marker_function}
+        {"Remove", remove_marker_function}
       });
     }
   }
