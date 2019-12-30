@@ -224,7 +224,7 @@ static bool isScenePath(const TreePath &path, const TreePaths &tree_paths)
 }
 
 
-static bool isTransformPath(const TreePath &path, const TreePaths &tree_paths)
+static bool isBodyPath(const TreePath &path, const TreePaths &tree_paths)
 {
   for (const TreePaths::Body &body_paths : tree_paths.bodies) {
     if (body_paths.path == path) {
@@ -979,7 +979,7 @@ TreeWidget::MenuItems
     });
   }
 
-  if (isTransformPath(path, tree_paths)) {
+  if (isBodyPath(path, tree_paths)) {
     auto remove_transform_function =
       [&controller,path]{
         Impl::removeTransformPressed(controller, path);
@@ -988,7 +988,7 @@ TreeWidget::MenuItems
     appendTo(menu_items,{
       {"Add Marker", add_marker_function},
       {"Add Body", add_body_function},
-      {"Remove Body", remove_transform_function },
+      {"Remove", remove_transform_function },
     });
   }
 
