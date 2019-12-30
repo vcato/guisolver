@@ -4,4 +4,7 @@ create a distance error between them.  I'm not sure what the interaction
 here is though.  The most intuitive thing seems to be right-clicking
 on the 3D view and having a context menu which says "Add Distance Error".
 ---
-Need to be able to duplicate bodies.
+Seems like duplicating a body should also duplicate the markers on the
+body and maybe the children as well, but I'm not sure.  What about the
+distance errors?  It might seem like the distance errors should be duplicated
+as well, but the distance errors are in a separate branch of the tree.

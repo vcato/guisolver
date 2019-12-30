@@ -111,3 +111,11 @@ SceneState::createBody(Optional<BodyIndex> maybe_parent_index)
   _bodies.back().maybe_parent_index = maybe_parent_index;
   return new_index;
 }
+
+
+BodyIndex SceneState::duplicateBody(BodyIndex source_body_index)
+{
+  BodyIndex new_body_index = _bodies.size();
+  _bodies.push_back(_bodies[source_body_index]);
+  return new_body_index;
+}

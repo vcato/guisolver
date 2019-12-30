@@ -278,14 +278,43 @@ struct MainWindowController::Impl {
   static void handleSceneChanged(MainWindowController &);
   static void handleTreeSelectionChanged(Data &);
 
+  static void createBodyInTree(BodyIndex body_index, Data &data)
+  {
+    TreeWidget &tree_widget = data.tree_widget;
+    TreePaths &tree_paths = data.tree_paths;
+    SceneState &scene_state = data.scene_state;
+    ::createBodyInTree(tree_widget, tree_paths, scene_state, body_index);
+  }
+
+  static void createBodyInScene(BodyIndex body_index, Data &data)
+  {
+    SceneHandles &scene_handles = data.scene_handles;
+    SceneState &scene_state = data.scene_state;
+    Scene &scene = data.scene;
+    ::createBodyInScene(scene, scene_handles, scene_state, body_index);
+  }
+
   static void selectMarkerInTree(MarkerIndex marker_index, Data &data)
   {
     data.tree_widget.selectItem(data.tree_paths.markers[marker_index].path);
   }
 
+  static void selectBodyInTree(BodyIndex body_index, Data &data)
+  {
+    TreeWidget &tree_widget = data.tree_widget;
+    TreePaths &tree_paths = data.tree_paths;
+    tree_widget.selectItem(tree_paths.bodies[body_index].path);
+  }
+
   static void selectMarker(MarkerIndex marker_index, Data &data)
   {
     selectMarkerInTree(marker_index, data);
+    handleTreeSelectionChanged(data);
+  }
+
+  static void selectBody(BodyIndex body_index, Data &data)
+  {
+    selectBodyInTree(body_index, data);
     handleTreeSelectionChanged(data);
   }
 
@@ -326,9 +355,8 @@ struct MainWindowController::Impl {
 
   static MarkerIndex addMarker(MainWindowController &, Optional<BodyIndex>);
   static void addMarkerPressed(MainWindowController &, const TreePath &);
-
-  static void
-    addBodyPressed(MainWindowController &, const TreePath &);
+  static void addBodyPressed(MainWindowController &, const TreePath &);
+  static void duplicateBodyPressed(MainWindowController &, const TreePath &);
 
   static void
     removeDistanceErrorPressed(
@@ -686,11 +714,9 @@ MainWindowController::Impl::addBodyPressed(
   const TreePath &parent_path
 )
 {
-  SceneState &scene_state = controller.data.scene_state;
-  Scene &scene = controller.data.scene;
-  SceneHandles &scene_handles = controller.data.scene_handles;
-  TreePaths &tree_paths = controller.data.tree_paths;
-  TreeWidget &tree_widget = controller.data.tree_widget;
+  Data &data = controller.data;
+  SceneState &scene_state = data.scene_state;
+  TreePaths &tree_paths = data.tree_paths;
 
   Optional<BodyIndex> maybe_parent_body_index;
 
@@ -704,11 +730,33 @@ MainWindowController::Impl::addBodyPressed(
   BodyIndex body_index =
     createBodyInState(scene_state, maybe_parent_body_index);
 
-  createBodyInScene(scene, scene_handles, scene_state, body_index);
-  createBodyInTree(tree_widget, tree_paths, scene_state, body_index);
+  createBodyInScene(body_index, data);
+  createBodyInTree(body_index, data);
+  selectBody(body_index, data);
 
-  tree_widget.selectItem(tree_paths.bodies[body_index].path);
-  handleTreeSelectionChanged(controller.data);
+}
+
+
+void
+MainWindowController::Impl::duplicateBodyPressed(
+  MainWindowController &controller, const TreePath &body_path
+)
+{
+  Data &data = controller.data;
+
+  Optional<BodyIndex> maybe_body_index =
+    bodyIndexFromTreePath(body_path, data.tree_paths);
+
+  assert(maybe_body_index);
+  // It should only have been possible to call this for a body.
+
+  BodyIndex body_index = *maybe_body_index;
+
+  SceneState &scene_state = data.scene_state;
+  BodyIndex new_body_index = scene_state.duplicateBody(body_index);
+  createBodyInTree(new_body_index, data);
+  createBodyInScene(new_body_index, data);
+  selectBody(new_body_index, data);
 }
 
 
@@ -985,10 +1033,14 @@ TreeWidget::MenuItems
         Impl::removeTransformPressed(controller, path);
       };
 
+    auto duplicate_body_function =
+      [&controller,path]{ Impl::duplicateBodyPressed(controller, path); };
+
     appendTo(menu_items,{
       {"Add Marker", add_marker_function},
       {"Add Body", add_body_function},
       {"Remove", remove_transform_function },
+      {"Duplicate", duplicate_body_function },
     });
   }
 
