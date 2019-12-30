@@ -97,7 +97,7 @@ class SceneState {
 
     MarkerIndex duplicateMarker(MarkerIndex);
 
-    BodyIndex createBody(Optional<BodyIndex> maybe_parent_index);
+    BodyIndex createBody(Optional<BodyIndex> maybe_parent_index = {});
 
     BodyIndex
       duplicateBodyOnto(

@@ -4,6 +4,7 @@
 #include "transformstate.hpp"
 #include "positionstate.hpp"
 #include "indicesof.hpp"
+#include "contains.hpp"
 
 using std::string;
 
@@ -131,6 +132,16 @@ static SceneState::XYZ
 }
 
 
+static bool
+markerNameExists(
+  const SceneState::Marker::Name &name,
+  const SceneState &scene_state
+)
+{
+  return contains(markerNames(scene_state), name);
+}
+
+
 static void
   createMarkerFromTaggedValue(
     SceneState &scene_state,
@@ -141,18 +152,21 @@ static void
   Optional<StringValue> maybe_name =
     findStringValue(tagged_value, "name");
 
-  Optional<MarkerIndex> maybe_marker_index;
+  if (maybe_name) {
+    if (markerNameExists(*maybe_name, scene_state)) {
+      maybe_name.reset();
+    }
+  }
+
+  Optional<MarkerIndex> maybe_marker_index =
+    scene_state.createMarker(maybe_parent_index);
 
   if (maybe_name) {
-    maybe_marker_index = scene_state.createMarker(*maybe_name);
-  }
-  else {
-    assert(false);
+    scene_state.marker(*maybe_marker_index).name = *maybe_name;
   }
 
   assert(maybe_marker_index);
   MarkerIndex marker_index = *maybe_marker_index;
-  scene_state.marker(marker_index).maybe_body_index = maybe_parent_index;
   const TaggedValue *position_ptr = findChild(tagged_value, "position");
 
   if (position_ptr) {
