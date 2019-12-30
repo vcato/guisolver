@@ -37,5 +37,3 @@ Make removing a body actually be a cut.
 * I think we should be extracting a tagged value for the body instead of
   a copy of the Body object and the related Markers.  This helps us abstract
   the way the scene is storing the data.
-* When pasting the body back into the scene using the tagged value, we'll have
-  to take renaming the markers into consideration.

@@ -77,7 +77,7 @@ scenestateio_test: scenestateio_test.o scenestate.o \
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 scenesolver_test: scenesolver_test.o \
-  scenesolver.o maketransform.o $(SCENEERROR) $(OPTIMIZE)
+  scenesolver.o maketransform.o randomtransform.o $(SCENEERROR) $(OPTIMIZE)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 optimize_test: optimize_test.o $(OPTIMIZE)

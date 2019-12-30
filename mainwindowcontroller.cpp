@@ -10,6 +10,7 @@
 #include "sceneobjects.hpp"
 #include "maketransform.hpp"
 #include "matchconst.hpp"
+#include "scenestatetaggedvalue.hpp"
 
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
@@ -274,6 +275,37 @@ static Optional<MarkerIndex>
 
 
 struct MainWindowController::Impl {
+  struct Data {
+    SceneState &scene_state;
+    Scene &scene;
+    TreeWidget &tree_widget;
+
+    SceneHandles scene_handles;
+    TreePaths tree_paths;
+    TaggedValue clipboard_tagged_value;
+    Transform clipboard_transform;
+
+    Data(SceneState &scene_state, Scene &, TreeWidget &);
+  };
+
+  Data data_member;
+
+  Impl(SceneState &scene_state, Scene &scene, TreeWidget &tree_widget)
+  : data_member(scene_state, scene, tree_widget)
+  {
+  }
+
+  static Impl &impl(MainWindowController &controller)
+  {
+    assert(controller.impl_ptr);
+    return *controller.impl_ptr;
+  }
+
+  static Data &data(MainWindowController &controller)
+  {
+    return impl(controller).data_member;
+  }
+
   static void handleSceneChanging(MainWindowController &);
   static void handleSceneChanged(MainWindowController &);
   static void handleTreeSelectionChanged(Data &);
@@ -382,15 +414,11 @@ struct MainWindowController::Impl {
       const TreePath &
     );
 
-  static void removeBody(MainWindowController::Data &, BodyIndex);
-  static void removeMarker(MainWindowController::Data &, MarkerIndex);
-  static MarkerIndex duplicateMarker(MainWindowController::Data &, MarkerIndex);
+  static void removeBody(Data &, BodyIndex);
+  static void removeMarker(Data &, MarkerIndex);
+  static MarkerIndex duplicateMarker(Data &, MarkerIndex);
 
-  static void
-  createMarkerInTree(
-    MarkerIndex marker_index,
-    MainWindowController::Data &data
-  )
+  static void createMarkerInTree(MarkerIndex marker_index, Data &data)
   {
     TreeWidget &tree_widget = data.tree_widget;
     TreePaths &tree_paths = data.tree_paths;
@@ -398,11 +426,7 @@ struct MainWindowController::Impl {
     ::createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
   }
 
-  static void
-  createMarkerInScene(
-    MarkerIndex marker_index,
-    MainWindowController::Data &data
-  )
+  static void createMarkerInScene(MarkerIndex marker_index, Data &data)
   {
     SceneHandles &scene_handles = data.scene_handles;
     SceneState &scene_state = data.scene_state;
@@ -417,7 +441,7 @@ void
     MainWindowController &controller
   )
 {
-  Data &data = controller.data;
+  Data &data = Impl::data(controller);
   // The mouse button is down.  The scene is being changed, but we don't
   // consider this change complete.
 
@@ -470,7 +494,7 @@ void
     MainWindowController &controller
   )
 {
-  Data &data = controller.data;
+  Data &data = Impl::data(controller);
   SceneHandles &scene_handles = data.scene_handles;
   Scene &scene = data.scene;
   SceneState &state = data.scene_state;
@@ -564,7 +588,7 @@ void
     NumericValue value
   )
 {
-  Data &data = controller.data;
+  Data &data = Impl::data(controller);
   TreeWidget &tree_widget = data.tree_widget;
   const TreePaths &tree_paths = data.tree_paths;
   SceneState &state = data.scene_state;
@@ -611,7 +635,7 @@ void
     int value
   )
 {
-  Data &data = controller.data;
+  Data &data = Impl::data(controller);
   const TreePaths &tree_paths = data.tree_paths;
   SceneState &scene_state = data.scene_state;
   setSceneStateEnumerationIndex(scene_state, path, value, tree_paths);
@@ -628,11 +652,12 @@ void
     const TreePath &
   )
 {
-  Scene &scene = controller.data.scene;
-  SceneHandles &scene_handles = controller.data.scene_handles;
-  SceneState &scene_state = controller.data.scene_state;
-  TreeWidget &tree_widget = controller.data.tree_widget;
-  TreePaths &tree_paths = controller.data.tree_paths;
+  Data &data = Impl::data(controller);
+  Scene &scene = data.scene;
+  SceneHandles &scene_handles = data.scene_handles;
+  SceneState &scene_state = data.scene_state;
+  TreeWidget &tree_widget = data.tree_widget;
+  TreePaths &tree_paths = data.tree_paths;
   DistanceErrorIndex index = scene_state.createDistanceError();
 
   SceneState::DistanceError &distance_error =
@@ -661,12 +686,13 @@ MarkerIndex
     Optional<BodyIndex> maybe_body_index
   )
 {
-  TreePaths &tree_paths = controller.data.tree_paths;
-  SceneState &scene_state = controller.data.scene_state;
-  TreeWidget &tree_widget = controller.data.tree_widget;
+  Data &data = Impl::data(controller);
+  TreePaths &tree_paths = data.tree_paths;
+  SceneState &scene_state = data.scene_state;
+  TreeWidget &tree_widget = data.tree_widget;
   MarkerIndex marker_index = scene_state.createMarker(maybe_body_index);
-  createMarkerInScene(marker_index, controller.data);
-  createMarkerInTree(marker_index, controller.data);
+  createMarkerInScene(marker_index, data);
+  createMarkerInTree(marker_index, data);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
   return marker_index;
 }
@@ -691,7 +717,7 @@ void
     const TreePath &path
   )
 {
-  Data &data = controller.data;
+  Data &data = Impl::data(controller);
   TreePaths &tree_paths = data.tree_paths;
   Optional<BodyIndex> maybe_body_index;
 
@@ -714,7 +740,7 @@ MainWindowController::Impl::addBodyPressed(
   const TreePath &parent_path
 )
 {
-  Data &data = controller.data;
+  Data &data = Impl::data(controller);
   SceneState &scene_state = data.scene_state;
   TreePaths &tree_paths = data.tree_paths;
 
@@ -737,12 +763,26 @@ MainWindowController::Impl::addBodyPressed(
 }
 
 
+static BodyIndex duplicateBody(BodyIndex body_index, SceneState &scene_state)
+{
+  TaggedValue root_tag_value("");
+  createBodyTaggedValue(root_tag_value, body_index, scene_state);
+
+  return
+    createBodyFromTaggedValue(
+      scene_state,
+      root_tag_value.children[0],
+      scene_state.body(body_index).maybe_parent_index
+    );
+}
+
+
 void
 MainWindowController::Impl::duplicateBodyPressed(
   MainWindowController &controller, const TreePath &body_path
 )
 {
-  Data &data = controller.data;
+  Data &data = Impl::data(controller);
 
   Optional<BodyIndex> maybe_body_index =
     bodyIndexFromTreePath(body_path, data.tree_paths);
@@ -751,9 +791,7 @@ MainWindowController::Impl::duplicateBodyPressed(
   // It should only have been possible to call this for a body.
 
   BodyIndex body_index = *maybe_body_index;
-
-  SceneState &scene_state = data.scene_state;
-  BodyIndex new_body_index = scene_state.duplicateBody(body_index);
+  BodyIndex new_body_index = duplicateBody(body_index, data.scene_state);
   createBodyInTree(new_body_index, data);
   createBodyInScene(new_body_index, data);
   selectBody(new_body_index, data);
@@ -766,11 +804,12 @@ void
     int distance_error_index
   )
 {
-  SceneState &scene_state = controller.data.scene_state;
-  Scene &scene = controller.data.scene;
-  SceneHandles &scene_handles = controller.data.scene_handles;
-  TreePaths &tree_paths = controller.data.tree_paths;
-  TreeWidget &tree_widget = controller.data.tree_widget;
+  Data &data = Impl::data(controller);
+  SceneState &scene_state = data.scene_state;
+  Scene &scene = data.scene;
+  SceneHandles &scene_handles = data.scene_handles;
+  TreePaths &tree_paths = data.tree_paths;
+  TreeWidget &tree_widget = data.tree_widget;
 
   removeDistanceErrorFromTree(
     distance_error_index,
@@ -792,10 +831,7 @@ void
 
 
 void
-MainWindowController::Impl::removeMarker(
-  MainWindowController::Data &data,
-  MarkerIndex marker_index
-)
+MainWindowController::Impl::removeMarker(Data &data, MarkerIndex marker_index)
 {
   TreePaths &tree_paths = data.tree_paths;
   TreeWidget &tree_widget = data.tree_widget;
@@ -810,7 +846,7 @@ MainWindowController::Impl::removeMarker(
 
 MarkerIndex
 MainWindowController::Impl::duplicateMarker(
-  MainWindowController::Data &data,
+  Data &data,
   MarkerIndex marker_index
 )
 {
@@ -828,10 +864,11 @@ void
     MarkerIndex marker_index
   )
 {
-  TreePaths &tree_paths = controller.data.tree_paths;
-  TreeWidget &tree_widget = controller.data.tree_widget;
-  SceneState &scene_state = controller.data.scene_state;
-  removeMarker(controller.data, marker_index);
+  Data &data = Impl::data(controller);
+  TreePaths &tree_paths = data.tree_paths;
+  TreeWidget &tree_widget = data.tree_widget;
+  SceneState &scene_state = data.scene_state;
+  removeMarker(data, marker_index);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
 }
 
@@ -842,7 +879,7 @@ void
     MarkerIndex source_marker_index
   )
 {
-  Data &data = controller.data;
+  Data &data = Impl::data(controller);
   TreePaths &tree_paths = data.tree_paths;
   TreeWidget &tree_widget = data.tree_widget;
   SceneState &scene_state = data.scene_state;
@@ -852,11 +889,7 @@ void
 }
 
 
-void
-  MainWindowController::Impl::removeBody(
-    MainWindowController::Data &data,
-    BodyIndex body_index
-  )
+void MainWindowController::Impl::removeBody(Data &data, BodyIndex body_index)
 {
   SceneState &scene_state = data.scene_state;
 
@@ -913,12 +946,23 @@ void
     const TreePath &path
   )
 {
-  Data &data = controller.data;
+  Data &data = Impl::data(controller);
   TreeWidget &tree_widget = data.tree_widget;
   TreePaths &tree_paths = data.tree_paths;
   SceneState &scene_state = data.scene_state;
   BodyIndex body_index = bodyIndexFromTreePath(path, tree_paths);
-  removeBody(controller.data, body_index);
+
+  data.clipboard_tagged_value.children.clear();
+  createBodyTaggedValue(data.clipboard_tagged_value, body_index, scene_state);
+
+#if 0
+  data.clipboard_transform =
+    bodyGlobalTransform(
+      scene_state.body(body_index).maybe_parent_index, scene_state
+    );
+#endif
+
+  removeBody(data, body_index);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
 }
 
@@ -978,18 +1022,13 @@ void
     const TreePath &path
   )
 {
-  SceneState &state = controller.data.scene_state;
-  TreeWidget &tree_widget = controller.data.tree_widget;
-  TreePaths &tree_paths = controller.data.tree_paths;
-  Scene &scene = controller.data.scene;
-  SceneHandles &scene_handles = controller.data.scene_handles;
-
-  flipSolveState(
-    state,
-    path,
-    controller.data.tree_paths
-  );
-
+  Data &data = Impl::data(controller);
+  SceneState &state = data.scene_state;
+  TreeWidget &tree_widget = data.tree_widget;
+  TreePaths &tree_paths = data.tree_paths;
+  Scene &scene = data.scene;
+  SceneHandles &scene_handles = data.scene_handles;
+  flipSolveState(state, path, data.tree_paths);
   solveScene(state);
   updateErrorsInState(state);
   updateTreeValues(tree_widget, tree_paths, state);
@@ -1003,8 +1042,9 @@ TreeWidget::MenuItems
     const TreePath &path
   )
 {
+  Data &data = Impl::data(controller);
   TreeWidget::MenuItems menu_items;
-  const TreePaths &tree_paths = controller.data.tree_paths;
+  const TreePaths &tree_paths = data.tree_paths;
 
   auto add_marker_function =
     [&controller,path]{
@@ -1084,14 +1124,14 @@ TreeWidget::MenuItems
     }
   }
 
-  if (solveStatePtr(controller.data.scene_state, path, tree_paths)) {
+  if (solveStatePtr(data.scene_state, path, tree_paths)) {
     auto solve_function =
       [&controller,path](){
         Impl::handleSolveToggleChange(controller,path);
       };
 
     bool checked_state =
-      solveState(controller.data.scene_state, path, tree_paths);
+      solveState(data.scene_state, path, tree_paths);
 
     appendTo(menu_items,{
       {"Solve", solve_function, checked_state}
@@ -1191,7 +1231,7 @@ void
     MainWindowController &controller
   )
 {
-  Data &data = controller.data;
+  Data &data = Impl::data(controller);
   Scene &scene = data.scene;
   TreeWidget &tree_widget = data.tree_widget;
 
@@ -1220,11 +1260,11 @@ void
     cerr << "No tree item for scene object.\n";
   }
 
-  attachProperDraggerToSelectedObject(controller.data);
+  attachProperDraggerToSelectedObject(data);
 }
 
 
-MainWindowController::Data::Data(
+MainWindowController::Impl::Data::Data(
   SceneState &scene_state_arg,
   Scene &scene_arg,
   TreeWidget &tree_widget_arg
@@ -1233,7 +1273,8 @@ MainWindowController::Data::Data(
   scene(scene_arg),
   tree_widget(tree_widget_arg),
   scene_handles(createSceneObjects(scene_state, scene)),
-  tree_paths(fillTree(tree_widget,scene_state))
+  tree_paths(fillTree(tree_widget,scene_state)),
+  clipboard_tagged_value("clipboard")
 {
 }
 
@@ -1243,8 +1284,9 @@ MainWindowController::MainWindowController(
   Scene &scene,
   TreeWidget &tree_widget
 )
-: data{scene_state, scene, tree_widget}
+: impl_ptr(new Impl(scene_state, scene, tree_widget))
 {
+  Impl::Data &data = Impl::data(*this);
   TreePaths &tree_paths = data.tree_paths;
   SceneHandles &scene_handles = data.scene_handles;
   SceneState &state = data.scene_state;
@@ -1270,7 +1312,7 @@ MainWindowController::MainWindowController(
     };
 
   tree_widget.selection_changed_callback =
-    [this](){ Impl::handleTreeSelectionChanged(data); };
+    [&data](){ Impl::handleTreeSelectionChanged(data); };
 
   tree_widget.context_menu_items_callback =
     [this](const TreePath &path){
@@ -1279,8 +1321,12 @@ MainWindowController::MainWindowController(
 }
 
 
+MainWindowController::~MainWindowController() = default;
+
+
 void MainWindowController::replaceSceneStateWith(const SceneState &new_state)
 {
+  Impl::Data &data = Impl::data(*this);
   Scene &scene = data.scene;
   SceneHandles &scene_handles = data.scene_handles;
   TreeWidget &tree_widget = data.tree_widget;

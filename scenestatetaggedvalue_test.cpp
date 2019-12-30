@@ -119,22 +119,19 @@ static void testBody()
 }
 
 
-static TaggedValue
-createTaggedValueForBody(BodyIndex body_index, const SceneState &scene_state)
-{
-  TaggedValue root_tag_value("");
-  createBodyTaggedValue(root_tag_value, body_index, scene_state);
-  return root_tag_value.children[0];
-}
-
-
 static void testCreatingABodyFromATaggedValueWithConflictingMarkerNames()
 {
   SceneState scene_state;
   BodyIndex body_index = scene_state.createBody();
   scene_state.createMarker(body_index);
-  TaggedValue tagged_value = createTaggedValueForBody(body_index, scene_state);
-  createBodyFromTaggedValue(scene_state, tagged_value, /*parent*/{});
+
+  {
+    TaggedValue root_tag_value("");
+    createBodyTaggedValue(root_tag_value, body_index, scene_state);
+    const TaggedValue &tagged_value = root_tag_value.children[0];
+    createBodyFromTaggedValue(scene_state, tagged_value, /*parent*/{});
+  }
+
   assert(scene_state.markers().size() == 2);
   assert(scene_state.marker(0).name != scene_state.marker(1).name);
 }

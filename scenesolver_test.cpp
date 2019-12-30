@@ -1,6 +1,5 @@
 #include "scenesolver.hpp"
 
-#include <random>
 #include <iostream>
 #include "coordinateaxes.hpp"
 #include "vec3.hpp"
@@ -11,10 +10,12 @@
 #include "transformstate.hpp"
 #include "positionstate.hpp"
 #include "indicesof.hpp"
+#include "randomengine.hpp"
+#include "randomfloat.hpp"
+#include "randompoint.hpp"
+#include "randomtransform.hpp"
 
 using std::cerr;
-using Quaternion = Eigen::Quaternion<float>;
-using RandomEngine = std::mt19937;
 
 
 static SceneState::DistanceError& createDistanceError(SceneState &scene_state)
@@ -34,49 +35,6 @@ static BodyIndex
 static BodyIndex createGlobalBodyIn(SceneState &scene_state)
 {
   return createBodyIn(scene_state, /*maybe_parent_index*/{});
-}
-
-
-static float randomFloat(float begin, float end, RandomEngine &engine)
-{
-  return std::uniform_real_distribution<float>(begin,end)(engine);
-}
-
-
-static Point randomPoint(RandomEngine &engine)
-{
-  float x = randomFloat(-1,1,engine);
-  float y = randomFloat(-1,1,engine);
-  float z = randomFloat(-1,1,engine);
-  return {x,y,z};
-}
-
-
-static Quaternion randomUnitQuaternion(RandomEngine &engine)
-{
-  using Scalar = float;
-
-  const Scalar u1 = randomFloat(0,1,engine),
-               u2 = randomFloat(0, 2*EIGEN_PI,engine),
-               u3 = randomFloat(0, 2*EIGEN_PI,engine);
-  const Scalar a = sqrt(1 - u1),
-               b = sqrt(u1);
-  return Quaternion (a * sin(u2), a * cos(u2), b * sin(u3), b * cos(u3));
-}
-
-
-static CoordinateAxes randomCoordinateAxes(RandomEngine &engine)
-{
-  Quaternion q = randomUnitQuaternion(engine);
-  return coordinateAxes(q.toRotationMatrix());
-}
-
-
-static Transform randomTransform(RandomEngine &engine)
-{
-  CoordinateAxes coordinate_axes = randomCoordinateAxes(engine);
-  Point origin = randomPoint(engine);
-  return makeTransform(coordinate_axes,origin);
 }
 
 

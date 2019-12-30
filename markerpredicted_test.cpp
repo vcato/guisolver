@@ -1,5 +1,7 @@
 #include "markerpredicted.hpp"
 
+#define ADD_TEST 0
+
 
 static BodyIndex
   createBodyIn(SceneState &scene_state, Optional<BodyIndex> maybe_parent_index)
@@ -43,8 +45,36 @@ static void testWithHierarchy()
 }
 
 
+#if ADD_TEST
+static void testGlobalTransform()
+{
+  assert(false); // not finished
+  RandomEngine engine(/*seed*/1);
+  // The marker predicted position on a body should be the same as the
+  // local with the global transform of the body applied.
+
+  BodyIndex body1_index = scene_state.createBody();
+  BodyIndex body2_index = scene_state.createBody(body1_index);
+  scene_state.body(body1_index).transform = randomTransform();
+  scene_state.body(body2_index).transform = randomTransform();
+  scene_state.createMarker(body2_index);
+  scene_sate.marker(marker_index).position = randomPosition();
+
+  Point local = scene_state.marker(marker_index).position;
+
+  assertNear(
+    markerPredicted(scene_state, marker_index),
+    bodyGlobalTransform(body_index, scene_state)*local
+  );
+}
+#endif
+
+
 int main()
 {
   testWithGlobalMarkerAtOrigin();
   testWithHierarchy();
+#if ADD_TEST
+  testGlobalTransform();
+#endif
 }
