@@ -96,16 +96,13 @@ struct AddNumericItemFunction {
 
 static TreePaths::XYZ
   createXYZChildren(
-    TreeWidget &tree_widget,
-    const TreePath &parent_path,
+    AddNumericItemFunction &add,
     const SceneState::XYZ &value,
     int digits_of_precision = defaultDigitsOfPrecision()
   )
 {
   TreePaths::XYZ xyz_paths;
-  xyz_paths.path = parent_path;
-  ItemAdder adder{parent_path, tree_widget};
-  AddNumericItemFunction add(adder);
+  xyz_paths.path = add.adder.parent_path;
   add.digits_of_precision = digits_of_precision;
 
   xyz_paths.x = add("x:", value.x);
@@ -113,6 +110,20 @@ static TreePaths::XYZ
   xyz_paths.z = add("z:", value.z);
 
   return xyz_paths;
+}
+
+
+static TreePaths::XYZ
+  createXYZChildren(
+    TreeWidget &tree_widget,
+    const TreePath &parent_path,
+    const SceneState::XYZ &value,
+    int digits_of_precision = defaultDigitsOfPrecision()
+  )
+{
+  ItemAdder adder{parent_path, tree_widget};
+  AddNumericItemFunction add(adder);
+  return createXYZChildren(add, value, digits_of_precision);
 }
 
 
@@ -600,8 +611,15 @@ createBodyItem(
     TreePaths::Body::Geometry &geometry_paths = body_paths.geometry;
     const SceneState::Geometry &geometry_state = body_state.geometry;
 
-    geometry_paths.scale =
-      TreePaths::Scale(addXYZ(adder, "scale: []", geometry_state.scale));
+    {
+      string label = "scale: []";
+      TreePath path = adder.addVoid(label);
+      ItemAdder child_adder{path, adder.tree_widget};
+      AddNumericItemFunction add(child_adder);
+      add.minimum_value = 0;
+      TreePaths::XYZ xyz_paths = createXYZChildren(add, geometry_state.scale);
+      geometry_paths.scale = TreePaths::Scale(xyz_paths);
+    }
 
     geometry_paths.center = addXYZ(adder, "center: []", geometry_state.center);
   }
