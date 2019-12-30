@@ -29,7 +29,7 @@ static void
     Optional<BodyIndex> maybe_body_index
   )
 {
-  MarkerIndex index = createMarkerInState(state, maybe_body_index);
+  MarkerIndex index = state.createMarker(maybe_body_index);
   state.marker(index).position = position;
 }
 

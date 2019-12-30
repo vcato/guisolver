@@ -276,14 +276,23 @@ static Optional<MarkerIndex>
 struct MainWindowController::Impl {
   static void handleSceneChanging(MainWindowController &);
   static void handleSceneChanged(MainWindowController &);
-  static void handleTreeSelectionChanged(MainWindowController &controller);
+  static void handleTreeSelectionChanged(Data &);
+
+  static void selectMarkerInTree(MarkerIndex marker_index, Data &data)
+  {
+    data.tree_widget.selectItem(data.tree_paths.markers[marker_index].path);
+  }
+
+  static void selectMarker(MarkerIndex marker_index, Data &data)
+  {
+    selectMarkerInTree(marker_index, data);
+    handleTreeSelectionChanged(data);
+  }
 
   static bool isRotateItem(const TreePath &, const TreePaths &);
   static bool isScaleItem(const TreePath &, const TreePaths &);
 
-  static void
-    attachProperDraggerToSelectedObject(MainWindowController &controller);
-
+  static void attachProperDraggerToSelectedObject(Data &);
   static void handleSceneSelectionChanged(MainWindowController &controller);
 
   static void
@@ -334,6 +343,12 @@ struct MainWindowController::Impl {
     );
 
   static void
+    duplicateMarkerPressed(
+      MainWindowController &,
+      MarkerIndex
+    );
+
+  static void
     removeTransformPressed(
       MainWindowController &,
       const TreePath &
@@ -341,6 +356,31 @@ struct MainWindowController::Impl {
 
   static void removeBody(MainWindowController::Data &, BodyIndex);
   static void removeMarker(MainWindowController::Data &, MarkerIndex);
+  static MarkerIndex duplicateMarker(MainWindowController::Data &, MarkerIndex);
+
+  static void
+  createMarkerInTree(
+    MarkerIndex marker_index,
+    MainWindowController::Data &data
+  )
+  {
+    TreeWidget &tree_widget = data.tree_widget;
+    TreePaths &tree_paths = data.tree_paths;
+    SceneState &scene_state = data.scene_state;
+    ::createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
+  }
+
+  static void
+  createMarkerInScene(
+    MarkerIndex marker_index,
+    MainWindowController::Data &data
+  )
+  {
+    SceneHandles &scene_handles = data.scene_handles;
+    SceneState &scene_state = data.scene_state;
+    Scene &scene = data.scene;
+    ::createMarkerInScene(scene, scene_handles, scene_state, marker_index);
+  }
 };
 
 
@@ -595,12 +635,10 @@ MarkerIndex
 {
   TreePaths &tree_paths = controller.data.tree_paths;
   SceneState &scene_state = controller.data.scene_state;
-  Scene &scene = controller.data.scene;
-  SceneHandles &scene_handles = controller.data.scene_handles;
   TreeWidget &tree_widget = controller.data.tree_widget;
-  MarkerIndex marker_index = createMarkerInState(scene_state, maybe_body_index);
-  createMarkerInScene(scene, scene_handles, scene_state, marker_index);
-  createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
+  MarkerIndex marker_index = scene_state.createMarker(maybe_body_index);
+  createMarkerInScene(marker_index, controller.data);
+  createMarkerInTree(marker_index, controller.data);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
   return marker_index;
 }
@@ -625,7 +663,8 @@ void
     const TreePath &path
   )
 {
-  TreePaths &tree_paths = controller.data.tree_paths;
+  Data &data = controller.data;
+  TreePaths &tree_paths = data.tree_paths;
   Optional<BodyIndex> maybe_body_index;
 
 
@@ -637,13 +676,7 @@ void
   }
 
   MarkerIndex marker_index = addMarker(controller, maybe_body_index);
-  Data &data = controller.data;
-
-  data.tree_widget.selectItem(
-    data.tree_paths.markers[marker_index].path
-  );
-
-  handleTreeSelectionChanged(controller);
+  selectMarker(marker_index, data);
 }
 
 
@@ -675,7 +708,7 @@ MainWindowController::Impl::addBodyPressed(
   createBodyInTree(tree_widget, tree_paths, scene_state, body_index);
 
   tree_widget.selectItem(tree_paths.bodies[body_index].path);
-  handleTreeSelectionChanged(controller);
+  handleTreeSelectionChanged(controller.data);
 }
 
 
@@ -727,6 +760,20 @@ MainWindowController::Impl::removeMarker(
 }
 
 
+MarkerIndex
+MainWindowController::Impl::duplicateMarker(
+  MainWindowController::Data &data,
+  MarkerIndex marker_index
+)
+{
+  SceneState &scene_state = data.scene_state;
+  MarkerIndex new_marker_index = scene_state.duplicateMarker(marker_index);
+  createMarkerInTree(new_marker_index, data);
+  createMarkerInScene(new_marker_index, data);
+  return new_marker_index;
+}
+
+
 void
   MainWindowController::Impl::removeMarkerPressed(
     MainWindowController &controller,
@@ -738,6 +785,22 @@ void
   SceneState &scene_state = controller.data.scene_state;
   removeMarker(controller.data, marker_index);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+}
+
+
+void
+  MainWindowController::Impl::duplicateMarkerPressed(
+    MainWindowController &controller,
+    MarkerIndex source_marker_index
+  )
+{
+  Data &data = controller.data;
+  TreePaths &tree_paths = data.tree_paths;
+  TreeWidget &tree_widget = data.tree_widget;
+  SceneState &scene_state = data.scene_state;
+  MarkerIndex new_marker_index = duplicateMarker(data, source_marker_index);
+  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+  selectMarker(new_marker_index, data);
 }
 
 
@@ -940,8 +1003,13 @@ TreeWidget::MenuItems
         Impl::removeMarkerPressed(controller, index);
       };
 
+      auto duplicate_marker_function = [&controller,index]{
+        Impl::duplicateMarkerPressed(controller, index);
+      };
+
       appendTo(menu_items,{
-        {"Remove", remove_marker_function}
+        {"Remove", remove_marker_function},
+        {"Duplicate", duplicate_marker_function}
       });
     }
   }
@@ -1016,12 +1084,12 @@ bool
 
 void
   MainWindowController::Impl::attachProperDraggerToSelectedObject(
-    MainWindowController &controller
+    Data &data
   )
 {
-  Scene &scene = controller.data.scene;
-  TreeWidget &tree_widget = controller.data.tree_widget;
-  TreePaths &tree_paths = controller.data.tree_paths;
+  Scene &scene = data.scene;
+  TreeWidget &tree_widget = data.tree_widget;
+  TreePaths &tree_paths = data.tree_paths;
 
   Optional<Scene::LineHandle> maybe_line_handle =
     scene.maybeLine(*scene.selectedObject());
@@ -1040,12 +1108,8 @@ void
 }
 
 
-void
-  MainWindowController::Impl::handleTreeSelectionChanged(
-    MainWindowController &controller
-  )
+void MainWindowController::Impl::handleTreeSelectionChanged(Data &data)
 {
-  Data &data = controller.data;
   TreeWidget &tree_widget = data.tree_widget;
   Scene &scene = data.scene;
   Optional<TreePath> maybe_selected_item_path = tree_widget.selectedItem();
@@ -1062,7 +1126,7 @@ void
 
   if (maybe_object) {
     scene.selectObject(*maybe_object);
-    attachProperDraggerToSelectedObject(controller);
+    attachProperDraggerToSelectedObject(data);
   }
   else {
     cerr << "No scene object found\n";
@@ -1104,7 +1168,7 @@ void
     cerr << "No tree item for scene object.\n";
   }
 
-  attachProperDraggerToSelectedObject(controller);
+  attachProperDraggerToSelectedObject(controller.data);
 }
 
 
@@ -1154,7 +1218,7 @@ MainWindowController::MainWindowController(
     };
 
   tree_widget.selection_changed_callback =
-    [this](){ Impl::handleTreeSelectionChanged(*this); };
+    [this](){ Impl::handleTreeSelectionChanged(data); };
 
   tree_widget.context_menu_items_callback =
     [this](const TreePath &path){

@@ -51,16 +51,23 @@ static SceneState::Marker::Name
 }
 
 
-MarkerIndex
-createMarkerInState(
-  SceneState &state,
-  Optional<BodyIndex> maybe_body_index
-)
+MarkerIndex SceneState::createMarker(Optional<BodyIndex> maybe_body_index)
 {
   bool is_local = maybe_body_index.hasValue();
-  MarkerIndex index = state.createMarker(newMarkerName(state, is_local));
-  state.marker(index).maybe_body_index = maybe_body_index;
+  SceneState::Marker::Name name = newMarkerName(*this, is_local);
+  MarkerIndex index = createMarker(name);
+  marker(index).maybe_body_index = maybe_body_index;
   return index;
+}
+
+
+MarkerIndex SceneState::duplicateMarker(MarkerIndex from_marker_index)
+{
+  bool is_local = _markers[from_marker_index].maybe_body_index.hasValue();
+  MarkerIndex new_marker_index = _markers.size();
+  _markers.push_back(_markers[from_marker_index]);
+  _markers[new_marker_index].name = newMarkerName(*this, is_local);
+  return new_marker_index;
 }
 
 

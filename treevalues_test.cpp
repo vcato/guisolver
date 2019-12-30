@@ -482,7 +482,7 @@ static void testAddingMarker()
   SceneState state = defaultSceneState();
   FakeTreeWidget tree_widget;
   TreePaths tree_paths = fillTree(tree_widget, state);
-  MarkerIndex marker_index = createMarkerInState(state, /*maybe_body_index*/{});
+  MarkerIndex marker_index = state.createMarker(Optional<BodyIndex>{});
   createMarkerInTree(tree_widget, tree_paths, state, marker_index);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, state);
   checkTree(tree_widget, tree_paths, state);

@@ -85,6 +85,8 @@ class SceneState {
     Body &body(BodyIndex index) { return _bodies[index]; }
     const Body &body(BodyIndex index) const { return _bodies[index]; }
 
+    MarkerIndex createMarker(Optional<BodyIndex>);
+
     MarkerIndex createMarker(const String &name)
     {
       MarkerIndex new_index = _markers.size();
@@ -92,6 +94,8 @@ class SceneState {
       _markers.back().name = name;
       return new_index;
     }
+
+    MarkerIndex duplicateMarker(MarkerIndex);
 
     BodyIndex createBody(Optional<BodyIndex> maybe_parent_index);
 
@@ -163,12 +167,6 @@ using TransformState = SceneState::Transform;
 using TranslationState = SceneState::XYZ;
 using RotationState = SceneState::XYZ;
 using MarkerPosition = SceneState::XYZ;
-
-extern MarkerIndex
-  createMarkerInState(
-    SceneState &state,
-    Optional<BodyIndex> maybe_body_index
-  );
 
 extern vector<SceneState::Marker::Name> markerNames(const SceneState &state);
 
