@@ -121,11 +121,7 @@ class SceneState {
 
     bool bodyHasChildren(BodyIndex body_index) const;
 
-    void removeBody(BodyIndex index_to_remove)
-    {
-      assert(!bodyHasChildren(index_to_remove));
-      removeIndexFrom(_bodies, index_to_remove);
-    }
+    void removeBody(BodyIndex index_to_remove);
 
     DistanceErrorIndex createDistanceError()
     {

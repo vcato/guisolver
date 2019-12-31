@@ -397,6 +397,48 @@ static void
 }
 
 
+static DistanceErrorIndex
+nextDistanceErrorIndex(
+  const TreePaths &tree_paths,
+  const SceneState &scene_state
+)
+{
+  int n_bodies_on_scene = 0;
+
+  for (BodyIndex body_index : indicesOf(tree_paths.bodies)) {
+    if (!scene_state.body(body_index).maybe_parent_index) {
+      ++n_bodies_on_scene;
+    }
+  }
+
+  int n_markers_on_scene = 0;
+
+  for (MarkerIndex marker_index : indicesOf(tree_paths.markers)) {
+    if (!scene_state.marker(marker_index).maybe_body_index) {
+      ++n_markers_on_scene;
+    }
+  }
+
+  int n_distance_errors = tree_paths.distance_errors.size();
+
+  TreeItemIndex next_distance_error_index =
+    n_bodies_on_scene + n_markers_on_scene + n_distance_errors;
+
+  return next_distance_error_index;
+}
+
+
+static TreePath
+nextDistanceErrorPath(
+  const TreePaths &tree_paths,
+  const SceneState &scene_state
+)
+{
+  TreeItemIndex index = nextDistanceErrorIndex(tree_paths, scene_state);
+  return childPath(tree_paths.path, index);
+}
+
+
 void
   createDistanceErrorInTree(
     const SceneState::DistanceError &state_distance_error,
@@ -405,10 +447,11 @@ void
     const SceneState &scene_state
   )
 {
-  TreePath &next_distance_error_path = tree_paths.next_distance_error_path;
+  const TreePath next_distance_error_path =
+    nextDistanceErrorPath(tree_paths, scene_state);
+
   TreePath distance_error_path = next_distance_error_path;
   handlePathInsertion(tree_paths, distance_error_path);
-  ++next_distance_error_path.back();
 
   tree_paths.distance_errors.push_back(
     createDistanceErrorInTree1(
@@ -423,38 +466,33 @@ void
 
 
 void
-  removeDistanceErrorFromTree(
-    int distance_error_index,
-    TreePaths &tree_paths,
-    TreeWidget &tree_widget
-  )
+removeDistanceErrorFromTree(
+  DistanceErrorIndex distance_error_index,
+  TreePaths &tree_paths,
+  TreeWidget &tree_widget
+)
 {
   TreePaths::DistanceErrors &distance_errors = tree_paths.distance_errors;
   TreePath distance_error_path = distance_errors[distance_error_index].path;
   tree_widget.removeItem(distance_error_path);
   removeIndexFrom(distance_errors, distance_error_index);
   handlePathRemoval(tree_paths, distance_error_path);
-
-  updatePathAfterRemoval(
-    tree_paths.next_distance_error_path,
-    distance_error_path
-  );
 }
 
 
-extern void
-  removeMarkerFromTree(
-    MarkerIndex marker_index,
-    TreePaths &tree_paths,
-    TreeWidget &tree_widget
-  )
+void
+removeMarkerFromTree(
+  MarkerIndex marker_index,
+  TreePaths &tree_paths,
+  TreeWidget &tree_widget
+)
 {
   TreePaths::Markers &markers = tree_paths.markers;
   TreePath marker_path = markers[marker_index].path;
   tree_widget.removeItem(marker_path);
   removeIndexFrom(markers, marker_index);
   handlePathRemoval(tree_paths, marker_path);
-  updatePathAfterRemoval(tree_paths.next_distance_error_path, marker_path);
+
   updatePathAfterRemoval(tree_paths.next_scene_marker_path, marker_path);
 
   for (BodyIndex body_index : indicesOf(tree_paths.bodies)) {
@@ -545,10 +583,6 @@ void
 
   TreePath marker_path = insert_point;
   ++insert_point.back();
-
-  if (!maybe_body_index) {
-    ++tree_paths.next_distance_error_path.back();
-  }
 
   handlePathInsertion(tree_paths, marker_path);
 
@@ -655,7 +689,6 @@ static void
 
   ++tree_paths.next_scene_body_path.back();
   ++tree_paths.next_scene_marker_path.back();
-  ++tree_paths.next_distance_error_path.back();
 }
 
 
@@ -715,20 +748,21 @@ createBodyInTree(
 
 
 void
-  removeBodyFromTree(
-    TreeWidget &tree_widget,
-    TreePaths &tree_paths,
-    const SceneState &/*scene_state*/,
-    BodyIndex body_index
-  )
+removeBodyFromTree(
+  TreeWidget &tree_widget,
+  TreePaths &tree_paths,
+  const SceneState &scene_state,
+  BodyIndex body_index
+)
 {
-  // TreePaths::Markers &markers = tree_paths.markers;
+  assert(indicesOfMarkersOnBody(body_index, scene_state).empty());
+  assert(indicesOfChildBodies(body_index, scene_state).empty());
+
   TreePath body_path = tree_paths.bodies[body_index].path;
   tree_widget.removeItem(body_path);
   removeIndexFrom(tree_paths.bodies, body_index);
   handlePathRemoval(tree_paths, body_path);
 
-  updatePathAfterRemoval(tree_paths.next_distance_error_path, body_path);
   updatePathAfterRemoval(tree_paths.next_scene_marker_path, body_path);
   updatePathAfterRemoval(tree_paths.next_scene_body_path, body_path);
 
@@ -754,7 +788,6 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
   tree_paths.path = scene_path;
 
   TreePath next_scene_child_path = childPath(scene_path, 0);
-  tree_paths.next_distance_error_path = next_scene_child_path;
   tree_paths.next_scene_marker_path = next_scene_child_path;
   tree_paths.next_scene_body_path = next_scene_child_path;
   tree_paths.total_error = next_scene_child_path;

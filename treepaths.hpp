@@ -154,7 +154,6 @@ struct TreePaths {
   Markers markers;
   Bodies bodies;
   DistanceErrors distance_errors;
-  TreePath next_distance_error_path;
   TreePath next_scene_marker_path;
   TreePath next_scene_body_path;
   TreePath total_error;
@@ -173,6 +172,8 @@ struct TreePaths {
   }
 
   bool operator==(const TreePaths &arg) const { return isEqual(*this, arg); }
+
+  private:
 };
 
 

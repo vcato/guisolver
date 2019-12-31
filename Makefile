@@ -13,6 +13,7 @@ run_unit_tests: \
   taggedvalueio_test.pass \
   osgutil_test.pass \
   transform_test.pass \
+  scenestate_test.pass \
   globaltransform_test.pass \
   scenestatetaggedvalue_test.pass \
   scenestateio_test.pass \
@@ -65,6 +66,9 @@ osgutil_test: osgutil_test.o osgutil.o
 transform_test: transform_test.o maketransform.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
+scenestate_test: scenestate_test.o scenestate.o
+	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
+
 globaltransform_test: globaltransform_test.o scenestate.o maketransform.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
@@ -84,8 +88,8 @@ scenesolver_test: scenesolver_test.o \
 optimize_test: optimize_test.o $(OPTIMIZE)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
-treevalues_test: treevalues_test.o $(DEFAULTSCENESTATE) treevalues.o \
-  maketransform.o
+treevalues_test: treevalues_test.o treepaths.o \
+  $(DEFAULTSCENESTATE) treevalues.o maketransform.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 sceneobjects_test: sceneobjects_test.o $(SCENEOBJECTS)

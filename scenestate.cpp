@@ -149,3 +149,18 @@ SceneState::createBody(Optional<BodyIndex> maybe_parent_index)
   _bodies.back().maybe_parent_index = maybe_parent_index;
   return new_index;
 }
+
+
+void SceneState::removeBody(BodyIndex index_to_remove)
+{
+  assert(!bodyHasChildren(index_to_remove));
+  removeIndexFrom(_bodies, index_to_remove);
+
+  for (auto marker_index : indicesOf(_markers)) {
+    if (_markers[marker_index].maybe_body_index) {
+      if (*_markers[marker_index].maybe_body_index >= index_to_remove) {
+        --*_markers[marker_index].maybe_body_index;
+      }
+    }
+  }
+}
