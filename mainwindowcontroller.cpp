@@ -13,6 +13,8 @@
 #include "scenestatetaggedvalue.hpp"
 #include "globaltransform.hpp"
 
+#define NEW_CUT_BEHAVIOR 0
+
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
 
@@ -283,8 +285,12 @@ struct MainWindowController::Impl {
 
     SceneHandles scene_handles;
     TreePaths tree_paths;
+#if !NEW_CUT_BEHAVIOR
     TaggedValue clipboard_tagged_value;
     Transform clipboard_transform;
+#else
+    Optional<BodyIndex> maybe_cut_body_index;
+#endif
 
     Data(SceneState &scene_state, Scene &, TreeWidget &);
   };
@@ -298,7 +304,11 @@ struct MainWindowController::Impl {
 
   static bool clipboardIsEmpty(const Data &data)
   {
+#if !NEW_CUT_BEHAVIOR
     return data.clipboard_tagged_value.children.empty();
+#else
+    return !data.maybe_cut_body_index.hasValue();
+#endif
   }
 
   static Impl &impl(MainWindowController &controller)
@@ -397,6 +407,7 @@ struct MainWindowController::Impl {
   static MarkerIndex addMarker(MainWindowController &, Optional<BodyIndex>);
   static void addMarkerPressed(MainWindowController &, const TreePath &);
   static void addBodyPressed(MainWindowController &, const TreePath &);
+  static void removeBodyPressed(MainWindowController &, const TreePath &);
   static void duplicateBodyPressed(MainWindowController &, const TreePath &);
 
   static void
@@ -404,6 +415,9 @@ struct MainWindowController::Impl {
       MainWindowController &,
       int distance_error_index
     );
+
+  static void removingMarker(Data &, MarkerIndex);
+  static void removingBody(Data &, BodyIndex);
 
   static void
     removeMarkerPressed(
@@ -424,6 +438,7 @@ struct MainWindowController::Impl {
     );
 
   static void removeBody(Data &, BodyIndex);
+
   static void removeMarker(Data &, MarkerIndex);
   static MarkerIndex duplicateMarker(Data &, MarkerIndex);
 
@@ -757,25 +772,55 @@ MainWindowController::Impl::pasteGlobalPressed(
   Data &data = Impl::data(controller);
   SceneState &scene_state = data.scene_state;
 
-  Optional<BodyIndex> maybe_parent_body_index =
+  Optional<BodyIndex> maybe_new_parent_body_index =
     maybeBodyIndexFromTreePath(path, data.tree_paths);
+
+#if !NEW_CUT_BEHAVIOR
+  const TaggedValue &body_tagged_value =
+    data.clipboard_tagged_value.children[0];
+
+  const Transform &old_parent_global_transform =
+    data.clipboard_transform;
+#else
+  BodyIndex old_body_index = *data.maybe_cut_body_index;
+  data.maybe_cut_body_index.reset();
+  TaggedValue clipboard("clipboard");
+
+  Optional<BodyIndex> maybe_old_parent_body_index =
+    scene_state.body(old_body_index).maybe_parent_index;
+
+  createBodyTaggedValue(clipboard, old_body_index, scene_state);
+
+  Transform old_parent_global_transform =
+    globalTransform(maybe_old_parent_body_index, scene_state);
+
+  const TaggedValue &body_tagged_value = clipboard.children[0];
+
+  removeBody(data, old_body_index);
+
+  if (maybe_new_parent_body_index) {
+    if (*maybe_new_parent_body_index > old_body_index) {
+      --*maybe_new_parent_body_index;
+    }
+  }
+#endif
 
   BodyIndex new_body_index =
     createBodyFromTaggedValue(
       scene_state,
-      data.clipboard_tagged_value.children[0],
-      maybe_parent_body_index
+      body_tagged_value,
+      maybe_new_parent_body_index
     );
 
   SceneState::Body &body_state = scene_state.body(new_body_index);
-  Transform body_transform = makeTransformFromState(body_state.transform);
+  Transform old_body_transform = makeTransformFromState(body_state.transform);
 
-  Transform parent_global_transform =
-    globalTransform(maybe_parent_body_index, scene_state);
+  Transform new_parent_global_transform =
+    globalTransform(maybe_new_parent_body_index, scene_state);
 
-  body_transform = data.clipboard_transform*body_transform;
-  body_transform = parent_global_transform.inverse()*body_transform;
-  body_state.transform = transformState(body_transform);
+  Transform body_global_transform = old_parent_global_transform*old_body_transform;
+  Transform new_body_transform = new_parent_global_transform.inverse()*body_global_transform;
+  body_state.transform = transformState(new_body_transform);
 
   createBodyInTree(new_body_index, data);
   createBodyInScene(new_body_index, data);
@@ -823,6 +868,21 @@ static BodyIndex duplicateBody(BodyIndex body_index, SceneState &scene_state)
       root_tag_value.children[0],
       scene_state.body(body_index).maybe_parent_index
     );
+}
+
+
+void
+MainWindowController::Impl::removeBodyPressed(
+  MainWindowController &controller, const TreePath &path
+)
+{
+  Data &data = Impl::data(controller);
+  TreeWidget &tree_widget = data.tree_widget;
+  TreePaths &tree_paths = data.tree_paths;
+  SceneState &scene_state = data.scene_state;
+  BodyIndex body_index = bodyIndexFromTreePath(path, tree_paths);
+  removeBody(data, body_index);
+  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
 }
 
 
@@ -880,15 +940,34 @@ void
 
 
 void
-MainWindowController::Impl::removeMarker(Data &data, MarkerIndex marker_index)
+MainWindowController::Impl::removingMarker(Data &data, MarkerIndex marker_index)
 {
   TreePaths &tree_paths = data.tree_paths;
   TreeWidget &tree_widget = data.tree_widget;
   SceneHandles &scene_handles = data.scene_handles;
-  SceneState &scene_state = data.scene_state;
   Scene &scene = data.scene;
   removeMarkerFromTree(marker_index, tree_paths, tree_widget);
   removeMarkerFromScene(scene, scene_handles.markers, marker_index);
+}
+
+
+void MainWindowController::Impl::removingBody(Data &data, BodyIndex body_index)
+{
+  Scene &scene = data.scene;
+  SceneHandles &scene_handles = data.scene_handles;
+  SceneState &scene_state = data.scene_state;
+  TreePaths &tree_paths = data.tree_paths;
+  TreeWidget &tree_widget = data.tree_widget;
+  removeBodyFromScene(scene, scene_handles, scene_state, body_index);
+  removeBodyFromTree(tree_widget, tree_paths, scene_state, body_index);
+}
+
+
+void
+MainWindowController::Impl::removeMarker(Data &data, MarkerIndex marker_index)
+{
+  SceneState &scene_state = data.scene_state;
+  removingMarker(data, marker_index);
   scene_state.removeMarker(marker_index);
 }
 
@@ -940,53 +1019,69 @@ void
 
 void MainWindowController::Impl::removeBody(Data &data, BodyIndex body_index)
 {
-  SceneState &scene_state = data.scene_state;
+  auto removing_marker_function =
+    [&](MarkerIndex arg){ removingMarker(data, arg); };
 
-  for (;;) {
-    bool a_body_was_removed = false;
+  auto removing_body_function =
+    [&](BodyIndex arg){ removingBody(data, arg); };
 
-    for (BodyIndex other_body_index : indicesOf(scene_state.bodies())) {
-      if (scene_state.body(other_body_index).maybe_parent_index == body_index) {
-        removeBody(data, other_body_index);
-        a_body_was_removed = true;
-
-        if (other_body_index < body_index) {
-          --body_index;
-        }
-
-        break;
-      }
-    }
-
-    if (!a_body_was_removed) {
-      break;
-    }
-  }
-
-  for (;;) {
-    bool a_marker_was_removed = false;
-
-    for (auto marker_index : indicesOf(scene_state.markers())) {
-      if (scene_state.marker(marker_index).maybe_body_index == body_index) {
-        removeMarker(data, marker_index);
-        a_marker_was_removed = true;
-        break;
-      }
-    }
-
-    if (!a_marker_was_removed) {
-      break;
-    }
-  }
-
-  Scene &scene = data.scene;
-  SceneHandles &scene_handles = data.scene_handles;
-  TreePaths &tree_paths = data.tree_paths;
-  TreeWidget &tree_widget = data.tree_widget;
-  removeBodyFromScene(scene, scene_handles, scene_state, body_index);
-  removeBodyFromTree(tree_widget, tree_paths, scene_state, body_index);
-  scene_state.removeBody(body_index);
+  removeBodyFromSceneState(
+    body_index,
+    data.scene_state,
+    removing_marker_function,
+    removing_body_function
+  );
 }
+
+
+template <typename Function>
+static void
+forEachChildItemPath(
+  const TreeWidget &tree_widget,
+  const TreePath &parent_path,
+  const Function &f
+)
+{
+  int n_children = tree_widget.itemChildCount(parent_path);
+
+  for (int i=0; i!=n_children; ++i) {
+    f(childPath(parent_path, i));
+  }
+}
+
+
+template <typename Function>
+static void
+forEachPathInBranch(
+  const TreeWidget &tree_widget,
+  const TreePath &branch_path,
+  const Function &f
+)
+{
+  f(branch_path);
+
+  forEachChildItemPath(tree_widget, branch_path,[&](const TreePath &child_path){
+    forEachPathInBranch(tree_widget, child_path, f);
+  });
+}
+
+
+#if NEW_CUT_BEHAVIOR
+static void
+setBranchPending(
+  TreeWidget &tree_widget,
+  const TreePath &branch_path,
+  bool new_state
+)
+{
+  forEachPathInBranch(
+    tree_widget, branch_path,
+    [&](const TreePath &item_path){
+      tree_widget.setItemPending(item_path, new_state);
+    }
+  );
+}
+#endif
 
 
 void
@@ -998,8 +1093,9 @@ void
   Data &data = Impl::data(controller);
   TreeWidget &tree_widget = data.tree_widget;
   TreePaths &tree_paths = data.tree_paths;
-  SceneState &scene_state = data.scene_state;
   BodyIndex body_index = bodyIndexFromTreePath(path, tree_paths);
+#if !NEW_CUT_BEHAVIOR
+  SceneState &scene_state = data.scene_state;
 
   Optional<BodyIndex> maybe_parent_body_index =
     scene_state.body(body_index).maybe_parent_index;
@@ -1012,6 +1108,20 @@ void
 
   removeBody(data, body_index);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+#else
+  if (data.maybe_cut_body_index) {
+    setBranchPending(
+      tree_widget,
+      tree_paths.bodies[*data.maybe_cut_body_index].path,
+      false
+    );
+
+    data.maybe_cut_body_index.reset();
+  }
+
+  setBranchPending(tree_widget, path, true);
+  data.maybe_cut_body_index = body_index;
+#endif
 }
 
 
@@ -1132,6 +1242,9 @@ TreeWidget::MenuItems
         Impl::cutBodyPressed(controller, path);
       };
 
+    auto remove_body_function =
+      [&controller,path]{ Impl::removeBodyPressed(controller, path); };
+
     auto duplicate_body_function =
       [&controller,path]{ Impl::duplicateBodyPressed(controller, path); };
 
@@ -1139,6 +1252,7 @@ TreeWidget::MenuItems
       {"Add Marker", add_marker_function},
       {"Add Body", add_body_function},
       {"Cut", cut_body_function },
+      {"Remove", remove_body_function },
       {"Duplicate", duplicate_body_function },
     });
 
@@ -1338,8 +1452,11 @@ MainWindowController::Impl::Data::Data(
   scene(scene_arg),
   tree_widget(tree_widget_arg),
   scene_handles(createSceneObjects(scene_state, scene)),
-  tree_paths(fillTree(tree_widget,scene_state)),
+  tree_paths(fillTree(tree_widget,scene_state))
+#if !NEW_CUT_BEHAVIOR
+  ,
   clipboard_tagged_value("clipboard")
+#endif
 {
 }
 

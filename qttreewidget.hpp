@@ -60,6 +60,8 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
     void
       setItemLabel(const TreePath &path,const std::string &new_label) override;
 
+    void setItemPending(const TreePath &path,bool) override;
+
     void
       setItemEnumerationValue(
         const TreePath &,
@@ -67,13 +69,14 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
         const EnumerationOptions &
       ) override;
 
-    TreePath itemPath(QTreeWidgetItem &item) const;
     void selectItem(const TreePath &path) override;
-    void setItemExpanded(const TreePath &path,bool new_expanded_state);
-    int itemChildCount(const TreePath &parent_item) const;
-    void removeItem(const TreePath &path) override;
-    void removeChildItems(const TreePath &path);
     Optional<TreePath> selectedItem() const override;
+    int itemChildCount(const TreePath &parent_item) const override;
+    void removeItem(const TreePath &path) override;
+
+    TreePath itemPath(QTreeWidgetItem &item) const;
+    void setItemExpanded(const TreePath &path,bool new_expanded_state);
+    void removeChildItems(const TreePath &path);
 
   private slots:
     void selectionChangedSlot();
@@ -85,8 +88,6 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
 
     static QTreeWidgetItem&
       createChildItem(QTreeWidgetItem &parent_item,const std::string &label);
-
-    static void setItemText(QTreeWidgetItem &item,const std::string &label);
 
     QTreeWidgetItem &itemFromPath(const vector<int> &path) const;
     void buildPath(TreePath &path,QTreeWidgetItem &item) const;

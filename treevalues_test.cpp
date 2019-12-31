@@ -6,6 +6,8 @@
 #include "indicesof.hpp"
 #include "contains.hpp"
 
+#define ADD_TEST 0
+
 using std::string;
 using std::ostringstream;
 using std::ostream;
@@ -116,6 +118,11 @@ struct FakeTreeWidget : TreeWidget {
     return parent_item.children.back();
   }
 
+  int itemChildCount(const TreePath &) const override
+  {
+    assert(false); // not implemented
+  }
+
   void
     createVoidItem(
       const TreePath &new_item_path,
@@ -193,6 +200,11 @@ struct FakeTreeWidget : TreeWidget {
   void setItemLabel(const TreePath &path,const std::string &label) override
   {
     item(path).label_text = label;
+  }
+
+  void setItemPending(const TreePath &, bool) override
+  {
+    assert(false); // not implemented
   }
 
   void
@@ -595,6 +607,34 @@ static void testChangingNumericValues()
 }
 
 
+#if ADD_TEST
+static void testRemoveBodyFromTree()
+{
+  FakeTreeWidget tree_widget;
+  TreePaths tree_paths;
+  SceneState scene_state;
+  BodyIndex body1_index = scene_state.createBody();
+  BodyIndex body2_index = scene_state.createBody();
+  BodyIndex body3_index = scene_state.createBody(/*parent*/body1_index);
+  MarkerIndex marker1_index = scene_state.createMarker(body2_index);
+
+  removeBodyFromTree(
+    tree_widget,
+    tree_paths,
+    scene_state,
+    body1_index
+  );
+
+  removeBodyFromSceneState(
+    scene_state,
+    body1_index
+  );
+
+  checkTree(tree_wigget, tree_paths, scene_state);
+}
+#endif
+
+
 int main()
 {
   testRemovingDistanceError();
@@ -606,4 +646,7 @@ int main()
   testRemovingAGlobalBody();
   testRemovingAChildBody();
   testChangingNumericValues();
+#if ADD_TEST
+  testRemoveBodyFromTree();
+#endif
 }

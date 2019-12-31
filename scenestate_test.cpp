@@ -1,7 +1,7 @@
 #include "scenestate.hpp"
 
 
-int main()
+static void testRemovingABody()
 {
   SceneState scene_state;
   BodyIndex body1_index = scene_state.createBody();
@@ -9,4 +9,10 @@ int main()
   MarkerIndex marker_index = scene_state.createMarker(body2_index);
   scene_state.removeBody(body1_index);
   assert(scene_state.marker(marker_index).maybe_body_index == 0);
+}
+
+
+int main()
+{
+  testRemovingABody();
 }

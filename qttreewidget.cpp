@@ -126,23 +126,33 @@ struct QtTreeWidget::Impl {
 static void setLabelWidgetText(QLabel &label_widget,const string &label)
 {
   label_widget.setText(QString::fromStdString(label));
+  // label_widget.setStyleSheet("QLabel { color : gray; }");
+}
+
+
+static void setLabelWidgetPending(QLabel &label_widget,bool state)
+{
+  if (state) {
+    label_widget.setStyleSheet("QLabel { color : gray; }");
+  }
+  else {
+    label_widget.setStyleSheet("QLabel { color : black; }");
+  }
 }
 
 
 QLabel&
-  QtTreeWidget::createItemLabelWidget(
-    QTreeWidgetItem &,
-    QHBoxLayout &layout,
-    const LabelProperties &label_properties
-  )
+QtTreeWidget::createItemLabelWidget(
+  QTreeWidgetItem &,
+  QHBoxLayout &layout,
+  const LabelProperties &label_properties
+)
 {
   const std::string &label = label_properties.text;
-
   QLabel &label_widget = createWidget<QLabel>(layout);
   setLabelWidgetText(label_widget,label);
   return label_widget;
 }
-
 
 
 QtTreeWidget::QtTreeWidget()
@@ -167,10 +177,10 @@ QtTreeWidget::QtTreeWidget()
 
 template <typename T>
 T &
-  QtTreeWidget::createItemWidget(
-    QTreeWidgetItem &item,
-    const LabelProperties &label_properties
-  )
+QtTreeWidget::createItemWidget(
+  QTreeWidgetItem &item,
+  const LabelProperties &label_properties
+)
 {
   Impl::QtItemWrapperWidget *wrapper_widget_ptr =
     new Impl::QtItemWrapperWidget();
@@ -188,6 +198,24 @@ T &
   setItemWidget(&item,/*column*/0,wrapper_widget_ptr);
 
   return widget;
+}
+
+
+static void setItemText(QTreeWidgetItem &item, const std::string &label)
+{
+  item.setText(/*column*/0,QString::fromStdString(label));
+  // item.setTextColor(/*column*/0, Qt::GlobalColor::gray);
+}
+
+
+static void setItemPending(QTreeWidgetItem &item,const bool new_state)
+{
+  if (new_state) {
+    item.setTextColor(/*column*/0, Qt::GlobalColor::gray);
+  }
+  else {
+    item.setTextColor(/*column*/0, Qt::GlobalColor::black);
+  }
 }
 
 
@@ -282,12 +310,6 @@ void
   QTreeWidgetItem &parent_item = itemFromPath(parent_path);
   assert(new_item_path.back() == parent_item.childCount());
   createLineEditItem(parent_item,label_properties,value);
-}
-
-
-void QtTreeWidget::setItemText(QTreeWidgetItem &item,const std::string &label)
-{
-  item.setText(/*column*/0,QString::fromStdString(label));
 }
 
 
@@ -667,6 +689,20 @@ void
   else {
     QTreeWidgetItem &item = itemFromPath(path);
     setItemText(item,new_label);
+  }
+}
+
+
+void QtTreeWidget::setItemPending(const TreePath &path, bool new_state)
+{
+  QLabel *label_widget_ptr = itemLabelPtr(path);
+
+  if (label_widget_ptr) {
+    setLabelWidgetPending(*label_widget_ptr, new_state);
+  }
+  else {
+    QTreeWidgetItem &item = itemFromPath(path);
+    ::setItemPending(item, new_state);
   }
 }
 

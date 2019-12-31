@@ -8,6 +8,7 @@
 #include "vector.hpp"
 #include "optional.hpp"
 #include "removeindexfrom.hpp"
+#include "indicesof.hpp"
 
 
 class SceneState {
@@ -193,6 +194,75 @@ extern vector<BodyIndex>
     Optional<BodyIndex> maybe_body_index,
     const SceneState &scene_state
   );
+
+
+template <typename Function>
+extern void
+removeMarkersOnBody(
+  BodyIndex body_index,
+  SceneState &scene_state,
+  const Function &removing_marker_function
+)
+{
+  for (;;) {
+    bool a_marker_was_removed = false;
+
+    for (auto marker_index : indicesOf(scene_state.markers())) {
+      if (scene_state.marker(marker_index).maybe_body_index == body_index) {
+        removing_marker_function(marker_index);
+        scene_state.removeMarker(marker_index);
+        a_marker_was_removed = true;
+        break;
+      }
+    }
+
+    if (!a_marker_was_removed) {
+      break;
+    }
+  }
+}
+
+
+template <typename MarkerFunction, typename BodyFunction>
+static void
+removeBodyFromSceneState(
+  BodyIndex body_index,
+  SceneState &scene_state,
+  const MarkerFunction &removing_marker_function,
+  const BodyFunction &removing_body_function
+)
+{
+  for (;;) {
+    bool a_body_was_removed = false;
+
+    for (BodyIndex other_body_index : indicesOf(scene_state.bodies())) {
+      if (scene_state.body(other_body_index).maybe_parent_index == body_index) {
+        removeBodyFromSceneState(
+          other_body_index,
+          scene_state,
+          removing_marker_function,
+          removing_body_function
+        );
+
+        a_body_was_removed = true;
+
+        if (other_body_index < body_index) {
+          --body_index;
+        }
+
+        break;
+      }
+    }
+
+    if (!a_body_was_removed) {
+      break;
+    }
+  }
+
+  removeMarkersOnBody(body_index, scene_state, removing_marker_function);
+  removing_body_function(body_index);
+  scene_state.removeBody(body_index);
+}
 
 
 #endif /* SCENESTATE_HPP_ */
