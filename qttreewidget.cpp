@@ -12,7 +12,7 @@
 #include "qtlineedit.hpp"
 #include "qttreewidgetitem.hpp"
 #include "qtmenu.hpp"
-#include "streamvector.hpp"
+#include "vectorio.hpp"
 #include "numericvalue.hpp"
 #include "numericvaluelimits.hpp"
 

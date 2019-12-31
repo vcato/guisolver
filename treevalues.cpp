@@ -5,7 +5,7 @@
 #include "numericvalue.hpp"
 #include "sceneerror.hpp"
 #include "indicesof.hpp"
-#include "streamvector.hpp"
+#include "vectorio.hpp"
 #include "removeindexfrom.hpp"
 #include "startswith.hpp"
 #include "numericvaluelimits.hpp"

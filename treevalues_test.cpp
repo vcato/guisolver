@@ -2,7 +2,7 @@
 
 #include <sstream>
 #include "defaultscenestate.hpp"
-#include "streamvector.hpp"
+#include "vectorio.hpp"
 #include "indicesof.hpp"
 #include "contains.hpp"
 
