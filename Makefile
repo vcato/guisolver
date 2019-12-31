@@ -88,7 +88,7 @@ scenesolver_test: scenesolver_test.o \
 optimize_test: optimize_test.o $(OPTIMIZE)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
-treevalues_test: treevalues_test.o treepaths.o \
+treevalues_test: treevalues_test.o \
   $(DEFAULTSCENESTATE) treevalues.o maketransform.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 

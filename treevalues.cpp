@@ -397,34 +397,133 @@ static void
 }
 
 
-static DistanceErrorIndex
-nextDistanceErrorIndex(
+static int
+nChildBodies(
+  const Optional<BodyIndex> &maybe_parent_index,
   const TreePaths &tree_paths,
   const SceneState &scene_state
 )
 {
-  int n_bodies_on_scene = 0;
+  int n_child_bodies = 0;
 
   for (BodyIndex body_index : indicesOf(tree_paths.bodies)) {
-    if (!scene_state.body(body_index).maybe_parent_index) {
-      ++n_bodies_on_scene;
+    if (scene_state.body(body_index).maybe_parent_index == maybe_parent_index) {
+      ++n_child_bodies;
     }
   }
 
-  int n_markers_on_scene = 0;
+  return n_child_bodies;
+}
+
+
+static int
+nMarkersOn(
+  Optional<BodyIndex> maybe_body_index,
+  const TreePaths &tree_paths,
+  const SceneState &scene_state
+)
+{
+  int n_attached_markers = 0;
 
   for (MarkerIndex marker_index : indicesOf(tree_paths.markers)) {
-    if (!scene_state.marker(marker_index).maybe_body_index) {
-      ++n_markers_on_scene;
+    if (scene_state.marker(marker_index).maybe_body_index == maybe_body_index) {
+      ++n_attached_markers;
     }
   }
 
-  int n_distance_errors = tree_paths.distance_errors.size();
+  return n_attached_markers;
+}
 
-  TreeItemIndex next_distance_error_index =
-    n_bodies_on_scene + n_markers_on_scene + n_distance_errors;
 
-  return next_distance_error_index;
+namespace {
+struct NextPaths {
+  TreePath body_path;
+  TreePath marker_path;
+  TreePath distance_error_path;
+};
+}
+
+
+static TreePath
+bodyPath(Optional<BodyIndex> maybe_body_index, const TreePaths &tree_paths)
+{
+  if (maybe_body_index) {
+    const TreePaths::Body &body_paths = tree_paths.bodies[*maybe_body_index];
+    return body_paths.path;
+  }
+  else {
+    return tree_paths.path;
+  }
+}
+
+
+static int
+nDistanceErrorsOn(
+  Optional<BodyIndex> maybe_body_index,
+  const TreePaths &tree_paths,
+  const SceneState &/*scene_state*/
+)
+{
+  if (!maybe_body_index) {
+    return tree_paths.distance_errors.size();
+  }
+  else {
+    return 0;
+  }
+}
+
+
+static NextPaths
+nextPaths(
+  Optional<BodyIndex> maybe_body_index,
+  const TreePaths &tree_paths,
+  const SceneState &scene_state
+)
+{
+  NextPaths result;
+  int n_bodies = nChildBodies(maybe_body_index, tree_paths, scene_state);
+  int n_markers = nMarkersOn(maybe_body_index, tree_paths, scene_state);
+
+  int n_distance_errors =
+    nDistanceErrorsOn(maybe_body_index, tree_paths, scene_state);
+
+  TreeItemIndex index = 0;
+
+  if (maybe_body_index) {
+    index += 3;
+        // 3 for translation, rotation, and geometry
+  }
+
+  const TreePath body_path = bodyPath(maybe_body_index, tree_paths);
+  index += n_markers;
+  result.marker_path = childPath(body_path, index);
+  index += n_bodies;
+  result.body_path = childPath(body_path, index);
+  index += n_distance_errors;
+  result.distance_error_path = childPath(body_path, index);
+  return result;
+}
+
+
+static TreePath
+nextBodyPath(
+  Optional<BodyIndex> maybe_parent_index,
+  const TreePaths &tree_paths,
+  const SceneState &scene_state
+)
+{
+  return nextPaths(maybe_parent_index, tree_paths, scene_state).body_path;
+}
+
+
+static TreePath
+nextMarkerPath(
+  Optional<BodyIndex> maybe_body_index,
+  const TreePaths &tree_paths,
+  const SceneState &scene_state
+)
+{
+  return nextPaths(maybe_body_index, tree_paths, scene_state).marker_path;
 }
 
 
@@ -434,8 +533,7 @@ nextDistanceErrorPath(
   const SceneState &scene_state
 )
 {
-  TreeItemIndex index = nextDistanceErrorIndex(tree_paths, scene_state);
-  return childPath(tree_paths.path, index);
+  return nextPaths({}, tree_paths, scene_state).distance_error_path;
 }
 
 
@@ -492,15 +590,6 @@ removeMarkerFromTree(
   tree_widget.removeItem(marker_path);
   removeIndexFrom(markers, marker_index);
   handlePathRemoval(tree_paths, marker_path);
-
-  updatePathAfterRemoval(tree_paths.next_scene_marker_path, marker_path);
-
-  for (BodyIndex body_index : indicesOf(tree_paths.bodies)) {
-    updatePathAfterRemoval(
-      tree_paths.bodies[body_index].next_marker_path,
-      marker_path
-    );
-  }
 }
 
 
@@ -551,21 +640,6 @@ static string totalErrorLabel(float total_error)
 }
 
 
-static TreePath &
-  nextMarkerInsertionPoint(
-    TreePaths &tree_paths,
-    Optional<BodyIndex> maybe_body_index
-  )
-{
-  if (maybe_body_index) {
-    return tree_paths.bodies[*maybe_body_index].next_marker_path;
-  }
-  else {
-    return tree_paths.next_scene_marker_path;
-  }
-}
-
-
 void
   createMarkerInTree(
     TreeWidget &tree_widget,
@@ -578,11 +652,10 @@ void
   assert(marker_index == MarkerIndex(tree_paths.markers.size()));
   Optional<BodyIndex> maybe_body_index = state_marker.maybe_body_index;
 
-  TreePath &insert_point =
-    nextMarkerInsertionPoint(tree_paths, maybe_body_index);
+  const TreePath insert_point =
+    nextMarkerPath(maybe_body_index, tree_paths, scene_state);
 
   TreePath marker_path = insert_point;
-  ++insert_point.back();
 
   handlePathInsertion(tree_paths, marker_path);
 
@@ -662,9 +735,6 @@ createBodyItem(
     geometry_paths.center = addXYZ(adder, "center: []", geometry_state.center);
   }
 
-  body_paths.next_body_path = next_body_path;
-  body_paths.next_marker_path = next_marker_path;
-
   return body_paths;
 }
 
@@ -677,7 +747,7 @@ static void
     const SceneState &scene_state
   )
 {
-  const TreePath body_path = tree_paths.next_scene_body_path;
+  const TreePath body_path = nextBodyPath({}, tree_paths, scene_state);
   assert(BodyIndex(tree_paths.bodies.size()) == body_index);
   const SceneState::Body &body_state = scene_state.body(body_index);
 
@@ -686,9 +756,6 @@ static void
   tree_paths.bodies.push_back(
     createBodyItem(body_path, body_state, tree_widget)
   );
-
-  ++tree_paths.next_scene_body_path.back();
-  ++tree_paths.next_scene_marker_path.back();
 }
 
 
@@ -704,7 +771,7 @@ static void
     *scene_state.body(body_index).maybe_parent_index;
 
   const TreePath body_path =
-    tree_paths.bodies[parent_body_index].next_body_path;
+    nextBodyPath(parent_body_index, tree_paths, scene_state);
 
   handlePathInsertion(tree_paths, body_path);
 
@@ -714,9 +781,6 @@ static void
   tree_paths.bodies.push_back(
     createBodyItem(body_path, body_state, tree_widget)
   );
-
-  ++tree_paths.bodies[parent_body_index].next_body_path.back();
-  ++tree_paths.bodies[parent_body_index].next_marker_path.back();
 }
 
 
@@ -762,21 +826,6 @@ removeBodyFromTree(
   tree_widget.removeItem(body_path);
   removeIndexFrom(tree_paths.bodies, body_index);
   handlePathRemoval(tree_paths, body_path);
-
-  updatePathAfterRemoval(tree_paths.next_scene_marker_path, body_path);
-  updatePathAfterRemoval(tree_paths.next_scene_body_path, body_path);
-
-  for (BodyIndex body_index : indicesOf(tree_paths.bodies)) {
-    updatePathAfterRemoval(
-      tree_paths.bodies[body_index].next_marker_path,
-      body_path
-    );
-
-    updatePathAfterRemoval(
-      tree_paths.bodies[body_index].next_body_path,
-      body_path
-    );
-  }
 }
 
 
@@ -788,8 +837,6 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
   tree_paths.path = scene_path;
 
   TreePath next_scene_child_path = childPath(scene_path, 0);
-  tree_paths.next_scene_marker_path = next_scene_child_path;
-  tree_paths.next_scene_body_path = next_scene_child_path;
   tree_paths.total_error = next_scene_child_path;
 
   tree_widget.createVoidItem(

@@ -384,8 +384,6 @@ static void
 checkEqual(const TreePaths::Body &a,const TreePaths::Body &b)
 {
   checkMembersEqual(a,b);
-  checkEqual(a.next_marker_path, b.next_marker_path);
-  checkEqual(a.next_body_path, b.next_body_path);
 }
 
 
@@ -436,8 +434,6 @@ static void checkEqual(const string &a,const string &b)
 static void checkEqual(const TreePaths &a,const TreePaths &b)
 {
   checkMembersEqual(a,b);
-  checkEqual(a.next_scene_marker_path, b.next_scene_marker_path);
-  checkEqual(a.next_scene_body_path, b.next_scene_body_path);
 }
 
 

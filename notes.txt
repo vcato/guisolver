@@ -44,18 +44,3 @@ If we cut a body and paste it, we lose the distance errors.
         * [DistanceError] local1 <-> global1
 * We could have a different way of moving a body that doesn't involve removing
   it first.
----
-Make markers appear before bodies in the scene.
-* This is currently awkward, because the TreePaths don't know anything about
-  the hiearchy.
-
-What is in the tree should always be a subset of what is in the scene state.
-i.e. if we are adding something, we first add it to the scene state, and then
-add it to the tree.  If we are removing something, we first remove it from
-the tree, then remove it from the scene state.
-
-However, we don't always add one at a time.  Do we always add to the end?
-  It seems like when we are adding, we are always adding to the end.
-  We never create markers or body in the middle.
-If we are removing, we may be removing from the middle.
-It only really matters if we use the path.

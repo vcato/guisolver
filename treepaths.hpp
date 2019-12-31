@@ -104,8 +104,6 @@ struct TreePaths {
     TreePath path;
     Translation translation;
     Rotation rotation;
-    TreePath next_body_path;
-    TreePath next_marker_path;
     Geometry geometry;
 
     template <typename F>
@@ -154,8 +152,6 @@ struct TreePaths {
   Markers markers;
   Bodies bodies;
   DistanceErrors distance_errors;
-  TreePath next_scene_marker_path;
-  TreePath next_scene_body_path;
   TreePath total_error;
 
   template <typename F>
@@ -165,15 +161,10 @@ struct TreePaths {
     f(&TreePaths::bodies);
     f(&TreePaths::markers);
     f(&TreePaths::distance_errors);
-    // f(&TreePaths::next_distance_error_path);
-    // f(&TreePaths::next_box_marker_path);
-    // f(&TreePaths::next_scene_marker_path);
     f(&TreePaths::total_error);
   }
 
   bool operator==(const TreePaths &arg) const { return isEqual(*this, arg); }
-
-  private:
 };
 
 
