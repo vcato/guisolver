@@ -279,7 +279,7 @@ static Optional<MarkerIndex>
 
 struct MainWindowController::Impl {
   struct Data {
-    SceneState &scene_state;
+    SceneState scene_state;
     Scene &scene;
     TreeWidget &tree_widget;
 
@@ -292,13 +292,13 @@ struct MainWindowController::Impl {
     Optional<BodyIndex> maybe_cut_body_index;
 #endif
 
-    Data(SceneState &scene_state, Scene &, TreeWidget &);
+    Data(Scene &, TreeWidget &);
   };
 
   Data data_member;
 
-  Impl(SceneState &scene_state, Scene &scene, TreeWidget &tree_widget)
-  : data_member(scene_state, scene, tree_widget)
+  Impl(Scene &scene, TreeWidget &tree_widget)
+  : data_member(scene, tree_widget)
   {
   }
 
@@ -1444,11 +1444,10 @@ void
 
 
 MainWindowController::Impl::Data::Data(
-  SceneState &scene_state_arg,
   Scene &scene_arg,
   TreeWidget &tree_widget_arg
 )
-: scene_state(scene_state_arg),
+:
   scene(scene_arg),
   tree_widget(tree_widget_arg),
   scene_handles(createSceneObjects(scene_state, scene)),
@@ -1462,21 +1461,15 @@ MainWindowController::Impl::Data::Data(
 
 
 MainWindowController::MainWindowController(
-  SceneState &scene_state,
   Scene &scene,
   TreeWidget &tree_widget
 )
-: impl_ptr(new Impl(scene_state, scene, tree_widget))
+: impl_ptr(new Impl(scene, tree_widget))
 {
   Impl::Data &data = Impl::data(*this);
-  TreePaths &tree_paths = data.tree_paths;
   SceneHandles &scene_handles = data.scene_handles;
   SceneState &state = data.scene_state;
   updateSceneStateFromSceneObjects(state, scene, scene_handles);
-  solveScene(state);
-  updateErrorsInState(state);
-  updateSceneObjects(scene, scene_handles, state);
-  updateTreeValues(tree_widget, tree_paths, state);
   scene.changed_callback = [&]{ Impl::handleSceneChanged(*this); };
   scene.changing_callback = [&]{ Impl::handleSceneChanging(*this); };
 
@@ -1516,6 +1509,15 @@ void MainWindowController::replaceSceneStateWith(const SceneState &new_state)
   destroySceneObjects(scene, scene_state, scene_handles);
   clearTree(tree_widget, data.tree_paths);
   scene_state = new_state;
+
+  solveScene(scene_state);
   scene_handles = createSceneObjects(scene_state, scene);
   data.tree_paths = fillTree(tree_widget, scene_state);
+}
+
+
+const SceneState &MainWindowController::sceneState()
+{
+  Impl::Data &data = Impl::data(*this);
+  return data.scene_state;
 }

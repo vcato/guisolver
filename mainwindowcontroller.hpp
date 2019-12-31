@@ -6,10 +6,11 @@
 
 class MainWindowController {
   public:
-    MainWindowController(SceneState &,Scene &,TreeWidget &);
+    MainWindowController(Scene &,TreeWidget &);
     ~MainWindowController();
 
     void replaceSceneStateWith(const SceneState &);
+    const SceneState &sceneState();
 
   private:
     struct Impl;

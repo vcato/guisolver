@@ -100,7 +100,7 @@ static Optional<string> askForOpenPath(QWidget &parent)
 }
 
 
-static void saveScene(SceneState &scene_state, const string &path)
+static void saveScene(const SceneState &scene_state, const string &path)
 {
   ofstream stream(path);
 
@@ -141,13 +141,13 @@ int main(int argc,char** argv)
   main_window.resize(1024,480);
   main_window.show();
   OSGScene scene;
-  SceneState scene_state(defaultSceneState());
 
   QSplitter splitter;
   main_window.setCentralWidget(&splitter);
   QtTreeWidget &tree_widget = createWidget<QtTreeWidget>(splitter);
   createGraphicsWindow(splitter, scene);
-  MainWindowController controller(scene_state, scene, tree_widget);
+  MainWindowController controller(scene, tree_widget);
+  controller.replaceSceneStateWith(defaultSceneState());
 
   QtSlot new_slot(
     [&](){
@@ -163,7 +163,7 @@ int main(int argc,char** argv)
         // Cancelled
       }
       else {
-        saveScene(scene_state, *maybe_path);
+        saveScene(controller.sceneState(), *maybe_path);
       }
     }
   );
