@@ -88,9 +88,9 @@ struct FakeTreeWidget : TreeWidget {
     return parent_item.children.back();
   }
 
-  int itemChildCount(const TreePath &) const override
+  int itemChildCount(const TreePath &path) const override
   {
-    assert(false); // not implemented
+    return item(path).children.size();
   }
 
   void
@@ -174,7 +174,6 @@ struct FakeTreeWidget : TreeWidget {
 
   void setItemPending(const TreePath &, bool) override
   {
-    assert(false); // not implemented
   }
 
   void

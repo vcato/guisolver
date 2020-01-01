@@ -214,7 +214,7 @@ struct MainWindowController::Impl {
 #if !NEW_CUT_BEHAVIOR
     return data.clipboard.clipboard_tagged_value.children.empty();
 #else
-    return !data.maybe_cut_body_index.hasValue();
+    return !data.clipboard.maybe_cut_body_index.hasValue();
 #endif
   }
 
@@ -772,56 +772,6 @@ void
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
   selectMarker(new_marker_index, data);
 }
-
-
-template <typename Function>
-static void
-forEachChildItemPath(
-  const TreeWidget &tree_widget,
-  const TreePath &parent_path,
-  const Function &f
-)
-{
-  int n_children = tree_widget.itemChildCount(parent_path);
-
-  for (int i=0; i!=n_children; ++i) {
-    f(childPath(parent_path, i));
-  }
-}
-
-
-template <typename Function>
-static void
-forEachPathInBranch(
-  const TreeWidget &tree_widget,
-  const TreePath &branch_path,
-  const Function &f
-)
-{
-  f(branch_path);
-
-  forEachChildItemPath(tree_widget, branch_path,[&](const TreePath &child_path){
-    forEachPathInBranch(tree_widget, child_path, f);
-  });
-}
-
-
-#if NEW_CUT_BEHAVIOR
-static void
-setBranchPending(
-  TreeWidget &tree_widget,
-  const TreePath &branch_path,
-  bool new_state
-)
-{
-  forEachPathInBranch(
-    tree_widget, branch_path,
-    [&](const TreePath &item_path){
-      tree_widget.setItemPending(item_path, new_state);
-    }
-  );
-}
-#endif
 
 
 void

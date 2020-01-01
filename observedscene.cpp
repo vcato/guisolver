@@ -223,6 +223,56 @@ ObservedScene::removeBody(
 }
 
 
+template <typename Function>
+static void
+forEachChildItemPath(
+  const TreeWidget &tree_widget,
+  const TreePath &parent_path,
+  const Function &f
+)
+{
+  int n_children = tree_widget.itemChildCount(parent_path);
+
+  for (int i=0; i!=n_children; ++i) {
+    f(childPath(parent_path, i));
+  }
+}
+
+
+template <typename Function>
+static void
+forEachPathInBranch(
+  const TreeWidget &tree_widget,
+  const TreePath &branch_path,
+  const Function &f
+)
+{
+  f(branch_path);
+
+  forEachChildItemPath(tree_widget, branch_path,[&](const TreePath &child_path){
+    forEachPathInBranch(tree_widget, child_path, f);
+  });
+}
+
+
+#if NEW_CUT_BEHAVIOR
+static void
+setBranchPending(
+  TreeWidget &tree_widget,
+  const TreePath &branch_path,
+  bool new_state
+)
+{
+  forEachPathInBranch(
+    tree_widget, branch_path,
+    [&](const TreePath &item_path){
+      tree_widget.setItemPending(item_path, new_state);
+    }
+  );
+}
+#endif
+
+
 void
 ObservedScene::cutBody(
   ObservedScene &observed_scene,
@@ -231,10 +281,11 @@ ObservedScene::cutBody(
 )
 {
   TreeWidget &tree_widget = observed_scene.tree_widget;
-  SceneState &scene_state = observed_scene.scene_state;
   TreePaths &tree_paths = observed_scene.tree_paths;
 
 #if !NEW_CUT_BEHAVIOR
+  SceneState &scene_state = observed_scene.scene_state;
+
   Optional<BodyIndex> maybe_parent_body_index =
     scene_state.body(body_index).maybe_parent_index;
 
@@ -257,7 +308,10 @@ ObservedScene::cutBody(
     clipboard.maybe_cut_body_index.reset();
   }
 
-  setBranchPending(tree_widget, path, true);
+  setBranchPending(
+    tree_widget, observed_scene.tree_paths.bodies[body_index].path, true
+  );
+
   clipboard.maybe_cut_body_index = body_index;
 #endif
 }
