@@ -187,11 +187,6 @@ struct MainWindowController::Impl {
   {
   }
 
-  static bool clipboardIsEmpty(const Data &data)
-  {
-    return !data.clipboard.maybe_cut_body_index.hasValue();
-  }
-
   static Impl &impl(MainWindowController &controller)
   {
     assert(controller.impl_ptr);
@@ -839,8 +834,9 @@ TreeWidget::MenuItems
 {
   Data &data = Impl::data(controller);
   TreeWidget::MenuItems menu_items;
-  const TreePaths &tree_paths = data.observed_scene.tree_paths;
-  const SceneState &scene_state = data.observed_scene.scene_state;
+  ObservedScene &observed_scene = data.observed_scene;
+  const TreePaths &tree_paths = observed_scene.tree_paths;
+  const SceneState &scene_state = observed_scene.scene_state;
 
   auto add_marker_function =
     [&controller,path]{
@@ -867,7 +863,7 @@ TreeWidget::MenuItems
       {"Add Body", add_body_function },
     });
 
-    if (!clipboardIsEmpty(data)) {
+    if (observed_scene.canPasteTo({})) {
       appendTo(menu_items,{
         {"Paste Preserving Global", paste_global_function}
       });
@@ -894,14 +890,12 @@ TreeWidget::MenuItems
       {"Duplicate", duplicate_body_function },
     });
 
-    if (!clipboardIsEmpty(data)) {
-      BodyIndex body_index = bodyIndexFromTreePath(path, tree_paths);
+    BodyIndex body_index = bodyIndexFromTreePath(path, tree_paths);
 
-      if (data.clipboard.canPasteTo(body_index, scene_state)) {
-        appendTo(menu_items,{
-          {"Paste Global", paste_global_function}
-        });
-      }
+    if (observed_scene.canPasteTo(body_index)) {
+      appendTo(menu_items,{
+        {"Paste Preserving Global", paste_global_function}
+      });
     }
   }
 
@@ -1013,16 +1007,9 @@ void MainWindowController::replaceSceneStateWith(const SceneState &new_state)
 {
   Impl::Data &data = Impl::data(*this);
   ObservedScene &observed_scene = data.observed_scene;
-  Scene &scene = observed_scene.scene;
-  SceneHandles &scene_handles = observed_scene.scene_handles;
-  TreeWidget &tree_widget = observed_scene.tree_widget;
-  SceneState &scene_state = observed_scene.scene_state;
-  destroySceneObjects(scene, scene_state, scene_handles);
-  clearTree(tree_widget, observed_scene.tree_paths);
-  scene_state = new_state;
-  solveScene(scene_state);
-  scene_handles = createSceneObjects(scene_state, scene);
-  observed_scene.tree_paths = fillTree(tree_widget, scene_state);
+  SceneState solved_new_state = new_state;
+  solveScene(solved_new_state);
+  observed_scene.replaceSceneStateWith(solved_new_state);
 }
 
 

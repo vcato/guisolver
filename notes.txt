@@ -51,4 +51,4 @@ Allow adding distance errors to bodies.
 ---
 Handle cut/paste of markers.
 ---
-The clipboard should be cleared whenever we change the scene.
+The clipboard should be cleared whenever we load a scene or do new.

@@ -509,7 +509,7 @@ ObservedScene::createMarkerInTree(
 
 bool
 Clipboard::canPasteTo(
-  BodyIndex body_index,
+  Optional<BodyIndex> maybe_body_index,
   const SceneState &scene_state
 ) const
 {
@@ -517,9 +517,33 @@ Clipboard::canPasteTo(
     return false;
   }
 
-  if (hasAncestor(body_index, *maybe_cut_body_index, scene_state)) {
-    return false;
+  if (maybe_body_index) {
+    if (hasAncestor(*maybe_body_index, *maybe_cut_body_index, scene_state)) {
+      return false;
+    }
   }
 
   return true;
+}
+
+
+bool ObservedScene::canPasteTo(Optional<BodyIndex> maybe_body_index)
+{
+  return clipboard.canPasteTo(maybe_body_index, scene_state);
+}
+
+
+void ObservedScene::replaceSceneStateWith(const SceneState &new_state)
+{
+  ObservedScene &observed_scene = *this;
+  Scene &scene = observed_scene.scene;
+  SceneHandles &scene_handles = observed_scene.scene_handles;
+  TreeWidget &tree_widget = observed_scene.tree_widget;
+  SceneState &scene_state = observed_scene.scene_state;
+  destroySceneObjects(scene, scene_state, scene_handles);
+  clearTree(tree_widget, observed_scene.tree_paths);
+  clipboard.maybe_cut_body_index.reset();
+  scene_state = new_state;
+  scene_handles = createSceneObjects(scene_state, scene);
+  observed_scene.tree_paths = fillTree(tree_widget, scene_state);
 }

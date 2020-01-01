@@ -14,7 +14,7 @@ struct Clipboard {
   {
   }
 
-  bool canPasteTo(BodyIndex, const SceneState &) const;
+  bool canPasteTo(Optional<BodyIndex>, const SceneState &) const;
 };
 
 
@@ -36,7 +36,10 @@ struct ObservedScene {
   static void removingBody(ObservedScene &, BodyIndex);
   static void removeBody(ObservedScene &, BodyIndex);
   static void cutBody(ObservedScene &, BodyIndex body_index);
-  static void clearClipboard(ObservedScene &observed_scene);
+  static void clearClipboard(ObservedScene &);
+
+  void replaceSceneStateWith(const SceneState &);
+  bool canPasteTo(Optional<BodyIndex>);
 
   static BodyIndex
     pasteGlobal(
