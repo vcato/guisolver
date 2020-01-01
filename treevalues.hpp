@@ -58,6 +58,14 @@ extern void
   );
 
 extern void
+  removeBodyItemsFromTree(
+    BodyIndex body_index,
+    TreeWidget &tree_widget,
+    TreePaths &tree_paths,
+    const SceneState &scene_state
+  );
+
+extern void
   updateTreeDistanceErrorMarkerOptions(
     TreeWidget &tree_widget,
     const TreePaths &tree_paths,

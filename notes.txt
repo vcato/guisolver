@@ -119,12 +119,10 @@ It would be nice to just
 * add body to scene
 * add body to tree
 
-It seems difficult to make this work using indices.  We can't easily maintain
-having the SceneState and the TreePaths and the SceneHandles be out of
-sync for more than one thing at a time.  One possibility is to clear the
-items of the the scene and the tree without removing the indices.  To make
-this work, we'd really need to have all the slots in the TreePaths and
-SceneHandles be optional so we can know which ones have been removed.
-This will also be good if we decided to move away from having indices to
-having some other kind of stable id for bodies and markers, so that
-we could have empty slots indicating those ids aren't used.
+We can do this if we have a way to remove the items from the tree without
+changing the indices.
+* remove body items from tree
+* remove body objects from scene
+* change the body's parent
+* create body items in tree
+* create body objects in tree

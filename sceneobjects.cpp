@@ -32,14 +32,16 @@ static void
 
 
 static void
-  updateStateMarkerPositions(
-    SceneState &scene_state,
-    const SceneHandles::Markers &handles_markers,
-    const Scene &scene
-  )
+updateStateMarkerPositions(
+  SceneState &scene_state,
+  const SceneHandles &scene_handles,
+  const Scene &scene
+)
 {
-  for (auto i : indicesOf(handles_markers)) {
-    updateMarkerPosition(scene_state.marker(i), handles_markers[i], scene);
+  for (auto i : indicesOf(scene_handles.markers)) {
+    updateMarkerPosition(
+      scene_state.marker(i), scene_handles.marker(i), scene
+    );
   }
 }
 
@@ -60,7 +62,7 @@ updateSceneStateFromSceneObjects(
   const SceneHandles &scene_handles
 )
 {
-  updateStateMarkerPositions(state, scene_handles.markers, scene);
+  updateStateMarkerPositions(state, scene_handles, scene);
 
   for (auto i : indicesOf(state.bodies())) {
     const TransformHandle body_handle = scene_handles.body(i);
@@ -156,10 +158,10 @@ static void
       *distance_error_state.optional_end_marker_index;
 
     TransformHandle line_start =
-      scene_handles.markers[start_marker_index].handle;
+      scene_handles.marker(start_marker_index).handle;
 
     TransformHandle line_end =
-      scene_handles.markers[end_marker_index].handle;
+      scene_handles.marker(end_marker_index).handle;
 
     start = scene.worldPoint({0,0,0}, line_start);
     end = scene.worldPoint({0,0,0}, line_end);
@@ -212,12 +214,12 @@ void
 void
   removeMarkerFromScene(
     Scene &scene,
-    SceneHandles::Markers &markers,
+    SceneHandles &scene_handles,
     MarkerIndex index
   )
 {
-  scene.destroyObject(markers[index].handle);
-  removeIndexFrom(markers, index);
+  scene.destroyObject(scene_handles.marker(index).handle);
+  removeIndexFrom(scene_handles.markers, index);
 }
 
 
@@ -230,7 +232,7 @@ createMarkerInScene(
 )
 {
   const SceneState::Marker &state_marker = state.marker(marker_index);
-  vector<SceneHandles::Marker> &marker_handles = scene_handles.markers;
+  SceneHandles::Markers &marker_handles = scene_handles.markers;
   marker_handles.push_back(createSceneMarker(scene,state_marker,scene_handles));
 }
 
@@ -304,6 +306,39 @@ createBodyInScene(
     createBodyInScene(scene, scene_handles, state, child_body_index);
   }
 }
+
+
+#if 0
+void
+removeBodyObjectsFromScene(
+  BodyIndex body_index,
+  Scene &scene,
+  SceneHandles &scene_handles,
+  const SceneState &state
+)
+{
+  struct Visitor {
+    Scene &scene;
+    SceneHandles &scene_handles;
+
+    void visitBody(BodyIndex body_index)
+    {
+      scene.destroyObject(scene_handles.body(body_index));
+      scene_handles.bodies[body_index].reset();
+    }
+
+    void visitMarker(MarkerIndex marker_index)
+    {
+      scene.destroyObject(scene_handles.marker(marker_index));
+      scene_handles.markers[marker_index].reset();
+    }
+  };
+
+  traverseBody(
+    TraverasalOrder::postorder, body_index, scene_state, visitor
+  );
+}
+#endif
 
 
 void
@@ -399,8 +434,8 @@ destroySceneObjects(
   const SceneHandles &scene_handles
 )
 {
-  for (const auto &marker : scene_handles.markers) {
-    scene.destroyObject(marker.handle);
+  for (auto marker_index : indicesOf(scene_handles.markers)) {
+    scene.destroyObject(scene_handles.marker(marker_index).handle);
   }
 
   for (const auto &distance_error : scene_handles.distance_errors) {
@@ -441,14 +476,14 @@ static void
 
 
 static void
-  updateMarkersInScene(
-    Scene &scene,
-    const SceneHandles::Markers &markers_handles,
-    const SceneState::Markers &marker_states
-  )
+updateMarkersInScene(
+  Scene &scene,
+  const SceneHandles &scene_handles,
+  const SceneState::Markers &marker_states
+)
 {
   for (auto i : indicesOf(marker_states)) {
-    updateMarkerInScene(scene, markers_handles[i], marker_states[i]);
+    updateMarkerInScene(scene, scene_handles.marker(i), marker_states[i]);
   }
 }
 
@@ -475,6 +510,6 @@ void
   )
 {
   updateBodiesInScene(scene, state, scene_handles);
-  updateMarkersInScene(scene, scene_handles.markers, state.markers());
+  updateMarkersInScene(scene, scene_handles, state.markers());
   updateDistanceErrorsInScene(scene, scene_handles, state);
 }

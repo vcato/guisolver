@@ -101,7 +101,7 @@ forEachSolveFlagAffectingHandle(
   }
 
   for (auto i : indicesOf(state.markers())) {
-    if (handle == scene_handles.markers[i].handle) {
+    if (handle == scene_handles.marker(i).handle) {
       Optional<BodyIndex> maybe_body_index = state.marker(i).maybe_body_index;
 
       if (maybe_body_index) {

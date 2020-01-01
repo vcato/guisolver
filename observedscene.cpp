@@ -7,6 +7,8 @@
 #include "treevalues.hpp"
 #include "sceneobjects.hpp"
 
+#define NEW_TRANSFER_TECHNIQUE 0
+
 using TransformHandle = Scene::TransformHandle;
 using std::cerr;
 
@@ -46,7 +48,7 @@ forEachTransformHandlePath(
   Optional<TransformHandle> maybe_object;
 
   for (auto i : indicesOf(tree_paths.markers)) {
-    f(scene_handles.markers[i].handle, tree_paths.marker(i).path);
+    f(scene_handles.marker(i).handle, tree_paths.marker(i).path);
   }
 
   for (auto i : indicesOf(tree_paths.bodies)) {
@@ -129,7 +131,7 @@ ObservedScene::pasteGlobal(
     clipboard.clipboard_transform;
 #else
   BodyIndex old_body_index = *clipboard.maybe_cut_body_index;
-#if 1
+#if !NEW_TRANSFER_TECHNIQUE
   clipboard.maybe_cut_body_index.reset();
   TaggedValue clipboard_tagged_value("clipboard");
 
@@ -151,8 +153,10 @@ ObservedScene::pasteGlobal(
     }
   }
 #else
-  removeBodyFromTree(old_body_index);
-  removeBodyFromScene(old_body_index);
+  TreeWidget &tree_widget = observed_scene.tree_widget;
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  removeBodyItemsFromTree(old_body_index, tree_widget, tree_paths, scene_state);
+  removeBodyObjectsFromScene(old_body_index);
   scene_state.bodies[body_index].maybe_parent_index = maybe_new_parent_index;
 #endif
 #endif
@@ -178,8 +182,13 @@ ObservedScene::pasteGlobal(
 
   body_state.transform = transformState(new_body_transform);
 
+#if !NEW_CUT_BEHAVIOR || !NEW_TRANSFER_TECHNIQUE
   ObservedScene::createBodyInTree(new_body_index, observed_scene);
   ObservedScene::createBodyInScene(new_body_index, observed_scene);
+#else
+  ObservedScene::createBodyItemsInTree(new_body_index, observed_scene);
+  ObservedScene::createBodyObjectsInScene(new_body_index, observed_scene);
+#endif
   return new_body_index;
 }
 
@@ -194,7 +203,7 @@ ObservedScene::removingMarker(
   SceneHandles &scene_handles = observed_scene.scene_handles;
   Scene &scene = observed_scene.scene;
   removeMarkerFromTree(marker_index, tree_paths, tree_widget);
-  removeMarkerFromScene(scene, scene_handles.markers, marker_index);
+  removeMarkerFromScene(scene, scene_handles, marker_index);
 }
 
 
@@ -311,7 +320,7 @@ ObservedScene::cutBody(
   if (clipboard.maybe_cut_body_index) {
     setBranchPending(
       tree_widget,
-      tree_paths.bodies[*clipboard.maybe_cut_body_index].path,
+      tree_paths.body(*clipboard.maybe_cut_body_index).path,
       false
     );
 
@@ -319,7 +328,7 @@ ObservedScene::cutBody(
   }
 
   setBranchPending(
-    tree_widget, observed_scene.tree_paths.bodies[body_index].path, true
+    tree_widget, observed_scene.tree_paths.body(body_index).path, true
   );
 
   clipboard.maybe_cut_body_index = body_index;

@@ -822,6 +822,36 @@ createBodyInTree(
 }
 
 
+#if 0
+void
+removeBodyItemsFromTree(
+  BodyIndex body_index,
+  TreeWidget &tree_widget,
+  TreePaths &tree_paths,
+  const SceneState &scene_state
+)
+{
+  struct Visitor {
+    void visitBody(BodyIndex body_index)
+    {
+      tree_widget.removeItem(tree_paths.body(body_index));
+      tree_paths.bodies[body_index].reset();
+    }
+
+    void visitMarker(MarkerIndex marker_index)
+    {
+      tree_widget.removeItem(tree_paths.marker(marker_index));
+      tree_paths.markers[marker_index].reset();
+    }
+  };
+
+  traverseBody(
+    TraverasalOrder::postorder, body_index, scene_state, visitor
+  );
+}
+#endif
+
+
 void
 removeBodyFromTree(
   TreeWidget &tree_widget,

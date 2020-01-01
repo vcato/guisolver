@@ -36,7 +36,7 @@ extern void
 extern void
   removeMarkerFromScene(
     Scene &scene,
-    SceneHandles::Markers &,
+    SceneHandles &,
     MarkerIndex index
   );
 

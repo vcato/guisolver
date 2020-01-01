@@ -12,8 +12,7 @@ struct SceneHandles {
   struct Marker;
   struct DistanceError;
   using TransformHandle = Scene::TransformHandle;
-  using TransformHandles = vector<TransformHandle>;
-  using Markers = vector<Marker>;
+  using Markers = vector<Optional<Marker>>;
   using DistanceErrors = vector<DistanceError>;
 
   struct Marker {
@@ -32,15 +31,18 @@ struct SceneHandles {
     return *scene_handles.bodies[i];
   }
 
-  TransformHandle &body(BodyIndex i)
+  template <typename SceneHandles>
+  static MatchConst_t<Marker, SceneHandles> &
+  marker(MarkerIndex i, SceneHandles &scene_handles)
   {
-    return body(i, *this);
+    assert(scene_handles.markers[i]);
+    return *scene_handles.markers[i];
   }
 
-  const TransformHandle &body(BodyIndex i) const
-  {
-    return body(i, *this);
-  }
+  TransformHandle &body(BodyIndex i) { return body(i, *this); }
+  const TransformHandle &body(BodyIndex i) const { return body(i, *this); }
+  Marker &marker(MarkerIndex i) { return marker(i, *this); }
+  const Marker &marker(MarkerIndex i) const { return marker(i, *this); }
 
   vector<Optional<TransformHandle>> bodies;
   Markers markers;
