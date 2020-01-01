@@ -669,6 +669,17 @@ BodyIndex ObservedScene::duplicateBody(BodyIndex body_index)
 }
 
 
+MarkerIndex ObservedScene::duplicateMarker(MarkerIndex marker_index)
+{
+  ObservedScene &observed_scene = *this;
+  SceneState &scene_state = observed_scene.scene_state;
+  MarkerIndex new_marker_index = scene_state.duplicateMarker(marker_index);
+  ObservedScene::createMarkerInTree(new_marker_index, observed_scene);
+  ObservedScene::createMarkerInScene(new_marker_index, observed_scene);
+  return new_marker_index;
+}
+
+
 BodyIndex
 ObservedScene::duplicateBodyWithDistanceErrors(BodyIndex body_index)
 {
@@ -684,6 +695,15 @@ ObservedScene::duplicateBodyWithDistanceErrors(BodyIndex body_index)
   }
 
   return new_body_index;
+}
+
+
+MarkerIndex
+ObservedScene::duplicateMarkerWithDistanceError(MarkerIndex marker_index)
+{
+  MarkerIndex new_marker_index = duplicateMarker(marker_index);
+  addDistanceError(marker_index, new_marker_index);
+  return new_marker_index;
 }
 
 

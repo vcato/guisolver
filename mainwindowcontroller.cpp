@@ -249,6 +249,11 @@ struct MainWindowController::Impl {
     duplicateBodyWithDistanceErrorsPressed(MainWindowController &, BodyIndex);
 
   static void
+    duplicateMarkerWithDistanceErrorPressed(
+      MainWindowController &, MarkerIndex
+    );
+
+  static void
     removeDistanceErrorPressed(
       MainWindowController &,
       int distance_error_index
@@ -269,7 +274,6 @@ struct MainWindowController::Impl {
   static void cutBodyPressed(MainWindowController &, const TreePath &);
   static void cutMarkerPressed(MainWindowController &, MarkerIndex);
   static void removeMarker(Data &, MarkerIndex);
-  static MarkerIndex duplicateMarker(Data &, MarkerIndex);
 };
 
 
@@ -627,6 +631,21 @@ MainWindowController::Impl::duplicateBodyWithDistanceErrorsPressed(
 
 
 void
+MainWindowController::Impl::duplicateMarkerWithDistanceErrorPressed(
+  MainWindowController &controller, MarkerIndex marker_index
+)
+{
+  Data &data = Impl::data(controller);
+  ObservedScene &observed_scene = data.observed_scene;
+
+  BodyIndex new_marker_index =
+    observed_scene.duplicateMarkerWithDistanceError(marker_index);
+
+  observed_scene.selectMarker(new_marker_index);
+}
+
+
+void
   MainWindowController::Impl::removeDistanceErrorPressed(
     MainWindowController &controller,
     int distance_error_index
@@ -667,20 +686,6 @@ MainWindowController::Impl::removeMarker(Data &data, MarkerIndex marker_index)
 }
 
 
-MarkerIndex
-MainWindowController::Impl::duplicateMarker(
-  Data &data,
-  MarkerIndex marker_index
-)
-{
-  SceneState &scene_state = data.observed_scene.scene_state;
-  MarkerIndex new_marker_index = scene_state.duplicateMarker(marker_index);
-  ObservedScene::createMarkerInTree(new_marker_index, data.observed_scene);
-  ObservedScene::createMarkerInScene(new_marker_index, data.observed_scene);
-  return new_marker_index;
-}
-
-
 void
   MainWindowController::Impl::removeMarkerPressed(
     MainWindowController &controller,
@@ -707,7 +712,10 @@ void
   TreePaths &tree_paths = observed_scene.tree_paths;
   TreeWidget &tree_widget = observed_scene.tree_widget;
   SceneState &scene_state = observed_scene.scene_state;
-  MarkerIndex new_marker_index = duplicateMarker(data, source_marker_index);
+
+  MarkerIndex new_marker_index =
+    observed_scene.duplicateMarker(source_marker_index);
+
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
   selectMarker(new_marker_index, data);
 }
@@ -905,6 +913,11 @@ TreeWidget::MenuItems
         Impl::duplicateMarkerPressed(controller, index);
       };
 
+      auto duplicate_marker_with_distance_error_function =
+        [&controller,index]{
+          Impl::duplicateMarkerWithDistanceErrorPressed(controller, index);
+        };
+
       auto cut_marker_function = [&controller,index]{
         Impl::cutMarkerPressed(controller, index);
       };
@@ -912,7 +925,9 @@ TreeWidget::MenuItems
       appendTo(menu_items,{
         {"Remove", remove_marker_function},
         {"Duplicate", duplicate_marker_function},
-        {"Cut", cut_marker_function}
+        {"Cut", cut_marker_function},
+        {"Duplicate With Distance Error",
+          duplicate_marker_with_distance_error_function },
       });
     }
   }

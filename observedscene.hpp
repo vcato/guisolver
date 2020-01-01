@@ -56,11 +56,13 @@ struct ObservedScene {
   void selectMarker(MarkerIndex);
   void selectDistanceError(DistanceErrorIndex);
   BodyIndex duplicateBody(BodyIndex body_index);
+  BodyIndex duplicateBodyWithDistanceErrors(BodyIndex);
+  MarkerIndex duplicateMarker(MarkerIndex);
+  MarkerIndex duplicateMarkerWithDistanceError(MarkerIndex);
+
 
   static BodyIndex
-  duplicateBody(BodyIndex body_index, MarkerNameMap &, ObservedScene &);
-
-  BodyIndex duplicateBodyWithDistanceErrors(BodyIndex body_index);
+    duplicateBody(BodyIndex, MarkerNameMap &, ObservedScene &);
 
   static void removingMarker(ObservedScene &, MarkerIndex);
   static void removingBody(ObservedScene &, BodyIndex);
