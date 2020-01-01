@@ -680,9 +680,7 @@ void
 void
 MainWindowController::Impl::removeMarker(Data &data, MarkerIndex marker_index)
 {
-  SceneState &scene_state = data.observed_scene.scene_state;
-  ObservedScene::removingMarker(data.observed_scene, marker_index);
-  scene_state.removeMarker(marker_index);
+  data.observed_scene.removeMarker(marker_index);
 }
 
 

@@ -286,6 +286,14 @@ void ObservedScene::removeBody(BodyIndex body_index)
 }
 
 
+void ObservedScene::removeMarker(MarkerIndex marker_index)
+{
+  clearClipboard(*this);
+  ObservedScene::removingMarker(*this, marker_index);
+  scene_state.removeMarker(marker_index);
+}
+
+
 template <typename Function>
 static void
 forEachChildItemPath(

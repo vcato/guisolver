@@ -52,3 +52,5 @@ Allow adding distance errors to bodies.
 After transferring a marker to a new body, the scene should be re-solved.
 ---
 Need to not allow rotation manipulation when alt is pressed.
+---
+Need to be able to rename markers.
