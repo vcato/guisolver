@@ -582,14 +582,13 @@ MainWindowController::Impl::pasteGlobalPressed(
 {
   Data &data = Impl::data(controller);
   ObservedScene &observed_scene = data.observed_scene;
-  Clipboard &clipboard = data.clipboard;
 
   Optional<BodyIndex> maybe_new_parent_body_index =
     maybeBodyIndexFromTreePath(path, observed_scene.tree_paths);
 
   BodyIndex new_body_index =
     ObservedScene::pasteGlobal(
-      maybe_new_parent_body_index, clipboard, observed_scene
+      maybe_new_parent_body_index, observed_scene
     );
 
   ObservedScene::selectBody(new_body_index, observed_scene);
@@ -637,13 +636,9 @@ MainWindowController::Impl::removeBodyPressed(
 {
   Data &data = Impl::data(controller);
   ObservedScene &observed_scene = data.observed_scene;
-  ObservedScene::clearClipboard(observed_scene, data.clipboard);
-  TreeWidget &tree_widget = observed_scene.tree_widget;
   TreePaths &tree_paths = observed_scene.tree_paths;
-  SceneState &scene_state = observed_scene.scene_state;
   BodyIndex body_index = bodyIndexFromTreePath(path, tree_paths);
   ObservedScene::removeBody(data.observed_scene, body_index);
-  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
 }
 
 
@@ -763,7 +758,7 @@ void
   Data &data = Impl::data(controller);
   TreePaths &tree_paths = data.observed_scene.tree_paths;
   BodyIndex body_index = bodyIndexFromTreePath(path, tree_paths);
-  ObservedScene::cutBody(data.observed_scene, body_index, data.clipboard);
+  ObservedScene::cutBody(data.observed_scene, body_index);
 }
 
 

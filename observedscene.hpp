@@ -24,6 +24,7 @@ struct ObservedScene {
   SceneState scene_state;
   SceneHandles scene_handles;
   TreePaths tree_paths;
+  Clipboard clipboard;
 
   ObservedScene(Scene &scene, TreeWidget &tree_widget);
 
@@ -34,18 +35,12 @@ struct ObservedScene {
   static void removingMarker(ObservedScene &, MarkerIndex);
   static void removingBody(ObservedScene &, BodyIndex);
   static void removeBody(ObservedScene &, BodyIndex);
-  static void cutBody(ObservedScene &, BodyIndex body_index, Clipboard &);
-
-  static void
-    clearClipboard(
-      ObservedScene &observed_scene,
-      Clipboard &clipboard
-    );
+  static void cutBody(ObservedScene &, BodyIndex body_index);
+  static void clearClipboard(ObservedScene &observed_scene);
 
   static BodyIndex
     pasteGlobal(
       Optional<BodyIndex> maybe_new_parent_body_index,
-      Clipboard &clipboard,
       ObservedScene &observed_scene
     );
 

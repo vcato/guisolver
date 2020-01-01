@@ -52,7 +52,3 @@ Allow adding distance errors to bodies.
 Handle cut/paste of markers.
 ---
 The clipboard should be cleared whenever we change the scene.
----
-Seems like we need to move the clipboard into the observed scene because
-we need to maintain consistency between the cut body and the tree pending
-state.

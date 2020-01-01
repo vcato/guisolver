@@ -115,10 +115,10 @@ treeItemForSceneObject(
 BodyIndex
 ObservedScene::pasteGlobal(
   Optional<BodyIndex> maybe_new_parent_body_index,
-  Clipboard &clipboard,
   ObservedScene &observed_scene
 )
 {
+  Clipboard &clipboard = observed_scene.clipboard;
   SceneState &scene_state = observed_scene.scene_state;
 
   Transform new_parent_global_transform =
@@ -209,6 +209,12 @@ ObservedScene::removeBody(
   ObservedScene &observed_scene, BodyIndex body_index
 )
 {
+  TreeWidget &tree_widget = observed_scene.tree_widget;
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  SceneState &scene_state = observed_scene.scene_state;
+
+  clearClipboard(observed_scene);
+
   struct Visitor {
     ObservedScene &observed_scene;
 
@@ -224,12 +230,8 @@ ObservedScene::removeBody(
   };
 
   Visitor visitor{observed_scene};
-
-  removeBodyFromSceneState(
-    body_index,
-    observed_scene.scene_state,
-    visitor
-  );
+  removeBodyFromSceneState(body_index, scene_state, visitor);
+  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
 }
 
 
@@ -281,12 +283,10 @@ setBranchPending(
 }
 
 
-void
-ObservedScene::clearClipboard(
-  ObservedScene &observed_scene,
-  Clipboard &clipboard
-)
+void ObservedScene::clearClipboard(ObservedScene &observed_scene)
 {
+  Clipboard &clipboard = observed_scene.clipboard;
+
   if (clipboard.maybe_cut_body_index) {
     setBranchPending(
       observed_scene.tree_widget,
@@ -299,13 +299,9 @@ ObservedScene::clearClipboard(
 }
 
 
-void
-ObservedScene::cutBody(
-  ObservedScene &observed_scene,
-  BodyIndex body_index,
-  Clipboard &clipboard
-)
+void ObservedScene::cutBody(ObservedScene &observed_scene, BodyIndex body_index)
 {
+  Clipboard &clipboard = observed_scene.clipboard;
   TreeWidget &tree_widget = observed_scene.tree_widget;
   TreePaths &tree_paths = observed_scene.tree_paths;
 

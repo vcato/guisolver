@@ -7,6 +7,18 @@
 using std::cerr;
 
 
+static void
+transferBody(
+  BodyIndex body1_index,
+  Optional<BodyIndex> maybe_new_parent_index,
+  ObservedScene &observed_scene
+)
+{
+  ObservedScene::cutBody(observed_scene, body1_index);
+  ObservedScene::pasteGlobal(maybe_new_parent_index, observed_scene);
+}
+
+
 static void testCutAndPaste1()
 {
   FakeTreeWidget tree_widget;
@@ -20,10 +32,7 @@ static void testCutAndPaste1()
     ObservedScene::addBody(/*parent*/{}, observed_scene);
 
   ObservedScene::addMarker(observed_scene, body2_index);
-  Clipboard clipboard;
-  ObservedScene::cutBody(observed_scene, body1_index, clipboard);
-
-  ObservedScene::pasteGlobal(body2_index, clipboard, observed_scene);
+  transferBody(body1_index, body2_index, observed_scene);
 
   const SceneState &scene_state = observed_scene.scene_state;
   checkTree(tree_widget, observed_scene.tree_paths, scene_state);
@@ -40,11 +49,7 @@ static void testCutAndPaste2()
     ObservedScene::addBody(/*parent*/{}, observed_scene);
 
   ObservedScene::addMarker(observed_scene, body1_index);
-  Clipboard clipboard;
-  ObservedScene::cutBody(observed_scene, body1_index, clipboard);
-
-  ObservedScene::pasteGlobal(/*parent*/{}, clipboard, observed_scene);
-
+  transferBody(body1_index, {}, observed_scene);
   const SceneState &scene_state = observed_scene.scene_state;
   checkTree(tree_widget, observed_scene.tree_paths, scene_state);
 }
