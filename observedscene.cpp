@@ -7,8 +7,6 @@
 #include "treevalues.hpp"
 #include "sceneobjects.hpp"
 
-#define NEW_TRANSFER_TECHNIQUE 1
-
 using TransformHandle = Scene::TransformHandle;
 using std::cerr;
 
@@ -126,13 +124,6 @@ ObservedScene::pasteGlobal(
   Transform new_parent_global_transform =
     globalTransform(maybe_new_parent_body_index, scene_state);
 
-#if !NEW_CUT_BEHAVIOR
-  const TaggedValue &body_tagged_value =
-    clipboard.clipboard_tagged_value.children[0];
-
-  const Transform &old_parent_global_transform =
-    clipboard.clipboard_transform;
-#else
   BodyIndex old_body_index = *clipboard.maybe_cut_body_index;
 
   Optional<BodyIndex> maybe_old_parent_body_index =
@@ -141,29 +132,6 @@ ObservedScene::pasteGlobal(
   Transform old_parent_global_transform =
     globalTransform(maybe_old_parent_body_index, scene_state);
 
-#if !NEW_TRANSFER_TECHNIQUE
-  clipboard.maybe_cut_body_index.reset();
-  TaggedValue clipboard_tagged_value("clipboard");
-
-  createBodyTaggedValue(clipboard_tagged_value, old_body_index, scene_state);
-
-  const TaggedValue &body_tagged_value = clipboard_tagged_value.children[0];
-
-  ObservedScene::removeBody(observed_scene, old_body_index);
-
-  if (maybe_new_parent_body_index) {
-    if (*maybe_new_parent_body_index > old_body_index) {
-      --*maybe_new_parent_body_index;
-    }
-  }
-
-  BodyIndex new_body_index =
-    createBodyFromTaggedValue(
-      scene_state,
-      body_tagged_value,
-      maybe_new_parent_body_index
-    );
-#else
   TreeWidget &tree_widget = observed_scene.tree_widget;
   Scene &scene = observed_scene.scene;
   SceneHandles &scene_handles = observed_scene.scene_handles;
@@ -183,8 +151,6 @@ ObservedScene::pasteGlobal(
     maybe_new_parent_body_index;
 
   BodyIndex new_body_index = old_body_index;
-#endif
-#endif
 
   SceneState::Body &body_state = scene_state.body(new_body_index);
   Transform old_body_transform = makeTransformFromState(body_state.transform);
@@ -197,10 +163,6 @@ ObservedScene::pasteGlobal(
 
   body_state.transform = transformState(new_body_transform);
 
-#if !NEW_CUT_BEHAVIOR || !NEW_TRANSFER_TECHNIQUE
-  ObservedScene::createBodyInTree(new_body_index, observed_scene);
-  ObservedScene::createBodyInScene(new_body_index, observed_scene);
-#else
   createBodyBranchItemsInTree(
     new_body_index, tree_widget, tree_paths, scene_state
   );
@@ -208,7 +170,7 @@ ObservedScene::pasteGlobal(
   createBodyBranchObjectsInScene(
     new_body_index, scene, scene_handles, scene_state
   );
-#endif
+
   return new_body_index;
 }
 
@@ -303,7 +265,6 @@ forEachPathInBranch(
 }
 
 
-#if NEW_CUT_BEHAVIOR
 static void
 setBranchPending(
   TreeWidget &tree_widget,
@@ -318,7 +279,6 @@ setBranchPending(
     }
   );
 }
-#endif
 
 
 void
@@ -349,21 +309,6 @@ ObservedScene::cutBody(
   TreeWidget &tree_widget = observed_scene.tree_widget;
   TreePaths &tree_paths = observed_scene.tree_paths;
 
-#if !NEW_CUT_BEHAVIOR
-  SceneState &scene_state = observed_scene.scene_state;
-
-  Optional<BodyIndex> maybe_parent_body_index =
-    scene_state.body(body_index).maybe_parent_index;
-
-  clipboard.clipboard_tagged_value.children.clear();
-  createBodyTaggedValue(clipboard.clipboard_tagged_value, body_index, scene_state);
-
-  clipboard.clipboard_transform =
-    globalTransform(maybe_parent_body_index, scene_state);
-
-  ObservedScene::removeBody(observed_scene, body_index);
-  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
-#else
   if (clipboard.maybe_cut_body_index) {
     setBranchPending(
       tree_widget,
@@ -379,7 +324,6 @@ ObservedScene::cutBody(
   );
 
   clipboard.maybe_cut_body_index = body_index;
-#endif
 }
 
 

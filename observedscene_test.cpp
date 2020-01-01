@@ -22,9 +22,6 @@ static void testCutAndPaste1()
   ObservedScene::addMarker(observed_scene, body2_index);
   Clipboard clipboard;
   ObservedScene::cutBody(observed_scene, body1_index, clipboard);
-#if !NEW_CUT_BEHAVIOR
-  --body2_index;
-#endif
 
   ObservedScene::pasteGlobal(body2_index, clipboard, observed_scene);
 
@@ -35,7 +32,6 @@ static void testCutAndPaste1()
 
 static void testCutAndPaste2()
 {
-  cerr << "---\n";
   FakeTreeWidget tree_widget;
   FakeScene scene;
   ObservedScene observed_scene(scene, tree_widget);
@@ -46,9 +42,6 @@ static void testCutAndPaste2()
   ObservedScene::addMarker(observed_scene, body1_index);
   Clipboard clipboard;
   ObservedScene::cutBody(observed_scene, body1_index, clipboard);
-#if !NEW_CUT_BEHAVIOR
-  --body2_index;
-#endif
 
   ObservedScene::pasteGlobal(/*parent*/{}, clipboard, observed_scene);
 

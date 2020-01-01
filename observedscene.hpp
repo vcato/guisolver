@@ -7,21 +7,10 @@
 #include "treepaths.hpp"
 
 
-#define NEW_CUT_BEHAVIOR 1
-
-
 struct Clipboard {
-#if !NEW_CUT_BEHAVIOR
-  TaggedValue clipboard_tagged_value;
-  Transform clipboard_transform;
-#else
   Optional<BodyIndex> maybe_cut_body_index;
-#endif
 
   Clipboard()
-#if !NEW_CUT_BEHAVIOR
-  : clipboard_tagged_value("clipboard")
-#endif
   {
   }
 

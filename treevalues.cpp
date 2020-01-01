@@ -1360,14 +1360,11 @@ createBodyBranchItemsInTree(
 
     void visitBody(BodyIndex body_index) const
     {
-      cerr << "Creating item for body " << body_index << "\n";
       createBodyItemInTree(body_index, tree_widget, tree_paths, scene_state);
     }
 
     void visitMarker(MarkerIndex marker_index) const
     {
-      cerr << "Creating item for marker " << marker_index << "\n";
-
       createMarkerItemInTree(
         marker_index, tree_widget, tree_paths, scene_state
       );

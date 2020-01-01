@@ -189,11 +189,7 @@ struct MainWindowController::Impl {
 
   static bool clipboardIsEmpty(const Data &data)
   {
-#if !NEW_CUT_BEHAVIOR
-    return data.clipboard.clipboard_tagged_value.children.empty();
-#else
     return !data.clipboard.maybe_cut_body_index.hasValue();
-#endif
   }
 
   static Impl &impl(MainWindowController &controller)
