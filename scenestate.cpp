@@ -164,3 +164,25 @@ void SceneState::removeBody(BodyIndex index_to_remove)
     }
   }
 }
+
+
+bool
+hasAncestor(
+  BodyIndex body_index,
+  BodyIndex ancestor_body_index,
+  const SceneState &state
+)
+{
+  if (body_index == ancestor_body_index) {
+    return true;
+  }
+
+  Optional<BodyIndex> maybe_parent_body_index =
+    state.body(body_index).maybe_parent_index;
+
+  if (!maybe_parent_body_index) {
+    return false;
+  }
+
+  return hasAncestor(*maybe_parent_body_index, ancestor_body_index, state);
+}

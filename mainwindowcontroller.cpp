@@ -13,28 +13,6 @@ using std::cerr;
 using TransformHandle = Scene::TransformHandle;
 
 
-static bool
-  hasAncestor(
-    BodyIndex body_index,
-    BodyIndex ancestor_body_index,
-    const SceneState &state
-  )
-{
-  if (body_index == ancestor_body_index) {
-    return true;
-  }
-
-  Optional<BodyIndex> maybe_parent_body_index =
-    state.body(body_index).maybe_parent_index;
-
-  if (!maybe_parent_body_index) {
-    return false;
-  }
-
-  return hasAncestor(*maybe_parent_body_index, ancestor_body_index, state);
-}
-
-
 template <typename XYZSolveFlags, typename F>
 static void forEachSolveFlagInXYZ(XYZSolveFlags &solve_flags, const F &f)
 {
@@ -662,9 +640,11 @@ MainWindowController::Impl::removeBodyPressed(
 )
 {
   Data &data = Impl::data(controller);
-  TreeWidget &tree_widget = data.observed_scene.tree_widget;
-  TreePaths &tree_paths = data.observed_scene.tree_paths;
-  SceneState &scene_state = data.observed_scene.scene_state;
+  ObservedScene &observed_scene = data.observed_scene;
+  ObservedScene::clearClipboard(observed_scene, data.clipboard);
+  TreeWidget &tree_widget = observed_scene.tree_widget;
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  SceneState &scene_state = observed_scene.scene_state;
   BodyIndex body_index = bodyIndexFromTreePath(path, tree_paths);
   ObservedScene::removeBody(data.observed_scene, body_index);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
@@ -869,6 +849,7 @@ TreeWidget::MenuItems
   Data &data = Impl::data(controller);
   TreeWidget::MenuItems menu_items;
   const TreePaths &tree_paths = data.observed_scene.tree_paths;
+  const SceneState &scene_state = data.observed_scene.scene_state;
 
   auto add_marker_function =
     [&controller,path]{
@@ -897,7 +878,7 @@ TreeWidget::MenuItems
 
     if (!clipboardIsEmpty(data)) {
       appendTo(menu_items,{
-        {"Paste Global", paste_global_function}
+        {"Paste Preserving Global", paste_global_function}
       });
     }
   }
@@ -923,9 +904,13 @@ TreeWidget::MenuItems
     });
 
     if (!clipboardIsEmpty(data)) {
-      appendTo(menu_items,{
-        {"Paste Global", paste_global_function}
-      });
+      BodyIndex body_index = bodyIndexFromTreePath(path, tree_paths);
+
+      if (data.clipboard.canPasteTo(body_index, scene_state)) {
+        appendTo(menu_items,{
+          {"Paste Global", paste_global_function}
+        });
+      }
     }
   }
 
@@ -969,14 +954,13 @@ TreeWidget::MenuItems
     }
   }
 
-  if (solveStatePtr(data.observed_scene.scene_state, path, tree_paths)) {
+  if (solveStatePtr(scene_state, path, tree_paths)) {
     auto solve_function =
       [&controller,path](){
         Impl::handleSolveToggleChange(controller,path);
       };
 
-    bool checked_state =
-      solveState(data.observed_scene.scene_state, path, tree_paths);
+    bool checked_state = solveState(scene_state, path, tree_paths);
 
     appendTo(menu_items,{
       {"Solve", solve_function, checked_state}

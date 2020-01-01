@@ -229,21 +229,48 @@ void removeIndices(vector<Index> &indices, const Function &remove_function)
 }
 
 
+inline vector<MarkerIndex>
+markersOnBody(BodyIndex body_index, const SceneState &scene_state)
+{
+  vector<MarkerIndex> indices;
+  addMarkersOnBodyTo(indices, body_index, scene_state);
+  return indices;
+}
+
+
 template <typename Visitor>
-extern void
+void
 removeMarkersOnBody(
   BodyIndex body_index,
   SceneState &scene_state,
   const Visitor &visitor
 )
 {
-  vector<MarkerIndex> indices_of_markers_to_remove;
-  addMarkersOnBodyTo(indices_of_markers_to_remove, body_index,scene_state);
+  vector<MarkerIndex> indices_of_markers_to_remove =
+    markersOnBody(body_index, scene_state);
 
   removeIndices(indices_of_markers_to_remove, [&](MarkerIndex i){
     visitor.visitMarker(i);
     scene_state.removeMarker(i);
   });
+}
+
+
+inline void
+preOrderTraverseBodyBranch(
+  BodyIndex body_index,
+  const SceneState &scene_state,
+  vector<BodyIndex> &body_indices
+)
+{
+  body_indices.push_back(body_index);
+
+  for (BodyIndex other_body_index : indicesOf(scene_state.bodies())) {
+    if (scene_state.body(other_body_index).maybe_parent_index == body_index) {
+      assert(other_body_index != body_index);
+      preOrderTraverseBodyBranch(other_body_index, scene_state, body_indices);
+    }
+  }
 }
 
 
@@ -265,6 +292,48 @@ postOrderTraverseBodyBranch(
 
 
 template <typename Visitor>
+inline void
+forEachBranchIndexInPostOrder(
+  BodyIndex body_index,
+  const SceneState &scene_state,
+  const Visitor &visitor
+)
+{
+  vector<BodyIndex> body_indices;
+  postOrderTraverseBodyBranch(body_index, scene_state, body_indices);
+
+  for (auto body_index : body_indices) {
+    for (auto marker_index : markersOnBody(body_index, scene_state)) {
+      visitor.visitMarker(marker_index);
+    }
+
+    visitor.visitBody(body_index);
+  }
+}
+
+
+template <typename Visitor>
+inline void
+forEachBranchIndexInPreOrder(
+  BodyIndex body_index,
+  const SceneState &scene_state,
+  const Visitor &visitor
+)
+{
+  vector<BodyIndex> body_indices;
+  preOrderTraverseBodyBranch(body_index, scene_state, body_indices);
+
+  for (auto body_index : body_indices) {
+    visitor.visitBody(body_index);
+
+    for (auto marker_index : markersOnBody(body_index, scene_state)) {
+      visitor.visitMarker(marker_index);
+    }
+  }
+}
+
+
+template <typename Visitor>
 static void
 removeBodyFromSceneState(
   BodyIndex body_index,
@@ -281,6 +350,14 @@ removeBodyFromSceneState(
     scene_state.removeBody(i);
   });
 }
+
+
+extern bool
+  hasAncestor(
+    BodyIndex body_index,
+    BodyIndex ancestor_body_index,
+    const SceneState &state
+  );
 
 
 #endif /* SCENESTATE_HPP_ */

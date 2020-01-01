@@ -49,80 +49,10 @@ Allow adding distance errors to bodies.
 * This will mean removing/adding distance errors to the tree when we
   remove or add bodies.
 ---
-I think a cut should work like in a spreadsheet, where the items are just
-marked as cut, but are still in the scene.  This will allow connections
-to be maintained until the destination is chosen.
-Somehow you should be disallowed from pasting into a cut object.
-
-It seems like the cut object should be shown differently somehow.
-
-Cuts are very transient.  Basically anything that affects the scene will
-remove the cut.  This means we should just be able to store the body index
-or the marker index that is cut, since anything that might change the
-index would clear the cut.  If we modify the value of a cut object, then
-it will clear the cut also.
-
-We need a way to show items in the tree that are cut.  Maybe greying
-the text color is good enough.
-
-How can we change the text color of items in the tree?
-
-Cutting a body and pasting to a body with a higher index involves adjusting
-the index of the pasted body.
-
-If we were cutting and pasting a marker, we would want to preserve
-the connections to any distance errors.  Because the SceneState manages
-the invariant that distance errors must refer to valid markers, this
-implies that the transfer has to be done in the scene state.
-
-* Remove object from tree
-* Remove object from scene
-* Transfer object to new location
-* Add object to tree
-* Add object to scene
-
-This has some issues because we've previously assumed that the tree and
-scene would closely match the scene state.  For example, we could not
-have any child bodies of the body being removed from the scene, and
-we assumed that we could check that by checking the scene state, and
-not having to check the scene itself.
-
-It seems intuitive that we would be able to ask a tree to remove a branch
-and it would be able to do that regardless of whether the branch had
-descendants, but there's some tricky issues with the indices.  As we
-remove bodies, if the indices of the body paths in the tree will
-shift and we'll get out of sync.
-
-Maybe it needs to be in two phases.  The first phase removes the items
-from the tree without changing the tree paths, and we remember the indices
-of the bodies and markers that were removed.  In a second phase, we remove
-a set of bodies and markers from the tree paths.  We can do that relatively
-easy by traversing these indices in reverse order.
-
-We may be able to section out the logic a bit better if we have a function
-which determines the bodies and the markers in a hierarchy.
-
-vector<BodyIndex> body_indices;
-vector<MarkerIndex> marker_indices;
-
-We can then first call a function to determine the index set for a hierarchy,
-then remove this index set from the tree, remove it from the scene, and
-remove it from the state.
-
-If the index set is in topological order, then we can do this fairly
-efficiently.
-
-It would be nice to just
-* remove body from tree
-* remove body from scene
-* change the body's parent
-* add body to scene
-* add body to tree
-
-We can do this if we have a way to remove the items from the tree without
-changing the indices.
-* remove body items from tree
-* remove body objects from scene
-* change the body's parent
-* create body items in tree
-* create body objects in tree
+Handle cut/paste of markers.
+---
+The clipboard should be cleared whenever we change the scene.
+---
+Seems like we need to move the clipboard into the observed scene because
+we need to maintain consistency between the cut body and the tree pending
+state.

@@ -212,14 +212,41 @@ void
 
 
 void
+removeMarkerObjectFromScene(
+  MarkerIndex index,
+  Scene &scene,
+  SceneHandles &scene_handles
+)
+{
+  scene.destroyObject(scene_handles.marker(index).handle);
+  scene_handles.markers[index].reset();
+}
+
+
+void
   removeMarkerFromScene(
     Scene &scene,
     SceneHandles &scene_handles,
     MarkerIndex index
   )
 {
-  scene.destroyObject(scene_handles.marker(index).handle);
+  removeMarkerObjectFromScene(index, scene, scene_handles);
   removeIndexFrom(scene_handles.markers, index);
+}
+
+
+static void
+createMarkerObjectInScene(
+  MarkerIndex marker_index,
+  Scene &scene,
+  SceneHandles &scene_handles,
+  const SceneState &state
+)
+{
+  const SceneState::Marker &state_marker = state.marker(marker_index);
+
+  scene_handles.markers[marker_index] =
+    createSceneMarker(scene,state_marker,scene_handles);
 }
 
 
@@ -231,9 +258,8 @@ createMarkerInScene(
   MarkerIndex marker_index
 )
 {
-  const SceneState::Marker &state_marker = state.marker(marker_index);
-  SceneHandles::Markers &marker_handles = scene_handles.markers;
-  marker_handles.push_back(createSceneMarker(scene,state_marker,scene_handles));
+  scene_handles.markers.emplace_back();
+  createMarkerObjectInScene(marker_index, scene, scene_handles, state);
 }
 
 
@@ -281,6 +307,25 @@ static void
 }
 
 
+static void
+createBodyObjectInScene(
+  BodyIndex body_index,
+  Scene &scene,
+  SceneHandles &scene_handles,
+  const SceneState &state
+)
+{
+  const SceneState::Body &body_state = state.body(body_index);
+
+  TransformHandle transform_handle =
+    createBodyTransform(body_state, scene, scene_handles);
+
+  updateBodyInScene(scene, transform_handle, body_state);
+  assert(!scene_handles.bodies[body_index].hasValue());
+  scene_handles.bodies[body_index] = transform_handle;
+}
+
+
 void
 createBodyInScene(
   Scene &scene,
@@ -289,14 +334,19 @@ createBodyInScene(
   BodyIndex body_index
 )
 {
-  const SceneState::Body &body_state = state.body(body_index);
-
-  TransformHandle transform_handle =
-    createBodyTransform(body_state, scene, scene_handles);
+  if (body_index > BodyIndex(scene_handles.bodies.size())) {
+    assert(false); // not implemented
+  }
 
   assert(BodyIndex(scene_handles.bodies.size()) == body_index);
-  scene_handles.bodies.push_back(transform_handle);
-  updateBodyInScene(scene, transform_handle, body_state);
+  scene_handles.bodies.emplace_back();
+
+  createBodyObjectInScene(
+    body_index,
+    scene,
+    scene_handles,
+    state
+  );
 
   for (auto marker_index : indicesOfMarkersOnBody(body_index, state)) {
     createMarkerInScene(scene, scene_handles, state, marker_index);
@@ -308,37 +358,75 @@ createBodyInScene(
 }
 
 
-#if 0
 void
-removeBodyObjectsFromScene(
+removeBodyObjectFromScene(
+  BodyIndex body_index,
+  Scene &scene,
+  SceneHandles &scene_handles
+)
+{
+  scene.destroyObject(scene_handles.body(body_index));
+  scene_handles.bodies[body_index].reset();
+}
+
+
+void
+createBodyBranchObjectsInScene(
   BodyIndex body_index,
   Scene &scene,
   SceneHandles &scene_handles,
-  const SceneState &state
+  const SceneState &scene_state
+)
+{
+  struct Visitor {
+    Scene &scene;
+    SceneHandles &scene_handles;
+    const SceneState &scene_state;
+
+    void visitBody(BodyIndex body_index) const
+    {
+      createBodyObjectInScene(
+        body_index, scene, scene_handles, scene_state
+      );
+    }
+
+    void visitMarker(MarkerIndex marker_index) const
+    {
+      createMarkerObjectInScene(
+        marker_index, scene, scene_handles, scene_state
+      );
+    }
+  } visitor = {scene, scene_handles, scene_state};
+
+  forEachBranchIndexInPreOrder(body_index, scene_state, visitor);
+}
+
+
+void
+removeBodyBranchObjectsFromScene(
+  BodyIndex body_index,
+  Scene &scene,
+  SceneHandles &scene_handles,
+  const SceneState &scene_state
 )
 {
   struct Visitor {
     Scene &scene;
     SceneHandles &scene_handles;
 
-    void visitBody(BodyIndex body_index)
+    void visitBody(BodyIndex body_index) const
     {
-      scene.destroyObject(scene_handles.body(body_index));
-      scene_handles.bodies[body_index].reset();
+      removeBodyObjectFromScene(body_index, scene, scene_handles);
     }
 
-    void visitMarker(MarkerIndex marker_index)
+    void visitMarker(MarkerIndex marker_index) const
     {
-      scene.destroyObject(scene_handles.marker(marker_index).handle);
-      scene_handles.markers[marker_index].reset();
+      removeMarkerObjectFromScene(marker_index, scene, scene_handles);
     }
-  };
+  } visitor = {scene, scene_handles};
 
-  traverseBody(
-    TraversalOrder::postorder, body_index, scene_state, visitor
-  );
+  forEachBranchIndexInPostOrder(body_index, scene_state, visitor);
 }
-#endif
 
 
 void
@@ -350,7 +438,7 @@ removeBodyFromScene(
 )
 {
   assert(!state.bodyHasChildren(body_index));
-  scene.destroyObject(scene_handles.body(body_index));
+  removeBodyObjectFromScene(body_index, scene, scene_handles);
   removeIndexFrom(scene_handles.bodies, body_index);
 }
 

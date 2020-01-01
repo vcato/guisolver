@@ -149,6 +149,11 @@ class Optional {
       return false;
     }
 
+    bool operator!=(const Optional<T>& arg) const
+    {
+      return !operator==(arg);
+    }
+
   private:
     union {
       T _value;

@@ -7,7 +7,7 @@
 #include "treepaths.hpp"
 
 
-#define NEW_CUT_BEHAVIOR 0
+#define NEW_CUT_BEHAVIOR 1
 
 
 struct Clipboard {
@@ -24,6 +24,8 @@ struct Clipboard {
 #endif
   {
   }
+
+  bool canPasteTo(BodyIndex, const SceneState &) const;
 };
 
 
@@ -44,6 +46,12 @@ struct ObservedScene {
   static void removingBody(ObservedScene &, BodyIndex);
   static void removeBody(ObservedScene &, BodyIndex);
   static void cutBody(ObservedScene &, BodyIndex body_index, Clipboard &);
+
+  static void
+    clearClipboard(
+      ObservedScene &observed_scene,
+      Clipboard &clipboard
+    );
 
   static BodyIndex
     pasteGlobal(

@@ -51,7 +51,7 @@ extern void
 extern void
 createMarkerInScene(Scene &, SceneHandles &, const SceneState &, MarkerIndex);
 
-void
+extern void
   createBodyInScene(
     Scene &,
     SceneHandles &,
@@ -59,10 +59,34 @@ void
     BodyIndex
   );
 
-void
+extern void
+  createBodyObjectsInScene(
+    BodyIndex body_index,
+    Scene &,
+    SceneHandles &,
+    const SceneState &
+  );
+
+extern void
   removeBodyFromScene(
     Scene &,
     SceneHandles &,
     const SceneState &,
     BodyIndex
+  );
+
+extern void
+  createBodyBranchObjectsInScene(
+    BodyIndex body_index,
+    Scene &scene,
+    SceneHandles &scene_handles,
+    const SceneState &scene_state
+  );
+
+extern void
+  removeBodyBranchObjectsFromScene(
+    BodyIndex,
+    Scene &,
+    SceneHandles &,
+    const SceneState &
   );

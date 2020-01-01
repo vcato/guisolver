@@ -128,12 +128,12 @@ static TreePaths::XYZ
 
 
 static TreePaths::Marker
-  createMarker(
-    TreeWidget &tree_widget,
-    const TreePath &path,
-    const string &name,
-    const SceneState::XYZ &position
-  )
+createMarker(
+  TreeWidget &tree_widget,
+  const TreePath &path,
+  const string &name,
+  const SceneState::XYZ &position
+)
 {
   tree_widget.createVoidItem(path,LabelProperties{"[Marker] " + name});
   ItemAdder adder{path, tree_widget};
@@ -309,11 +309,13 @@ createDistanceErrorInTree1(
 
 
 static void
-  updatePathAfterRemoval(TreePath &path_to_update, const TreePath &path_removed)
+updatePathAfterRemoval(TreePath &path_to_update, const TreePath &path_removed)
 {
   if (startsWith(path_to_update, parentPath(path_removed))) {
     if (path_to_update.size() >= path_removed.size()) {
       auto depth = path_removed.size() - 1;
+
+      assert(path_to_update[depth] != path_removed[depth]);
 
       if (path_to_update[depth] > path_removed[depth]) {
         --path_to_update[depth];
@@ -418,8 +420,12 @@ nChildBodies(
   int n_child_bodies = 0;
 
   for (BodyIndex body_index : indicesOf(tree_paths.bodies)) {
-    if (scene_state.body(body_index).maybe_parent_index == maybe_parent_index) {
-      ++n_child_bodies;
+    if (tree_paths.bodies[body_index].hasValue()) {
+      if (
+        scene_state.body(body_index).maybe_parent_index == maybe_parent_index
+      ) {
+        ++n_child_bodies;
+      }
     }
   }
 
@@ -437,8 +443,12 @@ nMarkersOn(
   int n_attached_markers = 0;
 
   for (MarkerIndex marker_index : indicesOf(tree_paths.markers)) {
-    if (scene_state.marker(marker_index).maybe_body_index == maybe_body_index) {
-      ++n_attached_markers;
+    if (tree_paths.markers[marker_index].hasValue()) {
+      if (
+        scene_state.marker(marker_index).maybe_body_index == maybe_body_index
+      ) {
+        ++n_attached_markers;
+      }
     }
   }
 
@@ -590,17 +600,28 @@ removeDistanceErrorFromTree(
 
 
 void
+removeMarkerItemFromTree(
+  MarkerIndex marker_index,
+  TreeWidget &tree_widget,
+  TreePaths &tree_paths
+)
+{
+  TreePath marker_path = tree_paths.marker(marker_index).path;
+  tree_widget.removeItem(marker_path);
+  tree_paths.markers[marker_index].reset();
+  handlePathRemoval(tree_paths, marker_path);
+}
+
+
+void
 removeMarkerFromTree(
   MarkerIndex marker_index,
   TreePaths &tree_paths,
   TreeWidget &tree_widget
 )
 {
-  TreePaths::Markers &markers = tree_paths.markers;
-  TreePath marker_path = tree_paths.marker(marker_index).path;
-  tree_widget.removeItem(marker_path);
-  removeIndexFrom(markers, marker_index);
-  handlePathRemoval(tree_paths, marker_path);
+  removeMarkerItemFromTree(marker_index, tree_widget, tree_paths);
+  removeIndexFrom(tree_paths.markers, marker_index);
 }
 
 
@@ -651,29 +672,45 @@ static string totalErrorLabel(float total_error)
 }
 
 
-void
-  createMarkerInTree(
-    TreeWidget &tree_widget,
-    TreePaths &tree_paths,
-    const SceneState &scene_state,
-    MarkerIndex marker_index
-  )
+static void
+createMarkerItemInTree(
+  MarkerIndex marker_index,
+  TreeWidget &tree_widget,
+  TreePaths &tree_paths,
+  const SceneState &scene_state
+)
 {
   const SceneState::Marker &state_marker = scene_state.marker(marker_index);
-  assert(marker_index == MarkerIndex(tree_paths.markers.size()));
   Optional<BodyIndex> maybe_body_index = state_marker.maybe_body_index;
 
-  const TreePath insert_point =
+  const TreePath marker_path =
     nextMarkerPath(maybe_body_index, tree_paths, scene_state);
-
-  TreePath marker_path = insert_point;
 
   handlePathInsertion(tree_paths, marker_path);
 
-  tree_paths.markers.push_back(
+  tree_paths.markers[marker_index] =
     createMarker(
       tree_widget, marker_path, state_marker.name, state_marker.position
-    )
+    );
+}
+
+
+void
+createMarkerInTree(
+  TreeWidget &tree_widget,
+  TreePaths &tree_paths,
+  const SceneState &scene_state,
+  MarkerIndex marker_index
+)
+{
+  assert(marker_index == MarkerIndex(tree_paths.markers.size()));
+  tree_paths.markers.emplace_back();
+
+  createMarkerItemInTree(
+    marker_index,
+    tree_widget,
+    tree_paths,
+    scene_state
   );
 }
 
@@ -751,47 +788,25 @@ createBodyItem(
 
 
 static void
-  createSceneBodyInTree(
-    const BodyIndex body_index,
-    TreePaths &tree_paths,
-    TreeWidget &tree_widget,
-    const SceneState &scene_state
-  )
+createBodyItemInTree(
+  BodyIndex body_index,
+  TreeWidget &tree_widget,
+  TreePaths &tree_paths,
+  const SceneState &scene_state
+)
 {
-  const TreePath body_path = nextBodyPath({}, tree_paths, scene_state);
-  assert(BodyIndex(tree_paths.bodies.size()) == body_index);
-  const SceneState::Body &body_state = scene_state.body(body_index);
-
-  handlePathInsertion(tree_paths, body_path);
-
-  tree_paths.bodies.push_back(
-    createBodyItem(body_path, body_state, tree_widget)
-  );
-}
-
-
-static void
-  createChildBodyInTree(
-    const BodyIndex body_index,
-    TreePaths &tree_paths,
-    TreeWidget &tree_widget,
-    const SceneState &scene_state
-  )
-{
-  BodyIndex parent_body_index =
-    *scene_state.body(body_index).maybe_parent_index;
+  const SceneState::Body &state_body = scene_state.body(body_index);
+  const Optional<BodyIndex> &maybe_parent_index = state_body.maybe_parent_index;
 
   const TreePath body_path =
-    nextBodyPath(parent_body_index, tree_paths, scene_state);
+    nextBodyPath(maybe_parent_index, tree_paths, scene_state);
+
+  const SceneState::Body &body_state = scene_state.body(body_index);
 
   handlePathInsertion(tree_paths, body_path);
 
-  assert(BodyIndex(tree_paths.bodies.size()) == body_index);
-  const SceneState::Body &body_state = scene_state.body(body_index);
-
-  tree_paths.bodies.push_back(
-    createBodyItem(body_path, body_state, tree_widget)
-  );
+  tree_paths.bodies[body_index] =
+    createBodyItem(body_path, body_state, tree_widget);
 }
 
 
@@ -803,14 +818,12 @@ createBodyInTree(
   BodyIndex body_index
 )
 {
-  const SceneState::Body &state_body = scene_state.body(body_index);
+  if (body_index >= BodyIndex(tree_paths.bodies.size())) {
+    tree_paths.bodies.resize(body_index+1);
+  }
 
-  if (!state_body.maybe_parent_index) {
-    createSceneBodyInTree(body_index, tree_paths, tree_widget, scene_state);
-  }
-  else {
-    createChildBodyInTree(body_index, tree_paths, tree_widget, scene_state);
-  }
+  assert(!tree_paths.bodies[body_index]);
+  createBodyItemInTree(body_index, tree_widget, tree_paths, scene_state);
 
   for (auto marker_index : indicesOfMarkersOnBody(body_index, scene_state)) {
     createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
@@ -822,34 +835,18 @@ createBodyInTree(
 }
 
 
-#if 0
 void
-removeBodyItemsFromTree(
+removeBodyItemFromTree(
   BodyIndex body_index,
   TreeWidget &tree_widget,
-  TreePaths &tree_paths,
-  const SceneState &scene_state
+  TreePaths &tree_paths
 )
 {
-  struct Visitor {
-    void visitBody(BodyIndex body_index)
-    {
-      tree_widget.removeItem(tree_paths.body(body_index));
-      tree_paths.bodies[body_index].reset();
-    }
-
-    void visitMarker(MarkerIndex marker_index)
-    {
-      tree_widget.removeItem(tree_paths.marker(marker_index));
-      tree_paths.markers[marker_index].reset();
-    }
-  };
-
-  traverseBody(
-    TraverasalOrder::postorder, body_index, scene_state, visitor
-  );
+  TreePath body_path = tree_paths.body(body_index).path;
+  tree_widget.removeItem(body_path);
+  tree_paths.bodies[body_index].reset();
+  handlePathRemoval(tree_paths, body_path);
 }
-#endif
 
 
 void
@@ -862,11 +859,8 @@ removeBodyFromTree(
 {
   assert(indicesOfMarkersOnBody(body_index, scene_state).empty());
   assert(indicesOfChildBodies(body_index, scene_state).empty());
-
-  TreePath body_path = tree_paths.body(body_index).path;
-  tree_widget.removeItem(body_path);
+  removeBodyItemFromTree(body_index, tree_widget, tree_paths);
   removeIndexFrom(tree_paths.bodies, body_index);
-  handlePathRemoval(tree_paths, body_path);
 }
 
 
@@ -1321,4 +1315,64 @@ bool
   }
 
   return false;
+}
+
+
+void
+removeBodyBranchItemsFromTree(
+  BodyIndex body_index,
+  TreeWidget &tree_widget,
+  TreePaths &tree_paths,
+  const SceneState &scene_state
+)
+{
+  struct Visitor {
+    TreeWidget &tree_widget;
+    TreePaths &tree_paths;
+
+    void visitBody(BodyIndex body_index) const
+    {
+      removeBodyItemFromTree(body_index, tree_widget, tree_paths);
+    }
+
+    void visitMarker(MarkerIndex marker_index) const
+    {
+      removeMarkerItemFromTree(marker_index, tree_widget, tree_paths);
+    }
+  } visitor = {tree_widget, tree_paths};
+
+  forEachBranchIndexInPostOrder(body_index, scene_state, visitor);
+}
+
+
+void
+createBodyBranchItemsInTree(
+  BodyIndex body_index,
+  TreeWidget &tree_widget,
+  TreePaths &tree_paths,
+  const SceneState &scene_state
+)
+{
+  struct Visitor {
+    TreeWidget &tree_widget;
+    TreePaths &tree_paths;
+    const SceneState &scene_state;
+
+    void visitBody(BodyIndex body_index) const
+    {
+      cerr << "Creating item for body " << body_index << "\n";
+      createBodyItemInTree(body_index, tree_widget, tree_paths, scene_state);
+    }
+
+    void visitMarker(MarkerIndex marker_index) const
+    {
+      cerr << "Creating item for marker " << marker_index << "\n";
+
+      createMarkerItemInTree(
+        marker_index, tree_widget, tree_paths, scene_state
+      );
+    }
+  } visitor = {tree_widget, tree_paths, scene_state};
+
+  forEachBranchIndexInPreOrder(body_index, scene_state, visitor);
 }

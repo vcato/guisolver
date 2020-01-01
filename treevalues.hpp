@@ -25,7 +25,7 @@ extern void
     const SceneState &scene_state
   );
 
-void
+extern void
   createMarkerInTree(
     TreeWidget &tree_widget,
     TreePaths &tree_paths,
@@ -33,7 +33,13 @@ void
     MarkerIndex marker_index
   );
 
-void createBodyInTree(TreeWidget &, TreePaths &, const SceneState &, BodyIndex);
+extern void
+  createBodyInTree(TreeWidget &, TreePaths &, const SceneState &, BodyIndex);
+
+extern void
+  createBodyItemsInTree(
+    BodyIndex, TreeWidget &, TreePaths &, const SceneState &
+  );
 
 extern void
   removeDistanceErrorFromTree(
@@ -58,7 +64,15 @@ extern void
   );
 
 extern void
-  removeBodyItemsFromTree(
+  createBodyBranchItemsInTree(
+    BodyIndex body_index,
+    TreeWidget &tree_widget,
+    TreePaths &tree_paths,
+    const SceneState &scene_state
+  );
+
+extern void
+  removeBodyBranchItemsFromTree(
     BodyIndex body_index,
     TreeWidget &tree_widget,
     TreePaths &tree_paths,
