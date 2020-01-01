@@ -63,7 +63,7 @@ updateSceneStateFromSceneObjects(
   updateStateMarkerPositions(state, scene_handles.markers, scene);
 
   for (auto i : indicesOf(state.bodies())) {
-    const TransformHandle body_handle = scene_handles.bodies[i];
+    const TransformHandle body_handle = scene_handles.body(i);
     SceneState::Body &body_state = state.body(i);
     body_state.transform = transformState(localTransform(scene, body_handle));
     body_state.geometry.scale = xyzState(scene.geometryScale(body_handle));
@@ -116,7 +116,7 @@ static SceneHandles::Marker
 
   if (maybe_body_index) {
     BodyIndex parent_body_index = *maybe_body_index;
-    TransformHandle box_handle = scene_handles.bodies[parent_body_index];
+    TransformHandle box_handle = scene_handles.body(parent_body_index);
     return createSceneLocal(scene, box_handle, position);
   }
   else {
@@ -246,7 +246,7 @@ createBodyTransform(
     const BodyIndex parent_body_index = *body_state.maybe_parent_index;
 
     TransformHandle parent_transform_handle =
-      scene_handles.bodies[parent_body_index];
+      scene_handles.body(parent_body_index);
 
     return scene.createBox(parent_transform_handle);
   }
@@ -315,7 +315,7 @@ removeBodyFromScene(
 )
 {
   assert(!state.bodyHasChildren(body_index));
-  scene.destroyObject(scene_handles.bodies[body_index]);
+  scene.destroyObject(scene_handles.body(body_index));
   removeIndexFrom(scene_handles.bodies, body_index);
 }
 
@@ -388,7 +388,7 @@ destroyBody(
 )
 {
   destroyChildrenOf(body_index, scene, scene_state, scene_handles);
-  scene.destroyObject(scene_handles.bodies[body_index]);
+  scene.destroyObject(scene_handles.body(body_index));
 }
 
 
@@ -461,7 +461,7 @@ updateBodiesInScene(
 )
 {
   for (auto body_index : indicesOf(state.bodies())) {
-    const TransformHandle body_handle = scene_handles.bodies[body_index];
+    const TransformHandle body_handle = scene_handles.body(body_index);
     updateBodyInScene(scene, body_handle, state.body(body_index));
   }
 }

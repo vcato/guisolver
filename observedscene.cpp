@@ -14,7 +14,7 @@ using std::cerr;
 static bool isRotateItem(const TreePath &path, const TreePaths &tree_paths)
 {
   for (auto i : indicesOf(tree_paths.bodies)) {
-    if (startsWith(path, tree_paths.bodies[i].rotation.path)) {
+    if (startsWith(path, tree_paths.body(i).rotation.path)) {
       return true;
     }
   }
@@ -26,7 +26,7 @@ static bool isRotateItem(const TreePath &path, const TreePaths &tree_paths)
 static bool isScaleItem(const TreePath &path, const TreePaths &tree_paths)
 {
   for (auto i : indicesOf(tree_paths.bodies)) {
-    if (startsWith(path, tree_paths.bodies[i].geometry.path)) {
+    if (startsWith(path, tree_paths.body(i).geometry.path)) {
       return true;
     }
   }
@@ -50,7 +50,7 @@ forEachTransformHandlePath(
   }
 
   for (auto i : indicesOf(tree_paths.bodies)) {
-    f(scene_handles.bodies[i], tree_paths.bodies[i].path);
+    f(scene_handles.body(i), tree_paths.body(i).path);
   }
 
   for (auto i : indicesOf(tree_paths.distance_errors)) {

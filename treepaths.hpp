@@ -14,7 +14,7 @@ struct TreePaths {
   struct Body;
   struct DistanceError;
   using Markers = vector<Optional<Marker>>;
-  using Bodies = vector<Body>;
+  using Bodies = vector<Optional<Body>>;
   using DistanceErrors = vector<DistanceError>;
 
   TreePaths()
@@ -165,6 +165,17 @@ struct TreePaths {
     return *tree_paths.markers[i];
   }
 
+  template <typename TreePaths>
+  static MatchConst_t<Body, TreePaths> &
+  body(BodyIndex i, TreePaths &tree_paths)
+  {
+    assert(tree_paths.bodies[i]);
+    return *tree_paths.bodies[i];
+  }
+
+
+  Body &body(MarkerIndex i) { return body(i, *this); }
+  const Body &body(MarkerIndex i) const { return body(i, *this); }
   Marker &marker(MarkerIndex i) { return marker(i, *this); }
   const Marker &marker(MarkerIndex i) const { return marker(i, *this); }
 

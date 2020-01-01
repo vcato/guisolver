@@ -95,7 +95,7 @@ forEachSolveFlagAffectingHandle(
   // If the handle is for a body that is a child of the box, then it
   // is going to be affected by the solve.
   for (auto i : indicesOf(state.bodies())) {
-    if (handle == scene_handles.bodies[i]) {
+    if (handle == scene_handles.body(i)) {
       forEachSolveFlagAffectingBody(i, state, f);
     }
   }
@@ -147,8 +147,8 @@ static bool isScenePath(const TreePath &path, const TreePaths &tree_paths)
 
 static bool isBodyPath(const TreePath &path, const TreePaths &tree_paths)
 {
-  for (const TreePaths::Body &body_paths : tree_paths.bodies) {
-    if (body_paths.path == path) {
+  for (auto i : indicesOf(tree_paths.bodies)) {
+    if (tree_paths.body(i).path == path) {
       return true;
     }
   }
@@ -411,7 +411,7 @@ static MatchConst_t<bool, SceneState> *
 {
   using Bool = MatchConst_t<bool, SceneState>;
   auto &body_state = scene_state.body(body_index);
-  const TreePaths::Body &body_paths = tree_paths.bodies[body_index];
+  const TreePaths::Body &body_paths = tree_paths.body(body_index);
   {
     const TreePaths::XYZ &xyz_paths = body_paths.translation;
     auto &xyz_solve_flags = body_state.solve_flags.translation;
@@ -560,7 +560,7 @@ static BodyIndex
   bodyIndexFromTreePath(const TreePath &path, const TreePaths &tree_paths)
 {
   for (auto i : indicesOf(tree_paths.bodies)) {
-    if (tree_paths.bodies[i].path == path) {
+    if (tree_paths.body(i).path == path) {
       return i;
     }
   }

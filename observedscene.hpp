@@ -65,7 +65,7 @@ struct ObservedScene {
   {
     TreeWidget &tree_widget = observed_scene.tree_widget;
     TreePaths &tree_paths = observed_scene.tree_paths;
-    tree_widget.selectItem(tree_paths.bodies[body_index].path);
+    tree_widget.selectItem(tree_paths.body(body_index).path);
   }
 
   static void handleTreeSelectionChanged(ObservedScene &);

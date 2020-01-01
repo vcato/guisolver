@@ -5,24 +5,44 @@
 #include "scene.hpp"
 #include "markerindex.hpp"
 #include "bodyindex.hpp"
+#include "matchconst.hpp"
 
 
 struct SceneHandles {
   struct Marker;
   struct DistanceError;
-  using TransformHandles = vector<Scene::TransformHandle>;
+  using TransformHandle = Scene::TransformHandle;
+  using TransformHandles = vector<TransformHandle>;
   using Markers = vector<Marker>;
   using DistanceErrors = vector<DistanceError>;
 
   struct Marker {
-    Scene::TransformHandle handle;
+    TransformHandle handle;
   };
 
   struct DistanceError {
     Scene::LineHandle line;
   };
 
-  vector<Scene::TransformHandle> bodies;
+  template <typename SceneHandles>
+  static MatchConst_t<TransformHandle, SceneHandles> &
+  body(BodyIndex i, SceneHandles &scene_handles)
+  {
+    assert(scene_handles.bodies[i]);
+    return *scene_handles.bodies[i];
+  }
+
+  TransformHandle &body(BodyIndex i)
+  {
+    return body(i, *this);
+  }
+
+  const TransformHandle &body(BodyIndex i) const
+  {
+    return body(i, *this);
+  }
+
+  vector<Optional<TransformHandle>> bodies;
   Markers markers;
   DistanceErrors distance_errors;
 };

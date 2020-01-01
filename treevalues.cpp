@@ -459,7 +459,7 @@ static TreePath
 bodyPath(Optional<BodyIndex> maybe_body_index, const TreePaths &tree_paths)
 {
   if (maybe_body_index) {
-    const TreePaths::Body &body_paths = tree_paths.bodies[*maybe_body_index];
+    const TreePaths::Body &body_paths = tree_paths.body(*maybe_body_index);
     return body_paths.path;
   }
   else {
@@ -833,7 +833,7 @@ removeBodyFromTree(
   assert(indicesOfMarkersOnBody(body_index, scene_state).empty());
   assert(indicesOfChildBodies(body_index, scene_state).empty());
 
-  TreePath body_path = tree_paths.bodies[body_index].path;
+  TreePath body_path = tree_paths.body(body_index).path;
   tree_widget.removeItem(body_path);
   removeIndexFrom(tree_paths.bodies, body_index);
   handlePathRemoval(tree_paths, body_path);
@@ -946,7 +946,7 @@ updateBody(
 {
   const SceneState::Body &body_state = state.body(body_index);
   const TransformState &global = body_state.transform;
-  const TreePaths::Body &body_paths = tree_paths.bodies[body_index];
+  const TreePaths::Body &body_paths = tree_paths.body(body_index);
   {
     const TreePaths::Translation &translation_paths = body_paths.translation;
     const TranslationState &translation = translationStateOf(global);
@@ -1223,7 +1223,7 @@ bool
   )
 {
   for (auto body_index : indicesOf(tree_paths.bodies)) {
-    const TreePaths::Body &body_paths = tree_paths.bodies[body_index];
+    const TreePaths::Body &body_paths = tree_paths.body(body_index);
 
     if (startsWith(path, body_paths.path)) {
       SceneState::Body &body_state = scene_state.body(body_index);
