@@ -36,12 +36,16 @@ struct ObservedScene {
 
   ObservedScene(Scene &scene, TreeWidget &tree_widget);
 
+  static BodyIndex
+  addBody(Optional<BodyIndex> maybe_parent_index, ObservedScene &);
+
+  static MarkerIndex addMarker(ObservedScene &, Optional<BodyIndex>);
   static void removingMarker(ObservedScene &, MarkerIndex);
   static void removingBody(ObservedScene &, BodyIndex);
   static void removeBody(ObservedScene &, BodyIndex);
   static void cutBody(ObservedScene &, BodyIndex body_index, Clipboard &);
 
-  static void
+  static BodyIndex
     pasteGlobal(
       Optional<BodyIndex> maybe_new_parent_body_index,
       Clipboard &clipboard,
@@ -73,4 +77,10 @@ struct ObservedScene {
   }
 
   static void handleSceneSelectionChanged(ObservedScene &);
+
+  static void
+  createMarkerInScene(MarkerIndex marker_index, ObservedScene &observed_scene);
+
+  static void
+  createMarkerInTree(MarkerIndex marker_index, ObservedScene &observed_scene);
 };

@@ -20,7 +20,8 @@ run_unit_tests: \
   scenesolver_test.pass \
   optimize_test.pass \
   treevalues_test.pass \
-  sceneobjects_test.pass
+  sceneobjects_test.pass \
+  observedscene_test.pass
 
 run_guisolver: guisolver
 	./guisolver
@@ -34,15 +35,15 @@ run_guisolver: guisolver
 
 DEFAULTSCENESTATE=defaultscenestate.o scenestate.o maketransform.o
 TAGGEDVALUEIO=taggedvalueio.o printindent.o streamparser.o stringutil.o
-SCENESTATETAGGEDVALUE=scenestatetaggedvalue.o scenestate.o
-
-SCENESTATEIO=scenestateio.o taggedvalue.o $(SCENESTATETAGGEDVALUE) \
-  $(TAGGEDVALUEIO)
+SCENESTATETAGGEDVALUE=scenestatetaggedvalue.o scenestate.o taggedvalue.o
+SCENESTATEIO=scenestateio.o $(SCENESTATETAGGEDVALUE) $(TAGGEDVALUEIO)
 
 SCENEERROR=sceneerror.o scenestate.o
 SCENEOBJECTS=sceneobjects.o maketransform.o settransform.o scenestate.o
 OPTIMIZE=optimize.o
 MAINWINDOWCONTROLLER=mainwindowcontroller.o observedscene.o
+OBSERVEDSCENE=observedscene.o \
+  $(SCENESTATETAGGEDVALUE) treevalues.o $(SCENEOBJECTS)
 
 guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
   osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o $(DEFAULTSCENESTATE) \
@@ -74,7 +75,7 @@ globaltransform_test: globaltransform_test.o scenestate.o maketransform.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 scenestatetaggedvalue_test: scenestatetaggedvalue_test.o \
-  $(SCENESTATETAGGEDVALUE) taggedvalue.o $(TAGGEDVALUEIO)
+  $(SCENESTATETAGGEDVALUE) $(TAGGEDVALUEIO)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 scenestateio_test: scenestateio_test.o scenestate.o \
@@ -89,11 +90,15 @@ scenesolver_test: scenesolver_test.o \
 optimize_test: optimize_test.o $(OPTIMIZE)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
-treevalues_test: treevalues_test.o \
-  $(DEFAULTSCENESTATE) treevalues.o maketransform.o
+treevalues_test: treevalues_test.o faketreewidget.o \
+  $(DEFAULTSCENESTATE) treevalues.o maketransform.o checktree.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
-sceneobjects_test: sceneobjects_test.o $(SCENEOBJECTS)
+sceneobjects_test: sceneobjects_test.o $(SCENEOBJECTS) fakescene.o
+	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
+
+observedscene_test: observedscene_test.o $(OBSERVEDSCENE) faketreewidget.o \
+  fakescene.o checktree.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 clean:

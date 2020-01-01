@@ -112,7 +112,7 @@ treeItemForSceneObject(
 }
 
 
-void
+BodyIndex
 ObservedScene::pasteGlobal(
   Optional<BodyIndex> maybe_new_parent_body_index,
   Clipboard &clipboard,
@@ -170,7 +170,7 @@ ObservedScene::pasteGlobal(
 
   ObservedScene::createBodyInTree(new_body_index, observed_scene);
   ObservedScene::createBodyInScene(new_body_index, observed_scene);
-  ObservedScene::selectBody(new_body_index, observed_scene);
+  return new_body_index;
 }
 
 
@@ -386,4 +386,62 @@ ObservedScene::createBodyInScene(
   SceneState &scene_state = observed_scene.scene_state;
   Scene &scene = observed_scene.scene;
   ::createBodyInScene(scene, scene_handles, scene_state, body_index);
+}
+
+
+BodyIndex
+ObservedScene::addBody(
+  Optional<BodyIndex> maybe_parent_body_index, ObservedScene &observed_scene
+)
+{
+  SceneState &scene_state = observed_scene.scene_state;
+
+  BodyIndex body_index =
+    createBodyInState(scene_state, maybe_parent_body_index);
+
+  ObservedScene::createBodyInScene(body_index, observed_scene);
+  ObservedScene::createBodyInTree(body_index, observed_scene);
+
+  return body_index;
+}
+
+
+MarkerIndex
+ObservedScene::addMarker(
+  ObservedScene &observed_scene,
+  Optional<BodyIndex> maybe_body_index
+)
+{
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  SceneState &scene_state = observed_scene.scene_state;
+  TreeWidget &tree_widget = observed_scene.tree_widget;
+  MarkerIndex marker_index = scene_state.createMarker(maybe_body_index);
+  createMarkerInScene(marker_index, observed_scene);
+  createMarkerInTree(marker_index, observed_scene);
+  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+  return marker_index;
+}
+
+
+void
+ObservedScene::createMarkerInScene(
+  MarkerIndex marker_index, ObservedScene &observed_scene
+)
+{
+  SceneHandles &scene_handles = observed_scene.scene_handles;
+  SceneState &scene_state = observed_scene.scene_state;
+  Scene &scene = observed_scene.scene;
+  ::createMarkerInScene(scene, scene_handles, scene_state, marker_index);
+}
+
+
+void
+ObservedScene::createMarkerInTree(
+  MarkerIndex marker_index, ObservedScene &observed_scene
+)
+{
+  TreeWidget &tree_widget = observed_scene.tree_widget;
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  SceneState &scene_state = observed_scene.scene_state;
+  ::createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
 }

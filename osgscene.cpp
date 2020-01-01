@@ -16,6 +16,7 @@
 #include "osgpickhandler.hpp"
 #include "contains.hpp"
 #include "matchconst.hpp"
+#include "ptrvector.hpp"
 
 namespace {
 struct ScaleDragger;
@@ -1405,30 +1406,13 @@ void OSGScene::setEndPoint(LineHandle handle,Point p)
 }
 
 
-template <typename T>
-static size_t findNull(const vector<T*> &v)
-{
-  return findIndex(v,nullptr);
-}
-
-
 size_t
   OSGScene::Impl::getNewHandleIndex(
     OSGScene &scene,
     osg::MatrixTransform &transform
   )
 {
-  assert(!contains(scene._transform_ptrs,&transform));
-  size_t index = findNull(scene._transform_ptrs);
-
-  if (index == scene._transform_ptrs.size()) {
-    scene._transform_ptrs.push_back(&transform);
-  }
-  else {
-    scene._transform_ptrs[index] = &transform;
-  }
-
-  return index;
+  return storeIn(scene._transform_ptrs, transform);
 }
 
 
