@@ -9,6 +9,7 @@
 #include "optional.hpp"
 #include "removeindexfrom.hpp"
 #include "indicesof.hpp"
+#include "vectorio.hpp"
 
 
 class SceneState {
@@ -196,72 +197,89 @@ extern vector<BodyIndex>
   );
 
 
-template <typename Function>
-extern void
-removeMarkersOnBody(
+inline void
+addMarkersOnBodyTo(
+  vector<MarkerIndex> &marker_indices,
   BodyIndex body_index,
-  SceneState &scene_state,
-  const Function &removing_marker_function
+  const SceneState &scene_state
 )
 {
-  for (;;) {
-    bool a_marker_was_removed = false;
-
-    for (auto marker_index : indicesOf(scene_state.markers())) {
-      if (scene_state.marker(marker_index).maybe_body_index == body_index) {
-        removing_marker_function(marker_index);
-        scene_state.removeMarker(marker_index);
-        a_marker_was_removed = true;
-        break;
-      }
-    }
-
-    if (!a_marker_was_removed) {
-      break;
+  for (auto marker_index : indicesOf(scene_state.markers())) {
+    if (scene_state.marker(marker_index).maybe_body_index == body_index) {
+      marker_indices.push_back(marker_index);
     }
   }
 }
 
 
-template <typename MarkerFunction, typename BodyFunction>
+template <typename Index, typename Function>
+void removeIndices(vector<Index> &indices, const Function &remove_function)
+{
+  size_t n = indices.size();
+
+  for (size_t i=0; i!=n; ++i) {
+    remove_function(indices[i]);
+
+    for (size_t j=i+1; j!=n; ++j) {
+      if (indices[j] > indices[i]) {
+        --indices[j];
+      }
+    }
+  }
+}
+
+
+template <typename Visitor>
+extern void
+removeMarkersOnBody(
+  BodyIndex body_index,
+  SceneState &scene_state,
+  const Visitor &visitor
+)
+{
+  vector<MarkerIndex> indices_of_markers_to_remove;
+  addMarkersOnBodyTo(indices_of_markers_to_remove, body_index,scene_state);
+
+  removeIndices(indices_of_markers_to_remove, [&](MarkerIndex i){
+    visitor.visitMarker(i);
+    scene_state.removeMarker(i);
+  });
+}
+
+
+inline void
+postOrderTraverseBodyBranch(
+  BodyIndex body_index,
+  const SceneState &scene_state,
+  vector<BodyIndex> &body_indices
+)
+{
+  for (BodyIndex other_body_index : indicesOf(scene_state.bodies())) {
+    if (scene_state.body(other_body_index).maybe_parent_index == body_index) {
+      postOrderTraverseBodyBranch(other_body_index, scene_state, body_indices);
+    }
+  }
+
+  body_indices.push_back(body_index);
+}
+
+
+template <typename Visitor>
 static void
 removeBodyFromSceneState(
   BodyIndex body_index,
   SceneState &scene_state,
-  const MarkerFunction &removing_marker_function,
-  const BodyFunction &removing_body_function
+  const Visitor &visitor
 )
 {
-  for (;;) {
-    bool a_body_was_removed = false;
+  vector<BodyIndex> body_indices_to_remove;
+  postOrderTraverseBodyBranch(body_index, scene_state, body_indices_to_remove);
 
-    for (BodyIndex other_body_index : indicesOf(scene_state.bodies())) {
-      if (scene_state.body(other_body_index).maybe_parent_index == body_index) {
-        removeBodyFromSceneState(
-          other_body_index,
-          scene_state,
-          removing_marker_function,
-          removing_body_function
-        );
-
-        a_body_was_removed = true;
-
-        if (other_body_index < body_index) {
-          --body_index;
-        }
-
-        break;
-      }
-    }
-
-    if (!a_body_was_removed) {
-      break;
-    }
-  }
-
-  removeMarkersOnBody(body_index, scene_state, removing_marker_function);
-  removing_body_function(body_index);
-  scene_state.removeBody(body_index);
+  removeIndices(body_indices_to_remove, [&](BodyIndex i){
+    removeMarkersOnBody(i, scene_state, visitor);
+    visitor.visitBody(i);
+    scene_state.removeBody(i);
+  });
 }
 
 

@@ -329,13 +329,13 @@ removeBodyObjectsFromScene(
 
     void visitMarker(MarkerIndex marker_index)
     {
-      scene.destroyObject(scene_handles.marker(marker_index));
+      scene.destroyObject(scene_handles.marker(marker_index).handle);
       scene_handles.markers[marker_index].reset();
     }
   };
 
   traverseBody(
-    TraverasalOrder::postorder, body_index, scene_state, visitor
+    TraversalOrder::postorder, body_index, scene_state, visitor
   );
 }
 #endif

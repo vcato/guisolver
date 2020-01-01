@@ -227,17 +227,26 @@ ObservedScene::removeBody(
   ObservedScene &observed_scene, BodyIndex body_index
 )
 {
-  auto removing_marker_function =
-    [&](MarkerIndex arg){ ObservedScene::removingMarker(observed_scene, arg); };
+  struct Visitor {
+    ObservedScene &observed_scene;
 
-  auto removing_body_function =
-    [&](BodyIndex arg){ ObservedScene::removingBody(observed_scene, arg); };
+    void visitMarker(MarkerIndex arg) const
+    {
+      ObservedScene::removingMarker(observed_scene, arg);
+    }
+
+    void visitBody(BodyIndex arg) const
+    {
+      ObservedScene::removingBody(observed_scene, arg);
+    }
+  };
+
+  Visitor visitor{observed_scene};
 
   removeBodyFromSceneState(
     body_index,
     observed_scene.scene_state,
-    removing_marker_function,
-    removing_body_function
+    visitor
   );
 }
 

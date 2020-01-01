@@ -1,3 +1,6 @@
+#ifndef VECTORIO_HPP_
+#define VECTORIO_HPP_
+
 #include <iostream>
 #include "vector.hpp"
 
@@ -24,3 +27,6 @@ std::ostream& operator<<(std::ostream &stream,const vector<T> &value)
 
   return stream;
 }
+
+
+#endif /* VECTORIO_HPP_ */
