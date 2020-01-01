@@ -34,6 +34,14 @@ extern void
   );
 
 extern void
+  createMarkerItemInTree(
+    MarkerIndex marker_index,
+    TreeWidget &tree_widget,
+    TreePaths &tree_paths,
+    const SceneState &scene_state
+  );
+
+extern void
   createBodyInTree(TreeWidget &, TreePaths &, const SceneState &, BodyIndex);
 
 extern void
@@ -53,6 +61,13 @@ extern void
     MarkerIndex,
     TreePaths &tree_paths,
     TreeWidget &tree_widget
+  );
+
+extern void
+  removeMarkerItemFromTree(
+    MarkerIndex marker_index,
+    TreeWidget &tree_widget,
+    TreePaths &tree_paths
   );
 
 extern void

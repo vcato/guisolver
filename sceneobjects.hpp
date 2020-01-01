@@ -41,6 +41,13 @@ extern void
   );
 
 extern void
+  removeMarkerObjectFromScene(
+    MarkerIndex index,
+    Scene &scene,
+    SceneHandles &scene_handles
+  );
+
+extern void
   createDistanceErrorInScene(
     Scene &,
     SceneHandles &,
@@ -49,7 +56,15 @@ extern void
   );
 
 extern void
-createMarkerInScene(Scene &, SceneHandles &, const SceneState &, MarkerIndex);
+  createMarkerObjectInScene(
+    MarkerIndex marker_index,
+    Scene &scene,
+    SceneHandles &scene_handles,
+    const SceneState &state
+  );
+
+extern void
+  createMarkerInScene(Scene &, SceneHandles &, const SceneState &, MarkerIndex);
 
 extern void
   createBodyInScene(

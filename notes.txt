@@ -49,6 +49,4 @@ Allow adding distance errors to bodies.
 * This will mean removing/adding distance errors to the tree when we
   remove or add bodies.
 ---
-Handle cut/paste of markers.
----
-The clipboard should be cleared whenever we load a scene or do new.
+After transferring a marker to a new body, the scene should be re-solved.

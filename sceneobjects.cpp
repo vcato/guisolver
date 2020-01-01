@@ -235,7 +235,7 @@ void
 }
 
 
-static void
+void
 createMarkerObjectInScene(
   MarkerIndex marker_index,
   Scene &scene,

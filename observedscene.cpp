@@ -112,18 +112,25 @@ treeItemForSceneObject(
 }
 
 
-BodyIndex
-ObservedScene::pasteGlobal(
-  Optional<BodyIndex> maybe_new_parent_body_index,
-  ObservedScene &observed_scene
-)
+bool ObservedScene::clipboardContainsABody() const
 {
-  Clipboard &clipboard = observed_scene.clipboard;
-  SceneState &scene_state = observed_scene.scene_state;
+  return clipboard.maybe_cut_body_index.hasValue();
+}
 
+
+bool ObservedScene::clipboardContainsAMarker() const
+{
+  return clipboard.maybe_cut_marker_index.hasValue();
+}
+
+
+BodyIndex
+ObservedScene::pasteBodyGlobal(Optional<BodyIndex> maybe_new_parent_body_index)
+{
   Transform new_parent_global_transform =
     globalTransform(maybe_new_parent_body_index, scene_state);
 
+  assert (clipboard.maybe_cut_body_index);
   BodyIndex old_body_index = *clipboard.maybe_cut_body_index;
 
   Optional<BodyIndex> maybe_old_parent_body_index =
@@ -131,11 +138,6 @@ ObservedScene::pasteGlobal(
 
   Transform old_parent_global_transform =
     globalTransform(maybe_old_parent_body_index, scene_state);
-
-  TreeWidget &tree_widget = observed_scene.tree_widget;
-  Scene &scene = observed_scene.scene;
-  SceneHandles &scene_handles = observed_scene.scene_handles;
-  TreePaths &tree_paths = observed_scene.tree_paths;
 
   removeBodyBranchItemsFromTree(
     old_body_index, tree_widget, tree_paths, scene_state
@@ -172,6 +174,53 @@ ObservedScene::pasteGlobal(
   );
 
   return new_body_index;
+}
+
+
+MarkerIndex
+ObservedScene::pasteMarkerGlobal(
+  Optional<BodyIndex>
+    maybe_new_parent_body_index
+)
+{
+  assert (clipboard.maybe_cut_marker_index);
+  MarkerIndex marker_index = *clipboard.maybe_cut_marker_index;
+
+  Transform new_parent_global_transform =
+    globalTransform(maybe_new_parent_body_index, scene_state);
+
+  Optional<BodyIndex> maybe_old_parent_body_index =
+    scene_state.marker(marker_index).maybe_body_index;
+
+  Transform old_parent_global_transform =
+    globalTransform(maybe_old_parent_body_index, scene_state);
+
+  removeMarkerItemFromTree(marker_index, tree_widget, tree_paths);
+  removeMarkerObjectFromScene(marker_index, scene, scene_handles);
+
+  scene_state.marker(marker_index).maybe_body_index =
+    maybe_new_parent_body_index;
+
+  SceneState::Marker &marker_state = scene_state.marker(marker_index);
+  Point old_marker_position = makePoint(marker_state.position);
+
+  Point marker_global_position =
+    old_parent_global_transform*old_marker_position;
+
+  Point new_marker_position =
+    new_parent_global_transform.inverse()*marker_global_position;
+
+  marker_state.position = makeMarkerPosition(new_marker_position);
+
+  createMarkerItemInTree(
+    marker_index, tree_widget, tree_paths, scene_state
+  );
+
+  createMarkerObjectInScene(
+    marker_index, scene, scene_handles, scene_state
+  );
+
+  return marker_index;
 }
 
 
@@ -286,22 +335,6 @@ setBranchPending(
 void ObservedScene::clearClipboard(ObservedScene &observed_scene)
 {
   Clipboard &clipboard = observed_scene.clipboard;
-
-  if (clipboard.maybe_cut_body_index) {
-    setBranchPending(
-      observed_scene.tree_widget,
-      observed_scene.tree_paths.body(*clipboard.maybe_cut_body_index).path,
-      false
-    );
-
-    clipboard.maybe_cut_body_index.reset();
-  }
-}
-
-
-void ObservedScene::cutBody(ObservedScene &observed_scene, BodyIndex body_index)
-{
-  Clipboard &clipboard = observed_scene.clipboard;
   TreeWidget &tree_widget = observed_scene.tree_widget;
   TreePaths &tree_paths = observed_scene.tree_paths;
 
@@ -315,11 +348,45 @@ void ObservedScene::cutBody(ObservedScene &observed_scene, BodyIndex body_index)
     clipboard.maybe_cut_body_index.reset();
   }
 
+  if (clipboard.maybe_cut_marker_index) {
+    setBranchPending(
+      tree_widget,
+      tree_paths.marker(*clipboard.maybe_cut_marker_index).path,
+      false
+    );
+
+    clipboard.maybe_cut_marker_index.reset();
+  }
+}
+
+
+void ObservedScene::cutBody(BodyIndex body_index)
+{
+  ObservedScene &observed_scene = *this;
+  Clipboard &clipboard = observed_scene.clipboard;
+  TreeWidget &tree_widget = observed_scene.tree_widget;
+  clearClipboard(observed_scene);
+
   setBranchPending(
     tree_widget, observed_scene.tree_paths.body(body_index).path, true
   );
 
   clipboard.maybe_cut_body_index = body_index;
+}
+
+
+void ObservedScene::cutMarker(MarkerIndex marker_index)
+{
+  ObservedScene &observed_scene = *this;
+  Clipboard &clipboard = observed_scene.clipboard;
+  TreeWidget &tree_widget = observed_scene.tree_widget;
+  clearClipboard(observed_scene);
+
+  setBranchPending(
+    tree_widget, observed_scene.tree_paths.marker(marker_index).path, true
+  );
+
+  clipboard.maybe_cut_marker_index = marker_index;
 }
 
 
@@ -449,11 +516,9 @@ ObservedScene::createBodyInScene(
 }
 
 
-BodyIndex
-ObservedScene::addBody(
-  Optional<BodyIndex> maybe_parent_body_index, ObservedScene &observed_scene
-)
+BodyIndex ObservedScene::addBody(Optional<BodyIndex> maybe_parent_body_index)
 {
+  ObservedScene &observed_scene = *this;
   SceneState &scene_state = observed_scene.scene_state;
 
   BodyIndex body_index =
@@ -466,12 +531,9 @@ ObservedScene::addBody(
 }
 
 
-MarkerIndex
-ObservedScene::addMarker(
-  ObservedScene &observed_scene,
-  Optional<BodyIndex> maybe_body_index
-)
+MarkerIndex ObservedScene::addMarker(Optional<BodyIndex> maybe_body_index)
 {
+  ObservedScene &observed_scene = *this;
   TreePaths &tree_paths = observed_scene.tree_paths;
   SceneState &scene_state = observed_scene.scene_state;
   TreeWidget &tree_widget = observed_scene.tree_widget;
@@ -513,17 +575,21 @@ Clipboard::canPasteTo(
   const SceneState &scene_state
 ) const
 {
-  if (!maybe_cut_body_index) {
-    return false;
-  }
-
-  if (maybe_body_index) {
-    if (hasAncestor(*maybe_body_index, *maybe_cut_body_index, scene_state)) {
-      return false;
+  if (maybe_cut_body_index) {
+    if (maybe_body_index) {
+      if (hasAncestor(*maybe_body_index, *maybe_cut_body_index, scene_state)) {
+        return false;
+      }
     }
+
+    return true;
   }
 
-  return true;
+  if (maybe_cut_marker_index) {
+    return true;
+  }
+
+  return false;
 }
 
 
@@ -546,4 +612,18 @@ void ObservedScene::replaceSceneStateWith(const SceneState &new_state)
   scene_state = new_state;
   scene_handles = createSceneObjects(scene_state, scene);
   observed_scene.tree_paths = fillTree(tree_widget, scene_state);
+}
+
+
+void ObservedScene::selectMarker(MarkerIndex marker_index)
+{
+  tree_widget.selectItem(tree_paths.marker(marker_index).path);
+  ObservedScene::handleTreeSelectionChanged(*this);
+}
+
+
+void ObservedScene::selectBody(BodyIndex body_index)
+{
+  selectBodyInTree(body_index, *this);
+  handleTreeSelectionChanged(*this);
 }

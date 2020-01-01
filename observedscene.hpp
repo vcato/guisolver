@@ -9,6 +9,7 @@
 
 struct Clipboard {
   Optional<BodyIndex> maybe_cut_body_index;
+  Optional<BodyIndex> maybe_cut_marker_index;
 
   Clipboard()
   {
@@ -28,24 +29,29 @@ struct ObservedScene {
 
   ObservedScene(Scene &scene, TreeWidget &tree_widget);
 
-  static BodyIndex
-  addBody(Optional<BodyIndex> maybe_parent_index, ObservedScene &);
+  BodyIndex addBody(Optional<BodyIndex> maybe_parent_index);
+  MarkerIndex addMarker(Optional<BodyIndex>);
+  void cutBody(BodyIndex);
+  void cutMarker(MarkerIndex);
 
-  static MarkerIndex addMarker(ObservedScene &, Optional<BodyIndex>);
+  BodyIndex
+    pasteBodyGlobal(Optional<BodyIndex> maybe_new_parent_body_index);
+
+  MarkerIndex
+    pasteMarkerGlobal(Optional<BodyIndex> maybe_new_parent_body_index);
+
+  bool clipboardContainsABody() const;
+  bool clipboardContainsAMarker() const;
+  void selectBody(BodyIndex);
+  void selectMarker(MarkerIndex);
+
   static void removingMarker(ObservedScene &, MarkerIndex);
   static void removingBody(ObservedScene &, BodyIndex);
   static void removeBody(ObservedScene &, BodyIndex);
-  static void cutBody(ObservedScene &, BodyIndex body_index);
   static void clearClipboard(ObservedScene &);
 
   void replaceSceneStateWith(const SceneState &);
   bool canPasteTo(Optional<BodyIndex>);
-
-  static BodyIndex
-    pasteGlobal(
-      Optional<BodyIndex> maybe_new_parent_body_index,
-      ObservedScene &observed_scene
-    );
 
   static void
   createBodyInTree(BodyIndex body_index, ObservedScene &observed_scene);
@@ -64,12 +70,6 @@ struct ObservedScene {
   }
 
   static void handleTreeSelectionChanged(ObservedScene &);
-
-  static void selectBody(BodyIndex body_index, ObservedScene &observed_scene)
-  {
-    selectBodyInTree(body_index, observed_scene);
-    handleTreeSelectionChanged(observed_scene);
-  }
 
   static void handleSceneSelectionChanged(ObservedScene &);
 

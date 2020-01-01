@@ -201,19 +201,11 @@ struct MainWindowController::Impl {
   static void handleSceneChanging(MainWindowController &);
   static void handleSceneChanged(MainWindowController &);
 
-  static void selectMarkerInTree(MarkerIndex marker_index, Data &data)
+  static void selectMarker(MarkerIndex marker_index, Data &data)
   {
     ObservedScene &observed_scene = data.observed_scene;
 
-    observed_scene.tree_widget.selectItem(
-      observed_scene.tree_paths.marker(marker_index).path
-    );
-  }
-
-  static void selectMarker(MarkerIndex marker_index, Data &data)
-  {
-    selectMarkerInTree(marker_index, data);
-    ObservedScene::handleTreeSelectionChanged(data.observed_scene);
+    observed_scene.selectMarker(marker_index);
   }
 
   static void
@@ -271,12 +263,8 @@ struct MainWindowController::Impl {
       MarkerIndex
     );
 
-  static void
-    cutBodyPressed(
-      MainWindowController &,
-      const TreePath &
-    );
-
+  static void cutBodyPressed(MainWindowController &, const TreePath &);
+  static void cutMarkerPressed(MainWindowController &, MarkerIndex);
   static void removeMarker(Data &, MarkerIndex);
   static MarkerIndex duplicateMarker(Data &, MarkerIndex);
 };
@@ -562,9 +550,7 @@ void
   Optional<BodyIndex> maybe_body_index =
     maybeBodyIndexFromTreePath(path, tree_paths);;
 
-  MarkerIndex marker_index =
-    ObservedScene::addMarker(data.observed_scene, maybe_body_index);
-
+  MarkerIndex marker_index = data.observed_scene.addMarker(maybe_body_index);
   selectMarker(marker_index, data);
 }
 
@@ -581,12 +567,25 @@ MainWindowController::Impl::pasteGlobalPressed(
   Optional<BodyIndex> maybe_new_parent_body_index =
     maybeBodyIndexFromTreePath(path, observed_scene.tree_paths);
 
-  BodyIndex new_body_index =
-    ObservedScene::pasteGlobal(
-      maybe_new_parent_body_index, observed_scene
-    );
+  if (observed_scene.clipboardContainsABody()) {
+    BodyIndex new_body_index =
+      observed_scene.pasteBodyGlobal(maybe_new_parent_body_index);
 
-  ObservedScene::selectBody(new_body_index, observed_scene);
+    observed_scene.selectBody(new_body_index);
+    return;
+  }
+
+  if (observed_scene.clipboardContainsAMarker()) {
+    MarkerIndex new_marker_index =
+      observed_scene.pasteMarkerGlobal(maybe_new_parent_body_index);
+
+    observed_scene.selectMarker(new_marker_index);
+    return;
+  }
+
+  else {
+    assert(false); // not implemented
+  }
 }
 
 
@@ -603,10 +602,8 @@ MainWindowController::Impl::addBodyPressed(
   Optional<BodyIndex> maybe_parent_body_index =
     maybeBodyIndexFromTreePath(parent_path, tree_paths);
 
-  BodyIndex new_body_index =
-    ObservedScene::addBody(maybe_parent_body_index, observed_scene);
-
-  ObservedScene::selectBody(new_body_index, observed_scene);
+  BodyIndex new_body_index = observed_scene.addBody(maybe_parent_body_index);
+  observed_scene.selectBody(new_body_index);
 }
 
 
@@ -643,18 +640,22 @@ MainWindowController::Impl::duplicateBodyPressed(
 )
 {
   Data &data = Impl::data(controller);
+  ObservedScene &observed_scene = data.observed_scene;
 
   Optional<BodyIndex> maybe_body_index =
-    bodyIndexFromTreePath(body_path, data.observed_scene.tree_paths);
+    bodyIndexFromTreePath(body_path, observed_scene.tree_paths);
 
   assert(maybe_body_index);
   // It should only have been possible to call this for a body.
 
   BodyIndex body_index = *maybe_body_index;
-  BodyIndex new_body_index = duplicateBody(body_index, data.observed_scene.scene_state);
-  ObservedScene::createBodyInTree(new_body_index, data.observed_scene);
-  ObservedScene::createBodyInScene(new_body_index, data.observed_scene);
-  ObservedScene::selectBody(new_body_index, data.observed_scene);
+
+  BodyIndex new_body_index =
+    duplicateBody(body_index, observed_scene.scene_state);
+
+  ObservedScene::createBodyInTree(new_body_index, observed_scene);
+  ObservedScene::createBodyInScene(new_body_index, observed_scene);
+  observed_scene.selectBody(new_body_index);
 }
 
 
@@ -735,12 +736,24 @@ void
   )
 {
   Data &data = Impl::data(controller);
-  TreePaths &tree_paths = data.observed_scene.tree_paths;
-  TreeWidget &tree_widget = data.observed_scene.tree_widget;
-  SceneState &scene_state = data.observed_scene.scene_state;
+  ObservedScene &observed_scene = data.observed_scene;
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  TreeWidget &tree_widget = observed_scene.tree_widget;
+  SceneState &scene_state = observed_scene.scene_state;
   MarkerIndex new_marker_index = duplicateMarker(data, source_marker_index);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
   selectMarker(new_marker_index, data);
+}
+
+
+void
+MainWindowController::Impl::cutMarkerPressed(
+  MainWindowController &controller,
+  MarkerIndex marker_index
+)
+{
+  Data &data = Impl::data(controller);
+  data.observed_scene.cutMarker(marker_index);
 }
 
 
@@ -753,7 +766,7 @@ void
   Data &data = Impl::data(controller);
   TreePaths &tree_paths = data.observed_scene.tree_paths;
   BodyIndex body_index = bodyIndexFromTreePath(path, tree_paths);
-  ObservedScene::cutBody(data.observed_scene, body_index);
+  data.observed_scene.cutBody(body_index);
 }
 
 
@@ -914,9 +927,14 @@ TreeWidget::MenuItems
         Impl::duplicateMarkerPressed(controller, index);
       };
 
+      auto cut_marker_function = [&controller,index]{
+        Impl::cutMarkerPressed(controller, index);
+      };
+
       appendTo(menu_items,{
         {"Remove", remove_marker_function},
-        {"Duplicate", duplicate_marker_function}
+        {"Duplicate", duplicate_marker_function},
+        {"Cut", cut_marker_function}
       });
     }
   }

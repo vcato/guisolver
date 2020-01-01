@@ -672,7 +672,7 @@ static string totalErrorLabel(float total_error)
 }
 
 
-static void
+void
 createMarkerItemInTree(
   MarkerIndex marker_index,
   TreeWidget &tree_widget,
