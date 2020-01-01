@@ -242,7 +242,7 @@ struct MainWindowController::Impl {
 
   static void addMarkerPressed(MainWindowController &, const TreePath &);
   static void addBodyPressed(MainWindowController &, const TreePath &);
-  static void removeBodyPressed(MainWindowController &, const TreePath &);
+  static void removeBodyPressed(MainWindowController &, BodyIndex);
   static void duplicateBodyPressed(MainWindowController &, BodyIndex);
 
   static void
@@ -591,14 +591,11 @@ MainWindowController::Impl::addBodyPressed(
 
 void
 MainWindowController::Impl::removeBodyPressed(
-  MainWindowController &controller, const TreePath &path
+  MainWindowController &controller, BodyIndex body_index
 )
 {
   Data &data = Impl::data(controller);
-  ObservedScene &observed_scene = data.observed_scene;
-  TreePaths &tree_paths = observed_scene.tree_paths;
-  BodyIndex body_index = bodyIndexFromTreePath(path, tree_paths);
-  ObservedScene::removeBody(data.observed_scene, body_index);
+  data.observed_scene.removeBody(body_index);
 }
 
 
@@ -862,10 +859,14 @@ TreeWidget::MenuItems
       };
 
     auto remove_body_function =
-      [&controller,path]{ Impl::removeBodyPressed(controller, path); };
+      [&controller,body_index]{
+        Impl::removeBodyPressed(controller, body_index);
+      };
 
     auto duplicate_body_function =
-      [&controller,body_index]{ Impl::duplicateBodyPressed(controller, body_index); };
+      [&controller,body_index]{
+        Impl::duplicateBodyPressed(controller, body_index);
+      };
 
     auto duplicate_body_with_distance_errors_function =
       [&controller,body_index]{

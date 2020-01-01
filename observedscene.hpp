@@ -64,7 +64,7 @@ struct ObservedScene {
 
   static void removingMarker(ObservedScene &, MarkerIndex);
   static void removingBody(ObservedScene &, BodyIndex);
-  static void removeBody(ObservedScene &, BodyIndex);
+  void removeBody(BodyIndex);
   static void clearClipboard(ObservedScene &);
 
   void replaceSceneStateWith(const SceneState &);

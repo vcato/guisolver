@@ -254,11 +254,9 @@ ObservedScene::removingBody(
 }
 
 
-void
-ObservedScene::removeBody(
-  ObservedScene &observed_scene, BodyIndex body_index
-)
+void ObservedScene::removeBody(BodyIndex body_index)
 {
+  ObservedScene &observed_scene = *this;
   TreeWidget &tree_widget = observed_scene.tree_widget;
   TreePaths &tree_paths = observed_scene.tree_paths;
   SceneState &scene_state = observed_scene.scene_state;
