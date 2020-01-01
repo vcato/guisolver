@@ -6,6 +6,7 @@
 #include "globaltransform.hpp"
 #include "treevalues.hpp"
 #include "sceneobjects.hpp"
+#include "sceneerror.hpp"
 
 using TransformHandle = Scene::TransformHandle;
 using std::cerr;
@@ -261,6 +262,8 @@ ObservedScene::removeBody(
   TreeWidget &tree_widget = observed_scene.tree_widget;
   TreePaths &tree_paths = observed_scene.tree_paths;
   SceneState &scene_state = observed_scene.scene_state;
+  Scene &scene = observed_scene.scene;
+  SceneHandles &scene_handles = observed_scene.scene_handles;
 
   clearClipboard(observed_scene);
 
@@ -281,6 +284,7 @@ ObservedScene::removeBody(
   Visitor visitor{observed_scene};
   removeBodyFromSceneState(body_index, scene_state, visitor);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+  updateSceneObjects(scene, scene_handles, scene_state);
 }
 
 
@@ -481,11 +485,16 @@ ObservedScene::handleSceneSelectionChanged(
 }
 
 
-ObservedScene::ObservedScene(Scene &scene, TreeWidget &tree_widget)
+ObservedScene::ObservedScene(
+  Scene &scene,
+  TreeWidget &tree_widget,
+  std::function<void(SceneState &)> update_errors_function
+)
 : scene(scene),
   tree_widget(tree_widget),
   scene_handles(createSceneObjects(scene_state, scene)),
-  tree_paths(fillTree(tree_widget,scene_state))
+  tree_paths(fillTree(tree_widget,scene_state)),
+  update_errors_function(std::move(update_errors_function))
 {
 }
 
@@ -626,4 +635,96 @@ void ObservedScene::selectBody(BodyIndex body_index)
 {
   selectBodyInTree(body_index, *this);
   handleTreeSelectionChanged(*this);
+}
+
+
+BodyIndex
+ObservedScene::duplicateBody(
+  BodyIndex body_index,
+  MarkerNameMap &marker_name_map,
+  ObservedScene &observed_scene
+)
+{
+  SceneState &scene_state = observed_scene.scene_state;
+  TaggedValue root_tag_value("");
+  createBodyTaggedValue(root_tag_value, body_index, scene_state);
+
+  BodyIndex new_body_index =
+    createBodyFromTaggedValue(
+      scene_state,
+      root_tag_value.children[0],
+      scene_state.body(body_index).maybe_parent_index,
+      marker_name_map
+    );
+
+  ObservedScene::createBodyInTree(new_body_index, observed_scene);
+  ObservedScene::createBodyInScene(new_body_index, observed_scene);
+
+  return new_body_index;
+}
+
+
+BodyIndex ObservedScene::duplicateBody(BodyIndex body_index)
+{
+  MarkerNameMap marker_name_map;
+  return ObservedScene::duplicateBody(body_index, marker_name_map, *this);
+}
+
+
+BodyIndex
+ObservedScene::duplicateBodyWithDistanceErrors(BodyIndex body_index)
+{
+  MarkerNameMap marker_name_map;
+
+  BodyIndex new_body_index =
+    ObservedScene::duplicateBody(body_index, marker_name_map, *this);
+
+  for (auto &map_entry : marker_name_map) {
+    MarkerIndex marker1_index = *findMarkerIndex(scene_state, map_entry.first);
+    MarkerIndex marker2_index = *findMarkerIndex(scene_state, map_entry.second);
+    addDistanceError(marker1_index, marker2_index);
+  }
+
+  return new_body_index;
+}
+
+
+DistanceErrorIndex
+ObservedScene::addDistanceError(
+  Optional<MarkerIndex> optional_start_marker_index,
+  Optional<MarkerIndex> optional_end_marker_index
+)
+{
+  ObservedScene &observed_scene = *this;
+  DistanceErrorIndex index = scene_state.createDistanceError();
+
+  SceneState::DistanceError &distance_error =
+    scene_state.distance_errors[index];
+
+  scene_state.distance_errors[index].optional_start_marker_index =
+    optional_start_marker_index;
+
+  scene_state.distance_errors[index].optional_end_marker_index =
+    optional_end_marker_index;
+
+  observed_scene.update_errors_function(scene_state);
+
+  createDistanceErrorInScene(scene, scene_handles, scene_state, index);
+
+  createDistanceErrorInTree(
+    distance_error,
+    tree_widget,
+    tree_paths,
+    scene_state
+  );
+
+  updateSceneObjects(scene, scene_handles, scene_state);
+  updateTreeValues(tree_widget, tree_paths, scene_state);
+  return index;
+}
+
+
+void ObservedScene::selectDistanceError(DistanceErrorIndex index)
+{
+  tree_widget.selectItem(tree_paths.distance_errors[index].path);
 }

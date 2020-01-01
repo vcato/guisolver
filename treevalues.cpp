@@ -247,10 +247,40 @@ distanceErrorLabel(
 }
 
 
+static string
+errorLabel(
+  const SceneState::DistanceError &distance_error_state
+)
+{
+  std::ostringstream label_stream;
+  label_stream << "error: " << distance_error_state.error;
+  string label_string = label_stream.str();
+  return label_string;
+}
+
+
+static string
+distanceLabel(
+  const SceneState::DistanceError &distance_error_state
+)
+{
+  std::ostringstream label_stream;
+
+  if (distance_error_state.maybe_distance) {
+    label_stream << "distance: " << *distance_error_state.maybe_distance;
+  }
+  else {
+    label_stream << "distance: N/A";
+  }
+
+  string label_string = label_stream.str();
+  return label_string;
+}
+
+
 static TreePaths::DistanceError
 createDistanceErrorInTree1(
   TreeWidget &tree_widget,
-  TreePaths &/*tree_paths*/,
   const TreePath &path,
   const SceneState::Markers &marker_states,
   const SceneState::DistanceError &distance_error_state
@@ -285,15 +315,23 @@ createDistanceErrorInTree1(
       enumerationValueFromMarkerIndex(optional_end_index)
     );
 
-  TreePath distance_path = adder.addVoid("distance:");
+  TreePath distance_path = adder.addVoid(distanceLabel(distance_error_state));
 
   TreePath desired_distance_path =
-    adder.addNumeric("desired_distance:", 0, /*minimum_value*/0);
+    adder.addNumeric(
+      "desired_distance:",
+      distance_error_state.desired_distance,
+      /*minimum_value*/0
+    );
 
   TreePath weight_path =
-    adder.addNumeric("weight:", 1, /*minimum_value*/0);
+    adder.addNumeric(
+      "weight:",
+      distance_error_state.weight,
+      /*minimum_value*/0
+    );
 
-  TreePath error_path = adder.addVoid("error:");
+  TreePath error_path = adder.addVoid(errorLabel(distance_error_state));
 
   return
     TreePaths::DistanceError{
@@ -575,7 +613,6 @@ void
   tree_paths.distance_errors.push_back(
     createDistanceErrorInTree1(
       tree_widget,
-      tree_paths,
       distance_error_path,
       scene_state.markers(),
       state_distance_error
@@ -645,21 +682,12 @@ static void
   );
 
   {
-    std::ostringstream label_stream;
-
-    if (distance_error_state.maybe_distance) {
-      label_stream << "distance: " << *distance_error_state.maybe_distance;
-    }
-    else {
-      label_stream << "distance: N/A";
-    }
-
-    tree_widget.setItemLabel(distance_error_paths.distance, label_stream.str());
+    string label_string = distanceLabel(distance_error_state);
+    tree_widget.setItemLabel(distance_error_paths.distance, label_string);
   }
   {
-    std::ostringstream label_stream;
-    label_stream << "error: " << distance_error_state.error;
-    tree_widget.setItemLabel(distance_error_paths.error, label_stream.str());
+    string label_string = errorLabel(distance_error_state);
+    tree_widget.setItemLabel(distance_error_paths.error, label_string);
   }
 }
 

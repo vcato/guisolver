@@ -64,11 +64,13 @@ static void testCreatingABodyFromATaggedValue()
   assert(result.isValue());
   SceneState state;
   const TaggedValue &tagged_value = result.asValue();
+  MarkerNameMap marker_name_map;
 
   createBodyFromTaggedValue(
     state,
     tagged_value,
-    /*maybe_parent_index*/{}
+    /*maybe_parent_index*/{},
+    marker_name_map
   );
 
   assert(state.bodies().size() == 1);
@@ -105,12 +107,14 @@ static void testBody()
   }
   {
     SceneState scene_state;
+    MarkerNameMap marker_name_map;
 
     BodyIndex body_index =
       createBodyFromTaggedValue(
         scene_state,
         *maybe_transform_tagged_value,
-        /*maybe_parent_index*/{}
+        /*maybe_parent_index*/{},
+        marker_name_map
       );
 
     assert(scene_state.body(body_index).solve_flags.translation.y == false);
@@ -129,7 +133,11 @@ static void testCreatingABodyFromATaggedValueWithConflictingMarkerNames()
     TaggedValue root_tag_value("");
     createBodyTaggedValue(root_tag_value, body_index, scene_state);
     const TaggedValue &tagged_value = root_tag_value.children[0];
-    createBodyFromTaggedValue(scene_state, tagged_value, /*parent*/{});
+    MarkerNameMap marker_name_map;
+
+    createBodyFromTaggedValue(
+      scene_state, tagged_value, /*parent*/{}, marker_name_map
+    );
   }
 
   assert(scene_state.markers().size() == 2);

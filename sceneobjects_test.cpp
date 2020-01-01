@@ -1,10 +1,7 @@
 #include "sceneobjects.hpp"
 
-#include <map>
 #include "transformstate.hpp"
 #include "fakescene.hpp"
-
-using std::map;
 
 
 static Point

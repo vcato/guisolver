@@ -60,7 +60,6 @@ struct Scene {
   virtual void setColor(TransformHandle,float r,float g,float b) = 0;
   virtual void setStartPoint(LineHandle,Point) = 0;
   virtual void setEndPoint(LineHandle,Point) = 0;
-  virtual Point worldPoint(Point local,TransformHandle) const = 0;
   virtual Optional<TransformHandle> selectedObject() const = 0;
   virtual void selectObject(TransformHandle) = 0;
   virtual Optional<LineHandle> maybeLine(TransformHandle) const = 0;

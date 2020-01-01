@@ -186,3 +186,19 @@ hasAncestor(
 
   return hasAncestor(*maybe_parent_body_index, ancestor_body_index, state);
 }
+
+
+Optional<MarkerIndex>
+  findMarkerIndex(
+    const SceneState &scene_state,
+    const SceneState::Marker::Name &name
+  )
+{
+  for (auto i : indicesOf(scene_state.markers())) {
+    if (scene_state.marker(i).name == name) {
+      return i;
+    }
+  }
+
+  return {};
+}

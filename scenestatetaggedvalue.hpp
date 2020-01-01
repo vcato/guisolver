@@ -1,5 +1,6 @@
 #include "scenestate.hpp"
 #include "taggedvalue.hpp"
+#include "markernamemap.hpp"
 
 
 extern void
@@ -13,14 +14,16 @@ extern BodyIndex
   createBodyFromTaggedValue(
     SceneState &result,
     const TaggedValue &tagged_value,
-    const Optional<BodyIndex> maybe_parent_index
+    const Optional<BodyIndex> maybe_parent_index,
+    MarkerNameMap &marker_name_map
   );
 
 extern void
   createChildMarkersInSceneState(
     SceneState &scene_state,
     const TaggedValue &tagged_value,
-    Optional<BodyIndex> maybe_parent_index
+    Optional<BodyIndex> maybe_parent_index,
+    MarkerNameMap &marker_name_map
   );
 
 extern void

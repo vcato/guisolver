@@ -38,7 +38,6 @@ class OSGScene : public Scene {
     void setColor(TransformHandle handle,float r,float g,float b) override;
     void setStartPoint(LineHandle,Point) override;
     void setEndPoint(LineHandle,Point) override;
-    Point worldPoint(Point p,TransformHandle t) const override;
     Optional<TransformHandle> selectedObject() const override;
     void selectObject(TransformHandle handle) override;
     Optional<LineHandle> maybeLine(TransformHandle handle) const override;

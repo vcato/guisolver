@@ -151,7 +151,7 @@ checkTree(
   FakeTreeWidget recreated_tree_widget;
   TreePaths recreated_tree_paths = fillTree(recreated_tree_widget, state);
   checkEqual(recreated_tree_paths, tree_paths);
-  assert(recreated_tree_widget == tree_widget);
-  checkEqual(recreated_tree_widget, tree_widget);
   assert(recreated_tree_paths == tree_paths);
+  checkEqual(recreated_tree_widget, tree_widget);
+  assert(recreated_tree_widget == tree_widget);
 }

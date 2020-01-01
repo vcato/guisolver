@@ -143,30 +143,36 @@ markerNameExists(
 
 
 static void
-  createMarkerFromTaggedValue(
-    SceneState &scene_state,
-    const TaggedValue &tagged_value,
-    Optional<BodyIndex> maybe_parent_index
-  )
+createMarkerFromTaggedValue(
+  SceneState &scene_state,
+  const TaggedValue &tagged_value,
+  Optional<BodyIndex> maybe_parent_index,
+  MarkerNameMap &marker_name_map
+)
 {
-  Optional<StringValue> maybe_name =
+  Optional<StringValue> maybe_old_name =
     findStringValue(tagged_value, "name");
 
+  Optional<StringValue> maybe_name;
+
+  if (maybe_old_name && !markerNameExists(*maybe_old_name, scene_state)) {
+    maybe_name = maybe_old_name;
+  }
+
+  MarkerIndex marker_index = scene_state.createMarker(maybe_parent_index);
+
   if (maybe_name) {
-    if (markerNameExists(*maybe_name, scene_state)) {
-      maybe_name.reset();
+    scene_state.marker(marker_index).name = *maybe_name;
+  }
+  else {
+    // There was either a name conflict, or there was no name in the
+    // tagged value.
+
+    if (maybe_old_name) {
+      marker_name_map[*maybe_old_name] = scene_state.marker(marker_index).name;
     }
   }
 
-  Optional<MarkerIndex> maybe_marker_index =
-    scene_state.createMarker(maybe_parent_index);
-
-  if (maybe_name) {
-    scene_state.marker(*maybe_marker_index).name = *maybe_name;
-  }
-
-  assert(maybe_marker_index);
-  MarkerIndex marker_index = *maybe_marker_index;
   const TaggedValue *position_ptr = findChild(tagged_value, "position");
 
   if (position_ptr) {
@@ -177,18 +183,20 @@ static void
 
 
 void
-  createChildMarkersInSceneState(
-    SceneState &scene_state,
-    const TaggedValue &tagged_value,
-    Optional<BodyIndex> maybe_parent_index
-  )
+createChildMarkersInSceneState(
+  SceneState &scene_state,
+  const TaggedValue &tagged_value,
+  Optional<BodyIndex> maybe_parent_index,
+  MarkerNameMap &marker_name_map
+)
 {
   for (auto &child_tagged_value : tagged_value.children) {
     if (child_tagged_value.tag == "Marker") {
       createMarkerFromTaggedValue(
         scene_state,
         child_tagged_value,
-        maybe_parent_index
+        maybe_parent_index,
+        marker_name_map
       );
     }
   }
@@ -199,7 +207,8 @@ BodyIndex
 createBodyFromTaggedValue(
   SceneState &result,
   const TaggedValue &tagged_value,
-  const Optional<BodyIndex> maybe_parent_index
+  const Optional<BodyIndex> maybe_parent_index,
+  MarkerNameMap &marker_name_map
 )
 {
   BodyIndex body_index = createBodyInState(result, maybe_parent_index);
@@ -245,7 +254,11 @@ createBodyFromTaggedValue(
   }
 
   createChildBodiesInSceneState(result, tagged_value, body_index);
-  createChildMarkersInSceneState(result, tagged_value, body_index);
+
+  createChildMarkersInSceneState(
+    result, tagged_value, body_index, marker_name_map
+  );
+
   return body_index;
 }
 
@@ -259,27 +272,14 @@ void
 {
   for (auto &child_tagged_value : tagged_value.children) {
     if (child_tagged_value.tag == "Transform") {
+      MarkerNameMap marker_name_map;
+
       createBodyFromTaggedValue(
-        result, child_tagged_value, maybe_parent_index
+        result, child_tagged_value, maybe_parent_index,
+        marker_name_map
       );
     }
   }
-}
-
-
-static Optional<MarkerIndex>
-  findMarkerIndex(
-    const SceneState &scene_state,
-    const SceneState::Marker::Name &name
-  )
-{
-  for (auto i : indicesOf(scene_state.markers())) {
-    if (scene_state.marker(i).name == name) {
-      return i;
-    }
-  }
-
-  return {};
 }
 
 
@@ -343,7 +343,12 @@ SceneState makeSceneStateFromTaggedValue(const TaggedValue &tagged_value)
   SceneState result;
   Optional<BodyIndex> maybe_parent_index;
   createChildBodiesInSceneState(result, tagged_value, maybe_parent_index);
-  createChildMarkersInSceneState(result, tagged_value, maybe_parent_index);
+  MarkerNameMap marker_name_map;
+
+  createChildMarkersInSceneState(
+    result, tagged_value, maybe_parent_index, marker_name_map
+  );
+
   createDistanceErrorsInSceneState(result, tagged_value);
   return result;
 }

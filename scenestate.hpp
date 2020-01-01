@@ -360,4 +360,8 @@ extern bool
   );
 
 
+extern Optional<MarkerIndex>
+  findMarkerIndex(const SceneState &, const SceneState::Marker::Name &name);
+
+
 #endif /* SCENESTATE_HPP_ */

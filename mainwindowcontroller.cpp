@@ -243,7 +243,10 @@ struct MainWindowController::Impl {
   static void addMarkerPressed(MainWindowController &, const TreePath &);
   static void addBodyPressed(MainWindowController &, const TreePath &);
   static void removeBodyPressed(MainWindowController &, const TreePath &);
-  static void duplicateBodyPressed(MainWindowController &, const TreePath &);
+  static void duplicateBodyPressed(MainWindowController &, BodyIndex);
+
+  static void
+    duplicateBodyWithDistanceErrorsPressed(MainWindowController &, BodyIndex);
 
   static void
     removeDistanceErrorPressed(
@@ -486,30 +489,9 @@ void
   )
 {
   Data &data = Impl::data(controller);
-  Scene &scene = data.observed_scene.scene;
-  SceneHandles &scene_handles = data.observed_scene.scene_handles;
-  SceneState &scene_state = data.observed_scene.scene_state;
-  TreeWidget &tree_widget = data.observed_scene.tree_widget;
-  TreePaths &tree_paths = data.observed_scene.tree_paths;
-  DistanceErrorIndex index = scene_state.createDistanceError();
-
-  SceneState::DistanceError &distance_error =
-    scene_state.distance_errors[index];
-
-  createDistanceErrorInScene(scene, scene_handles, scene_state, index);
-
-  createDistanceErrorInTree(
-    distance_error,
-    tree_widget,
-    tree_paths,
-    scene_state
-  );
-
-  tree_widget.selectItem(tree_paths.distance_errors[index].path);
-
-  updateErrorsInState(scene_state);
-  updateSceneObjects(scene, scene_handles, scene_state);
-  updateTreeValues(tree_widget, tree_paths, scene_state);
+  ObservedScene &observed_scene = data.observed_scene;
+  DistanceErrorIndex index = observed_scene.addDistanceError({}, {});
+  observed_scene.selectDistanceError(index);
 }
 
 
@@ -607,20 +589,6 @@ MainWindowController::Impl::addBodyPressed(
 }
 
 
-static BodyIndex duplicateBody(BodyIndex body_index, SceneState &scene_state)
-{
-  TaggedValue root_tag_value("");
-  createBodyTaggedValue(root_tag_value, body_index, scene_state);
-
-  return
-    createBodyFromTaggedValue(
-      scene_state,
-      root_tag_value.children[0],
-      scene_state.body(body_index).maybe_parent_index
-    );
-}
-
-
 void
 MainWindowController::Impl::removeBodyPressed(
   MainWindowController &controller, const TreePath &path
@@ -636,25 +604,27 @@ MainWindowController::Impl::removeBodyPressed(
 
 void
 MainWindowController::Impl::duplicateBodyPressed(
-  MainWindowController &controller, const TreePath &body_path
+  MainWindowController &controller, BodyIndex body_index
+)
+{
+  Data &data = Impl::data(controller);
+  ObservedScene &observed_scene = data.observed_scene;
+  BodyIndex new_body_index = observed_scene.duplicateBody(body_index);
+  observed_scene.selectBody(new_body_index);
+}
+
+
+void
+MainWindowController::Impl::duplicateBodyWithDistanceErrorsPressed(
+  MainWindowController &controller, BodyIndex body_index
 )
 {
   Data &data = Impl::data(controller);
   ObservedScene &observed_scene = data.observed_scene;
 
-  Optional<BodyIndex> maybe_body_index =
-    bodyIndexFromTreePath(body_path, observed_scene.tree_paths);
-
-  assert(maybe_body_index);
-  // It should only have been possible to call this for a body.
-
-  BodyIndex body_index = *maybe_body_index;
-
   BodyIndex new_body_index =
-    duplicateBody(body_index, observed_scene.scene_state);
+    observed_scene.duplicateBodyWithDistanceErrors(body_index);
 
-  ObservedScene::createBodyInTree(new_body_index, observed_scene);
-  ObservedScene::createBodyInScene(new_body_index, observed_scene);
   observed_scene.selectBody(new_body_index);
 }
 
@@ -884,6 +854,8 @@ TreeWidget::MenuItems
   }
 
   if (isBodyPath(path, tree_paths)) {
+    BodyIndex body_index = bodyIndexFromTreePath(path, tree_paths);
+
     auto cut_body_function =
       [&controller,path]{
         Impl::cutBodyPressed(controller, path);
@@ -893,7 +865,12 @@ TreeWidget::MenuItems
       [&controller,path]{ Impl::removeBodyPressed(controller, path); };
 
     auto duplicate_body_function =
-      [&controller,path]{ Impl::duplicateBodyPressed(controller, path); };
+      [&controller,body_index]{ Impl::duplicateBodyPressed(controller, body_index); };
+
+    auto duplicate_body_with_distance_errors_function =
+      [&controller,body_index]{
+        Impl::duplicateBodyWithDistanceErrorsPressed(controller, body_index);
+      };
 
     appendTo(menu_items,{
       {"Add Marker", add_marker_function},
@@ -901,9 +878,9 @@ TreeWidget::MenuItems
       {"Cut", cut_body_function },
       {"Remove", remove_body_function },
       {"Duplicate", duplicate_body_function },
+      {"Duplicate With Distance Errors",
+        duplicate_body_with_distance_errors_function },
     });
-
-    BodyIndex body_index = bodyIndexFromTreePath(path, tree_paths);
 
     if (observed_scene.canPasteTo(body_index)) {
       appendTo(menu_items,{
@@ -952,7 +929,7 @@ TreeWidget::MenuItems
         };
 
       appendTo(menu_items,{
-        {"Remove Distance Error", remove_distance_error_function}
+        {"Remove", remove_distance_error_function}
       });
     }
   }
@@ -978,7 +955,13 @@ MainWindowController::Impl::Data::Data(
   Scene &scene_arg,
   TreeWidget &tree_widget_arg
 )
-: observed_scene(scene_arg, tree_widget_arg)
+: observed_scene(
+    scene_arg,
+    tree_widget_arg,
+    [](SceneState &state){
+      updateErrorsInState(state);
+    }
+  )
 {
 }
 

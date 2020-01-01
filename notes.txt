@@ -50,3 +50,5 @@ Allow adding distance errors to bodies.
   remove or add bodies.
 ---
 After transferring a marker to a new body, the scene should be re-solved.
+---
+If we remove a body, the distance error lines need to be updated in the scene.

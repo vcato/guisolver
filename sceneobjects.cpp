@@ -7,6 +7,7 @@
 #include "removeindexfrom.hpp"
 #include "transformstate.hpp"
 #include "positionstate.hpp"
+#include "globaltransform.hpp"
 
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
@@ -136,13 +137,19 @@ static SceneHandles::DistanceError createDistanceError(Scene &scene)
 
 
 static void
-  updateDistanceErrorInScene(
-    Scene &scene,
-    const SceneHandles::DistanceError &distance_error_handles,
-    const SceneState::DistanceError &distance_error_state,
-    const SceneHandles &scene_handles
-  )
+updateDistanceErrorInScene(
+  Scene &scene,
+  const SceneState &scene_state,
+  const SceneHandles &scene_handles,
+  DistanceErrorIndex distance_error_index
+)
 {
+  const SceneHandles::DistanceError &distance_error_handles =
+    scene_handles.distance_errors[distance_error_index];
+
+  const SceneState::DistanceError &distance_error_state =
+    scene_state.distance_errors[distance_error_index];
+
   bool have_both_markers =
     distance_error_state.optional_start_marker_index &&
     distance_error_state.optional_end_marker_index;
@@ -157,14 +164,8 @@ static void
     MarkerIndex end_marker_index =
       *distance_error_state.optional_end_marker_index;
 
-    TransformHandle line_start =
-      scene_handles.marker(start_marker_index).handle;
-
-    TransformHandle line_end =
-      scene_handles.marker(end_marker_index).handle;
-
-    start = scene.worldPoint({0,0,0}, line_start);
-    end = scene.worldPoint({0,0,0}, line_end);
+    start = markerPredicted(scene_state, start_marker_index);
+    end = markerPredicted(scene_state, end_marker_index);
   }
 
   scene.setStartPoint(distance_error_handles.line, start);
@@ -172,11 +173,10 @@ static void
 }
 
 
-void
-createDistanceErrorInScene(
+static void
+createDistanceErrorInScene1(
   Scene &scene,
   SceneHandles &scene_handles,
-  const SceneState &scene_state,
   DistanceErrorIndex index
 )
 {
@@ -189,13 +189,19 @@ createDistanceErrorInScene(
   else {
     distance_error_handles.push_back(createDistanceError(scene));
   }
+}
 
-  updateDistanceErrorInScene(
-    scene,
-    scene_handles.distance_errors[index],
-    scene_state.distance_errors[index],
-    scene_handles
-  );
+
+void
+createDistanceErrorInScene(
+  Scene &scene,
+  SceneHandles &scene_handles,
+  const SceneState &scene_state,
+  DistanceErrorIndex index
+)
+{
+  createDistanceErrorInScene1(scene, scene_handles, index);
+  updateDistanceErrorInScene(scene, scene_state, scene_handles, index);
 }
 
 
@@ -542,12 +548,7 @@ static void
   )
 {
   for (auto i : indicesOf(scene_state.distance_errors)) {
-    updateDistanceErrorInScene(
-      scene,
-      scene_handles.distance_errors[i],
-      scene_state.distance_errors[i],
-      scene_handles
-    );
+    updateDistanceErrorInScene(scene, scene_state, scene_handles, i);
   }
 }
 

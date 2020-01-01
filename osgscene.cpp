@@ -1416,25 +1416,6 @@ size_t
 }
 
 
-static osg::Vec3f worldPoint(const osg::Node &node,const osg::Vec3f &local)
-{
-  osg::MatrixList matrices = node.getWorldMatrices();
-  assert(matrices.size() == 1);
-  const osg::Matrixd &matrix = matrices[0];
-  return local*matrix;
-}
-
-
-static osg::Vec3f localPoint(const osg::Node &node,const osg::Vec3f &world_point)
-{
-  osg::MatrixList matrices = node.getWorldMatrices();
-  assert(matrices.size() == 1);
-  osg::Matrixd matrix;
-  matrix.invert(matrices[0]);
-  return world_point*matrix;
-}
-
-
 auto
   OSGScene::Impl::makeHandle(
     OSGScene &scene,
@@ -1458,19 +1439,6 @@ auto
 auto OSGScene::top() const -> TransformHandle
 {
   return _top_handle;
-}
-
-
-auto OSGScene::worldPoint(Point p,TransformHandle t) const -> Point
-{
-  osg::Vec3f v1 =
-    ::worldPoint(
-      Impl::transform(*this,t),
-      {p.x(),p.y(),p.z()}
-    );
-
-  osg::Vec3f v2 = ::localPoint(*_top_node_ptr,v1);
-  return {v2.x(),v2.y(),v2.z()};
 }
 
 

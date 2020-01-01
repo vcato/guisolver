@@ -35,7 +35,7 @@ namespace {
 struct Tester {
   FakeTreeWidget tree_widget;
   FakeScene scene;
-  ObservedScene observed_scene{scene, tree_widget};
+  ObservedScene observed_scene{scene, tree_widget, [](SceneState &){}};
 };
 }
 
@@ -93,9 +93,34 @@ static void testTransferringAMarker()
 }
 
 
+static void testDuplicatingABodyWithDistanceErrors()
+{
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+  BodyIndex body_index = observed_scene.addBody(/*parent*/{});
+  MarkerIndex marker_index = observed_scene.addMarker(body_index);
+  SceneState &scene_state = observed_scene.scene_state;
+
+  BodyIndex new_body_index =
+    observed_scene.duplicateBodyWithDistanceErrors(body_index);
+
+  assert(scene_state.distance_errors.size() == 1);
+
+  const SceneState::DistanceError &distance_error_state =
+    scene_state.distance_errors[0];
+
+  assert(distance_error_state.optional_start_marker_index == marker_index);
+  assert(distance_error_state.optional_end_marker_index.hasValue());
+  assert(scene_state.bodies().size() == 2);
+  assert(new_body_index != body_index);
+  checkTree(tester);
+}
+
+
 int main()
 {
   testTransferringABody1();
   testTransferringABody2();
   testTransferringAMarker();
+  testDuplicatingABodyWithDistanceErrors();
 }

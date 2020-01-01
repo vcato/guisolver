@@ -5,6 +5,7 @@
 #include "scenestate.hpp"
 #include "scenehandles.hpp"
 #include "treepaths.hpp"
+#include "markernamemap.hpp"
 
 
 struct Clipboard {
@@ -26,11 +27,20 @@ struct ObservedScene {
   SceneHandles scene_handles;
   TreePaths tree_paths;
   Clipboard clipboard;
+  std::function<void(SceneState&)> update_errors_function;
 
-  ObservedScene(Scene &scene, TreeWidget &tree_widget);
+  ObservedScene(
+    Scene &scene,
+    TreeWidget &tree_widget,
+    std::function<void(SceneState &)>
+  );
 
   BodyIndex addBody(Optional<BodyIndex> maybe_parent_index);
   MarkerIndex addMarker(Optional<BodyIndex>);
+
+  DistanceErrorIndex
+    addDistanceError(Optional<MarkerIndex> start, Optional<MarkerIndex> end);
+
   void cutBody(BodyIndex);
   void cutMarker(MarkerIndex);
 
@@ -44,6 +54,13 @@ struct ObservedScene {
   bool clipboardContainsAMarker() const;
   void selectBody(BodyIndex);
   void selectMarker(MarkerIndex);
+  void selectDistanceError(DistanceErrorIndex);
+  BodyIndex duplicateBody(BodyIndex body_index);
+
+  static BodyIndex
+  duplicateBody(BodyIndex body_index, MarkerNameMap &, ObservedScene &);
+
+  BodyIndex duplicateBodyWithDistanceErrors(BodyIndex body_index);
 
   static void removingMarker(ObservedScene &, MarkerIndex);
   static void removingBody(ObservedScene &, BodyIndex);

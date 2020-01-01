@@ -54,10 +54,7 @@ struct FakeScene : Scene {
 
   virtual TransformHandle createBox(TransformHandle parent);
 
-  virtual LineHandle createLine(TransformHandle)
-  {
-    assert(false); // not needed
-  }
+  virtual LineHandle createLine(TransformHandle);
 
   virtual void destroyLine(LineHandle)
   {
@@ -113,17 +110,10 @@ struct FakeScene : Scene {
 
   virtual void setStartPoint(LineHandle,Point)
   {
-    assert(false); // not needed
   }
 
   virtual void setEndPoint(LineHandle,Point)
   {
-    assert(false); // not needed
-  }
-
-  virtual Point worldPoint(Point /*local*/,TransformHandle) const
-  {
-    assert(false); // not needed
   }
 
   virtual Optional<TransformHandle> selectedObject() const

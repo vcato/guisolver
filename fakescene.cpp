@@ -2,6 +2,7 @@
 
 
 using TransformHandle = Scene::TransformHandle;
+using LineHandle = Scene::LineHandle;
 using std::cerr;
 
 
@@ -22,4 +23,10 @@ TransformHandle FakeScene::createSphere(TransformHandle parent_handle)
 TransformHandle FakeScene::createBox(TransformHandle parent)
 {
   return create(parent);
+}
+
+
+LineHandle FakeScene::createLine(TransformHandle parent)
+{
+  return LineHandle{create(parent).index};
 }
