@@ -1,0 +1,346 @@
+Scene {
+  Transform {
+    translation {
+      x: -0.334833 {
+        solve: false
+      }
+      y: 0 {
+        solve: false
+      }
+      z: -7.43478e-17 {
+        solve: false
+      }
+    }
+    rotation {
+      x: 0 {
+        solve: false
+      }
+      y: 0 {
+        solve: false
+      }
+      z: 0 {
+        solve: false
+      }
+    }
+    Box {
+      scale {
+        x: 1
+        y: 0.1
+        z: 1
+      }
+      center {
+        x: 0
+        y: 0
+        z: 0
+      }
+    }
+    Marker {
+      name: "local1"
+      position {
+        x: 0.514836
+        y: 0
+        z: 0.418799
+      }
+    }
+    Marker {
+      name: "local2"
+      position {
+        x: 0.514836
+        y: 0
+        z: -0.451763
+      }
+    }
+    Marker {
+      name: "local3"
+      position {
+        x: -0.454571
+        y: 0
+        z: -0.451763
+      }
+    }
+    Marker {
+      name: "local4"
+      position {
+        x: -0.454571
+        y: 0
+        z: 0.423682
+      }
+    }
+  }
+  Transform {
+    translation {
+      x: 3.58413
+      y: 1.98753
+      z: 0.351997
+    }
+    rotation {
+      x: 0.0573459
+      y: -5.32853
+      z: -2.17724
+    }
+    Box {
+      scale {
+        x: 1
+        y: 1
+        z: 1
+      }
+      center {
+        x: 0
+        y: 0
+        z: 0
+      }
+    }
+    Transform {
+      translation {
+        x: -3.82613 {
+          solve: false
+        }
+        y: -2.13253 {
+          solve: false
+        }
+        z: -1.32309e-15 {
+          solve: false
+        }
+      }
+      rotation {
+        x: 0 {
+          solve: false
+        }
+        y: 0 {
+          solve: false
+        }
+        z: 0 {
+          solve: false
+        }
+      }
+      Box {
+        scale {
+          x: 1
+          y: 0.1
+          z: 1
+        }
+        center {
+          x: 0
+          y: 0
+          z: 0
+        }
+      }
+      Marker {
+        name: "local5"
+        position {
+          x: 0.514836
+          y: 0
+          z: 0.418799
+        }
+      }
+      Marker {
+        name: "local6"
+        position {
+          x: 0.514836
+          y: 0
+          z: -0.451763
+        }
+      }
+      Marker {
+        name: "local7"
+        position {
+          x: -0.454571
+          y: 0
+          z: -0.451763
+        }
+      }
+      Marker {
+        name: "local8"
+        position {
+          x: -0.454571
+          y: 0
+          z: 0.423682
+        }
+      }
+    }
+    Transform {
+      translation {
+        x: -3.82613 {
+          solve: false
+        }
+        y: -2.13253 {
+          solve: false
+        }
+        z: -2.89338 {
+          solve: false
+        }
+      }
+      rotation {
+        x: 0 {
+          solve: false
+        }
+        y: 0 {
+          solve: false
+        }
+        z: 0 {
+          solve: false
+        }
+      }
+      Box {
+        scale {
+          x: 1
+          y: 0.1
+          z: 1
+        }
+        center {
+          x: 0
+          y: 0
+          z: 0
+        }
+      }
+      Marker {
+        name: "local13"
+        position {
+          x: 0.514836
+          y: 0
+          z: 0.418799
+        }
+      }
+      Marker {
+        name: "local14"
+        position {
+          x: 0.514836
+          y: 0
+          z: -0.451763
+        }
+      }
+      Marker {
+        name: "local15"
+        position {
+          x: -0.454571
+          y: 0
+          z: -0.451763
+        }
+      }
+      Marker {
+        name: "local16"
+        position {
+          x: -0.454571
+          y: 0
+          z: 0.423682
+        }
+      }
+    }
+  }
+  Transform {
+    translation {
+      x: 0 {
+        solve: false
+      }
+      y: 0 {
+        solve: false
+      }
+      z: -2.89338 {
+        solve: false
+      }
+    }
+    rotation {
+      x: 0 {
+        solve: false
+      }
+      y: 0 {
+        solve: false
+      }
+      z: 0 {
+        solve: false
+      }
+    }
+    Box {
+      scale {
+        x: 1
+        y: 0.1
+        z: 1
+      }
+      center {
+        x: 0
+        y: 0
+        z: 0
+      }
+    }
+    Marker {
+      name: "local9"
+      position {
+        x: 0.514836
+        y: 0
+        z: 0.418799
+      }
+    }
+    Marker {
+      name: "local10"
+      position {
+        x: 0.514836
+        y: 0
+        z: -0.451763
+      }
+    }
+    Marker {
+      name: "local11"
+      position {
+        x: -0.454571
+        y: 0
+        z: -0.451763
+      }
+    }
+    Marker {
+      name: "local12"
+      position {
+        x: -0.454571
+        y: 0
+        z: 0.423682
+      }
+    }
+  }
+  DistanceError {
+    start: "local1"
+    end: "local5"
+    desired_distance: 0
+    weight: 1
+  }
+  DistanceError {
+    start: "local2"
+    end: "local6"
+    desired_distance: 0
+    weight: 1
+  }
+  DistanceError {
+    start: "local3"
+    end: "local7"
+    desired_distance: 0
+    weight: 1
+  }
+  DistanceError {
+    start: "local4"
+    end: "local8"
+    desired_distance: 0
+    weight: 1
+  }
+  DistanceError {
+    start: "local10"
+    end: "local14"
+    desired_distance: 0
+    weight: 1
+  }
+  DistanceError {
+    start: "local11"
+    end: "local15"
+    desired_distance: 0
+    weight: 1
+  }
+  DistanceError {
+    start: "local12"
+    end: "local16"
+    desired_distance: 0
+    weight: 1
+  }
+  DistanceError {
+    start: "local9"
+    end: "local13"
+    desired_distance: 0
+    weight: 1
+  }
+}

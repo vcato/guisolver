@@ -1,0 +1,160 @@
+Scene {
+  Transform {
+    translation {
+      x: 0 {
+        solve: false
+      }
+      y: 2 {
+        solve: false
+      }
+      z: 0 {
+        solve: false
+      }
+    }
+    rotation {
+      x: 12.2319
+      y: 0.000379175 {
+        solve: false
+      }
+      z: 57.2616
+    }
+    Box {
+      scale {
+        x: 0.1
+        y: 1
+        z: 1
+      }
+      center {
+        x: 0
+        y: 0
+        z: 0
+      }
+    }
+    Transform {
+      translation {
+        x: 1 {
+          solve: false
+        }
+        y: 0 {
+          solve: false
+        }
+        z: 0 {
+          solve: false
+        }
+      }
+      rotation {
+        x: 0 {
+          solve: false
+        }
+        y: -41.2526
+        z: 0 {
+          solve: false
+        }
+      }
+      Box {
+        scale {
+          x: 9.90603
+          y: 1
+          z: 1
+        }
+        center {
+          x: 5.16591
+          y: -0.0864034
+          z: -1.11004e-15
+        }
+      }
+      Transform {
+        translation {
+          x: 10 {
+            solve: false
+          }
+          y: 0 {
+            solve: false
+          }
+          z: 0 {
+            solve: false
+          }
+        }
+        rotation {
+          x: -0 {
+            solve: false
+          }
+          y: -0 {
+            solve: false
+          }
+          z: -153.771
+        }
+        Box {
+          scale {
+            x: 9.5129
+            y: 1
+            z: 1
+          }
+          center {
+            x: 4.90613
+            y: 3.17248e-15
+            z: -2.53975e-16
+          }
+        }
+        Transform {
+          translation {
+            x: 10 {
+              solve: false
+            }
+            y: 1.77636e-15 {
+              solve: false
+            }
+            z: 0 {
+              solve: false
+            }
+          }
+          rotation {
+            x: 0 {
+              solve: false
+            }
+            y: 0 {
+              solve: false
+            }
+            z: 0 {
+              solve: false
+            }
+          }
+          Box {
+            scale {
+              x: 1
+              y: 1
+              z: 1
+            }
+            center {
+              x: 0
+              y: 0
+              z: 0
+            }
+          }
+          Marker {
+            name: "local1"
+            position {
+              x: 0
+              y: 0
+              z: 0
+            }
+          }
+        }
+      }
+    }
+  }
+  Marker {
+    name: "global1"
+    position {
+      x: 4.71951
+      y: 1.05279
+      z: 0.0508986
+    }
+  }
+  DistanceError {
+    start: "local1"
+    end: "global1"
+    desired_distance: 0
+    weight: 1
+  }
+}

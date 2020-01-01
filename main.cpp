@@ -77,7 +77,7 @@ static void createGraphicsWindow(ParentWidgetRef parent, OSGScene &scene)
 static Optional<string> askForSavePath(QWidget &parent)
 {
   QFileDialog file_dialog;
-  QString path = file_dialog.getSaveFileName(&parent,"Save Scene",".");
+  QString path = file_dialog.getSaveFileName(&parent,"Save Scene","./scenes/");
 
   if (path == "") {
     return {};
@@ -90,7 +90,7 @@ static Optional<string> askForSavePath(QWidget &parent)
 static Optional<string> askForOpenPath(QWidget &parent)
 {
   QFileDialog file_dialog;
-  QString path = file_dialog.getOpenFileName(&parent,"Open Scene",".");
+  QString path = file_dialog.getOpenFileName(&parent,"Open Scene","./scenes/");
 
   if (path == "") {
     return {};
