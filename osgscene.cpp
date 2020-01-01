@@ -21,6 +21,7 @@
 namespace {
 struct ScaleDragger;
 struct TranslateDragger;
+struct RotateDragger;
 }
 
 
@@ -34,12 +35,26 @@ using AutoTransformPtr = osg::ref_ptr<osg::AutoTransform>;
 using DraggerPtr = osg::ref_ptr<osgManipulator::Dragger>;
 using TransformHandle = Scene::TransformHandle;
 using LineHandle = Scene::LineHandle;
-
-using TrackballDraggerPtr =
-  osg::ref_ptr<osgManipulator::TrackballDragger>;
-
+using RotateDraggerPtr = osg::ref_ptr<RotateDragger>;
 using TranslateDraggerPtr = osg::ref_ptr<TranslateDragger>;
 using ScaleDraggerPtr = osg::ref_ptr<ScaleDragger>;
+
+
+static bool
+isValidDraggerEvent(const osgGA::GUIEventAdapter& ea)
+{
+  // Prevent the dragger from being activated if we're holding down
+  // the ALT key, since we want that to be reserved for view manipulation.
+
+  if (ea.getEventType() == osgGA::GUIEventAdapter::PUSH) {
+    if ((ea.getModKeyMask() & osgGA::GUIEventAdapter::MODKEY_ALT) != 0) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 
 namespace {
 struct ScaleDragger : osgManipulator::TabBoxDragger {
@@ -50,13 +65,8 @@ struct ScaleDragger : osgManipulator::TabBoxDragger {
       osgGA::GUIActionAdapter& aa
     ) override
   {
-    // Prevent the dragger from being activated if we're holding down
-    // the ALT key, since we want that to be reserved for view manipulation.
-
-    if (ea.getEventType() == osgGA::GUIEventAdapter::PUSH) {
-      if ((ea.getModKeyMask() & osgGA::GUIEventAdapter::MODKEY_ALT) != 0) {
-        return false;
-      }
+    if (!isValidDraggerEvent(ea)) {
+      return false;
     }
 
     return osgManipulator::TabBoxDragger::handle(pi, ea, aa);
@@ -74,16 +84,30 @@ struct TranslateDragger : osgManipulator::TranslateAxisDragger {
       osgGA::GUIActionAdapter& aa
     ) override
   {
-    // Prevent the dragger from being activated if we're holding down
-    // the ALT key, since we want that to be reserved for view manipulation.
-
-    if (ea.getEventType() == osgGA::GUIEventAdapter::PUSH) {
-      if ((ea.getModKeyMask() & osgGA::GUIEventAdapter::MODKEY_ALT) != 0) {
-        return false;
-      }
+    if (!isValidDraggerEvent(ea)) {
+      return false;
     }
 
     return osgManipulator::TranslateAxisDragger::handle(pi, ea, aa);
+  }
+};
+}
+
+
+namespace {
+struct RotateDragger : osgManipulator::TrackballDragger {
+  bool
+    handle(
+      const osgManipulator::PointerInfo& pi,
+      const osgGA::GUIEventAdapter& ea,
+      osgGA::GUIActionAdapter& aa
+    ) override
+  {
+    if (!isValidDraggerEvent(ea)) {
+      return false;
+    }
+
+    return osgManipulator::TrackballDragger::handle(pi, ea, aa);
   }
 };
 }
@@ -544,8 +568,7 @@ static DraggerPtr
       break;
     case DraggerType::rotate:
       {
-        TrackballDraggerPtr rotate_dragger_ptr =
-          new osgManipulator::TrackballDragger();
+        RotateDraggerPtr rotate_dragger_ptr = new RotateDragger();
 
         rotate_dragger_ptr->setupDefaultGeometry();
         dragger_ptr = rotate_dragger_ptr;
