@@ -3,14 +3,17 @@
 
 #include "treepath.hpp"
 #include "isequal.hpp"
+#include "markerindex.hpp"
 #include "bodyindex.hpp"
+#include "optional.hpp"
+#include "matchconst.hpp"
 
 
 struct TreePaths {
   struct Marker;
   struct Body;
   struct DistanceError;
-  using Markers = vector<Marker>;
+  using Markers = vector<Optional<Marker>>;
   using Bodies = vector<Body>;
   using DistanceErrors = vector<DistanceError>;
 
@@ -153,6 +156,17 @@ struct TreePaths {
   Bodies bodies;
   DistanceErrors distance_errors;
   TreePath total_error;
+
+  template <typename TreePaths>
+  static MatchConst_t<Marker, TreePaths> &
+  marker(MarkerIndex i, TreePaths &tree_paths)
+  {
+    assert(tree_paths.markers[i]);
+    return *tree_paths.markers[i];
+  }
+
+  Marker &marker(MarkerIndex i) { return marker(i, *this); }
+  const Marker &marker(MarkerIndex i) const { return marker(i, *this); }
 
   template <typename F>
   static void forEachMember(const F &f)

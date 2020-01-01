@@ -183,7 +183,7 @@ static Optional<MarkerIndex>
   )
 {
   for (auto index : indicesOf(tree_paths.markers)) {
-    const TreePaths::Marker &marker_paths = tree_paths.markers[index];
+    const TreePaths::Marker &marker_paths = tree_paths.marker(index);
 
     if (path == marker_paths.path) {
       return index;
@@ -234,7 +234,11 @@ struct MainWindowController::Impl {
 
   static void selectMarkerInTree(MarkerIndex marker_index, Data &data)
   {
-    data.observed_scene.tree_widget.selectItem(data.observed_scene.tree_paths.markers[marker_index].path);
+    ObservedScene &observed_scene = data.observed_scene;
+
+    observed_scene.tree_widget.selectItem(
+      observed_scene.tree_paths.marker(marker_index).path
+    );
   }
 
   static void selectMarker(MarkerIndex marker_index, Data &data)

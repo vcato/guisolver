@@ -1,3 +1,7 @@
+#ifndef MATCHCONST_HPP_
+#define MATCHCONST_HPP_
+
+
 template<typename T>
 struct AsConst {
   using type = const T;
@@ -22,3 +26,6 @@ struct MatchConst<T, const Like> {
 
 template <typename T, typename Like>
 using MatchConst_t = typename MatchConst<T,Like>::type;
+
+
+#endif /* MATCHCONST_HPP_ */

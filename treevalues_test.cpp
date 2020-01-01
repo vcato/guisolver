@@ -143,7 +143,7 @@ static void testAddingMarker()
 
   assert(
     tree_widget.item(
-      tree_paths.markers[marker_index].position.x
+      tree_paths.marker(marker_index).position.x
     ).maybe_numeric_value == 1.5
   );
 

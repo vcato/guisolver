@@ -358,6 +358,17 @@ static void visitPaths(vector<T> &v, const Visitor &visitor)
 
 
 template <typename T, typename Visitor>
+static void visitPaths(vector<Optional<T>> &v, const Visitor &visitor)
+{
+  for (auto i : indicesOf(v)) {
+    if (v[i]) {
+      visitPaths(*v[i], visitor);
+    }
+  }
+}
+
+
+template <typename T, typename Visitor>
 static void visitPaths(const vector<T> &v, const Visitor &visitor)
 {
   for (auto i : indicesOf(v)) {
@@ -586,7 +597,7 @@ removeMarkerFromTree(
 )
 {
   TreePaths::Markers &markers = tree_paths.markers;
-  TreePath marker_path = markers[marker_index].path;
+  TreePath marker_path = tree_paths.marker(marker_index).path;
   tree_widget.removeItem(marker_path);
   removeIndexFrom(markers, marker_index);
   handlePathRemoval(tree_paths, marker_path);
@@ -913,13 +924,13 @@ static void
   updateMarker(
     MarkerIndex i,
     TreeWidget &tree_widget,
-    const TreePaths::Markers &marker_paths,
-    const SceneState::Markers &markers
+    const SceneState::Markers &markers,
+    const TreePaths &tree_paths
   )
 {
   updateXYZValues(
     tree_widget,
-    marker_paths[i].position,
+    tree_paths.marker(i).position,
     vec3(markers[i].position)
   );
 }
@@ -971,7 +982,7 @@ void
   }
 
   for (auto i : indicesOf(state.markers())) {
-    updateMarker(i, tree_widget, tree_paths.markers, state.markers());
+    updateMarker(i, tree_widget, state.markers(), tree_paths);
   }
 
   for (auto i : indicesOf(tree_paths.distance_errors)) {
@@ -1126,19 +1137,20 @@ static bool
 
 
 static bool
-  setMarkersValue(
-    const TreePath &path,
-    NumericValue value,
-    const TreePaths::Markers &markers_paths,
-    SceneState &scene_state
-  )
+setMarkersValue(
+  const TreePath &path,
+  NumericValue value,
+  const TreePaths::Markers &,
+  const TreePaths &tree_paths,
+  SceneState &scene_state
+)
 {
-  for (auto i : indicesOf(markers_paths)) {
+  for (auto i : indicesOf(tree_paths.markers)) {
     bool value_was_set =
       setMarkerValue(
         path,
         value,
-        markers_paths[i],
+        tree_paths.marker(i),
         scene_state.marker(i)
       );
 
@@ -1255,6 +1267,7 @@ bool
         path,
         value,
         tree_paths.markers,
+        tree_paths,
         scene_state
       );
 

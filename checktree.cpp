@@ -39,6 +39,17 @@ static void
 
 
 template <typename T>
+static void checkEqual(const Optional<T> &a, const Optional<T> &b)
+{
+  checkEqual(a.hasValue(), b.hasValue());
+
+  if (a.hasValue()) {
+    checkEqual(*a, *b);
+  }
+}
+
+
+template <typename T>
 static void checkEqual(const vector<T> &a, const vector<T> &b)
 {
   if (a.size() != b.size()) {

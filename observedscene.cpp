@@ -46,7 +46,7 @@ forEachTransformHandlePath(
   Optional<TransformHandle> maybe_object;
 
   for (auto i : indicesOf(tree_paths.markers)) {
-    f(scene_handles.markers[i].handle, tree_paths.markers[i].path);
+    f(scene_handles.markers[i].handle, tree_paths.marker(i).path);
   }
 
   for (auto i : indicesOf(tree_paths.bodies)) {
@@ -129,6 +129,7 @@ ObservedScene::pasteGlobal(
     clipboard.clipboard_transform;
 #else
   BodyIndex old_body_index = *clipboard.maybe_cut_body_index;
+#if 1
   clipboard.maybe_cut_body_index.reset();
   TaggedValue clipboard_tagged_value("clipboard");
 
@@ -149,6 +150,11 @@ ObservedScene::pasteGlobal(
       --*maybe_new_parent_body_index;
     }
   }
+#else
+  removeBodyFromTree(old_body_index);
+  removeBodyFromScene(old_body_index);
+  scene_state.bodies[body_index].maybe_parent_index = maybe_new_parent_index;
+#endif
 #endif
 
   BodyIndex new_body_index =
@@ -161,11 +167,15 @@ ObservedScene::pasteGlobal(
   SceneState::Body &body_state = scene_state.body(new_body_index);
   Transform old_body_transform = makeTransformFromState(body_state.transform);
 
+  Transform body_global_transform =
+    old_parent_global_transform*old_body_transform;
+
   Transform new_parent_global_transform =
     globalTransform(maybe_new_parent_body_index, scene_state);
 
-  Transform body_global_transform = old_parent_global_transform*old_body_transform;
-  Transform new_body_transform = new_parent_global_transform.inverse()*body_global_transform;
+  Transform new_body_transform =
+    new_parent_global_transform.inverse()*body_global_transform;
+
   body_state.transform = transformState(new_body_transform);
 
   ObservedScene::createBodyInTree(new_body_index, observed_scene);
