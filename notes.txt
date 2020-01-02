@@ -1,52 +1,8 @@
 ---
-Seems like it would make sense to be able to select two markers and then
-create a distance error between them.  I'm not sure what the interaction
-here is though.  The most intuitive thing seems to be right-clicking
-on the 3D view and having a context menu which says "Add Distance Error".
----
-I'd like to be able to take an existing body and create another version of
-it as a child of another body at the same global location.
-
-* steps
-  * Select a body
-  * duplicate
-  * cut
-  * Select another body
-  * paste child global
-* notes
-  * we could potentially select multiple source bodies and multiple target
-    bodies and create a copy of each source on each target
-  * we can reparent a body by
-    * steps
-      * select a body
-      * cut
-      * select another body
-      * paste child global
-    * We lose any distance errors that are not children of the body this way.
-      * If we support having distance errors that are children of bodies, then
-        this wouldn't be as big of a problem.
-  * having duplicate instead of copy seems a bit better, since we can't
-    easily make several copies of a body onto the same parent using just copy
-    and paste child global, but we can easily copy a body onto another
-    body by using duplicate, cut and paste child global
----
-If we cut a body and paste it, we lose the distance errors.
-* We could potentially remember the distance errors that are connected.
-  * This might be nice, because we could
-* We could allow distance errors to be children of a body.
-  * This seems like a good alternative.
-  * For this to work without having objects reference later objects, we
-    would need to move the markers so that they appear before the bodies.
-    * Scene
-      * [Marker] global1
-      * [Body]
-        * [Marker] local1
-        * [DistanceError] local1 <-> global1
-* We could have a different way of moving a body that doesn't involve removing
-  it first.
----
 Allow adding distance errors to bodies.
 * This will mean removing/adding distance errors to the tree when we
   remove or add bodies.
+* This will make it more natural to think of a body, its markers, and
+  its distance errors as a single unit.
 ---
 After transferring a marker to a new body, the scene should be re-solved.
