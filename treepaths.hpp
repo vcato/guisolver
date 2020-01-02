@@ -107,6 +107,7 @@ struct TreePaths {
     };
 
     TreePath path;
+    TreePath name;
     Translation translation;
     Rotation rotation;
     Geometry geometry;
@@ -115,6 +116,7 @@ struct TreePaths {
     static void forEachMember(const F &f)
     {
       f(&Body::path);
+      f(&Body::name);
       f(&Body::translation);
       f(&Body::rotation);
       f(&Body::geometry);

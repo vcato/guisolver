@@ -1,5 +1,6 @@
 Scene {
   Transform {
+    name: "aruco1_global"
     translation {
       x: -0.334833 {
         solve: false
@@ -35,7 +36,7 @@ Scene {
       }
     }
     Marker {
-      name: "local1"
+      name: "aruco1_global1"
       position {
         x: 0.514836
         y: 0
@@ -43,7 +44,7 @@ Scene {
       }
     }
     Marker {
-      name: "local2"
+      name: "aruco1_global2"
       position {
         x: 0.514836
         y: 0
@@ -51,7 +52,7 @@ Scene {
       }
     }
     Marker {
-      name: "local3"
+      name: "aruco1_global3"
       position {
         x: -0.454571
         y: 0
@@ -59,7 +60,7 @@ Scene {
       }
     }
     Marker {
-      name: "local4"
+      name: "aruco1_global4"
       position {
         x: -0.454571
         y: 0
@@ -68,6 +69,7 @@ Scene {
     }
   }
   Transform {
+    name: "camera"
     translation {
       x: 3.58413
       y: 1.98753
@@ -91,6 +93,7 @@ Scene {
       }
     }
     Transform {
+      name: "aruco1_local"
       translation {
         x: -3.82613 {
           solve: false
@@ -126,7 +129,7 @@ Scene {
         }
       }
       Marker {
-        name: "local5"
+        name: "aruco1_local1"
         position {
           x: 0.514836
           y: 0
@@ -134,7 +137,7 @@ Scene {
         }
       }
       Marker {
-        name: "local6"
+        name: "aruco1_local2"
         position {
           x: 0.514836
           y: 0
@@ -142,7 +145,7 @@ Scene {
         }
       }
       Marker {
-        name: "local7"
+        name: "aruco1_local3"
         position {
           x: -0.454571
           y: 0
@@ -150,7 +153,7 @@ Scene {
         }
       }
       Marker {
-        name: "local8"
+        name: "aruco1_local4"
         position {
           x: -0.454571
           y: 0
@@ -159,6 +162,7 @@ Scene {
       }
     }
     Transform {
+      name: "aruco2_local"
       translation {
         x: -3.82613 {
           solve: false
@@ -194,7 +198,7 @@ Scene {
         }
       }
       Marker {
-        name: "local13"
+        name: "aruco2_local1"
         position {
           x: 0.514836
           y: 0
@@ -202,7 +206,7 @@ Scene {
         }
       }
       Marker {
-        name: "local14"
+        name: "aruco2_local2"
         position {
           x: 0.514836
           y: 0
@@ -210,7 +214,7 @@ Scene {
         }
       }
       Marker {
-        name: "local15"
+        name: "aruco2_local3"
         position {
           x: -0.454571
           y: 0
@@ -218,7 +222,7 @@ Scene {
         }
       }
       Marker {
-        name: "local16"
+        name: "aruco2_local4"
         position {
           x: -0.454571
           y: 0
@@ -228,6 +232,7 @@ Scene {
     }
   }
   Transform {
+    name: "aruco2_global"
     translation {
       x: 0 {
         solve: false
@@ -263,7 +268,7 @@ Scene {
       }
     }
     Marker {
-      name: "local9"
+      name: "aruco2_global1"
       position {
         x: 0.514836
         y: 0
@@ -271,7 +276,7 @@ Scene {
       }
     }
     Marker {
-      name: "local10"
+      name: "aruco2_global2"
       position {
         x: 0.514836
         y: 0
@@ -279,7 +284,7 @@ Scene {
       }
     }
     Marker {
-      name: "local11"
+      name: "aruco2_global3"
       position {
         x: -0.454571
         y: 0
@@ -287,7 +292,7 @@ Scene {
       }
     }
     Marker {
-      name: "local12"
+      name: "aruco2_global4"
       position {
         x: -0.454571
         y: 0
@@ -296,50 +301,50 @@ Scene {
     }
   }
   DistanceError {
-    start: "local1"
-    end: "local5"
+    start: "aruco1_global1"
+    end: "aruco1_local1"
     desired_distance: 0
     weight: 1
   }
   DistanceError {
-    start: "local2"
-    end: "local6"
+    start: "aruco1_global2"
+    end: "aruco1_local2"
     desired_distance: 0
     weight: 1
   }
   DistanceError {
-    start: "local3"
-    end: "local7"
+    start: "aruco1_global3"
+    end: "aruco1_local3"
     desired_distance: 0
     weight: 1
   }
   DistanceError {
-    start: "local4"
-    end: "local8"
+    start: "aruco1_global4"
+    end: "aruco1_local4"
     desired_distance: 0
     weight: 1
   }
   DistanceError {
-    start: "local10"
-    end: "local14"
+    start: "aruco2_global2"
+    end: "aruco2_local2"
     desired_distance: 0
     weight: 1
   }
   DistanceError {
-    start: "local11"
-    end: "local15"
+    start: "aruco2_global3"
+    end: "aruco2_local3"
     desired_distance: 0
     weight: 1
   }
   DistanceError {
-    start: "local12"
-    end: "local16"
+    start: "aruco2_global4"
+    end: "aruco2_local4"
     desired_distance: 0
     weight: 1
   }
   DistanceError {
-    start: "local9"
-    end: "local13"
+    start: "aruco2_global1"
+    end: "aruco2_local1"
     desired_distance: 0
     weight: 1
   }

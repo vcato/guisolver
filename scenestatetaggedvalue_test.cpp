@@ -93,6 +93,7 @@ static void testBody()
     SceneState scene_state;
 
     BodyIndex body_index = createGlobalBodyIn(scene_state);
+    scene_state.body(body_index).name = "testbody";
     scene_state.body(body_index).solve_flags.translation.y = false;
     scene_state.body(body_index).geometry.center.y = 2.5;
 
@@ -119,11 +120,12 @@ static void testBody()
 
     assert(scene_state.body(body_index).solve_flags.translation.y == false);
     assert(scene_state.body(body_index).geometry.center.y == 2.5);
+    assert(scene_state.body(body_index).name == "testbody");
   }
 }
 
 
-static void testCreatingABodyFromATaggedValueWithConflictingMarkerNames()
+static void testCreatingABodyFromATaggedValueWithConflictingNames()
 {
   SceneState scene_state;
   BodyIndex body_index = scene_state.createBody();
@@ -142,12 +144,14 @@ static void testCreatingABodyFromATaggedValueWithConflictingMarkerNames()
 
   assert(scene_state.markers().size() == 2);
   assert(scene_state.marker(0).name != scene_state.marker(1).name);
+  assert(scene_state.bodies().size() == 2);
+  assert(scene_state.body(0).name != scene_state.body(1).name);
 }
 
 
 int main()
 {
   testCreatingABodyFromATaggedValue();
-  testCreatingABodyFromATaggedValueWithConflictingMarkerNames();
+  testCreatingABodyFromATaggedValueWithConflictingNames();
   testBody();
 }

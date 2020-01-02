@@ -136,9 +136,15 @@ static TreePaths::XYZ
 }
 
 
-static string markerLabel(const SceneState::Marker &state_marker)
+static string markerLabel(const SceneState::Marker &marker_state)
 {
-  return "[Marker] " + state_marker.name;
+  return "[Marker] " + marker_state.name;
+}
+
+
+static string bodyLabel(const SceneState::Body &body_state)
+{
+  return "[Body] " + body_state.name;
 }
 
 
@@ -774,10 +780,11 @@ createBodyItem(
 {
   TreePaths::Body body_paths;
 
-  tree_widget.createVoidItem(body_path, LabelProperties{"[Body]"});
+  tree_widget.createVoidItem(body_path, LabelProperties{bodyLabel(body_state)});
 
   ItemAdder adder{body_path, tree_widget};
 
+  TreePath name_path        = adder.addString("name:",body_state.name);
   TreePath translation_path = adder.addVoid("translation: []");
   TreePath rotation_path    = adder.addVoid("rotation: []");
   TreePath geometry_path    = adder.addVoid("[Box]");
@@ -785,6 +792,7 @@ createBodyItem(
   TreePath next_body_path = childPath(body_path, adder.n_children);
   TreePath next_marker_path = childPath(body_path, adder.n_children);
   body_paths.path = body_path;
+  body_paths.name = name_path;
 
   body_paths.translation =
     TreePaths::Translation(
@@ -1018,6 +1026,12 @@ updateBody(
   const SceneState::Body &body_state = state.body(body_index);
   const TransformState &global = body_state.transform;
   const TreePaths::Body &body_paths = tree_paths.body(body_index);
+
+  tree_widget.setItemLabel(
+    tree_paths.body(body_index).path,
+    bodyLabel(body_state)
+  );
+
   {
     const TreePaths::Translation &translation_paths = body_paths.translation;
     const TranslationState &translation = translationStateOf(global);
@@ -1234,6 +1248,32 @@ static bool
 
 
 static bool
+  setBodyStringValue(
+    const TreePath &path,
+    const StringValue &value,
+    SceneState &scene_state,
+    const TreePaths &tree_paths,
+    BodyIndex body_index
+  )
+{
+  const TreePaths::Body &body_paths = tree_paths.body(body_index);
+  SceneState::Body &body_state = scene_state.body(body_index);
+
+  if (startsWith(path, body_paths.name)) {
+    if (findBodyIndex(scene_state, value)) {
+      // Name already exists.
+      return false;
+    }
+
+    body_state.name = value;
+    return true;
+  }
+
+  return false;
+}
+
+
+static bool
   setDistanceErrorValue(
     SceneState::DistanceError &distance_error_state,
     const TreePath &path,
@@ -1370,6 +1410,15 @@ setSceneStateStringValue(
   const TreePaths &tree_paths
 )
 {
+  for (auto i : indicesOf(tree_paths.bodies)) {
+    bool value_was_set =
+      setBodyStringValue(path, value, scene_state, tree_paths, i);
+
+    if (value_was_set) {
+      return true;
+    }
+  }
+
   for (auto i : indicesOf(tree_paths.markers)) {
     bool value_was_set =
       setMarkerStringValue(path, value, scene_state, tree_paths, i);

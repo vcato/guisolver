@@ -142,6 +142,16 @@ markerNameExists(
 }
 
 
+static bool
+bodyNameExists(
+  const SceneState::Marker::Name &name,
+  const SceneState &scene_state
+)
+{
+  return contains(bodyNames(scene_state), name);
+}
+
+
 static void
 createMarkerFromTaggedValue(
   SceneState &scene_state,
@@ -213,6 +223,19 @@ createBodyFromTaggedValue(
 {
   BodyIndex body_index = createBodyInState(result, maybe_parent_index);
   setAll(result.body(body_index).solve_flags, true);
+
+  Optional<StringValue> maybe_old_name =
+    findStringValue(tagged_value, "name");
+
+  Optional<StringValue> maybe_name;
+
+  if (maybe_old_name && !bodyNameExists(*maybe_old_name, result)) {
+    maybe_name = maybe_old_name;
+  }
+
+  if (maybe_name) {
+    result.body(body_index).name = *maybe_name;
+  }
 
   result.body(body_index).transform =
     makeTransformFromTaggedValue(tagged_value);
@@ -466,6 +489,7 @@ create(TaggedValue &parent, const string &tag, const SceneState::XYZ &xyz)
 static TaggedValue &
   createTransform(
     TaggedValue &parent,
+    const SceneState::Body::Name &name,
     const TransformState &transform_state,
     const SceneState::TransformSolveFlags &solve_flags
   )
@@ -473,6 +497,7 @@ static TaggedValue &
   auto &transform = create(parent, "Transform");
   {
     auto &parent = transform;
+    create(parent, "name", name);
     {
       auto &translation = create(parent, "translation");
       auto &parent = translation;
@@ -583,7 +608,12 @@ void
   const TransformState &transform_state = body_state.transform;
 
   TaggedValue &transform =
-    createTransform(parent, transform_state, body_state.solve_flags);
+    createTransform(
+      parent,
+      body_state.name,
+      transform_state,
+      body_state.solve_flags
+    );
 
   createBox(transform, body_state);
   createChildBodiesInTaggedValue(transform, scene_state, body_index);

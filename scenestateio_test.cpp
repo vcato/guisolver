@@ -64,6 +64,7 @@ static void testWithChildTransform()
   string expected_string =
     "Scene {\n"
     "  Transform {\n"
+    "    name: \"body1\"\n"
     "    translation {\n"
     "      x: 0\n"
     "      y: 0\n"
@@ -87,6 +88,7 @@ static void testWithChildTransform()
     "      }\n"
     "    }\n"
     "    Transform {\n"
+    "      name: \"body2\"\n"
     "      translation {\n"
     "        x: 0\n"
     "        y: 0\n"
@@ -123,6 +125,7 @@ static void testWithMultipleTransforms()
   string expected_string =
     "Scene {\n"
     "  Transform {\n"
+    "    name: \"body1\"\n"
     "    translation {\n"
     "      x: 0\n"
     "      y: 0\n"
@@ -147,6 +150,7 @@ static void testWithMultipleTransforms()
     "    }\n"
     "  }\n"
     "  Transform {\n"
+    "    name: \"body2\"\n"
     "    translation {\n"
     "      x: 0\n"
     "      y: 0\n"

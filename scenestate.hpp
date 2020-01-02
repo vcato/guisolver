@@ -59,7 +59,9 @@ class SceneState {
     };
 
     struct Body {
-      Body() = default;
+      using Name = String;
+      Body(const Name &name) : name(name) {}
+      Name name;
       Transform transform;
       Geometry geometry;
       TransformSolveFlags solve_flags;
@@ -167,6 +169,7 @@ using RotationState = SceneState::XYZ;
 using MarkerPosition = SceneState::XYZ;
 
 extern vector<SceneState::Marker::Name> markerNames(const SceneState &state);
+extern vector<SceneState::Body::Name> bodyNames(const SceneState &state);
 
 extern BodyIndex
   createBodyInState(SceneState &, Optional<BodyIndex> maybe_parent_index);
@@ -361,7 +364,10 @@ extern bool
 
 
 extern Optional<MarkerIndex>
-  findMarkerIndex(const SceneState &, const SceneState::Marker::Name &name);
+  findMarkerIndex(const SceneState &, const SceneState::Marker::Name &);
+
+extern Optional<MarkerIndex>
+  findBodyIndex(const SceneState &, const SceneState::Body::Name &);
 
 
 #endif /* SCENESTATE_HPP_ */

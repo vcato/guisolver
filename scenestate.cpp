@@ -45,10 +45,28 @@ vector<SceneState::Marker::Name> markerNames(const SceneState &state)
 }
 
 
+vector<SceneState::Body::Name> bodyNames(const SceneState &state)
+{
+  vector<SceneState::Body::Name> result;
+
+  for (auto &body : state.bodies()) {
+    result.push_back(body.name);
+  }
+
+  return result;
+}
+
+
 static SceneState::Marker::Name
   newMarkerName(const SceneState &state, bool is_local)
 {
   return nextUnusedName(markerNames(state), namePrefix(is_local));
+}
+
+
+static SceneState::Body::Name newBodyName(const SceneState &state)
+{
+  return nextUnusedName(bodyNames(state), SceneState::Body::Name("body"));
 }
 
 
@@ -145,7 +163,7 @@ BodyIndex
 SceneState::createBody(Optional<BodyIndex> maybe_parent_index)
 {
   BodyIndex new_index = _bodies.size();
-  _bodies.emplace_back();
+  _bodies.emplace_back(newBodyName(*this));
   _bodies.back().maybe_parent_index = maybe_parent_index;
   return new_index;
 }
@@ -196,6 +214,22 @@ Optional<MarkerIndex>
 {
   for (auto i : indicesOf(scene_state.markers())) {
     if (scene_state.marker(i).name == name) {
+      return i;
+    }
+  }
+
+  return {};
+}
+
+
+Optional<BodyIndex>
+  findBodyIndex(
+    const SceneState &scene_state,
+    const SceneState::Body::Name &name
+  )
+{
+  for (auto i : indicesOf(scene_state.bodies())) {
+    if (scene_state.body(i).name == name) {
       return i;
     }
   }

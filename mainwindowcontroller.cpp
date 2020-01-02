@@ -498,6 +498,9 @@ MainWindowController::Impl::handleTreeStringValueChanged(
     updateTreeValues(tree_widget, tree_paths, state);
     updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, state);
   }
+  else {
+    cerr << "handleTreeStringValueChanged: no match\n";
+  }
 }
 
 
