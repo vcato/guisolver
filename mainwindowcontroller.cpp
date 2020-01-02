@@ -117,58 +117,23 @@ static void
 }
 
 
-static bool isScenePath(const TreePath &path, const TreePaths &tree_paths)
-{
-  return path == tree_paths.path;
-}
+namespace {
+struct ItemDescription {
+  enum class Type {
+    scene,
+    body,
+    marker,
+    distance_error,
+    translation,
+    rotation,
+    other
+  };
 
-
-static bool isBodyPath(const TreePath &path, const TreePaths &tree_paths)
-{
-  for (auto i : indicesOf(tree_paths.bodies)) {
-    if (tree_paths.body(i).path == path) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-
-static Optional<int>
-  maybeDistanceErrorIndexOfPath(
-    const TreePath &path,
-    const TreePaths &tree_paths
-  )
-{
-  for (auto index : indicesOf(tree_paths.distance_errors)) {
-    const TreePaths::DistanceError &distance_error_paths =
-      tree_paths.distance_errors[index];
-
-    if (path == distance_error_paths.path) {
-      return index;
-    }
-  }
-
-  return {};
-}
-
-
-static Optional<MarkerIndex>
-  maybeMarkerIndexOfPath(
-    const TreePath &path,
-    const TreePaths &tree_paths
-  )
-{
-  for (auto index : indicesOf(tree_paths.markers)) {
-    const TreePaths::Marker &marker_paths = tree_paths.marker(index);
-
-    if (path == marker_paths.path) {
-      return index;
-    }
-  }
-
-  return {};
+  Type type = Type::other;
+  Optional<BodyIndex> maybe_body_index;
+  Optional<MarkerIndex> maybe_marker_index;
+  Optional<DistanceErrorIndex> maybe_distance_error_index;
+};
 }
 
 
@@ -247,6 +212,13 @@ struct MainWindowController::Impl {
   static void
     pasteGlobalPressed(MainWindowController &controller, const TreePath &path);
 
+  static void
+    solveAllPressed(
+      MainWindowController &controller,
+      const ItemDescription &,
+      bool state
+    );
+
   static void addMarkerPressed(MainWindowController &, const TreePath &);
   static void addBodyPressed(MainWindowController &, const TreePath &);
   static void removeBodyPressed(MainWindowController &, BodyIndex);
@@ -293,11 +265,10 @@ void
   // The mouse button is down.  The scene is being changed, but we don't
   // consider this change complete.
 
-  Scene &scene = data.observed_scene.scene;
-  SceneHandles &scene_handles = data.observed_scene.scene_handles;
-  SceneState &state = data.observed_scene.scene_state;
-  TreeWidget &tree_widget = data.observed_scene.tree_widget;
-  TreePaths &tree_paths = data.observed_scene.tree_paths;
+  ObservedScene &observed_scene = data.observed_scene;
+  Scene &scene = observed_scene.scene;
+  SceneHandles &scene_handles = observed_scene.scene_handles;
+  SceneState &state = observed_scene.scene_state;
   Optional<TransformHandle> th = scene.selectedObject();
   updateSceneStateFromSceneObjects(state, scene, scene_handles);
 
@@ -330,9 +301,7 @@ void
     assert(iter == old_flags.end());
   }
 
-  updateErrorsInState(state);
-  updateTreeValues(tree_widget, tree_paths, state);
-  updateSceneObjects(scene, scene_handles, state);
+  observed_scene.handleSceneStateChanged();
 }
 
 
@@ -342,17 +311,14 @@ void
   )
 {
   Data &data = Impl::data(controller);
-  SceneHandles &scene_handles = data.observed_scene.scene_handles;
-  Scene &scene = data.observed_scene.scene;
-  SceneState &state = data.observed_scene.scene_state;
-  TreeWidget &tree_widget = data.observed_scene.tree_widget;
-  TreePaths &tree_paths = data.observed_scene.tree_paths;
+  ObservedScene &observed_scene = data.observed_scene;
+  SceneHandles &scene_handles = observed_scene.scene_handles;
+  Scene &scene = observed_scene.scene;
+  SceneState &state = observed_scene.scene_state;
 
   updateSceneStateFromSceneObjects(state, scene, scene_handles);
   solveScene(state);
-  updateErrorsInState(state);
-  updateTreeValues(tree_widget, tree_paths, state);
-  updateSceneObjects(scene, scene_handles, state);
+  observed_scene.handleSceneStateChanged();
 }
 
 
@@ -437,11 +403,8 @@ MainWindowController::Impl::handleTreeNumericValueChanged(
 {
   Data &data = Impl::data(controller);
   ObservedScene &observed_scene = data.observed_scene;
-  TreeWidget &tree_widget = observed_scene.tree_widget;
   const TreePaths &tree_paths = observed_scene.tree_paths;
   SceneState &state = observed_scene.scene_state;
-  Scene &scene = observed_scene.scene;
-  const SceneHandles &scene_handles = observed_scene.scene_handles;
 
   bool value_was_changed =
     setSceneStateNumericValue(state, path, value, tree_paths);
@@ -466,9 +429,7 @@ MainWindowController::Impl::handleTreeNumericValueChanged(
       }
     }
 
-    observed_scene.update_errors_function(state);
-    updateSceneObjects(scene, scene_handles, state);
-    updateTreeValues(tree_widget, tree_paths, state);
+    observed_scene.handleSceneStateChanged();
   }
   else {
     cerr << "Handling spin_box_item_value_changed_function\n";
@@ -512,13 +473,13 @@ void
   )
 {
   Data &data = Impl::data(controller);
-  const TreePaths &tree_paths = data.observed_scene.tree_paths;
-  SceneState &scene_state = data.observed_scene.scene_state;
+  ObservedScene &observed_scene = data.observed_scene;
+  const TreePaths &tree_paths = observed_scene.tree_paths;
+  SceneState &scene_state = observed_scene.scene_state;
+
   setSceneStateEnumerationIndex(scene_state, path, value, tree_paths);
   solveScene(scene_state);
-  updateErrorsInState(scene_state);
-  updateSceneObjects(data.observed_scene.scene, data.observed_scene.scene_handles, scene_state);
-  updateTreeValues(data.observed_scene.tree_widget, data.observed_scene.tree_paths, scene_state);
+  observed_scene.handleSceneStateChanged();
 }
 
 
@@ -586,10 +547,6 @@ MainWindowController::Impl::pasteGlobalPressed(
   Data &data = Impl::data(controller);
   ObservedScene &observed_scene = data.observed_scene;
   SceneState &scene_state = observed_scene.scene_state;
-  TreeWidget &tree_widget = observed_scene.tree_widget;
-  TreePaths &tree_paths = observed_scene.tree_paths;
-  Scene &scene = observed_scene.scene;
-  SceneHandles &scene_handles = observed_scene.scene_handles;
 
   Optional<BodyIndex> maybe_new_parent_body_index =
     maybeBodyIndexFromTreePath(path, observed_scene.tree_paths);
@@ -600,8 +557,7 @@ MainWindowController::Impl::pasteGlobalPressed(
 
     observed_scene.selectBody(new_body_index);
     solveScene(scene_state);
-    updateTreeValues(tree_widget, tree_paths, scene_state);
-    updateSceneObjects(scene, scene_handles, scene_state);
+    observed_scene.handleSceneStateChanged();
     return;
   }
 
@@ -611,14 +567,41 @@ MainWindowController::Impl::pasteGlobalPressed(
 
     observed_scene.selectMarker(new_marker_index);
     solveScene(scene_state);
-    updateTreeValues(tree_widget, tree_paths, scene_state);
-    updateSceneObjects(scene, scene_handles, scene_state);
+    observed_scene.handleSceneStateChanged();
     return;
   }
 
   else {
     assert(false); // not implemented
   }
+}
+
+
+void
+MainWindowController::Impl::solveAllPressed(
+  MainWindowController &controller,
+  const ItemDescription &item,
+  bool state
+)
+{
+  Data &data = Impl::data(controller);
+  ObservedScene &observed_scene = data.observed_scene;
+  SceneState &scene_state = observed_scene.scene_state;
+  using ItemType = ItemDescription::Type;
+
+  SceneState::TransformSolveFlags &solve_flags =
+    scene_state.body(*item.maybe_body_index).solve_flags;
+
+  if (item.type == ItemType::translation) {
+    setAll(solve_flags.translation, state);
+  }
+
+  if (item.type == ItemType::rotation) {
+    setAll(solve_flags.rotation, state);
+  }
+
+  solveScene(scene_state);
+  observed_scene.handleSceneStateChanged();
 }
 
 
@@ -699,11 +682,12 @@ void
   )
 {
   Data &data = Impl::data(controller);
-  SceneState &scene_state = data.observed_scene.scene_state;
-  Scene &scene = data.observed_scene.scene;
-  SceneHandles &scene_handles = data.observed_scene.scene_handles;
-  TreePaths &tree_paths = data.observed_scene.tree_paths;
-  TreeWidget &tree_widget = data.observed_scene.tree_widget;
+  ObservedScene &observed_scene = data.observed_scene;
+  SceneState &scene_state = observed_scene.scene_state;
+  Scene &scene = observed_scene.scene;
+  SceneHandles &scene_handles = observed_scene.scene_handles;
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  TreeWidget &tree_widget = observed_scene.tree_widget;
 
   removeDistanceErrorFromTree(
     distance_error_index,
@@ -719,8 +703,7 @@ void
 
   scene_state.removeDistanceError(distance_error_index);
   solveScene(scene_state);
-  updateTreeValues(tree_widget, tree_paths, scene_state);
-  updateSceneObjects(scene, scene_handles, scene_state);
+  observed_scene.handleSceneStateChanged();
 }
 
 
@@ -846,16 +829,63 @@ void
   )
 {
   Data &data = Impl::data(controller);
-  SceneState &state = data.observed_scene.scene_state;
-  TreeWidget &tree_widget = data.observed_scene.tree_widget;
-  TreePaths &tree_paths = data.observed_scene.tree_paths;
-  Scene &scene = data.observed_scene.scene;
-  SceneHandles &scene_handles = data.observed_scene.scene_handles;
+  ObservedScene &observed_scene = data.observed_scene;
+  SceneState &state = observed_scene.scene_state;
+  TreePaths &tree_paths = observed_scene.tree_paths;
   flipSolveState(state, path, tree_paths);
   solveScene(state);
-  updateErrorsInState(state);
-  updateTreeValues(tree_widget, tree_paths, state);
-  updateSceneObjects(scene, scene_handles, state);
+  observed_scene.handleSceneStateChanged();
+}
+
+
+static ItemDescription
+describePath(const TreePath &path, const TreePaths &tree_paths)
+{
+  ItemDescription description;
+  using ItemType = ItemDescription::Type;
+
+  if (path == tree_paths.path) {
+    description.type = ItemType::scene;
+    return description;
+  }
+
+  for (auto i : indicesOf(tree_paths.bodies)) {
+    if (tree_paths.body(i).translation.path == path) {
+      description.type = ItemType::translation;
+      description.maybe_body_index = i;
+      return description;
+    }
+
+    if (tree_paths.body(i).rotation.path == path) {
+      description.type = ItemType::rotation;
+      description.maybe_body_index = i;
+      return description;
+    }
+
+    if (tree_paths.body(i).path == path) {
+      description.type = ItemType::body;
+      description.maybe_body_index = i;
+      return description;
+    }
+  }
+
+  for (auto i : indicesOf(tree_paths.markers)) {
+    if (path == tree_paths.marker(i).path) {
+      description.type = ItemType::marker;
+      description.maybe_marker_index = i;
+      return description;
+    }
+  }
+
+  for (auto i : indicesOf(tree_paths.distance_errors)) {
+    if (path == tree_paths.distance_errors[i].path) {
+      description.type = ItemType::distance_error;
+      description.maybe_distance_error_index = i;
+      return description;
+    }
+  }
+
+  return description;
 }
 
 
@@ -870,6 +900,9 @@ TreeWidget::MenuItems
   ObservedScene &observed_scene = data.observed_scene;
   const TreePaths &tree_paths = observed_scene.tree_paths;
   const SceneState &scene_state = observed_scene.scene_state;
+  ItemDescription item = describePath(path, tree_paths);
+  using ItemType = ItemDescription::Type;
+  const ItemType item_type = item.type;
 
   auto add_marker_function =
     [&controller,path]{
@@ -884,7 +917,24 @@ TreeWidget::MenuItems
       Impl::pasteGlobalPressed(controller, path);
     };
 
-  if (isScenePath(path, tree_paths)) {
+  if (item_type == ItemType::translation || item_type == ItemType::rotation) {
+    auto solve_all_on_function =
+      [&controller,item]{
+        Impl::solveAllPressed(controller, item, true);
+      };
+
+    auto solve_all_off_function =
+      [&controller,item]{
+        Impl::solveAllPressed(controller, item, false);
+      };
+
+    appendTo(menu_items,{
+      {"Solve All On", solve_all_on_function },
+      {"Solve All Off", solve_all_off_function },
+    });
+  }
+
+  if (item_type == ItemType::scene) {
     auto add_distance_error_function =
       [&controller,path]{
         Impl::addDistanceErrorPressed(controller, path);
@@ -903,7 +953,7 @@ TreeWidget::MenuItems
     }
   }
 
-  if (isBodyPath(path, tree_paths)) {
+  if (item_type == ItemType::body) {
     BodyIndex body_index = bodyIndexFromTreePath(path, tree_paths);
 
     auto cut_body_function =
@@ -943,56 +993,46 @@ TreeWidget::MenuItems
     }
   }
 
-  {
-    Optional<MarkerIndex> maybe_marker_index =
-      maybeMarkerIndexOfPath(path, tree_paths);
+  if (item_type == ItemType::marker) {
+    auto index = *item.maybe_marker_index;
 
-    if (maybe_marker_index) {
-      auto index = *maybe_marker_index;
+    auto remove_marker_function = [&controller,index]{
+      Impl::removeMarkerPressed(controller, index);
+    };
 
-      auto remove_marker_function = [&controller,index]{
-        Impl::removeMarkerPressed(controller, index);
+    auto duplicate_marker_function = [&controller,index]{
+      Impl::duplicateMarkerPressed(controller, index);
+    };
+
+    auto duplicate_marker_with_distance_error_function =
+      [&controller,index]{
+        Impl::duplicateMarkerWithDistanceErrorPressed(controller, index);
       };
 
-      auto duplicate_marker_function = [&controller,index]{
-        Impl::duplicateMarkerPressed(controller, index);
-      };
+    auto cut_marker_function = [&controller,index]{
+      Impl::cutMarkerPressed(controller, index);
+    };
 
-      auto duplicate_marker_with_distance_error_function =
-        [&controller,index]{
-          Impl::duplicateMarkerWithDistanceErrorPressed(controller, index);
-        };
-
-      auto cut_marker_function = [&controller,index]{
-        Impl::cutMarkerPressed(controller, index);
-      };
-
-      appendTo(menu_items,{
-        {"Remove", remove_marker_function},
-        {"Duplicate", duplicate_marker_function},
-        {"Cut", cut_marker_function},
-        {"Duplicate With Distance Error",
-          duplicate_marker_with_distance_error_function },
-      });
-    }
+    appendTo(menu_items,{
+      {"Remove", remove_marker_function},
+      {"Duplicate", duplicate_marker_function},
+      {"Cut", cut_marker_function},
+      {"Duplicate With Distance Error",
+        duplicate_marker_with_distance_error_function },
+    });
   }
 
-  {
-    Optional<int> maybe_distance_error_index =
-      maybeDistanceErrorIndexOfPath(path, tree_paths);
+  if (item_type == ItemType::distance_error) {
+    auto index = *item.maybe_distance_error_index;
 
-    if (maybe_distance_error_index) {
-      auto index = *maybe_distance_error_index;
+    auto remove_distance_error_function =
+      [&controller,index]{
+        Impl::removeDistanceErrorPressed(controller, index);
+      };
 
-      auto remove_distance_error_function =
-        [&controller,index]{
-          Impl::removeDistanceErrorPressed(controller, index);
-        };
-
-      appendTo(menu_items,{
-        {"Remove", remove_distance_error_function}
-      });
-    }
+    appendTo(menu_items,{
+      {"Remove", remove_distance_error_function}
+    });
   }
 
   if (solveStatePtr(scene_state, path, tree_paths)) {

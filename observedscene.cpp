@@ -755,3 +755,10 @@ void ObservedScene::selectDistanceError(DistanceErrorIndex index)
 {
   tree_widget.selectItem(tree_paths.distance_errors[index].path);
 }
+
+
+void ObservedScene::handleSceneStateChanged()
+{
+  updateTreeValues(tree_widget, tree_paths, scene_state);
+  updateSceneObjects(scene, scene_handles, scene_state);
+}

@@ -89,8 +89,8 @@ struct ObservedScene {
     tree_widget.selectItem(tree_paths.body(body_index).path);
   }
 
+  void handleSceneStateChanged();
   static void handleTreeSelectionChanged(ObservedScene &);
-
   static void handleSceneSelectionChanged(ObservedScene &);
 
   static void

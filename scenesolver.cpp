@@ -118,4 +118,5 @@ void solveScene(SceneState &scene_state)
 
   minimize(f, variables);
   updateState(scene_state, variables);
+  updateErrorsInState(scene_state);
 }
