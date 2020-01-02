@@ -585,6 +585,11 @@ MainWindowController::Impl::pasteGlobalPressed(
 {
   Data &data = Impl::data(controller);
   ObservedScene &observed_scene = data.observed_scene;
+  SceneState &scene_state = observed_scene.scene_state;
+  TreeWidget &tree_widget = observed_scene.tree_widget;
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  Scene &scene = observed_scene.scene;
+  SceneHandles &scene_handles = observed_scene.scene_handles;
 
   Optional<BodyIndex> maybe_new_parent_body_index =
     maybeBodyIndexFromTreePath(path, observed_scene.tree_paths);
@@ -594,6 +599,9 @@ MainWindowController::Impl::pasteGlobalPressed(
       observed_scene.pasteBodyGlobal(maybe_new_parent_body_index);
 
     observed_scene.selectBody(new_body_index);
+    solveScene(scene_state);
+    updateTreeValues(tree_widget, tree_paths, scene_state);
+    updateSceneObjects(scene, scene_handles, scene_state);
     return;
   }
 
@@ -602,6 +610,9 @@ MainWindowController::Impl::pasteGlobalPressed(
       observed_scene.pasteMarkerGlobal(maybe_new_parent_body_index);
 
     observed_scene.selectMarker(new_marker_index);
+    solveScene(scene_state);
+    updateTreeValues(tree_widget, tree_paths, scene_state);
+    updateSceneObjects(scene, scene_handles, scene_state);
     return;
   }
 

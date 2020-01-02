@@ -4,5 +4,3 @@ Allow adding distance errors to bodies.
   remove or add bodies.
 * This will make it more natural to think of a body, its markers, and
   its distance errors as a single unit.
----
-After transferring a marker to a new body, the scene should be re-solved.

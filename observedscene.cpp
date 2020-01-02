@@ -291,6 +291,7 @@ void ObservedScene::removeMarker(MarkerIndex marker_index)
   clearClipboard(*this);
   ObservedScene::removingMarker(*this, marker_index);
   scene_state.removeMarker(marker_index);
+  updateSceneObjects(scene, scene_handles, scene_state);
 }
 
 
