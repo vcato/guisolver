@@ -571,8 +571,8 @@ nextPaths(
   TreeItemIndex index = 0;
 
   if (maybe_body_index) {
-    index += 3;
-        // 3 for translation, rotation, and geometry
+    index += 4;
+        // 4 for name, translation, rotation, and geometry
   }
 
   const TreePath body_path = bodyPath(maybe_body_index, tree_paths);
@@ -789,8 +789,6 @@ createBodyItem(
   TreePath rotation_path    = adder.addVoid("rotation: []");
   TreePath geometry_path    = adder.addVoid("[Box]");
 
-  TreePath next_body_path = childPath(body_path, adder.n_children);
-  TreePath next_marker_path = childPath(body_path, adder.n_children);
   body_paths.path = body_path;
   body_paths.name = name_path;
 
