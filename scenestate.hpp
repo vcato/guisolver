@@ -53,7 +53,7 @@ class SceneState {
       XYZSolveFlags rotation;
     };
 
-    struct Geometry {
+    struct Box {
       XYZ scale = {1,1,1};
       XYZ center = {0,0,0};
     };
@@ -63,7 +63,10 @@ class SceneState {
       Body(const Name &name) : name(name) {}
       Name name;
       Transform transform;
-      Geometry geometry;
+      vector<Box> boxes = vector<Box>{1};
+      Box &box() { return boxes[0]; }
+      const Box &box() const { return boxes[0]; }
+
       TransformSolveFlags solve_flags;
       Optional<BodyIndex> maybe_parent_index;
     };

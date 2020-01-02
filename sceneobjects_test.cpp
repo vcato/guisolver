@@ -27,7 +27,8 @@ int main()
   SceneState state;
   BodyIndex parent_index = state.createBody(/*parent*/{});
   BodyIndex child_index = state.createBody(parent_index);
-  state.body(child_index).geometry.center = xyzState(center);
+  state.body(child_index).boxes.resize(1);
+  state.body(child_index).boxes[0].center = xyzState(center);
   SceneHandles scene_handles = createSceneObjects(state, scene);
   assert(sceneGeometryCenter(child_index, scene, scene_handles) == center);
   destroySceneObjects(scene, state, scene_handles);

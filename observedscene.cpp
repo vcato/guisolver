@@ -27,8 +27,12 @@ static bool isRotateItem(const TreePath &path, const TreePaths &tree_paths)
 static bool isScaleItem(const TreePath &path, const TreePaths &tree_paths)
 {
   for (auto i : indicesOf(tree_paths.bodies)) {
-    if (startsWith(path, tree_paths.body(i).geometry.path)) {
-      return true;
+    const TreePaths::Body &body_paths = tree_paths.body(i);
+
+    for (const TreePaths::Box &box_paths : body_paths.boxes) {
+      if (startsWith(path, box_paths.path)) {
+        return true;
+      }
     }
   }
 

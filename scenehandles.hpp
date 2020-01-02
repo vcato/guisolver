@@ -23,6 +23,10 @@ struct SceneHandles {
     Scene::LineHandle line;
   };
 
+  vector<Optional<TransformHandle>> bodies;
+  Markers markers;
+  DistanceErrors distance_errors;
+
   template <typename SceneHandles>
   static MatchConst_t<TransformHandle, SceneHandles> &
   body(BodyIndex i, SceneHandles &scene_handles)
@@ -43,10 +47,6 @@ struct SceneHandles {
   const TransformHandle &body(BodyIndex i) const { return body(i, *this); }
   Marker &marker(MarkerIndex i) { return marker(i, *this); }
   const Marker &marker(MarkerIndex i) const { return marker(i, *this); }
-
-  vector<Optional<TransformHandle>> bodies;
-  Markers markers;
-  DistanceErrors distance_errors;
 };
 
 

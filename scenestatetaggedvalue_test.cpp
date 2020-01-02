@@ -26,6 +26,13 @@ static BodyIndex createGlobalBodyIn(SceneState &scene_state)
 }
 
 
+static SceneState::Box &bodyBox(SceneState::Body &body)
+{
+  assert(body.boxes.size() == 1);
+  return body.boxes[0];
+}
+
+
 static void testCreatingABodyFromATaggedValue()
 {
   const char *text =
@@ -74,14 +81,17 @@ static void testCreatingABodyFromATaggedValue()
   );
 
   assert(state.bodies().size() == 1);
-  assert(state.body(0).geometry.scale.x == 1);
-  assert(state.body(0).geometry.scale.y == 2.5);
-  assert(state.body(0).geometry.scale.z == 3.5);
-  assert(state.body(0).geometry.center.x == 1.5);
-  assert(state.body(0).geometry.center.y == 2.5);
-  assert(state.body(0).geometry.center.z == 3.5);
-  assert(state.body(0).solve_flags.translation.x == false);
-  assert(state.body(0).solve_flags.translation.y == true);
+  const SceneState::Body &body = state.body(0);
+  assert(body.boxes.size() == 1);
+  const SceneState::Box &box = body.boxes[0];
+  assert(box.scale.x == 1);
+  assert(box.scale.y == 2.5);
+  assert(box.scale.z == 3.5);
+  assert(box.center.x == 1.5);
+  assert(box.center.y == 2.5);
+  assert(box.center.z == 3.5);
+  assert(body.solve_flags.translation.x == false);
+  assert(body.solve_flags.translation.y == true);
 }
 
 
@@ -95,7 +105,7 @@ static void testBody()
     BodyIndex body_index = createGlobalBodyIn(scene_state);
     scene_state.body(body_index).name = "testbody";
     scene_state.body(body_index).solve_flags.translation.y = false;
-    scene_state.body(body_index).geometry.center.y = 2.5;
+    bodyBox(scene_state.body(body_index)).center.y = 2.5;
 
     TaggedValue tagged_value("root");
     createBodyTaggedValue(tagged_value, body_index, scene_state);
@@ -119,7 +129,7 @@ static void testBody()
       );
 
     assert(scene_state.body(body_index).solve_flags.translation.y == false);
-    assert(scene_state.body(body_index).geometry.center.y == 2.5);
+    assert(bodyBox(scene_state.body(body_index)).center.y == 2.5);
     assert(scene_state.body(body_index).name == "testbody");
   }
 }

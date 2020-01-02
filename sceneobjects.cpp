@@ -69,8 +69,8 @@ updateSceneStateFromSceneObjects(
     const TransformHandle body_handle = scene_handles.body(i);
     SceneState::Body &body_state = state.body(i);
     body_state.transform = transformState(localTransform(scene, body_handle));
-    body_state.geometry.scale = xyzState(scene.geometryScale(body_handle));
-    body_state.geometry.center = xyzState(scene.geometryCenter(body_handle));
+    body_state.box().scale = xyzState(scene.geometryScale(body_handle));
+    body_state.box().center = xyzState(scene.geometryCenter(body_handle));
   }
 }
 
@@ -304,11 +304,11 @@ static void
   );
 
   scene.setGeometryScale(
-    body_transform_handle, vec3(body_state.geometry.scale)
+    body_transform_handle, vec3(body_state.box().scale)
   );
 
   scene.setGeometryCenter(
-    body_transform_handle, point(body_state.geometry.center)
+    body_transform_handle, point(body_state.box().center)
   );
 }
 

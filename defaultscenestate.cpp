@@ -75,7 +75,7 @@ SceneState defaultSceneState()
   SceneState::XYZ scale = { 5.0, 0.1, 10.0 };
   BodyIndex body_index = createBodyInState(result, /*maybe_parent_index*/{});
   setAll(result.body(body_index).solve_flags, true);
-  result.body(body_index).geometry.scale = scale;
+  result.body(body_index).boxes[0].scale = scale;
 
   Transform default_box_transform =
     makeTransform(defaultBoxCoordinateAxes(), defaultBoxTranslation());

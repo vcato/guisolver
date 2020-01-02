@@ -246,32 +246,33 @@ createBodyFromTaggedValue(
   const TaggedValue *box_ptr = findChild(tagged_value, "Box");
 
   if (box_ptr) {
-    const TaggedValue &box = *box_ptr;
+    const TaggedValue &box_tagged_value = *box_ptr;
+    // Here, we would add a box to the body.
+    SceneState::Box &box_state = result.body(body_index).boxes[0];
     {
-      const TaggedValue *scale_ptr = findChild(box, "scale");
+      const TaggedValue *scale_ptr = findChild(box_tagged_value, "scale");
       const Vec3 default_scale = {1,1,1};
 
       if (scale_ptr) {
-        result.body(body_index).geometry.scale =
+        box_state.scale =
           xyzValueOr(*scale_ptr, default_scale);
       }
       else {
-        result.body(body_index).geometry.scale.x =
-          numericValueOr(box, "scale_x", default_scale.x);
+        box_state.scale.x =
+          numericValueOr(box_tagged_value, "scale_x", default_scale.x);
 
-        result.body(body_index).geometry.scale.y =
-          numericValueOr(box, "scale_y", default_scale.y);
+        box_state.scale.y =
+          numericValueOr(box_tagged_value, "scale_y", default_scale.y);
 
-        result.body(body_index).geometry.scale.z =
-          numericValueOr(box, "scale_z", default_scale.z);
+        box_state.scale.z =
+          numericValueOr(box_tagged_value, "scale_z", default_scale.z);
       }
     }
     {
-      const TaggedValue *center_ptr = findChild(box, "center");
+      const TaggedValue *center_ptr = findChild(box_tagged_value, "center");
 
       if (center_ptr) {
-        result.body(body_index).geometry.center =
-          xyzValueOr(*center_ptr, {0,0,0});
+        box_state.center = xyzValueOr(*center_ptr, {0,0,0});
       }
     }
   }
@@ -521,12 +522,12 @@ static TaggedValue &
 
 
 static TaggedValue &
-  createBox(TaggedValue &parent, const SceneState::Body &box_state)
+  createBox(TaggedValue &parent, const SceneState::Box &box_state)
 {
-  auto &box = create(parent, "Box");
-  create(box, "scale", box_state.geometry.scale);
-  create(box, "center", box_state.geometry.center);
-  return box;
+  auto &box_tagged_value = create(parent, "Box");
+  create(box_tagged_value, "scale", box_state.scale);
+  create(box_tagged_value, "center", box_state.center);
+  return box_tagged_value;
 }
 
 
@@ -615,7 +616,10 @@ void
       body_state.solve_flags
     );
 
-  createBox(transform, body_state);
+  for (const SceneState::Box &box_state : body_state.boxes) {
+    createBox(transform, box_state);
+  }
+
   createChildBodiesInTaggedValue(transform, scene_state, body_index);
 
   for (const SceneState::Marker &marker_state : scene_state.markers()) {

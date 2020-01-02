@@ -4,3 +4,49 @@ Allow adding distance errors to bodies.
   remove or add bodies.
 * This will make it more natural to think of a body, its markers, and
   its distance errors as a single unit.
+---
+Allow loading .obj geometry onto a body.
+---
+Have rays.
+
+Class {
+  name: "Ray"
+  Param {
+    name: "origin"
+    type: Point
+  }
+  Param {
+    name: "direction"
+    type: Vector
+  }
+  Line {
+    start: origin
+    end: origin + direction*1000
+  }
+}
+Class {
+  name: "PointOnRay"
+  Param {
+    name: "ray"
+    type: Ray
+  }
+  Param {
+    name: "step"
+    type: Float
+  }
+  ray.origin + ray.direction*step
+}
+
+Should we have markers as children of rays?
+
+A ray could just be geometry.  It could be an infinite line along the X
+axis starting at (0,0,0).  We could change the ray origin and direction
+using a body.
+
+Seems like we want to be able to add and remove geometry, so generalizing
+the geometry so that we can have a list of geometry objects on a
+body seems best.
+
+Maybe we have a list of boxes and a list of rays on a body.
+---
+We need to generalize the scene so that there can be multiple geometry objects.

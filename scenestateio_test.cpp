@@ -18,6 +18,13 @@ static string sceneStateString(const SceneState &state)
 }
 
 
+static SceneState::Box &bodyBox(SceneState::Body &body)
+{
+  assert(body.boxes.size() == 1);
+  return body.boxes[0];
+}
+
+
 static void testWith(const SceneState &state)
 {
   std::string state_string = sceneStateString(state);
@@ -55,10 +62,10 @@ static void testWithChildTransform()
   SceneState::XYZ scale = { 5, 0.1, 10 };
   BodyIndex body1_index = createBodyInState(state, /*parent*/{});
   setAll(state.body(body1_index).solve_flags, true);
-  state.body(body1_index).geometry.scale = scale;
+  bodyBox(state.body(body1_index)).scale = scale;
   BodyIndex body2_index = createBodyInState(state, /*parent*/body1_index);
   setAll(state.body(body2_index).solve_flags, true);
-  state.body(body2_index).geometry.scale = scale;
+  bodyBox(state.body(body2_index)).scale = scale;
   string state_string = sceneStateString(state);
 
   string expected_string =
@@ -180,10 +187,10 @@ static void testWithMultipleTransforms()
   SceneState::XYZ box_scale = {5, 0.1, 10};
   BodyIndex box1_index = createBodyInState(state, /*maybe_parent_index*/{});
   setAll(state.body(box1_index).solve_flags, true);
-  state.body(box1_index).geometry.scale = box_scale;
+  bodyBox(state.body(box1_index)).scale = box_scale;
   BodyIndex box2_index = createBodyInState(state, /*maybe_parent_index*/{});
   setAll(state.body(box2_index).solve_flags, true);
-  state.body(box2_index).geometry.scale = box_scale;
+  bodyBox(state.body(box2_index)).scale = box_scale;
   string state_string = sceneStateString(state);
   assert(state_string == expected_string);
   testWith(state);

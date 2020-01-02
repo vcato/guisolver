@@ -86,31 +86,35 @@ struct TreePaths {
     explicit Scale(const XYZ &xyz_arg) : XYZ(xyz_arg) {}
   };
 
+  struct Box {
+    TreePath path;
+    Scale scale;
+    XYZ center;
+
+    template <typename F>
+    static void forEachMember(const F &f)
+    {
+      f(&Box::path);
+      f(&Box::scale);
+      f(&Box::center);
+    }
+
+    bool operator==(const Box &arg) const
+    {
+      return isEqual(*this, arg);
+    }
+  };
+
   struct Body {
-    struct Geometry {
-      TreePath path;
-      Scale scale;
-      XYZ center;
-
-      template <typename F>
-      static void forEachMember(const F &f)
-      {
-        f(&Geometry::path);
-        f(&Geometry::scale);
-        f(&Geometry::center);
-      }
-
-      bool operator==(const Geometry &arg) const
-      {
-        return isEqual(*this, arg);
-      }
-    };
-
     TreePath path;
     TreePath name;
     Translation translation;
     Rotation rotation;
-    Geometry geometry;
+    vector<Box> boxes;
+
+    Body()
+    {
+    }
 
     template <typename F>
     static void forEachMember(const F &f)
@@ -119,7 +123,7 @@ struct TreePaths {
       f(&Body::name);
       f(&Body::translation);
       f(&Body::rotation);
-      f(&Body::geometry);
+      f(&Body::boxes);
     }
 
     bool operator==(const Body &arg) const

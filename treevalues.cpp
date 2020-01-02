@@ -1,21 +1,19 @@
 #include "treevalues.hpp"
 
-#include "eigenconv.hpp"
 #include "rotationvector.hpp"
 #include "numericvalue.hpp"
 #include "stringvalue.hpp"
-#include "sceneerror.hpp"
 #include "indicesof.hpp"
 #include "vectorio.hpp"
 #include "removeindexfrom.hpp"
 #include "startswith.hpp"
 #include "numericvaluelimits.hpp"
-#include "maketransform.hpp"
 #include "transformstate.hpp"
 
 using std::cerr;
 using std::string;
 using LabelProperties = TreeWidget::LabelProperties;
+using BoxPaths = TreePaths::Box;
 static int defaultDigitsOfPrecision() { return 2; }
 
 
@@ -771,6 +769,32 @@ addXYZ(ItemAdder &adder, const string &label, const SceneState::XYZ &xyz)
 }
 
 
+static void
+createBoxItem(
+  BoxPaths &box_paths,
+  ItemAdder &parent_adder,
+  TreeWidget &tree_widget,
+  const SceneState::Box &box_state
+)
+{
+  TreePath box_path    = parent_adder.addVoid("[Box]");
+  box_paths.path = box_path;
+  ItemAdder adder{box_path, tree_widget};
+
+  {
+    string label = "scale: []";
+    TreePath path = adder.addVoid(label);
+    ItemAdder child_adder{path, adder.tree_widget};
+    AddNumericItemFunction add(child_adder);
+    add.minimum_value = 0;
+    TreePaths::XYZ xyz_paths = createXYZChildren(add, box_state.scale);
+    box_paths.scale = TreePaths::Scale(xyz_paths);
+  }
+
+  box_paths.center = addXYZ(adder, "center: []", box_state.center);
+}
+
+
 static TreePaths::Body
 createBodyItem(
   const TreePath &body_path,
@@ -779,15 +803,12 @@ createBodyItem(
 )
 {
   TreePaths::Body body_paths;
-
   tree_widget.createVoidItem(body_path, LabelProperties{bodyLabel(body_state)});
-
   ItemAdder adder{body_path, tree_widget};
 
   TreePath name_path        = adder.addString("name:",body_state.name);
   TreePath translation_path = adder.addVoid("translation: []");
   TreePath rotation_path    = adder.addVoid("rotation: []");
-  TreePath geometry_path    = adder.addVoid("[Box]");
 
   body_paths.path = body_path;
   body_paths.name = name_path;
@@ -811,24 +832,11 @@ createBodyItem(
       )
     );
 
-  body_paths.geometry.path = geometry_path;
+  size_t n_boxes = body_state.boxes.size();
+  body_paths.boxes.resize(n_boxes);
 
-  {
-    ItemAdder adder{geometry_path, tree_widget};
-    TreePaths::Body::Geometry &geometry_paths = body_paths.geometry;
-    const SceneState::Geometry &geometry_state = body_state.geometry;
-
-    {
-      string label = "scale: []";
-      TreePath path = adder.addVoid(label);
-      ItemAdder child_adder{path, adder.tree_widget};
-      AddNumericItemFunction add(child_adder);
-      add.minimum_value = 0;
-      TreePaths::XYZ xyz_paths = createXYZChildren(add, geometry_state.scale);
-      geometry_paths.scale = TreePaths::Scale(xyz_paths);
-    }
-
-    geometry_paths.center = addXYZ(adder, "center: []", geometry_state.center);
+  for (size_t i=0; i!=n_boxes; ++i) {
+    createBoxItem(body_paths.boxes[i], adder, tree_widget, body_state.boxes[i]);
   }
 
   return body_paths;
@@ -1040,15 +1048,22 @@ updateBody(
     const RotationState &rotation = rotationStateOf(global);
     updateRotationValues(tree_widget, rotation_paths, rotation);
   }
-  {
-    const TreePaths::XYZ &scale_paths = body_paths.geometry.scale;
-    const SceneState::XYZ &scale = body_state.geometry.scale;
-    updateXYZValues(tree_widget, scale_paths, vec3(scale));
-  }
-  {
-    const TreePaths::XYZ &center_paths = body_paths.geometry.center;
-    const SceneState::XYZ &center = body_state.geometry.center;
-    updateXYZValues(tree_widget, center_paths, vec3(center));
+  assert(body_paths.boxes.size() == body_state.boxes.size());
+  size_t n_boxes = body_state.boxes.size();
+
+  for (size_t i=0; i!=n_boxes; ++i) {
+    const BoxPaths &box_paths = body_paths.boxes[i];
+    const SceneState::Box &box_state = body_state.boxes[i];
+    {
+      const TreePaths::XYZ &scale_paths = box_paths.scale;
+      const SceneState::XYZ &scale = box_state.scale;
+      updateXYZValues(tree_widget, scale_paths, vec3(scale));
+    }
+    {
+      const TreePaths::XYZ &center_paths = box_paths.center;
+      const SceneState::XYZ &center = box_state.center;
+      updateXYZValues(tree_widget, center_paths, vec3(center));
+    }
   }
 }
 
@@ -1321,6 +1336,48 @@ static bool
 }
 
 
+static bool
+setBodyNumericValue(
+  SceneState::Body &body_state,
+  const TreePath &path,
+  NumericValue value,
+  const TreePaths::Body &body_paths
+)
+{
+  if (startsWith(path, body_paths.path)) {
+    TransformState transform_state = body_state.transform;
+
+    if (setTransformValue(transform_state, path, value, body_paths)) {
+      body_state.transform = transform_state;
+      return true;
+    }
+
+    assert(body_paths.boxes.size() == body_state.boxes.size());
+    size_t n_boxes = body_state.boxes.size();
+
+    for (size_t box_index = 0; box_index != n_boxes; ++box_index) {
+      const BoxPaths &box_paths = body_paths.boxes[box_index];
+      SceneState::Box &box_state = body_state.boxes[box_index];
+
+      if (startsWith(path, box_paths.path)) {
+        if (startsWith(path, box_paths.scale.path)) {
+          return setVectorValue(box_state.scale, path, value, box_paths.scale);
+        }
+        else if (startsWith(path, box_paths.center.path)) {
+          return
+            setVectorValue(box_state.center, path, value, box_paths.center);
+        }
+        else {
+          assert(false); // not implemented
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+
 bool
 setSceneStateNumericValue(
   SceneState &scene_state,
@@ -1331,41 +1388,11 @@ setSceneStateNumericValue(
 {
   for (auto body_index : indicesOf(tree_paths.bodies)) {
     const TreePaths::Body &body_paths = tree_paths.body(body_index);
+    SceneState::Body &body_state = scene_state.body(body_index);
 
-    if (startsWith(path, body_paths.path)) {
-      SceneState::Body &body_state = scene_state.body(body_index);
-      TransformState transform_state = body_state.transform;
-
-      if (setTransformValue(transform_state, path, value, body_paths)) {
-        body_state.transform = transform_state;
-        return true;
-      }
-
-      if (startsWith(path, body_paths.geometry.path)) {
-        SceneState::Geometry &geometry_state =
-          body_state.geometry;
-
-        const TreePaths::Body::Geometry &geometry_paths =
-          body_paths.geometry;
-
-        if (startsWith(path, geometry_paths.scale.path)) {
-          return
-            setVectorValue(
-              geometry_state.scale, path, value, geometry_paths.scale
-            );
-        }
-        else if (startsWith(path, geometry_paths.center.path)) {
-          return
-            setVectorValue(
-              geometry_state.center, path, value, geometry_paths.center
-            );
-        }
-        else {
-          assert(false); // not implemented
-        }
-      }
+    if (setBodyNumericValue(body_state, path, value, body_paths)) {
+      return true;
     }
-
   }
 
   for (auto i : indicesOf(tree_paths.markers)) {
