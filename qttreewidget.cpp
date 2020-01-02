@@ -308,7 +308,6 @@ void
 {
   TreePath parent_path = parentPath(new_item_path);
   QTreeWidgetItem &parent_item = itemFromPath(parent_path);
-  assert(new_item_path.back() == parent_item.childCount());
   createLineEditItem(parent_item,label_properties,value);
 }
 
@@ -521,6 +520,7 @@ void
   )
 {
   assert(item_ptr);
+  assert(line_edit_item_value_changed_callback);
   line_edit_item_value_changed_callback(itemPath(*item_ptr),value);
 }
 

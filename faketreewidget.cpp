@@ -40,11 +40,15 @@ LabelText
   )
 {
   ostringstream stream;
+  stream << ", value=" << value << ", options=" << options;
+  return stream.str();
+}
 
-  stream <<
-    ", value=" << value <<
-    ", options=" << options;
 
+LabelText FakeTreeWidget::stringValueText(const StringValue &value)
+{
+  ostringstream stream;
+  stream << ", value=" << value;
   return stream.str();
 }
 

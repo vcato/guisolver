@@ -4,6 +4,7 @@
 #include <string>
 #include "optional.hpp"
 #include "numericvalue.hpp"
+#include "stringvalue.hpp"
 #include "vector.hpp"
 #include "treewidget.hpp"
 
@@ -53,6 +54,8 @@ struct FakeTreeWidget : TreeWidget {
       int value,
       const EnumerationOptions &options
     );
+
+  static LabelText stringValueText(const StringValue &);
 
   template <typename Item>
   static Item &
@@ -139,12 +142,16 @@ struct FakeTreeWidget : TreeWidget {
 
   void
     createStringItem(
-      const TreePath &/*new_item_path*/,
-      const LabelProperties &,
-      const std::string &/*value*/
+      const TreePath &new_item_path,
+      const LabelProperties &label_properties,
+      const std::string &value
     ) override
   {
-    assert(false); // not implemented
+    createItem(
+      new_item_path,
+      label_properties,
+      stringValueText(value)
+    );
   }
 
   void

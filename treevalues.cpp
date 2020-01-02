@@ -3,6 +3,7 @@
 #include "eigenconv.hpp"
 #include "rotationvector.hpp"
 #include "numericvalue.hpp"
+#include "stringvalue.hpp"
 #include "sceneerror.hpp"
 #include "indicesof.hpp"
 #include "vectorio.hpp"
@@ -51,6 +52,14 @@ struct ItemAdder {
   {
     TreePath child_path = childPath(parent_path, n_children);
     tree_widget.createVoidItem(child_path, LabelProperties{label});
+    ++n_children;
+    return child_path;
+  }
+
+  TreePath addString(const string &label, const StringValue &value)
+  {
+    TreePath child_path = childPath(parent_path, n_children);
+    tree_widget.createStringItem(child_path, LabelProperties{label}, value);
     ++n_children;
     return child_path;
   }
@@ -127,17 +136,24 @@ static TreePaths::XYZ
 }
 
 
+static string markerLabel(const SceneState::Marker &state_marker)
+{
+  return "[Marker] " + state_marker.name;
+}
+
+
 static TreePaths::Marker
 createMarker(
   TreeWidget &tree_widget,
   const TreePath &path,
-  const string &name,
-  const SceneState::XYZ &position
+  const SceneState::Marker &state_marker
 )
 {
-  tree_widget.createVoidItem(path,LabelProperties{"[Marker] " + name});
+  const string &name = state_marker.name;
+  const SceneState::XYZ &position = state_marker.position;
+  tree_widget.createVoidItem(path,LabelProperties{markerLabel(state_marker)});
   ItemAdder adder{path, tree_widget};
-  adder.addVoid("name: \"" + name + "\"");
+  TreePath name_path = adder.addString("name:", name);
   TreePath position_path = adder.addVoid("position: []");
 
   TreePaths::Position position_paths =
@@ -145,7 +161,7 @@ createMarker(
       createXYZChildren(tree_widget, position_path, position)
     );
 
-  TreePaths::Marker marker_paths = {path, position_paths};
+  TreePaths::Marker marker_paths = {path, name_path, position_paths};
   return marker_paths;
 }
 
@@ -663,12 +679,12 @@ removeMarkerFromTree(
 
 
 static void
-  updateDistanceError(
-    DistanceErrorIndex distance_error_index,
-    TreeWidget &tree_widget,
-    const TreePaths &tree_paths,
-    const SceneState &scene_state
-  )
+updateDistanceError(
+  DistanceErrorIndex distance_error_index,
+  TreeWidget &tree_widget,
+  const TreePaths &tree_paths,
+  const SceneState &scene_state
+)
 {
   const TreePaths::DistanceError &distance_error_paths =
     tree_paths.distance_errors[distance_error_index];
@@ -717,9 +733,7 @@ createMarkerItemInTree(
   handlePathInsertion(tree_paths, marker_path);
 
   tree_paths.markers[marker_index] =
-    createMarker(
-      tree_widget, marker_path, state_marker.name, state_marker.position
-    );
+    createMarker(tree_widget, marker_path, state_marker);
 }
 
 
@@ -980,6 +994,11 @@ static void
     const TreePaths &tree_paths
   )
 {
+  tree_widget.setItemLabel(
+    tree_paths.marker(i).path,
+    markerLabel(markers[i])
+  );
+
   updateXYZValues(
     tree_widget,
     tree_paths.marker(i).position,
@@ -1172,14 +1191,14 @@ static bool
 
 
 static bool
-  setMarkerValue(
+  setMarkerNumericValue(
     const TreePath &path,
     NumericValue value,
     const TreePaths::Marker &marker_path,
     SceneState::Marker &marker_state
   )
 {
-  if (startsWith(path,marker_path.position.path)) {
+  if (startsWith(path, marker_path.position.path)) {
     return
       setVectorValue(marker_state.position, path, value, marker_path.position);
   }
@@ -1189,31 +1208,29 @@ static bool
 
 
 static bool
-setMarkersValue(
-  const TreePath &path,
-  NumericValue value,
-  const TreePaths::Markers &,
-  const TreePaths &tree_paths,
-  SceneState &scene_state
-)
+  setMarkerStringValue(
+    const TreePath &path,
+    const StringValue &value,
+    SceneState &scene_state,
+    const TreePaths &tree_paths,
+    MarkerIndex marker_index
+  )
 {
-  for (auto i : indicesOf(tree_paths.markers)) {
-    bool value_was_set =
-      setMarkerValue(
-        path,
-        value,
-        tree_paths.marker(i),
-        scene_state.marker(i)
-      );
+  const TreePaths::Marker &marker_path = tree_paths.marker(marker_index);
+  SceneState::Marker &marker_state = scene_state.marker(marker_index);
 
-    if (value_was_set) {
-      return true;
+  if (startsWith(path, marker_path.name)) {
+    if (findMarkerIndex(scene_state, value)) {
+      // Name already exists.
+      return false;
     }
+
+    marker_state.name = value;
+    return true;
   }
 
   return false;
 }
-
 
 
 static bool
@@ -1267,12 +1284,12 @@ static bool
 
 
 bool
-  setSceneStateValue(
-    SceneState &scene_state,
-    const TreePath &path,
-    NumericValue value,
-    const TreePaths &tree_paths
-  )
+setSceneStateNumericValue(
+  SceneState &scene_state,
+  const TreePath &path,
+  NumericValue value,
+  const TreePaths &tree_paths
+)
 {
   for (auto body_index : indicesOf(tree_paths.bodies)) {
     const TreePaths::Body &body_paths = tree_paths.body(body_index);
@@ -1313,17 +1330,16 @@ bool
 
   }
 
-  {
-    bool was_markers_value =
-      setMarkersValue(
+  for (auto i : indicesOf(tree_paths.markers)) {
+    bool value_was_set =
+      setMarkerNumericValue(
         path,
         value,
-        tree_paths.markers,
-        tree_paths,
-        scene_state
+        tree_paths.marker(i),
+        scene_state.marker(i)
       );
 
-    if (was_markers_value) {
+    if (value_was_set) {
       return true;
     }
   }
@@ -1338,6 +1354,27 @@ bool
       );
 
     if (was_distance_error_value) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+bool
+setSceneStateStringValue(
+  SceneState &scene_state,
+  const TreePath &path,
+  const StringValue &value,
+  const TreePaths &tree_paths
+)
+{
+  for (auto i : indicesOf(tree_paths.markers)) {
+    bool value_was_set =
+      setMarkerStringValue(path, value, scene_state, tree_paths, i);
+
+    if (value_was_set) {
       return true;
     }
   }

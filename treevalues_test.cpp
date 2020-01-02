@@ -245,7 +245,7 @@ static void testChangingNumericValues()
       tree_widget.setItemNumericValue(path, value + 1);
 
       bool value_was_changed =
-        setSceneStateValue(test_state, path, value, tree_paths);
+        setSceneStateNumericValue(test_state, path, value, tree_paths);
 
       assert(value_was_changed);
     };

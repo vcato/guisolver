@@ -1,6 +1,7 @@
 #include "treepaths.hpp"
 #include "treewidget.hpp"
 #include "scenestate.hpp"
+#include "stringvalue.hpp"
 
 
 extern TreePaths fillTree(TreeWidget &, const SceneState &);
@@ -105,9 +106,18 @@ extern void
 
 
 extern bool
-  setSceneStateValue(
+  setSceneStateNumericValue(
     SceneState &scene_state,
     const TreePath &path,
     NumericValue value,
+    const TreePaths &tree_paths
+  );
+
+
+extern bool
+  setSceneStateStringValue(
+    SceneState &scene_state,
+    const TreePath &path,
+    const StringValue &value,
     const TreePaths &tree_paths
   );

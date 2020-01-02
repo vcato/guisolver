@@ -51,12 +51,14 @@ struct TreePaths {
 
   struct Marker {
     TreePath path;
+    TreePath name;
     Position position;
 
     template <typename F>
     static void forEachMember(const F &f)
     {
       f(&Marker::path);
+      f(&Marker::name);
       f(&Marker::position);
     }
 

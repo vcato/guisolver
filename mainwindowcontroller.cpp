@@ -209,10 +209,17 @@ struct MainWindowController::Impl {
   }
 
   static void
-    handleTreeValueChanged(
+    handleTreeNumericValueChanged(
       MainWindowController &,
       const TreePath &,
       NumericValue
+    );
+
+  static void
+    handleTreeStringValueChanged(
+      MainWindowController &,
+      const TreePath &,
+      const StringValue &
     );
 
   static void
@@ -422,17 +429,22 @@ static auto*
 
 
 void
-  MainWindowController::Impl::handleTreeValueChanged(
-    MainWindowController &controller,
-    const TreePath &path,
-    NumericValue value
-  )
+MainWindowController::Impl::handleTreeNumericValueChanged(
+  MainWindowController &controller,
+  const TreePath &path,
+  NumericValue value
+)
 {
   Data &data = Impl::data(controller);
-  TreeWidget &tree_widget = data.observed_scene.tree_widget;
-  const TreePaths &tree_paths = data.observed_scene.tree_paths;
-  SceneState &state = data.observed_scene.scene_state;
-  bool value_was_changed = setSceneStateValue(state, path, value, tree_paths);
+  ObservedScene &observed_scene = data.observed_scene;
+  TreeWidget &tree_widget = observed_scene.tree_widget;
+  const TreePaths &tree_paths = observed_scene.tree_paths;
+  SceneState &state = observed_scene.scene_state;
+  Scene &scene = observed_scene.scene;
+  const SceneHandles &scene_handles = observed_scene.scene_handles;
+
+  bool value_was_changed =
+    setSceneStateNumericValue(state, path, value, tree_paths);
 
   if (value_was_changed) {
     {
@@ -454,9 +466,7 @@ void
       }
     }
 
-    Scene &scene = data.observed_scene.scene;
-    const SceneHandles &scene_handles = data.observed_scene.scene_handles;
-    updateErrorsInState(state);
+    observed_scene.update_errors_function(state);
     updateSceneObjects(scene, scene_handles, state);
     updateTreeValues(tree_widget, tree_paths, state);
   }
@@ -464,6 +474,29 @@ void
     cerr << "Handling spin_box_item_value_changed_function\n";
     cerr << "  path: " << path << "\n";
     cerr << "  value: " << value << "\n";
+  }
+}
+
+
+void
+MainWindowController::Impl::handleTreeStringValueChanged(
+  MainWindowController &controller,
+  const TreePath &path,
+  const StringValue &value
+)
+{
+  Data &data = Impl::data(controller);
+  ObservedScene &observed_scene = data.observed_scene;
+  const TreePaths &tree_paths = observed_scene.tree_paths;
+  SceneState &state = observed_scene.scene_state;
+  TreeWidget &tree_widget = observed_scene.tree_widget;
+
+  bool value_was_changed =
+    setSceneStateStringValue(state, path, value, tree_paths);
+
+  if (value_was_changed) {
+    updateTreeValues(tree_widget, tree_paths, state);
+    updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, state);
   }
 }
 
@@ -995,7 +1028,7 @@ MainWindowController::MainWindowController(
 
   tree_widget.spin_box_item_value_changed_callback =
     [this](const TreePath &path, NumericValue value){
-      Impl::handleTreeValueChanged(*this, path, value);
+      Impl::handleTreeNumericValueChanged(*this, path, value);
     };
 
   tree_widget.enumeration_item_index_changed_callback =
@@ -1011,6 +1044,11 @@ MainWindowController::MainWindowController(
   tree_widget.context_menu_items_callback =
     [this](const TreePath &path){
       return Impl::contextMenuItemsForPath(*this, path);
+    };
+
+  tree_widget.line_edit_item_value_changed_callback =
+    [this](const TreePath &path, const StringValue &value){
+      Impl::handleTreeStringValueChanged(*this, path, value);
     };
 }
 
