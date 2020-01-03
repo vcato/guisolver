@@ -54,7 +54,5 @@ It seems like we need to work towards have
 createBox(), createSphere(), and createLine() so that they return new
 kinds of handles, and there is no implicit body.
 ---
-We need to have separate handles for the transform and the geometry.
-
-destroyTransformAndGeometry() will need to destroy the geometry then destroy
-the transform.
+We should be able to replace OSGScene::selectedTransform() with
+OSGScene::selectedGeometry()

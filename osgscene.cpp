@@ -33,6 +33,7 @@ using GroupPtr = osg::ref_ptr<osg::Group>;
 using AutoTransformPtr = osg::ref_ptr<osg::AutoTransform>;
 using DraggerPtr = osg::ref_ptr<osgManipulator::Dragger>;
 using TransformHandle = Scene::TransformHandle;
+using GeometryHandle = Scene::GeometryHandle;
 using LineAndTransformHandle = Scene::LineAndTransformHandle;
 using RotateDraggerPtr = osg::ref_ptr<RotateDragger>;
 using TranslateDraggerPtr = osg::ref_ptr<TranslateDragger>;
@@ -288,6 +289,18 @@ struct OSGScene::Impl {
     assert(transform_ptr);
     return *transform_ptr;
   }
+
+  static TransformHandle
+    makeHandleFromTransform(
+      OSGScene &scene,
+      osg::MatrixTransform &transform
+    );
+
+  static GeometryHandle
+    makeHandleFromGeometryTransform(
+      OSGScene &scene,
+      osg::MatrixTransform &geometry_transform
+    );
 
   static GeometryAndTransformHandle
     makeHandleFromTransforms(
@@ -1499,6 +1512,35 @@ size_t OSGScene::Impl::newHandleIndex(OSGScene &scene)
   return n;
 }
 
+
+TransformHandle
+OSGScene::Impl::makeHandleFromTransform(
+  OSGScene &scene,
+  osg::MatrixTransform &transform
+)
+{
+  size_t transform_index = newHandleIndex(scene);
+  scene._handle_datas[transform_index].transform_ptr = &transform;
+  TransformHandle transform_handle{transform_index};
+  return transform_handle;
+}
+
+
+GeometryHandle
+OSGScene::Impl::makeHandleFromGeometryTransform(
+  OSGScene &scene,
+  osg::MatrixTransform &geometry_transform
+)
+{
+  size_t geometry_index = newHandleIndex(scene);
+
+  scene._handle_datas[geometry_index].geometry_transform_ptr =
+    &geometry_transform;
+
+  return GeometryHandle{geometry_index};
+}
+
+
 auto
   OSGScene::Impl::makeHandleFromTransforms(
     OSGScene &scene,
@@ -1506,16 +1548,15 @@ auto
     osg::MatrixTransform &geometry_transform
   ) -> GeometryAndTransformHandle
 {
-  size_t transform_index = newHandleIndex(scene);
-  scene._handle_datas[transform_index].transform_ptr = &transform;
+  TransformHandle transform_handle = makeHandleFromTransform(scene, transform);
 
-  size_t geometry_index = newHandleIndex(scene);
-  assert(geometry_index != transform_index);
+  GeometryHandle geometry_handle =
+    makeHandleFromGeometryTransform(scene, geometry_transform);
 
-  scene._handle_datas[geometry_index].geometry_transform_ptr =
-    &geometry_transform;
+  assert(geometry_handle.index != transform_handle.index);
 
-  return GeometryAndTransformHandle{transform_index,geometry_index};
+  return
+    GeometryAndTransformHandle{transform_handle.index, geometry_handle.index};
 }
 
 
