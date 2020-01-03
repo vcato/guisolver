@@ -36,7 +36,10 @@ struct ObservedScene {
     Type type = Type::other;
     Optional<BodyIndex> maybe_body_index;
     Optional<MarkerIndex> maybe_marker_index;
+    Optional<size_t> maybe_box_index;
     Optional<DistanceErrorIndex> maybe_distance_error_index;
+    bool has_rotation_ancestor = false;
+    bool has_translation_ancesor = false;
   };
 
   Scene &scene;

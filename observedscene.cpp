@@ -425,12 +425,10 @@ ObservedScene::attachProperDraggerToSelectedObject(
     TreeItemDescription item =
       describePath(*tree_widget.selectedItem(), tree_paths);
 
-    using ItemType = TreeItemDescription::Type;
-
-    if (item.type == ItemType::rotation) {
+    if (item.has_rotation_ancestor) {
       scene.attachDraggerToSelectedNode(Scene::DraggerType::rotate);
     }
-    else if (item.type == ItemType::box) {
+    else if (item.maybe_box_index) {
       scene.attachDraggerToSelectedNode(Scene::DraggerType::scale);
     }
     else {
@@ -793,23 +791,39 @@ ObservedScene::describePath(const TreePath &path, const TreePaths &tree_paths)
     const TreePaths::Body &body_paths = tree_paths.body(body_index);
 
     if (startsWith(path, body_paths.translation.path)) {
-      description.type = ItemType::translation;
+      description.has_translation_ancesor = true;
+
+      if (path == body_paths.translation.path) {
+        description.type = ItemType::translation;
+      }
+
       description.maybe_body_index = body_index;
       return description;
     }
 
     if (startsWith(path, body_paths.rotation.path)) {
-      description.type = ItemType::rotation;
+      description.has_rotation_ancestor = true;
       description.maybe_body_index = body_index;
+
+      if (path == body_paths.rotation.path) {
+        description.type = ItemType::rotation;
+      }
+
       return description;
     }
 
     size_t n_boxes = body_paths.boxes.size();
 
     for (size_t box_index = 0; box_index != n_boxes; ++box_index) {
-      if (startsWith(path, body_paths.boxes[box_index].path)) {
-        description.type = ItemType::box;
+      const TreePaths::Box &box_paths = body_paths.boxes[box_index];
+
+      if (startsWith(path, box_paths.path)) {
+        if (path == box_paths.path) {
+          description.type = ItemType::box;
+        }
+
         description.maybe_body_index = body_index;
+        description.maybe_box_index = box_index;
         return description;
       }
     }
