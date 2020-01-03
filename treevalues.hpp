@@ -80,6 +80,15 @@ extern void
   );
 
 extern void
+  removeBoxFromTree(
+    TreeWidget &tree_widget,
+    TreePaths &tree_paths,
+    const SceneState &,
+    BodyIndex body_index,
+    BoxIndex box_index
+  );
+
+extern void
   createBodyBranchItemsInTree(
     BodyIndex body_index,
     TreeWidget &tree_widget,

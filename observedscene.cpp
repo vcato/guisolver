@@ -303,6 +303,19 @@ void ObservedScene::removeMarker(MarkerIndex marker_index)
 }
 
 
+void ObservedScene::removeBox(BodyIndex body_index, BoxIndex box_index)
+{
+  clearClipboard(*this);
+
+  removeBoxFromTree(
+    tree_widget, tree_paths, scene_state, body_index, box_index
+  );
+
+  removeBoxFromScene(scene, scene_handles, scene_state, body_index, box_index);
+  removeIndexFrom(scene_state.body(body_index).boxes, box_index);
+}
+
+
 template <typename Function>
 static void
 forEachChildItemPath(

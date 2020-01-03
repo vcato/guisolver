@@ -231,6 +231,13 @@ createDistanceErrorInScene(
 
 
 static void
+destroyBoxObjects(const SceneHandles::Box &box_handles, Scene &scene)
+{
+  scene.destroyGeometry(box_handles.handle);
+}
+
+
+static void
 destroyBodyObjects(
   BodyIndex body_index, Scene &scene, const SceneHandles &scene_handles
 )
@@ -241,7 +248,7 @@ destroyBodyObjects(
     size_t n_boxes = body_handles.boxes.size();
 
     for (size_t box_index = 0; box_index != n_boxes; ++box_index) {
-      scene.destroyGeometry(body_handles.boxes[box_index].handle);
+      destroyBoxObjects(body_handles.boxes[box_index], scene);
     }
   }
 
@@ -507,6 +514,21 @@ removeBodyFromScene(
   assert(!state.bodyHasChildren(body_index));
   removeBodyObjectFromScene(body_index, scene, scene_handles);
   removeIndexFrom(scene_handles.bodies, body_index);
+}
+
+
+void
+removeBoxFromScene(
+  Scene &scene,
+  SceneHandles &scene_handles,
+  const SceneState &,
+  BodyIndex body_index,
+  BoxIndex box_index
+)
+{
+  SceneHandles::Body &body_handles = *scene_handles.bodies[body_index];
+  destroyBoxObjects(body_handles.boxes[box_index], scene);
+  removeIndexFrom(body_handles.boxes, box_index);
 }
 
 

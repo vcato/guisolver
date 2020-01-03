@@ -66,3 +66,6 @@ and place the handle on that.
 ---
 If we're going to be able to remove the box, then the handle for a body
 has to be a TransformHandle and not a BoxAndTransformHandle.
+---
+If there's no box in the tag values for a body, it shouldn't create
+one automatically.

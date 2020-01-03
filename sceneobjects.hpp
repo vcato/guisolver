@@ -91,6 +91,15 @@ extern void
   );
 
 extern void
+  removeBoxFromScene(
+    Scene &,
+    SceneHandles &,
+    const SceneState &,
+    BodyIndex,
+    BoxIndex
+  );
+
+extern void
   createBodyBranchObjectsInScene(
     BodyIndex body_index,
     Scene &scene,

@@ -920,6 +920,22 @@ removeBodyFromTree(
 }
 
 
+void
+removeBoxFromTree(
+  TreeWidget &tree_widget,
+  TreePaths &tree_paths,
+  const SceneState &,
+  BodyIndex body_index,
+  BoxIndex box_index
+)
+{
+  TreePath box_path = tree_paths.body(body_index).boxes[box_index].path;
+  tree_widget.removeItem(box_path);
+  removeIndexFrom(tree_paths.bodies[body_index]->boxes, box_index);
+  handlePathRemoval(tree_paths, box_path);
+}
+
+
 TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
 {
   TreePaths tree_paths;

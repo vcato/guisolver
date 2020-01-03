@@ -12,6 +12,8 @@
 #include "vectorio.hpp"
 
 
+using BoxIndex = int;
+
 class SceneState {
   public:
     struct Marker;

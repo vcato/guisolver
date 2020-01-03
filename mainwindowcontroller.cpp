@@ -229,6 +229,13 @@ struct MainWindowController::Impl {
     );
 
   static void
+    removeBoxPressed(
+      MainWindowController &,
+      BodyIndex,
+      BoxIndex
+    );
+
+  static void
     duplicateMarkerPressed(
       MainWindowController &,
       MarkerIndex
@@ -735,6 +742,17 @@ void
 
 
 void
+MainWindowController::Impl::removeBoxPressed(
+  MainWindowController &controller,
+  BodyIndex body_index,
+  BoxIndex box_index
+)
+{
+  Impl::data(controller).observed_scene.removeBox(body_index, box_index);
+}
+
+
+void
   MainWindowController::Impl::duplicateMarkerPressed(
     MainWindowController &controller,
     MarkerIndex source_marker_index
@@ -945,6 +963,20 @@ TreeWidget::MenuItems
         {"Paste Preserving Global", paste_global_function}
       });
     }
+  }
+
+  if (item_type == ItemType::box) {
+    BodyIndex body_index = *item.maybe_body_index;
+    size_t box_index = *item.maybe_box_index;
+
+    auto remove_box_function =
+      [&controller, body_index, box_index]{
+        Impl::removeBoxPressed(controller, body_index, box_index);
+      };
+
+    appendTo(menu_items,{
+      {"Remove", remove_box_function}
+    });
   }
 
   if (item_type == ItemType::marker) {
