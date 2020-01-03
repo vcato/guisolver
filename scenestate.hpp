@@ -60,15 +60,13 @@ class SceneState {
 
     struct Body {
       using Name = String;
-      Body(const Name &name) : name(name) {}
       Name name;
       Transform transform;
-      vector<Box> boxes = vector<Box>{1};
-      Box &box() { return boxes[0]; }
-      const Box &box() const { return boxes[0]; }
-
+      vector<Box> boxes;
       TransformSolveFlags solve_flags;
       Optional<BodyIndex> maybe_parent_index;
+
+      Body(const Name &name, size_t n_boxes) : name(name), boxes(n_boxes) {}
     };
 
     struct DistanceError {

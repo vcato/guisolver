@@ -163,7 +163,7 @@ BodyIndex
 SceneState::createBody(Optional<BodyIndex> maybe_parent_index)
 {
   BodyIndex new_index = _bodies.size();
-  _bodies.emplace_back(newBodyName(*this));
+  _bodies.emplace_back(newBodyName(*this), /*n_boxes*/1);
   _bodies.back().maybe_parent_index = maybe_parent_index;
   return new_index;
 }
