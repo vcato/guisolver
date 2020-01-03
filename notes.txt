@@ -50,3 +50,13 @@ body seems best.
 Maybe we have a list of boxes and a list of rays on a body.
 ---
 We need to generalize the scene so that there can be multiple geometry objects.
+It seems like we need to work towards have
+createBox(), createSphere(), and createLine() so that they return new
+kinds of handles, and there is no implicit body.
+---
+We need to have separate handles for the transform and the geometry.
+
+destroyLineAndTransform() will need to destroy the line then destroy
+the transform.
+---
+Strengthen the types on geometryScale() and geometryCenter()

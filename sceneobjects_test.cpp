@@ -12,7 +12,7 @@ sceneGeometryCenter(
 )
 {
   const FakeScene::Bodies::const_iterator iter =
-    scene.bodies.find(scene_handles.body(index).index);
+    scene.bodies.find(scene_handles.body(index).transform_handle.index);
 
   assert(iter != scene.bodies.end());
   return iter->second.geometry_center;

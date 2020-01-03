@@ -2,7 +2,9 @@
 
 
 using TransformHandle = Scene::TransformHandle;
-using LineHandle = Scene::LineHandle;
+using LineAndTransformHandle = Scene::LineAndTransformHandle;
+using BoxAndTransformHandle = Scene::BoxAndTransformHandle;
+using SphereAndTransformHandle = Scene::SphereAndTransformHandle;
 using std::cerr;
 
 
@@ -14,19 +16,20 @@ TransformHandle FakeScene::create(TransformHandle parent_handle)
 }
 
 
-TransformHandle FakeScene::createSphere(TransformHandle parent_handle)
+SphereAndTransformHandle
+FakeScene::createSphereAndTransform(TransformHandle parent_handle)
 {
-  return create(parent_handle);
+  return SphereAndTransformHandle{create(parent_handle).index};
 }
 
 
-TransformHandle FakeScene::createBox(TransformHandle parent)
+BoxAndTransformHandle FakeScene::createBoxAndTransform(TransformHandle parent)
 {
-  return create(parent);
+  return BoxAndTransformHandle{create(parent).index};
 }
 
 
-LineHandle FakeScene::createLine(TransformHandle parent)
+LineAndTransformHandle FakeScene::createLineAndTransform(TransformHandle parent)
 {
-  return LineHandle{create(parent).index};
+  return LineAndTransformHandle{create(parent).index};
 }

@@ -21,11 +21,18 @@ class OSGScene : public Scene {
     ~OSGScene();
     TransformHandle top() const override;
 
-    using Scene::createSphere;
-    TransformHandle createSphere(TransformHandle parent) override;
-    TransformHandle createBox(TransformHandle parent) override;
-    LineHandle createLine(TransformHandle parent) override;
-    void destroyLine(LineHandle) override;
+    using Scene::createSphereAndTransform;
+
+    SphereAndTransformHandle
+      createSphereAndTransform(TransformHandle parent) override;
+
+    BoxAndTransformHandle
+      createBoxAndTransform(TransformHandle parent) override;
+
+    LineAndTransformHandle
+      createLineAndTransform(TransformHandle parent) override;
+
+    void destroyLineAndTransform(LineAndTransformHandle) override;
     void destroyObject(TransformHandle) override;
     void setGeometryScale(TransformHandle handle,const Vec3 &) override;
     void setGeometryCenter(TransformHandle handle,const Point &) override;
@@ -36,11 +43,14 @@ class OSGScene : public Scene {
     void setCoordinateAxes(TransformHandle,const CoordinateAxes &) override;
     CoordinateAxes coordinateAxes(TransformHandle) const override;
     void setColor(TransformHandle handle,float r,float g,float b) override;
-    void setStartPoint(LineHandle,Point) override;
-    void setEndPoint(LineHandle,Point) override;
+    void setStartPoint(LineAndTransformHandle,Point) override;
+    void setEndPoint(LineAndTransformHandle,Point) override;
     Optional<TransformHandle> selectedObject() const override;
     void selectObject(TransformHandle handle) override;
-    Optional<LineHandle> maybeLine(TransformHandle handle) const override;
+
+    Optional<LineAndTransformHandle>
+      maybeLineAndTransform(TransformHandle handle) const override;
+
     void attachDraggerToSelectedNode(DraggerType) override;
 
     GraphicsWindowPtr createGraphicsWindow(ViewType view_type);
@@ -50,8 +60,12 @@ class OSGScene : public Scene {
 
     class SelectionHandler;
 
-    vector<osg::MatrixTransform *> _transform_ptrs;
-      // These are the geometry transforms for each handle.
+    struct HandleData {
+      osg::MatrixTransform *transform_ptr = nullptr;
+      osg::MatrixTransform *geometry_transform_ptr = nullptr;
+    };
+
+    vector<HandleData> _handle_datas;
 
     const MatrixTransformPtr _top_node_ptr;
     const TransformHandle _top_handle;

@@ -51,16 +51,16 @@ forEachTransformHandlePath(
   Optional<TransformHandle> maybe_object;
 
   for (auto i : indicesOf(tree_paths.markers)) {
-    f(scene_handles.marker(i).handle, tree_paths.marker(i).path);
+    f(scene_handles.marker(i).handle.transform_handle, tree_paths.marker(i).path);
   }
 
   for (auto i : indicesOf(tree_paths.bodies)) {
-    f(scene_handles.body(i), tree_paths.body(i).path);
+    f(scene_handles.body(i).transform_handle, tree_paths.body(i).path);
   }
 
   for (auto i : indicesOf(tree_paths.distance_errors)) {
     f(
-      scene_handles.distance_errors[i].line,
+      scene_handles.distance_errors[i].line.transform_handle,
       tree_paths.distance_errors[i].path
     );
   }
@@ -414,8 +414,8 @@ ObservedScene::attachProperDraggerToSelectedObject(
   TreeWidget &tree_widget = observed_scene.tree_widget;
   TreePaths &tree_paths = observed_scene.tree_paths;
 
-  Optional<Scene::LineHandle> maybe_line_handle =
-    scene.maybeLine(*scene.selectedObject());
+  Optional<Scene::LineAndTransformHandle> maybe_line_handle =
+    scene.maybeLineAndTransform(*scene.selectedObject());
 
   if (!maybe_line_handle) {
     if (isRotateItem(*tree_widget.selectedItem(), tree_paths)) {

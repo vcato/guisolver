@@ -23,8 +23,8 @@ inline osg::Quat worldRotation()
 extern CameraManipulatorPtr createCameraManipulator(ViewType view_type);
 extern osg::MatrixTransform &parentTransform(osg::MatrixTransform &t);
 
-extern const
-  osg::MatrixTransform &parentTransform(const osg::MatrixTransform &t);
+extern const osg::MatrixTransform &
+  parentTransform(const osg::MatrixTransform &t);
 
 
 extern bool isDragger(osg::Node *node_ptr);

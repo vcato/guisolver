@@ -50,13 +50,13 @@ struct FakeScene : Scene {
     return top_handle;
   }
 
-  virtual TransformHandle createSphere(TransformHandle parent_handle);
+  virtual SphereAndTransformHandle
+    createSphereAndTransform(TransformHandle parent_handle);
 
-  virtual TransformHandle createBox(TransformHandle parent);
+  virtual BoxAndTransformHandle createBoxAndTransform(TransformHandle parent);
+  virtual LineAndTransformHandle createLineAndTransform(TransformHandle);
 
-  virtual LineHandle createLine(TransformHandle);
-
-  virtual void destroyLine(LineHandle)
+  virtual void destroyLineAndTransform(LineAndTransformHandle)
   {
     assert(false); // not needed
   }
@@ -108,11 +108,11 @@ struct FakeScene : Scene {
   {
   }
 
-  virtual void setStartPoint(LineHandle,Point)
+  virtual void setStartPoint(LineAndTransformHandle,Point)
   {
   }
 
-  virtual void setEndPoint(LineHandle,Point)
+  virtual void setEndPoint(LineAndTransformHandle,Point)
   {
   }
 
@@ -126,7 +126,8 @@ struct FakeScene : Scene {
     assert(false); // not needed
   }
 
-  virtual Optional<LineHandle> maybeLine(TransformHandle) const
+  virtual Optional<LineAndTransformHandle>
+  maybeLineAndTransform(TransformHandle) const
   {
     assert(false); // not needed
   }

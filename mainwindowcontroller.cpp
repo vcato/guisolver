@@ -73,13 +73,13 @@ forEachSolveFlagAffectingHandle(
   // If the handle is for a body that is a child of the box, then it
   // is going to be affected by the solve.
   for (auto i : indicesOf(state.bodies())) {
-    if (handle == scene_handles.body(i)) {
+    if (handle == scene_handles.body(i).transform_handle) {
       forEachSolveFlagAffectingBody(i, state, f);
     }
   }
 
   for (auto i : indicesOf(state.markers())) {
-    if (handle == scene_handles.marker(i).handle) {
+    if (handle == scene_handles.marker(i).handle.transform_handle) {
       Optional<BodyIndex> maybe_body_index = state.marker(i).maybe_body_index;
 
       if (maybe_body_index) {
