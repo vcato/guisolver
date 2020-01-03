@@ -21,6 +21,24 @@ struct Clipboard {
 
 
 struct ObservedScene {
+  struct TreeItemDescription {
+    enum class Type {
+      scene,
+      body,
+      box,
+      marker,
+      distance_error,
+      translation,
+      rotation,
+      other
+    };
+
+    Type type = Type::other;
+    Optional<BodyIndex> maybe_body_index;
+    Optional<MarkerIndex> maybe_marker_index;
+    Optional<DistanceErrorIndex> maybe_distance_error_index;
+  };
+
   Scene &scene;
   TreeWidget &tree_widget;
   SceneState scene_state;
@@ -60,6 +78,9 @@ struct ObservedScene {
   MarkerIndex duplicateMarker(MarkerIndex);
   MarkerIndex duplicateMarkerWithDistanceError(MarkerIndex);
 
+
+  static TreeItemDescription
+    describePath(const TreePath &path, const TreePaths &tree_paths);
 
   static BodyIndex
     duplicateBody(BodyIndex, MarkerNameMap &, ObservedScene &);

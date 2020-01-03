@@ -118,24 +118,7 @@ static void
 }
 
 
-namespace {
-struct ItemDescription {
-  enum class Type {
-    scene,
-    body,
-    marker,
-    distance_error,
-    translation,
-    rotation,
-    other
-  };
-
-  Type type = Type::other;
-  Optional<BodyIndex> maybe_body_index;
-  Optional<MarkerIndex> maybe_marker_index;
-  Optional<DistanceErrorIndex> maybe_distance_error_index;
-};
-}
+using TreeItemDescription = ObservedScene::TreeItemDescription;
 
 
 struct MainWindowController::Impl {
@@ -216,7 +199,7 @@ struct MainWindowController::Impl {
   static void
     solveAllPressed(
       MainWindowController &controller,
-      const ItemDescription &,
+      const TreeItemDescription &,
       bool state
     );
 
@@ -602,14 +585,14 @@ MainWindowController::Impl::pasteGlobalPressed(
 void
 MainWindowController::Impl::solveAllPressed(
   MainWindowController &controller,
-  const ItemDescription &item,
+  const TreeItemDescription &item,
   bool state
 )
 {
   Data &data = Impl::data(controller);
   ObservedScene &observed_scene = data.observed_scene;
   SceneState &scene_state = observed_scene.scene_state;
-  using ItemType = ItemDescription::Type;
+  using ItemType = TreeItemDescription::Type;
 
   SceneState::TransformSolveFlags &solve_flags =
     scene_state.body(*item.maybe_body_index).solve_flags;
@@ -860,57 +843,6 @@ void
 }
 
 
-static ItemDescription
-describePath(const TreePath &path, const TreePaths &tree_paths)
-{
-  ItemDescription description;
-  using ItemType = ItemDescription::Type;
-
-  if (path == tree_paths.path) {
-    description.type = ItemType::scene;
-    return description;
-  }
-
-  for (auto i : indicesOf(tree_paths.bodies)) {
-    if (tree_paths.body(i).translation.path == path) {
-      description.type = ItemType::translation;
-      description.maybe_body_index = i;
-      return description;
-    }
-
-    if (tree_paths.body(i).rotation.path == path) {
-      description.type = ItemType::rotation;
-      description.maybe_body_index = i;
-      return description;
-    }
-
-    if (tree_paths.body(i).path == path) {
-      description.type = ItemType::body;
-      description.maybe_body_index = i;
-      return description;
-    }
-  }
-
-  for (auto i : indicesOf(tree_paths.markers)) {
-    if (path == tree_paths.marker(i).path) {
-      description.type = ItemType::marker;
-      description.maybe_marker_index = i;
-      return description;
-    }
-  }
-
-  for (auto i : indicesOf(tree_paths.distance_errors)) {
-    if (path == tree_paths.distance_errors[i].path) {
-      description.type = ItemType::distance_error;
-      description.maybe_distance_error_index = i;
-      return description;
-    }
-  }
-
-  return description;
-}
-
-
 TreeWidget::MenuItems
   MainWindowController::Impl::contextMenuItemsForPath(
     MainWindowController &controller,
@@ -922,8 +854,8 @@ TreeWidget::MenuItems
   ObservedScene &observed_scene = data.observed_scene;
   const TreePaths &tree_paths = observed_scene.tree_paths;
   const SceneState &scene_state = observed_scene.scene_state;
-  ItemDescription item = describePath(path, tree_paths);
-  using ItemType = ItemDescription::Type;
+  TreeItemDescription item = ObservedScene::describePath(path, tree_paths);
+  using ItemType = TreeItemDescription::Type;
   const ItemType item_type = item.type;
 
   auto add_marker_function =

@@ -14,34 +14,6 @@ using GeometryAndTransformHandle = Scene::GeometryAndTransformHandle;
 using std::cerr;
 
 
-static bool isRotateItem(const TreePath &path, const TreePaths &tree_paths)
-{
-  for (auto i : indicesOf(tree_paths.bodies)) {
-    if (startsWith(path, tree_paths.body(i).rotation.path)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-
-static bool isScaleItem(const TreePath &path, const TreePaths &tree_paths)
-{
-  for (auto i : indicesOf(tree_paths.bodies)) {
-    const TreePaths::Body &body_paths = tree_paths.body(i);
-
-    for (const TreePaths::Box &box_paths : body_paths.boxes) {
-      if (startsWith(path, box_paths.path)) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-
 template <typename F>
 static void
 forEachTransformHandlePath(
@@ -450,10 +422,15 @@ ObservedScene::attachProperDraggerToSelectedObject(
     scene.maybeLineAndTransform(*scene.selectedObject());
 
   if (!maybe_line_handle) {
-    if (isRotateItem(*tree_widget.selectedItem(), tree_paths)) {
+    TreeItemDescription item =
+      describePath(*tree_widget.selectedItem(), tree_paths);
+
+    using ItemType = TreeItemDescription::Type;
+
+    if (item.type == ItemType::rotation) {
       scene.attachDraggerToSelectedNode(Scene::DraggerType::rotate);
     }
-    else if (isScaleItem(*tree_widget.selectedItem(), tree_paths)) {
+    else if (item.type == ItemType::box) {
       scene.attachDraggerToSelectedNode(Scene::DraggerType::scale);
     }
     else {
@@ -797,4 +774,68 @@ void ObservedScene::handleSceneStateChanged()
 {
   updateTreeValues(tree_widget, tree_paths, scene_state);
   updateSceneObjects(scene, scene_handles, scene_state);
+}
+
+
+auto
+ObservedScene::describePath(const TreePath &path, const TreePaths &tree_paths)
+-> TreeItemDescription
+{
+  TreeItemDescription description;
+  using ItemType = TreeItemDescription::Type;
+
+  if (path == tree_paths.path) {
+    description.type = ItemType::scene;
+    return description;
+  }
+
+  for (auto body_index : indicesOf(tree_paths.bodies)) {
+    const TreePaths::Body &body_paths = tree_paths.body(body_index);
+
+    if (startsWith(path, body_paths.translation.path)) {
+      description.type = ItemType::translation;
+      description.maybe_body_index = body_index;
+      return description;
+    }
+
+    if (startsWith(path, body_paths.rotation.path)) {
+      description.type = ItemType::rotation;
+      description.maybe_body_index = body_index;
+      return description;
+    }
+
+    size_t n_boxes = body_paths.boxes.size();
+
+    for (size_t box_index = 0; box_index != n_boxes; ++box_index) {
+      if (startsWith(path, body_paths.boxes[box_index].path)) {
+        description.type = ItemType::box;
+        description.maybe_body_index = body_index;
+        return description;
+      }
+    }
+
+    if (body_paths.path == path) {
+      description.type = ItemType::body;
+      description.maybe_body_index = body_index;
+      return description;
+    }
+  }
+
+  for (auto i : indicesOf(tree_paths.markers)) {
+    if (path == tree_paths.marker(i).path) {
+      description.type = ItemType::marker;
+      description.maybe_marker_index = i;
+      return description;
+    }
+  }
+
+  for (auto i : indicesOf(tree_paths.distance_errors)) {
+    if (path == tree_paths.distance_errors[i].path) {
+      description.type = ItemType::distance_error;
+      description.maybe_distance_error_index = i;
+      return description;
+    }
+  }
+
+  return description;
 }
