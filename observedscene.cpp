@@ -62,14 +62,20 @@ forEachTransformHandlePath(
     );
   }
 
-  for (auto i : indicesOf(tree_paths.bodies)) {
-    const SceneHandles::Body &body_handles = scene_handles.body(i);
+  for (auto body_index : indicesOf(tree_paths.bodies)) {
+    const SceneHandles::Body &body_handles = scene_handles.body(body_index);
+    const TreePaths::Body &body_paths = tree_paths.body(body_index);
 
-    f(
-      body_handles.transformHandle(),
-      body_handles.boxHandle(),
-      tree_paths.body(i).path
-    );
+    assert(body_handles.boxes.size() == body_paths.boxes.size());
+    size_t n_boxes = body_handles.boxes.size();
+
+    for (size_t box_index = 0; box_index != n_boxes; ++box_index) {
+      f(
+        body_handles.transformHandle(),
+        body_handles.boxes[box_index].handle,
+        body_paths.path
+      );
+    }
   }
 
   for (auto i : indicesOf(tree_paths.distance_errors)) {
@@ -96,7 +102,11 @@ sceneObjectForTreeItem(
   Optional<GeometryHandle> maybe_matching_handle;
 
   forEachTransformHandlePath(
-    [&](TransformHandle, GeometryHandle geometry_handle, const TreePath &object_path){
+    [&](
+      TransformHandle,
+      GeometryHandle geometry_handle,
+      const TreePath &object_path
+    ){
       if (startsWith(item_path, object_path)) {
         if (object_path.size() > matching_path.size()) {
           matching_path = object_path;

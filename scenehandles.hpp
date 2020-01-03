@@ -19,18 +19,26 @@ struct SceneHandles {
   using Markers = vector<Optional<Marker>>;
   using DistanceErrors = vector<DistanceError>;
 
+  struct Box {
+    GeometryHandle handle;
+
+    Box(GeometryHandle handle)
+    : handle(handle)
+    {
+    }
+  };
+
   struct Body {
     TransformHandle transform_handle;
-    GeometryHandle box_handle;
+    vector<Box> boxes;
 
     Body(TransformHandle transform_handle, GeometryHandle box_handle)
-    : transform_handle(transform_handle),
-      box_handle(box_handle)
+    : transform_handle(transform_handle)
     {
+      boxes.push_back(box_handle);
     }
 
     TransformHandle transformHandle() const { return transform_handle; }
-    GeometryHandle boxHandle() const { return box_handle; }
   };
 
   struct Marker {

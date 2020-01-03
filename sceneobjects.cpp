@@ -59,6 +59,28 @@ localTransform(const Scene &scene, Scene::TransformHandle transform_id)
 }
 
 
+static void
+updateBodyStateFromBodyObjects(
+  SceneState::Body &body_state,
+  const SceneHandles::Body &body_handles,
+  const Scene &scene
+)
+{
+  body_state.transform =
+    transformState(localTransform(scene, body_handles.transformHandle()));
+
+  assert(body_state.boxes.size() == body_handles.boxes.size());
+  size_t n_boxes = body_state.boxes.size();
+
+  for (size_t box_index=0; box_index!=n_boxes; ++box_index) {
+    SceneState::Box &box_state = body_state.boxes[box_index];
+    Scene::GeometryHandle box_handle = body_handles.boxes[box_index].handle;
+    box_state.scale = xyzState(scene.geometryScale(box_handle));
+    box_state.center = xyzState(scene.geometryCenter(box_handle));
+  }
+}
+
+
 void
 updateSceneStateFromSceneObjects(
   SceneState &state,
@@ -68,17 +90,10 @@ updateSceneStateFromSceneObjects(
 {
   updateStateMarkerPositions(state, scene_handles, scene);
 
-  for (auto i : indicesOf(state.bodies())) {
-    const SceneHandles::Body &body_handles = scene_handles.body(i);
-    SceneState::Body &body_state = state.body(i);
-
-    body_state.transform =
-      transformState(localTransform(scene, body_handles.transformHandle()));
-
-    SceneState::Box &box_state = body_state.box();
-    Scene::GeometryHandle box_handle = body_handles.boxHandle();
-    box_state.scale = xyzState(scene.geometryScale(box_handle));
-    box_state.center = xyzState(scene.geometryCenter(box_handle));
+  for (auto body_index : indicesOf(state.bodies())) {
+    const SceneHandles::Body &body_handles = scene_handles.body(body_index);
+    SceneState::Body &body_state = state.body(body_index);
+    updateBodyStateFromBodyObjects(body_state, body_handles, scene);
   }
 }
 
@@ -220,8 +235,17 @@ destroyBodyObjects(
   BodyIndex body_index, Scene &scene, const SceneHandles &scene_handles
 )
 {
-  scene.destroyGeometry(scene_handles.body(body_index).boxHandle());
-  scene.destroyTransform(scene_handles.body(body_index).transformHandle());
+  const SceneHandles::Body &body_handles = scene_handles.body(body_index);
+
+  {
+    size_t n_boxes = body_handles.boxes.size();
+
+    for (size_t box_index = 0; box_index != n_boxes; ++box_index) {
+      scene.destroyGeometry(body_handles.boxes[box_index].handle);
+    }
+  }
+
+  scene.destroyTransform(body_handles.transformHandle());
 }
 
 
@@ -321,15 +345,15 @@ static void
     scene
   );
 
-  scene.setGeometryScale(
-    body_handles.boxHandle(),
-    vec3(body_state.box().scale)
-  );
+  assert(body_handles.boxes.size() == body_state.boxes.size());
+  size_t n_boxes = body_state.boxes.size();
 
-  scene.setGeometryCenter(
-    body_handles.boxHandle(),
-    point(body_state.box().center)
-  );
+  for (size_t box_index = 0; box_index != n_boxes; ++box_index) {
+    const SceneHandles::Box &box_handles = body_handles.boxes[box_index];
+    const SceneState::Box &box_state = body_state.boxes[box_index];
+    scene.setGeometryScale(box_handles.handle, vec3(box_state.scale));
+    scene.setGeometryCenter(box_handles.handle, point(box_state.center));
+  }
 }
 
 
