@@ -5,31 +5,33 @@ using TransformHandle = Scene::TransformHandle;
 using LineAndTransformHandle = Scene::LineAndTransformHandle;
 using BoxAndTransformHandle = Scene::BoxAndTransformHandle;
 using SphereAndTransformHandle = Scene::SphereAndTransformHandle;
+using GeometryAndTransformHandle = Scene::GeometryAndTransformHandle;
 using std::cerr;
 
 
-TransformHandle FakeScene::create(TransformHandle parent_handle)
+GeometryAndTransformHandle FakeScene::create(TransformHandle parent_handle)
 {
-  TransformHandle new_handle = {firstUnusedIndex()};
-  bodies[new_handle.index].parent_index = parent_handle.index;
+  size_t index = firstUnusedIndex();
+  GeometryAndTransformHandle new_handle = {index,index};
+  bodies[index].parent_index = parent_handle.index;
   return new_handle;
 }
 
 
 SphereAndTransformHandle
-FakeScene::createSphereAndTransform(TransformHandle parent_handle)
+FakeScene::createSphereAndTransform(TransformHandle parent)
 {
-  return SphereAndTransformHandle{create(parent_handle).index};
+  return SphereAndTransformHandle(create(parent));
 }
 
 
 BoxAndTransformHandle FakeScene::createBoxAndTransform(TransformHandle parent)
 {
-  return BoxAndTransformHandle{create(parent).index};
+  return BoxAndTransformHandle{create(parent)};
 }
 
 
 LineAndTransformHandle FakeScene::createLineAndTransform(TransformHandle parent)
 {
-  return LineAndTransformHandle{create(parent).index};
+  return LineAndTransformHandle{create(parent)};
 }

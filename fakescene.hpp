@@ -139,5 +139,5 @@ struct FakeScene : Scene {
   }
 
   private:
-    TransformHandle create(TransformHandle parent_handle);
+    GeometryAndTransformHandle create(TransformHandle parent_handle);
 };

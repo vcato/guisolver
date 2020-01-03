@@ -35,24 +35,35 @@ struct Scene {
     }
   };
 
+  struct GeometryHandle {
+    size_t index;
+
+    GeometryHandle(size_t index) : index(index) {}
+
+    bool operator==(const GeometryHandle &arg) const
+    {
+      return index == arg.index;
+    }
+  };
+
   struct GeometryAndTransformHandle {
     TransformHandle transform_handle;
+    GeometryHandle geometry_handle;
 
-    GeometryAndTransformHandle(size_t index)
-    : transform_handle{index}
+    GeometryAndTransformHandle(size_t transform_index, size_t geometry_index)
+    : transform_handle{transform_index}, geometry_handle(geometry_index)
     {
     }
 
     bool operator==(const GeometryAndTransformHandle &arg) const
     {
-      return transform_handle == arg.transform_handle;
+      return
+        transform_handle == arg.transform_handle &&
+        geometry_handle == arg.geometry_handle;
     }
   };
 
   struct LineAndTransformHandle : GeometryAndTransformHandle {
-    LineAndTransformHandle(size_t index)
-    : GeometryAndTransformHandle{index} {}
-
     explicit LineAndTransformHandle(const GeometryAndTransformHandle &arg)
     : GeometryAndTransformHandle(arg)
     {
@@ -60,9 +71,6 @@ struct Scene {
   };
 
   struct BoxAndTransformHandle : GeometryAndTransformHandle {
-    BoxAndTransformHandle(size_t index)
-    : GeometryAndTransformHandle{index} {}
-
     explicit BoxAndTransformHandle(const GeometryAndTransformHandle &arg)
     : GeometryAndTransformHandle(arg)
     {
@@ -70,9 +78,6 @@ struct Scene {
   };
 
   struct SphereAndTransformHandle : GeometryAndTransformHandle {
-    SphereAndTransformHandle(size_t index)
-    : GeometryAndTransformHandle{index} {}
-
     explicit SphereAndTransformHandle(const GeometryAndTransformHandle &arg)
     : GeometryAndTransformHandle(arg)
     {

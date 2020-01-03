@@ -218,14 +218,13 @@ struct OSGScene::Impl {
 
   static void clearHandle(size_t index, OSGScene &scene);
 
-  static void
-    destroyTransformAndChildren(OSGScene &scene, size_t handle_index);
+  static void destroyIndex(size_t index, OSGScene &);
 
   static GeometryAndTransformHandle
   makeTopHandle(OSGScene &scene, osg::MatrixTransform &top_node)
   {
     return
-      Impl::makeHandleFromGeometryTransform(
+      Impl::makeHandleFromTransforms(
         scene, top_node, addTransformToGroup(top_node)
       );
   }
@@ -259,13 +258,6 @@ struct OSGScene::Impl {
 
   static size_t newHandleIndex(OSGScene &scene);
 
-  static size_t
-    getNewHandleIndexFromGeometryTransform(
-      OSGScene &scene,
-      osg::MatrixTransform &transform,
-      osg::MatrixTransform &geometry_transform
-    );
-
   template <typename OSGScene>
   static MatchConst_t<osg::MatrixTransform, OSGScene> &
   geometryTransformForHandle(
@@ -273,7 +265,7 @@ struct OSGScene::Impl {
     const GeometryAndTransformHandle &handle
   )
   {
-    size_t index = handle.transform_handle.index;
+    size_t index = handle.geometry_handle.index;
     assert(scene._handle_datas[index].geometry_transform_ptr);
     return *scene._handle_datas[index].geometry_transform_ptr;
   }
@@ -298,7 +290,7 @@ struct OSGScene::Impl {
   }
 
   static GeometryAndTransformHandle
-    makeHandleFromGeometryTransform(
+    makeHandleFromTransforms(
       OSGScene &,
       osg::MatrixTransform &transform,
       osg::MatrixTransform &geometry_transform
@@ -326,7 +318,13 @@ struct OSGScene::Impl {
   static bool isSelectedHandle(TransformHandle handle, const OSGScene &scene);
 
   static Optional<size_t>
-    findTransformIndex(const OSGScene &,const osg::Geode &);
+    findGeometryTransformIndex(
+      const OSGScene &,
+      const osg::MatrixTransform &geometry_transform
+    );
+
+  static Optional<size_t>
+    findTransformIndex(const OSGScene &,const osg::MatrixTransform &);
 
   template <typename Scene>
   static MatchConst_t<osg::Geode,Scene> &
@@ -744,13 +742,11 @@ OSGScene::SelectionHandler::SelectionHandler(OSGScene &scene_arg)
 
 
 Optional<size_t>
-  OSGScene::Impl::findTransformIndex(
+  OSGScene::Impl::findGeometryTransformIndex(
     const OSGScene &scene,
-    const osg::Geode &const_node
+    const osg::MatrixTransform &geometry_transform
   )
 {
-  auto &node = const_cast<osg::Geode &>(const_node);
-  osg::MatrixTransform &geometry_transform = geometryTransformOf(node);
   size_t n_handles = scene._handle_datas.size();
 
   for (size_t index = 0; index != n_handles; ++index) {
@@ -758,6 +754,24 @@ Optional<size_t>
       scene._handle_datas[index].geometry_transform_ptr;
 
     if (transform_ptr == &geometry_transform) {
+      return index;
+    }
+  }
+
+  return {};
+}
+
+
+Optional<size_t>
+OSGScene::Impl::findTransformIndex(
+  const OSGScene &scene,
+  const osg::MatrixTransform &transform
+)
+{
+  size_t n_handles = scene._handle_datas.size();
+
+  for (size_t index = 0; index != n_handles; ++index) {
+    if (scene._handle_datas[index].transform_ptr == &transform) {
       return index;
     }
   }
@@ -777,14 +791,29 @@ OSGScene::Impl::selectedTransform(const OSGScene &scene)
     return {};
   }
 
-  Optional<size_t> maybe_index = findTransformIndex(scene, *geode_ptr);
+  osg::MatrixTransform &geometry_transform =
+    geometryTransformOf(*geode_ptr);
+
+  Optional<size_t> maybe_index =
+    findGeometryTransformIndex(scene, geometry_transform);
 
   if (!maybe_index) {
     cerr << "Didn't find transform for selection\n";
     return {};
   }
 
-  return GeometryAndTransformHandle{*maybe_index};
+  size_t geometry_index = *maybe_index;
+
+  osg::MatrixTransform &transform =
+    transformFromGeometryTransform(geometry_transform);
+
+  Optional<size_t> maybe_transform_index =
+    findTransformIndex(scene, transform);
+
+  assert(maybe_transform_index);
+  size_t transform_index = *maybe_transform_index;
+
+  return GeometryAndTransformHandle{transform_index, geometry_index};
 }
 
 
@@ -1054,7 +1083,7 @@ Optional<LineAndTransformHandle>
 OSGScene::maybeLineAndTransform(GeometryAndTransformHandle handle) const
 {
   if (nodeIsLine(Impl::geodeForHandle(*this, handle))) {
-    return LineAndTransformHandle(handle.transform_handle.index);
+    return LineAndTransformHandle(handle);
   }
   else {
     return {};
@@ -1321,7 +1350,7 @@ auto
   osg::MatrixTransform &geometry_transform =
     createShape(transform, shape_params);
 
-  return makeHandleFromGeometryTransform(scene, transform, geometry_transform);
+  return makeHandleFromTransforms(scene, transform, geometry_transform);
 }
 
 
@@ -1361,32 +1390,6 @@ OSGScene::createLineAndTransform(TransformHandle parent)
 void OSGScene::Impl::clearHandle(size_t index, OSGScene &scene)
 {
   scene._handle_datas[index] = HandleData{};
-}
-
-
-void
-OSGScene::Impl::destroyTransformAndChildren(
-  OSGScene &scene,size_t handle_index
-)
-{
-  HandleData &handle_data = scene._handle_datas[handle_index];
-
-  if (handle_data.geometry_transform_ptr) {
-    Impl::destroyGeometryTransform(scene, *handle_data.geometry_transform_ptr);
-    handle_data.geometry_transform_ptr = nullptr;
-  }
-
-  assert(handle_data.transform_ptr);
-  osg::MatrixTransform &transform = *handle_data.transform_ptr;
-  removeTransformFromGroup(parentOf(transform), transform);
-  Impl::clearHandle(handle_index, scene);
-}
-
-
-void OSGScene::destroyTransformAndGeometry(GeometryAndTransformHandle handle)
-{
-  size_t handle_index = handle.transform_handle.index;
-  Impl::destroyTransformAndChildren(*this, handle_index);
 }
 
 
@@ -1487,7 +1490,7 @@ size_t OSGScene::Impl::newHandleIndex(OSGScene &scene)
   size_t n = scene._handle_datas.size();
 
   for (size_t i=0; i!=n; ++i) {
-    if (!scene._handle_datas[i].geometry_transform_ptr) {
+    if (!scene._handle_datas[i].geometry_transform_ptr && !scene._handle_datas[i].transform_ptr) {
       return i;
     }
   }
@@ -1496,31 +1499,55 @@ size_t OSGScene::Impl::newHandleIndex(OSGScene &scene)
   return n;
 }
 
-size_t
-  OSGScene::Impl::getNewHandleIndexFromGeometryTransform(
-    OSGScene &scene,
-    osg::MatrixTransform &transform,
-    osg::MatrixTransform &geometry_transform
-  )
-{
-  size_t i = newHandleIndex(scene);
-  scene._handle_datas[i].transform_ptr = &transform;
-  scene._handle_datas[i].geometry_transform_ptr = &geometry_transform;
-  return i;
-}
-
-
 auto
-  OSGScene::Impl::makeHandleFromGeometryTransform(
+  OSGScene::Impl::makeHandleFromTransforms(
     OSGScene &scene,
     osg::MatrixTransform &transform,
     osg::MatrixTransform &geometry_transform
   ) -> GeometryAndTransformHandle
 {
-  size_t index =
-    getNewHandleIndexFromGeometryTransform(scene, transform, geometry_transform);
+  size_t transform_index = newHandleIndex(scene);
+  scene._handle_datas[transform_index].transform_ptr = &transform;
 
-  return GeometryAndTransformHandle{index};
+  size_t geometry_index = newHandleIndex(scene);
+  assert(geometry_index != transform_index);
+
+  scene._handle_datas[geometry_index].geometry_transform_ptr =
+    &geometry_transform;
+
+  return GeometryAndTransformHandle{transform_index,geometry_index};
+}
+
+
+void OSGScene::Impl::destroyIndex(size_t index, OSGScene &scene)
+{
+  HandleData &handle_data = scene._handle_datas[index];
+
+  if (handle_data.geometry_transform_ptr) {
+    Impl::destroyGeometryTransform(scene, *handle_data.geometry_transform_ptr);
+    handle_data.geometry_transform_ptr = nullptr;
+  }
+
+  if (handle_data.transform_ptr) {
+    osg::MatrixTransform &transform = *handle_data.transform_ptr;
+    removeTransformFromGroup(parentOf(transform), transform);
+    handle_data.transform_ptr = nullptr;
+  }
+
+  Impl::clearHandle(index, scene);
+}
+
+
+void OSGScene::destroyTransformAndGeometry(GeometryAndTransformHandle handle)
+{
+  size_t transform_index = handle.transform_handle.index;
+  size_t geometry_index = handle.geometry_handle.index;
+
+  Impl::destroyIndex(geometry_index, *this);
+
+  if (geometry_index != transform_index) {
+    Impl::destroyIndex(transform_index, *this);
+  }
 }
 
 

@@ -76,6 +76,13 @@ class OSGScene : public Scene {
     struct HandleData {
       osg::MatrixTransform *transform_ptr = nullptr;
       osg::MatrixTransform *geometry_transform_ptr = nullptr;
+
+      bool operator==(const HandleData &arg) const
+      {
+        return
+          transform_ptr == arg.transform_ptr &&
+          geometry_transform_ptr == arg.geometry_transform_ptr;
+      }
     };
 
     vector<HandleData> _handle_datas;
