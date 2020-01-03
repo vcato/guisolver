@@ -10,12 +10,28 @@
 
 struct SceneHandles {
   struct Marker;
+  struct Body;
   struct DistanceError;
   using TransformHandle = Scene::TransformHandle;
+  using GeometryHandle = Scene::GeometryHandle;
   using SphereAndTransformHandle = Scene::SphereAndTransformHandle;
   using BoxAndTransformHandle = Scene::BoxAndTransformHandle;
   using Markers = vector<Optional<Marker>>;
   using DistanceErrors = vector<DistanceError>;
+
+  struct Body {
+    TransformHandle transform_handle;
+    GeometryHandle box_handle;
+
+    Body(BoxAndTransformHandle arg)
+    : transform_handle(arg.transform_handle),
+      box_handle(arg.geometry_handle)
+    {
+    }
+
+    TransformHandle transformHandle() const { return transform_handle; }
+    GeometryHandle boxHandle() const { return box_handle; }
+  };
 
   struct Marker {
     SphereAndTransformHandle handle;
@@ -25,12 +41,12 @@ struct SceneHandles {
     Scene::LineAndTransformHandle line;
   };
 
-  vector<Optional<BoxAndTransformHandle>> bodies;
+  vector<Optional<Body>> bodies;
   Markers markers;
   DistanceErrors distance_errors;
 
   template <typename SceneHandles>
-  static MatchConst_t<BoxAndTransformHandle, SceneHandles> &
+  static MatchConst_t<Body, SceneHandles> &
   body(BodyIndex i, SceneHandles &scene_handles)
   {
     assert(scene_handles.bodies[i]);
@@ -45,8 +61,8 @@ struct SceneHandles {
     return *scene_handles.markers[i];
   }
 
-  BoxAndTransformHandle &body(BodyIndex i) { return body(i, *this); }
-  const BoxAndTransformHandle &body(BodyIndex i) const { return body(i, *this); }
+  Body &body(BodyIndex i) { return body(i, *this); }
+  const Body &body(BodyIndex i) const { return body(i, *this); }
   Marker &marker(MarkerIndex i) { return marker(i, *this); }
   const Marker &marker(MarkerIndex i) const { return marker(i, *this); }
 };

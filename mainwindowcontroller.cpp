@@ -74,7 +74,7 @@ forEachSolveFlagAffectingHandle(
   // If the handle is for a body that is a child of the box, then it
   // is going to be affected by the solve.
   for (auto i : indicesOf(state.bodies())) {
-    if (handle == scene_handles.body(i).transform_handle) {
+    if (handle == scene_handles.body(i).transformHandle()) {
       forEachSolveFlagAffectingBody(i, state, f);
     }
   }
@@ -257,6 +257,19 @@ struct MainWindowController::Impl {
 };
 
 
+static Optional<TransformHandle> selectedObjectTransform(const Scene &scene)
+{
+  Optional<GeometryAndTransformHandle>
+    maybe_selected_geometry_and_transform_handle = scene.selectedObject();
+
+  if (!maybe_selected_geometry_and_transform_handle) {
+    return {};
+  }
+
+  return maybe_selected_geometry_and_transform_handle->transform_handle;
+}
+
+
 void
   MainWindowController::Impl::handleSceneChanging(
     MainWindowController &controller
@@ -270,7 +283,15 @@ void
   Scene &scene = observed_scene.scene;
   SceneHandles &scene_handles = observed_scene.scene_handles;
   SceneState &state = observed_scene.scene_state;
-  Optional<GeometryAndTransformHandle> th = scene.selectedObject();
+
+  Optional<TransformHandle> maybe_transform_handle =
+    selectedObjectTransform(scene);
+
+  assert(maybe_transform_handle);
+    // How could the scene be changing if nothing was selected?
+
+  TransformHandle transform_handle = *maybe_transform_handle;
+
   updateSceneStateFromSceneObjects(state, scene, scene_handles);
 
   vector<bool> old_flags;
@@ -279,7 +300,7 @@ void
   // old state.
 
   forEachSolveFlagAffectingHandle(
-    th->transform_handle, scene_handles, state,
+    transform_handle, scene_handles, state,
     [&](bool &arg){
       old_flags.push_back(arg);
       arg = false;
@@ -293,7 +314,7 @@ void
     vector<bool>::const_iterator iter = old_flags.begin();
 
     forEachSolveFlagAffectingHandle(
-      th->transform_handle, scene_handles, state,
+      transform_handle, scene_handles, state,
       [&](bool &arg){
         arg = *iter++;
       }

@@ -54,5 +54,15 @@ It seems like we need to work towards have
 createBox(), createSphere(), and createLine() so that they return new
 kinds of handles, and there is no implicit body.
 ---
-We should be able to replace OSGScene::selectedTransform() with
-OSGScene::selectedGeometry()
+If we delete the box, we still want to be able to select the transform
+so we can translate and rotate it.
+---
+In the SelectionHandler, we use _translate_dragger_geode_ptr, but this
+is no longer appropriate, since we can translate transforms.  In fact,
+it seems like we are always translating transforms.
+
+If we want a translate handle for a body, we need to select the body transform
+and place the handle on that.
+---
+If we're going to be able to remove the box, then the handle for a body
+has to be a TransformHandle and not a BoxAndTransformHandle.

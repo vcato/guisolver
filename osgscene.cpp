@@ -170,12 +170,14 @@ class OSGScene::SelectionHandler : public OSGSelectionHandler {
 
     SelectionHandler(OSGScene &);
     void updateDraggerPosition();
-    void selectNodeWithoutDragger(osg::Geode *);
+    void changeSelectedGeodeTo(osg::Geode *);
+    void changeSelectedTransformTo(osg::MatrixTransform *);
     void attachDragger(DraggerType);
     osg::Geode *selectedGeodePtr() const { return _selected_geode_ptr; }
 
   private:
     osg::Geode *_selected_geode_ptr = nullptr;
+    osg::MatrixTransform *_selected_transform_ptr = nullptr;
     osg::Geode *_translate_dragger_geode_ptr = nullptr;
     osg::Geode *_rotate_dragger_geode_ptr = nullptr;
     osg::Geode *_scale_dragger_geode_ptr = nullptr;
@@ -189,7 +191,7 @@ class OSGScene::SelectionHandler : public OSGSelectionHandler {
     void attachTranslateDraggerTo(osg::Geode &);
     void attachRotateDraggerTo(osg::Geode &);
     void attachScaleDraggerTo(osg::Geode &);
-    void changeSelectedNodeTo(osg::Geode *);
+    void clearSelection();
 };
 
 
@@ -263,10 +265,10 @@ struct OSGScene::Impl {
   static MatchConst_t<osg::MatrixTransform, OSGScene> &
   geometryTransformForHandle(
     OSGScene &scene,
-    const GeometryAndTransformHandle &handle
+    const GeometryHandle &handle
   )
   {
-    size_t index = handle.geometry_handle.index;
+    size_t index = handle.index;
     assert(scene._handle_datas[index].geometry_transform_ptr);
     return *scene._handle_datas[index].geometry_transform_ptr;
   }
@@ -325,10 +327,12 @@ struct OSGScene::Impl {
     }
   }
 
-  static Optional<GeometryAndTransformHandle>
-    selectedTransform(const OSGScene &scene);
+  static TransformHandle parentHandle(GeometryHandle, const OSGScene &);
 
-  static bool isSelectedHandle(TransformHandle handle, const OSGScene &scene);
+  static Optional<GeometryAndTransformHandle>
+    selectedGeometryAndTransform(const OSGScene &scene);
+
+  static Optional<GeometryHandle> selectedGeometry(const OSGScene &scene);
 
   static Optional<size_t>
     findGeometryTransformIndex(
@@ -341,10 +345,11 @@ struct OSGScene::Impl {
 
   template <typename Scene>
   static MatchConst_t<osg::Geode,Scene> &
-  geodeForHandle(Scene &scene, GeometryAndTransformHandle handle)
+  geodeForHandle(Scene &scene, GeometryHandle handle)
   {
     auto *geode_ptr =
-      geometryTransformForHandle(scene, handle).getChild(0)->asGeode();
+      geometryTransformForHandle(scene, handle)
+      .getChild(0)->asGeode();
 
     assert(geode_ptr);
     return *geode_ptr;
@@ -794,9 +799,8 @@ OSGScene::Impl::findTransformIndex(
 }
 
 
-auto
-OSGScene::Impl::selectedTransform(const OSGScene &scene)
--> Optional<GeometryAndTransformHandle>
+Optional<GeometryHandle>
+OSGScene::Impl::selectedGeometry(const OSGScene &scene)
 {
   osg::Geode *geode_ptr = scene.selectionHandler().selectedGeodePtr();
 
@@ -816,8 +820,21 @@ OSGScene::Impl::selectedTransform(const OSGScene &scene)
   }
 
   size_t geometry_index = *maybe_index;
+  GeometryHandle geometry_handle{geometry_index};
+  return geometry_handle;
+}
 
-  osg::MatrixTransform &transform =
+
+TransformHandle
+OSGScene::Impl::parentHandle(
+  GeometryHandle geometry_handle,
+  const OSGScene &scene
+)
+{
+  const osg::MatrixTransform &geometry_transform =
+    geometryTransformForHandle(scene, geometry_handle);
+
+  const osg::MatrixTransform &transform =
     transformFromGeometryTransform(geometry_transform);
 
   Optional<size_t> maybe_transform_index =
@@ -826,7 +843,27 @@ OSGScene::Impl::selectedTransform(const OSGScene &scene)
   assert(maybe_transform_index);
   size_t transform_index = *maybe_transform_index;
 
-  return GeometryAndTransformHandle{transform_index, geometry_index};
+  TransformHandle transform_handle{transform_index};
+  return transform_handle;
+}
+
+
+auto
+OSGScene::Impl::selectedGeometryAndTransform(const OSGScene &scene)
+-> Optional<GeometryAndTransformHandle>
+{
+  Optional<GeometryHandle> maybe_geometry_handle =
+    selectedGeometry(scene);
+
+  if (!maybe_geometry_handle) {
+    return {};
+  }
+
+  const GeometryHandle &geometry_handle = *maybe_geometry_handle;
+
+  TransformHandle transform_handle = parentHandle(geometry_handle, scene);
+
+  return GeometryAndTransformHandle{transform_handle, geometry_handle};
 }
 
 
@@ -898,29 +935,40 @@ static void setGeodeColor(osg::Geode &geode,const osg::Vec3f &vec)
 }
 
 
+void OSGScene::SelectionHandler::clearSelection()
+{
+  if (_selected_geode_ptr) {
+    setGeodeColor(*_selected_geode_ptr, _old_color);
+    _selected_geode_ptr = nullptr;
+  }
+
+  _selected_transform_ptr = nullptr;
+  removeExistingDraggers();
+}
+
+
 void
-  OSGScene::SelectionHandler::changeSelectedNodeTo(
+  OSGScene::SelectionHandler::changeSelectedGeodeTo(
     osg::Geode *new_selected_node_ptr
   )
 {
-  if (_selected_geode_ptr) {
-    osg::Geode *geode_ptr = _selected_geode_ptr->asGeode();
-
-    if (geode_ptr) {
-      setGeodeColor(*geode_ptr, _old_color);
-    }
-  }
-
+  clearSelection();
   _selected_geode_ptr = new_selected_node_ptr;
 
   if (_selected_geode_ptr) {
-    osg::Geode *geode_ptr = _selected_geode_ptr->asGeode();
-
-    if (geode_ptr) {
-      _old_color = geodeColor(*geode_ptr);
-      setGeodeColor(*geode_ptr, selectionColor());
-    }
+    _old_color = geodeColor(*_selected_geode_ptr);
+    setGeodeColor(*_selected_geode_ptr, selectionColor());
   }
+}
+
+
+void
+  OSGScene::SelectionHandler::changeSelectedTransformTo(
+    osg::MatrixTransform *new_selected_node_ptr
+  )
+{
+  clearSelection();
+  _selected_transform_ptr = new_selected_node_ptr;
 }
 
 
@@ -1078,7 +1126,7 @@ void OSGScene::SelectionHandler::nodeClicked(osg::Node *new_selected_node_ptr)
     }
   }
 
-  selectNodeWithoutDragger(new_selected_geode_ptr);
+  changeSelectedGeodeTo(new_selected_geode_ptr);
 
   if (scene.selection_changed_callback) {
     scene.selection_changed_callback();
@@ -1095,7 +1143,7 @@ void OSGScene::attachDraggerToSelectedNode(DraggerType dragger_type)
 Optional<LineAndTransformHandle>
 OSGScene::maybeLineAndTransform(GeometryAndTransformHandle handle) const
 {
-  if (nodeIsLine(Impl::geodeForHandle(*this, handle))) {
+  if (nodeIsLine(Impl::geodeForHandle(*this, handle.geometry_handle))) {
     return LineAndTransformHandle(handle);
   }
   else {
@@ -1258,7 +1306,7 @@ OSGScene::OSGScene()
   osg::MatrixTransform &node = *_top_node_ptr;
 
   osg::MatrixTransform &geometry_transform =
-    Impl::geometryTransformForHandle(*this, _top_handle);
+    Impl::geometryTransformForHandle(*this, _top_handle.geometry_handle);
 
   addFloorTo(geometry_transform);
   setRotatation(node,worldRotation());
@@ -1343,7 +1391,7 @@ void
       parentOf(*scene.selectionHandler().selectedGeodePtr());
 
     if (&geometry_transform == &selected_geometry_transform) {
-      scene.selectionHandler().selectNodeWithoutDragger(nullptr);
+      scene.selectionHandler().changeSelectedGeodeTo(nullptr);
     }
   }
 
@@ -1410,7 +1458,7 @@ LineDrawable&
 OSGScene::Impl::lineDrawable(OSGScene &scene, LineAndTransformHandle handle)
 {
   osg::MatrixTransform &transform =
-    Impl::geometryTransformForHandle(scene, handle);
+    Impl::geometryTransformForHandle(scene, handle.geometry_handle);
 
   osg::Node *child_ptr = transform.getChild(0);
   assert(child_ptr);
@@ -1424,7 +1472,7 @@ OSGScene::Impl::lineDrawable(OSGScene &scene, LineAndTransformHandle handle)
 }
 
 
-void OSGScene::setGeometryScale(GeometryAndTransformHandle handle,const Vec3 &v)
+void OSGScene::setGeometryScale(GeometryHandle handle,const Vec3 &v)
 {
   float x = v.x;
   float y = v.y;
@@ -1435,35 +1483,35 @@ void OSGScene::setGeometryScale(GeometryAndTransformHandle handle,const Vec3 &v)
 
   ::setScale(geometry_transform, x, y, z);
 
-  if (Impl::selectedTransform(*this) == handle) {
+  if (Impl::selectedGeometry(*this) == handle) {
     selectionHandler().updateDraggerPosition();
   }
 }
 
 
-void
-OSGScene::setGeometryCenter(GeometryAndTransformHandle handle,const Point &v)
+void OSGScene::setGeometryCenter(GeometryHandle handle,const Point &v)
 {
   osg::MatrixTransform &geometry_transform =
     Impl::geometryTransformForHandle(*this, handle);
 
   ::setTranslation(geometry_transform, {v.x(), v.y(), v.z()});
 
-  if (Impl::selectedTransform(*this) == handle) {
+  if (Impl::selectedGeometry(*this) == handle) {
     selectionHandler().updateDraggerPosition();
   }
 }
 
 
-Vec3 OSGScene::geometryScale(GeometryAndTransformHandle handle) const
+Vec3 OSGScene::geometryScale(GeometryHandle handle) const
 {
   return ::scale(Impl::geometryTransformForHandle(*this, handle));
 }
 
 
-Point OSGScene::geometryCenter(GeometryAndTransformHandle handle) const
+Point OSGScene::geometryCenter(GeometryHandle handle) const
 {
-  return ::translation(Impl::geometryTransformForHandle(*this, handle));
+  return
+    ::translation(Impl::geometryTransformForHandle(*this, handle));
 }
 
 
@@ -1478,7 +1526,10 @@ OSGScene::setGeometryColor(
   GeometryAndTransformHandle handle,float r,float g,float b
 )
 {
-  ::setColor(Impl::geometryTransformForHandle(*this,handle),osg::Vec3f(r,g,b));
+  ::setColor(
+    Impl::geometryTransformForHandle(*this,handle.geometry_handle),
+    osg::Vec3f(r,g,b)
+  );
 }
 
 
@@ -1555,8 +1606,7 @@ auto
 
   assert(geometry_handle.index != transform_handle.index);
 
-  return
-    GeometryAndTransformHandle{transform_handle.index, geometry_handle.index};
+  return GeometryAndTransformHandle{transform_handle, geometry_handle};
 }
 
 
@@ -1579,16 +1629,16 @@ void OSGScene::Impl::destroyIndex(size_t index, OSGScene &scene)
 }
 
 
-void OSGScene::destroyTransformAndGeometry(GeometryAndTransformHandle handle)
+void OSGScene::destroyGeometry(GeometryHandle handle)
 {
-  size_t transform_index = handle.transform_handle.index;
-  size_t geometry_index = handle.geometry_handle.index;
-
+  size_t geometry_index = handle.index;
   Impl::destroyIndex(geometry_index, *this);
+}
 
-  if (geometry_index != transform_index) {
-    Impl::destroyIndex(transform_index, *this);
-  }
+
+void OSGScene::destroyTransform(TransformHandle handle)
+{
+  Impl::destroyIndex(handle.index, *this);
 }
 
 
@@ -1601,7 +1651,7 @@ auto OSGScene::top() const -> TransformHandle
 auto OSGScene::selectedObject() const
 -> Optional<GeometryAndTransformHandle>
 {
-  return Impl::selectedTransform(*this);
+  return Impl::selectedGeometryAndTransform(*this);
 }
 
 
@@ -1630,13 +1680,6 @@ void OSGScene::SelectionHandler::attachDragger(DraggerType dragger_type)
   assert(_selected_geode_ptr);
   removeExistingDraggers();
   attachDragger(*_selected_geode_ptr, dragger_type);
-}
-
-
-void OSGScene::SelectionHandler::selectNodeWithoutDragger(osg::Geode *geode_ptr)
-{
-  changeSelectedNodeTo(geode_ptr);
-  removeExistingDraggers();
 }
 
 
@@ -1727,13 +1770,10 @@ void OSGScene::SelectionHandler::updateDraggerPosition()
 }
 
 
-void OSGScene::selectObject(GeometryAndTransformHandle handle)
+void OSGScene::selectGeometry(GeometryHandle handle)
 {
-  osg::Geode *geode_ptr =
-    Impl::geometryTransformForHandle(*this,handle).getChild(0)->asGeode();
-
-  assert(geode_ptr);
-  selectionHandler().selectNodeWithoutDragger(geode_ptr);
+  osg::Geode &geode = Impl::geodeForHandle(*this,handle);
+  selectionHandler().changeSelectedGeodeTo(&geode);
 }
 
 
@@ -1755,24 +1795,6 @@ void OSGScene::setTranslation(TransformHandle handle, Point p)
     Impl::transformForHandle(*this, handle);
 
   ::setTranslation(transform, {p.x(), p.y(), p.z()});
-
-  if (Impl::isSelectedHandle(handle, *this)) {
-    selectionHandler().updateDraggerPosition();
-  }
-}
-
-
-bool
-OSGScene::Impl::isSelectedHandle(TransformHandle handle, const OSGScene &scene)
-{
-  Optional<GeometryAndTransformHandle> selected_handle =
-    selectedTransform(scene);
-
-  if (!selected_handle) {
-    return false;
-  }
-
-  return (selected_handle->transform_handle == handle);
 }
 
 
@@ -1786,10 +1808,6 @@ void
   osg::Vec3f y = osgVec(axes.y);
   osg::Vec3f z = osgVec(axes.z);
   ::setCoordinateAxes(Impl::transformForHandle(*this, handle),x,y,z);
-
-  if (Impl::isSelectedHandle(handle, *this)) {
-    selectionHandler().updateDraggerPosition();
-  }
 }
 
 

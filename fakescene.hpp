@@ -6,17 +6,17 @@ struct FakeScene : Scene {
   using TransformIndex = TransformHandle::Index;
   TransformHandle top_handle = {0};
 
-  struct Body {
+  struct Object {
     TransformIndex parent_index;
     Point geometry_center = {0,0,0};
   };
 
-  using Bodies = std::map<TransformIndex, Body>;
-  Bodies bodies;
+  using Objects = std::map<TransformIndex, Object>;
+  Objects objects;
 
   bool indexIsUsed(TransformIndex i) const
   {
-    return bodies.count(i) != 0;
+    return objects.count(i) != 0;
   }
 
   TransformIndex firstUnusedIndex() const
@@ -30,48 +30,29 @@ struct FakeScene : Scene {
     return i;
   }
 
-  int nChildren(TransformHandle handle) const
-  {
-    int count = 0;
-
-    for (auto item : bodies) {
-      TransformIndex next_parent_index = item.second.parent_index;
-
-      if (next_parent_index == handle.index) {
-        ++count;
-      }
-    }
-
-    return count;
-  }
-
   virtual TransformHandle top() const
   {
     return top_handle;
   }
 
-  virtual SphereAndTransformHandle
-    createSphereAndTransform(TransformHandle parent_handle);
+  SphereAndTransformHandle
+    createSphereAndTransform(TransformHandle parent_handle) override;
 
-  virtual BoxAndTransformHandle createBoxAndTransform(TransformHandle parent);
-  virtual LineAndTransformHandle createLineAndTransform(TransformHandle);
+  BoxAndTransformHandle createBoxAndTransform(TransformHandle parent) override;
+  LineAndTransformHandle createLineAndTransform(TransformHandle) override;
+  void destroyGeometry(GeometryHandle) override;
+  void destroyTransform(TransformHandle) override;
 
-  virtual void destroyTransformAndGeometry(GeometryAndTransformHandle handle)
-  {
-    assert(nChildren(handle.transform_handle) == 0);
-    bodies.erase(handle.transform_handle.index);
-  }
-
-  void setGeometryScale(GeometryAndTransformHandle,const Vec3 &) override
+  void setGeometryScale(GeometryHandle,const Vec3 &) override
   {
   }
 
   void
   setGeometryCenter(
-    GeometryAndTransformHandle handle,const Point &center
+    GeometryHandle geometry_handle,const Point &center
   ) override
   {
-    bodies[handle.transform_handle.index].geometry_center = center;
+    objects[geometry_handle.index].geometry_center = center;
   }
 
   virtual Vec3 geometryScale(GeometryAndTransformHandle) const
@@ -79,7 +60,17 @@ struct FakeScene : Scene {
     assert(false); // not needed
   }
 
+  virtual Vec3 geometryScale(GeometryHandle) const
+  {
+    assert(false); // not needed
+  }
+
   virtual Point geometryCenter(GeometryAndTransformHandle) const
+  {
+    assert(false); // not needed
+  }
+
+  virtual Point geometryCenter(GeometryHandle) const
   {
     assert(false); // not needed
   }
@@ -122,7 +113,7 @@ struct FakeScene : Scene {
     assert(false); // not needed
   }
 
-  virtual void selectObject(GeometryAndTransformHandle)
+  virtual void selectGeometry(GeometryHandle)
   {
     assert(false); // not needed
   }
@@ -139,5 +130,8 @@ struct FakeScene : Scene {
   }
 
   private:
-    GeometryAndTransformHandle create(TransformHandle parent_handle);
+    GeometryAndTransformHandle
+      createGeometryAndTransform(TransformHandle parent_handle);
+
+    int nChildren(size_t handle_index) const;
 };

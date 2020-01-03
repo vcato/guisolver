@@ -50,8 +50,12 @@ struct Scene {
     TransformHandle transform_handle;
     GeometryHandle geometry_handle;
 
-    GeometryAndTransformHandle(size_t transform_index, size_t geometry_index)
-    : transform_handle{transform_index}, geometry_handle(geometry_index)
+    GeometryAndTransformHandle(
+      TransformHandle transform_handle,
+      GeometryHandle geometry_handle
+    )
+    : transform_handle(transform_handle),
+      geometry_handle(geometry_handle)
     {
     }
 
@@ -99,11 +103,13 @@ struct Scene {
   virtual LineAndTransformHandle
     createLineAndTransform(TransformHandle parent) = 0;
 
-  virtual void destroyTransformAndGeometry(GeometryAndTransformHandle) = 0;
-  virtual void setGeometryScale(GeometryAndTransformHandle, const Vec3 &) = 0;
-  virtual void setGeometryCenter(GeometryAndTransformHandle, const Point &) = 0;
-  virtual Vec3 geometryScale(GeometryAndTransformHandle) const = 0;
-  virtual Point geometryCenter(GeometryAndTransformHandle) const = 0;
+  virtual void destroyGeometry(GeometryHandle) = 0;
+  virtual void destroyTransform(TransformHandle) = 0;
+
+  virtual void setGeometryScale(GeometryHandle handle,const Vec3 &v) = 0;
+  virtual void setGeometryCenter(GeometryHandle handle,const Point &v) = 0;
+  virtual Vec3 geometryScale(GeometryHandle) const = 0;
+  virtual Point geometryCenter(GeometryHandle) const = 0;
   virtual void setCoordinateAxes(TransformHandle,const CoordinateAxes &) = 0;
   virtual CoordinateAxes coordinateAxes(TransformHandle) const = 0;
   virtual void setTranslation(TransformHandle,Point) = 0;
@@ -115,7 +121,7 @@ struct Scene {
   virtual void setStartPoint(LineAndTransformHandle,Point) = 0;
   virtual void setEndPoint(LineAndTransformHandle,Point) = 0;
   virtual Optional<GeometryAndTransformHandle> selectedObject() const = 0;
-  virtual void selectObject(GeometryAndTransformHandle) = 0;
+  virtual void selectGeometry(GeometryHandle) = 0;
 
   virtual Optional<LineAndTransformHandle>
     maybeLineAndTransform(GeometryAndTransformHandle) const = 0;

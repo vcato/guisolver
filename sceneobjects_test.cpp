@@ -11,10 +11,10 @@ sceneGeometryCenter(
   const SceneHandles &scene_handles
 )
 {
-  const FakeScene::Bodies::const_iterator iter =
-    scene.bodies.find(scene_handles.body(index).transform_handle.index);
+  const FakeScene::Objects::const_iterator iter =
+    scene.objects.find(scene_handles.body(index).boxHandle().index);
 
-  assert(iter != scene.bodies.end());
+  assert(iter != scene.objects.end());
   return iter->second.geometry_center;
 }
 
@@ -32,5 +32,5 @@ int main()
   SceneHandles scene_handles = createSceneObjects(state, scene);
   assert(sceneGeometryCenter(child_index, scene, scene_handles) == center);
   destroySceneObjects(scene, state, scene_handles);
-  assert(scene.bodies.empty());
+  assert(scene.objects.empty());
 }

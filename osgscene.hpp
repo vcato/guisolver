@@ -32,20 +32,13 @@ class OSGScene : public Scene {
     LineAndTransformHandle
       createLineAndTransform(TransformHandle parent) override;
 
-    void destroyTransformAndGeometry(GeometryAndTransformHandle) override;
+    void destroyGeometry(GeometryHandle) override;
+    void destroyTransform(TransformHandle) override;
+    void setGeometryScale(GeometryHandle handle,const Vec3 &v) override;
+    void setGeometryCenter(GeometryHandle handle,const Point &v) override;
 
-    void
-      setGeometryScale(
-        GeometryAndTransformHandle handle,const Vec3 &
-      ) override;
-
-    void
-      setGeometryCenter(
-        GeometryAndTransformHandle handle,const Point &
-      ) override;
-
-    Vec3 geometryScale(GeometryAndTransformHandle) const override;
-    Point geometryCenter(GeometryAndTransformHandle) const override;
+    Vec3 geometryScale(GeometryHandle) const override;
+    Point geometryCenter(GeometryHandle) const override;
     void setTranslation(TransformHandle,Point) override;
     Point translation(TransformHandle) const override;
     void setCoordinateAxes(TransformHandle,const CoordinateAxes &) override;
@@ -59,7 +52,8 @@ class OSGScene : public Scene {
     void setStartPoint(LineAndTransformHandle,Point) override;
     void setEndPoint(LineAndTransformHandle,Point) override;
     Optional<GeometryAndTransformHandle> selectedObject() const override;
-    void selectObject(GeometryAndTransformHandle handle) override;
+    void selectGeometry(GeometryHandle handle);
+    void selectTransform(TransformHandle handle);
 
     Optional<LineAndTransformHandle>
       maybeLineAndTransform(GeometryAndTransformHandle handle) const override;
