@@ -23,9 +23,9 @@ struct SceneHandles {
     TransformHandle transform_handle;
     GeometryHandle box_handle;
 
-    Body(BoxAndTransformHandle arg)
-    : transform_handle(arg.transform_handle),
-      box_handle(arg.geometry_handle)
+    Body(TransformHandle transform_handle, GeometryHandle box_handle)
+    : transform_handle(transform_handle),
+      box_handle(box_handle)
     {
     }
 

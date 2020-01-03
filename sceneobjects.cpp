@@ -11,7 +11,9 @@
 
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
+using GeometryHandle = Scene::GeometryHandle;
 using BoxAndTransformHandle = Scene::BoxAndTransformHandle;
+using GeometryAndTransformHandle = Scene::GeometryAndTransformHandle;
 using LineAndTransformHandle = Scene::LineAndTransformHandle;
 
 static Point
@@ -341,27 +343,29 @@ createBodyObjectInScene(
 {
   const SceneState::Body &body_state = state.body(body_index);
   assert(!scene_handles.bodies[body_index].hasValue());
+  Optional<TransformHandle> maybe_parent_transform;
 
   if (body_state.maybe_parent_index) {
     const BodyIndex parent_body_index = *body_state.maybe_parent_index;
 
-    const SceneHandles::Body &body_handles =
+    const SceneHandles::Body &parent_body_handles =
       scene_handles.body(parent_body_index);
 
-    BoxAndTransformHandle transform_handle =
-      scene.createBoxAndTransform(body_handles.transformHandle());
-    scene_handles.bodies[body_index] = SceneHandles::Body{transform_handle};
+    maybe_parent_transform = parent_body_handles.transformHandle();
   }
   else {
-    BoxAndTransformHandle transform_handle = scene.createBoxAndTransform();
-    scene_handles.bodies[body_index] = SceneHandles::Body{transform_handle};
+    maybe_parent_transform = scene.top();
   }
 
-  updateBodyInScene(
-    scene,
-    body_state,
-    *scene_handles.bodies[body_index]
-  );
+  const TransformHandle &parent_transform = *maybe_parent_transform;
+
+  TransformHandle transform_handle = scene.createTransform(parent_transform);
+  GeometryHandle geometry_handle = scene.createBox(transform_handle);
+
+  scene_handles.bodies[body_index] =
+    SceneHandles::Body{transform_handle, geometry_handle};
+
+  updateBodyInScene(scene, body_state, *scene_handles.bodies[body_index]);
 }
 
 

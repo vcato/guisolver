@@ -93,6 +93,8 @@ struct Scene {
   std::function<void()> selection_changed_callback;
 
   virtual TransformHandle top() const = 0;
+  virtual TransformHandle createTransform(TransformHandle parent) = 0;
+  virtual GeometryHandle createBox(TransformHandle parent) = 0;
 
   virtual SphereAndTransformHandle
     createSphereAndTransform(TransformHandle parent) = 0;

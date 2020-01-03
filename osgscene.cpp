@@ -232,11 +232,6 @@ struct OSGScene::Impl {
       );
   }
 
-  static GeometryAndTransformHandle
-    createShapeWithTransform(
-      OSGScene &, TransformHandle parent, const ShapeParams &shape_params
-    );
-
   static osg::MatrixTransform &
     createTransform(OSGScene &scene, TransformHandle parent);
 
@@ -244,6 +239,13 @@ struct OSGScene::Impl {
     createShape(
       osg::MatrixTransform &transform,
       const ShapeParams &shape_params
+    );
+
+  static GeometryHandle
+    createGeometry(
+      const ShapeParams &,
+      TransformHandle parent,
+      OSGScene &scene
     );
 
   static void
@@ -1399,30 +1401,53 @@ void
 }
 
 
-auto
-  OSGScene::Impl::createShapeWithTransform(
-    OSGScene &scene,
-    TransformHandle parent,
-    const ShapeParams &shape_params
-  ) -> GeometryAndTransformHandle
+TransformHandle OSGScene::createTransform(TransformHandle parent)
 {
-  osg::MatrixTransform &transform = createTransform(scene, parent);
+  OSGScene &scene = *this;
+  osg::MatrixTransform &transform = Impl::createTransform(scene, parent);
 
-  osg::MatrixTransform &geometry_transform =
-    createShape(transform, shape_params);
+  TransformHandle transform_handle =
+    Impl::makeHandleFromTransform(scene, transform);
 
-  return makeHandleFromTransforms(scene, transform, geometry_transform);
+  return transform_handle;
 }
 
 
-auto
-OSGScene::createSphereAndTransform(TransformHandle parent)
-  -> SphereAndTransformHandle
+GeometryHandle
+OSGScene::Impl::createGeometry(
+  const ShapeParams &shape_params,
+  TransformHandle transform_handle,
+  OSGScene &scene
+)
 {
-  return
-    SphereAndTransformHandle{
-      Impl::createShapeWithTransform(*this,parent,SphereShapeParams())
-    };
+  osg::MatrixTransform &transform =
+    Impl::transformForHandle(scene, transform_handle);
+
+  osg::MatrixTransform &geometry_transform =
+    Impl::createShape(transform, shape_params);
+
+  GeometryHandle geometry_handle =
+    Impl::makeHandleFromGeometryTransform(scene, geometry_transform);
+
+  return geometry_handle;
+}
+
+
+GeometryHandle OSGScene::createBox(TransformHandle transform_handle)
+{
+  return Impl::createGeometry(BoxShapeParams(), transform_handle, *this);
+}
+
+
+GeometryHandle OSGScene::createLine(TransformHandle transform_handle)
+{
+  return Impl::createGeometry(LineShapeParams(), transform_handle, *this);
+}
+
+
+GeometryHandle OSGScene::createSphere(TransformHandle transform_handle)
+{
+  return Impl::createGeometry(SphereShapeParams(), transform_handle, *this);
 }
 
 
@@ -1430,10 +1455,27 @@ auto
 OSGScene::createBoxAndTransform(TransformHandle parent)
   -> BoxAndTransformHandle
 {
-  return
-    BoxAndTransformHandle{
-      Impl::createShapeWithTransform(*this,parent,BoxShapeParams())
-    };
+  TransformHandle transform_handle = createTransform(parent);
+  GeometryHandle geometry_handle = createBox(transform_handle);
+
+  GeometryAndTransformHandle handle =
+    GeometryAndTransformHandle{transform_handle, geometry_handle};
+
+  return BoxAndTransformHandle{handle};
+}
+
+
+auto
+OSGScene::createSphereAndTransform(TransformHandle parent)
+  -> SphereAndTransformHandle
+{
+  TransformHandle transform_handle = createTransform(parent);
+  GeometryHandle geometry_handle = createSphere(transform_handle);
+
+  GeometryAndTransformHandle handle =
+    GeometryAndTransformHandle{transform_handle, geometry_handle};
+
+  return SphereAndTransformHandle{handle};
 }
 
 
@@ -1441,10 +1483,13 @@ auto
 OSGScene::createLineAndTransform(TransformHandle parent)
   -> LineAndTransformHandle
 {
-  return
-    LineAndTransformHandle{
-      Impl::createShapeWithTransform(*this,parent,LineShapeParams())
-    };
+  TransformHandle transform_handle = createTransform(parent);
+  GeometryHandle geometry_handle = createLine(transform_handle);
+
+  GeometryAndTransformHandle handle =
+    GeometryAndTransformHandle{transform_handle, geometry_handle};
+
+  return LineAndTransformHandle{handle};
 }
 
 

@@ -38,6 +38,8 @@ struct FakeScene : Scene {
   SphereAndTransformHandle
     createSphereAndTransform(TransformHandle parent_handle) override;
 
+  GeometryHandle createBox(TransformHandle parent) override;
+  TransformHandle createTransform(TransformHandle parent) override;
   BoxAndTransformHandle createBoxAndTransform(TransformHandle parent) override;
   LineAndTransformHandle createLineAndTransform(TransformHandle) override;
   void destroyGeometry(GeometryHandle) override;
@@ -130,6 +132,8 @@ struct FakeScene : Scene {
   }
 
   private:
+    GeometryHandle createGeometry(TransformHandle parent);
+
     GeometryAndTransformHandle
       createGeometryAndTransform(TransformHandle parent_handle);
 

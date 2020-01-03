@@ -23,6 +23,11 @@ class OSGScene : public Scene {
 
     using Scene::createSphereAndTransform;
 
+    TransformHandle createTransform(TransformHandle parent) override;
+    GeometryHandle createBox(TransformHandle parent) override;
+    GeometryHandle createLine(TransformHandle parent);
+    GeometryHandle createSphere(TransformHandle parent);
+
     SphereAndTransformHandle
       createSphereAndTransform(TransformHandle parent) override;
 
