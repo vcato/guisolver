@@ -225,12 +225,12 @@ struct OSGScene::Impl {
   makeTopHandle(OSGScene &scene, osg::MatrixTransform &top_node)
   {
     return
-      GeometryAndTransformHandle(Impl::makeHandleFromGeometryTransform(
+      Impl::makeHandleFromGeometryTransform(
         scene, top_node, addTransformToGroup(top_node)
-      ).index);
+      );
   }
 
-  static TransformHandle
+  static GeometryAndTransformHandle
     createShapeWithTransform(
       OSGScene &, TransformHandle parent, const ShapeParams &shape_params
     );
@@ -297,7 +297,7 @@ struct OSGScene::Impl {
     return *transform_ptr;
   }
 
-  static TransformHandle
+  static GeometryAndTransformHandle
     makeHandleFromGeometryTransform(
       OSGScene &,
       osg::MatrixTransform &transform,
@@ -1314,7 +1314,7 @@ auto
     OSGScene &scene,
     TransformHandle parent,
     const ShapeParams &shape_params
-  ) -> TransformHandle
+  ) -> GeometryAndTransformHandle
 {
   osg::MatrixTransform &transform = createTransform(scene, parent);
 
@@ -1329,7 +1329,10 @@ auto
 OSGScene::createSphereAndTransform(TransformHandle parent)
   -> SphereAndTransformHandle
 {
-  return SphereAndTransformHandle{Impl::createShapeWithTransform(*this,parent,SphereShapeParams()).index};
+  return
+    SphereAndTransformHandle{
+      Impl::createShapeWithTransform(*this,parent,SphereShapeParams())
+    };
 }
 
 
@@ -1337,7 +1340,10 @@ auto
 OSGScene::createBoxAndTransform(TransformHandle parent)
   -> BoxAndTransformHandle
 {
-  return BoxAndTransformHandle{Impl::createShapeWithTransform(*this,parent,BoxShapeParams()).index};
+  return
+    BoxAndTransformHandle{
+      Impl::createShapeWithTransform(*this,parent,BoxShapeParams())
+    };
 }
 
 
@@ -1345,19 +1351,10 @@ auto
 OSGScene::createLineAndTransform(TransformHandle parent)
   -> LineAndTransformHandle
 {
-  osg::MatrixTransform &transform = Impl::createTransform(*this, parent);
-
-  osg::MatrixTransform &geometry_transform =
-    Impl::createShape(transform, LineShapeParams());
-
-  size_t index =
-    Impl::getNewHandleIndexFromGeometryTransform(
-      *this,
-      transform,
-      geometry_transform
-    );
-
-  return LineAndTransformHandle{index};
+  return
+    LineAndTransformHandle{
+      Impl::createShapeWithTransform(*this,parent,LineShapeParams())
+    };
 }
 
 
@@ -1518,12 +1515,12 @@ auto
     OSGScene &scene,
     osg::MatrixTransform &transform,
     osg::MatrixTransform &geometry_transform
-  ) -> TransformHandle
+  ) -> GeometryAndTransformHandle
 {
   size_t index =
     getNewHandleIndexFromGeometryTransform(scene, transform, geometry_transform);
 
-  return TransformHandle{index};
+  return GeometryAndTransformHandle{index};
 }
 
 

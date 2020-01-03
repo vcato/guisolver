@@ -52,16 +52,31 @@ struct Scene {
   struct LineAndTransformHandle : GeometryAndTransformHandle {
     LineAndTransformHandle(size_t index)
     : GeometryAndTransformHandle{index} {}
+
+    explicit LineAndTransformHandle(const GeometryAndTransformHandle &arg)
+    : GeometryAndTransformHandle(arg)
+    {
+    }
   };
 
   struct BoxAndTransformHandle : GeometryAndTransformHandle {
     BoxAndTransformHandle(size_t index)
     : GeometryAndTransformHandle{index} {}
+
+    explicit BoxAndTransformHandle(const GeometryAndTransformHandle &arg)
+    : GeometryAndTransformHandle(arg)
+    {
+    }
   };
 
   struct SphereAndTransformHandle : GeometryAndTransformHandle {
     SphereAndTransformHandle(size_t index)
     : GeometryAndTransformHandle{index} {}
+
+    explicit SphereAndTransformHandle(const GeometryAndTransformHandle &arg)
+    : GeometryAndTransformHandle(arg)
+    {
+    }
   };
 
   std::function<void()> changing_callback;
