@@ -59,4 +59,5 @@ We need to have separate handles for the transform and the geometry.
 destroyLineAndTransform() will need to destroy the line then destroy
 the transform.
 ---
-Strengthen the types on geometryScale() and geometryCenter()
+The selected object in the scene should always be a geometry and transform
+object.

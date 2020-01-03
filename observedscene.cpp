@@ -9,6 +9,7 @@
 #include "sceneerror.hpp"
 
 using TransformHandle = Scene::TransformHandle;
+using GeometryAndTransformHandle = Scene::GeometryAndTransformHandle;
 using std::cerr;
 
 
@@ -51,23 +52,23 @@ forEachTransformHandlePath(
   Optional<TransformHandle> maybe_object;
 
   for (auto i : indicesOf(tree_paths.markers)) {
-    f(scene_handles.marker(i).handle.transform_handle, tree_paths.marker(i).path);
+    f(scene_handles.marker(i).handle, tree_paths.marker(i).path);
   }
 
   for (auto i : indicesOf(tree_paths.bodies)) {
-    f(scene_handles.body(i).transform_handle, tree_paths.body(i).path);
+    f(scene_handles.body(i), tree_paths.body(i).path);
   }
 
   for (auto i : indicesOf(tree_paths.distance_errors)) {
     f(
-      scene_handles.distance_errors[i].line.transform_handle,
+      scene_handles.distance_errors[i].line,
       tree_paths.distance_errors[i].path
     );
   }
 }
 
 
-static Optional<TransformHandle>
+static Optional<GeometryAndTransformHandle>
   sceneObjectForTreeItem(
     const TreePath &item_path,
     const TreePaths &tree_paths,
@@ -75,10 +76,10 @@ static Optional<TransformHandle>
   )
 {
   TreePath matching_path;
-  Optional<TransformHandle> maybe_matching_handle;
+  Optional<GeometryAndTransformHandle> maybe_matching_handle;
 
   forEachTransformHandlePath(
-    [&](TransformHandle object_handle, const TreePath &object_path){
+    [&](GeometryAndTransformHandle object_handle, const TreePath &object_path){
       if (startsWith(item_path, object_path)) {
         if (object_path.size() > matching_path.size()) {
           matching_path = object_path;
@@ -104,8 +105,8 @@ treeItemForSceneObject(
   Optional<TreePath> maybe_found_path;
 
   forEachTransformHandlePath(
-    [&](TransformHandle object_handle, const TreePath &object_path){
-      if (object_handle == handle) {
+    [&](GeometryAndTransformHandle object_handle, const TreePath &object_path){
+      if (object_handle.transform_handle == handle) {
         maybe_found_path = object_path;
       }
     },
@@ -442,7 +443,7 @@ void ObservedScene::handleTreeSelectionChanged(ObservedScene &observed_scene)
     return;
   }
 
-  Optional<TransformHandle> maybe_object =
+  Optional<GeometryAndTransformHandle> maybe_object =
     sceneObjectForTreeItem(
       *maybe_selected_item_path,
       observed_scene.tree_paths,
@@ -467,20 +468,20 @@ ObservedScene::handleSceneSelectionChanged(
   Scene &scene = observed_scene.scene;
   TreeWidget &tree_widget = observed_scene.tree_widget;
 
-  Optional<TransformHandle> maybe_selected_transform_handle =
-    scene.selectedObject();
+  Optional<GeometryAndTransformHandle>
+    maybe_selected_transform_handle = scene.selectedObject();
 
   if (!maybe_selected_transform_handle) {
     cerr << "No object selected in the scene.\n";
     return;
   }
 
-  TransformHandle selected_transform_handle =
+  GeometryAndTransformHandle selected_transform_handle =
     *maybe_selected_transform_handle;
 
   Optional<TreePath> maybe_tree_path =
     treeItemForSceneObject(
-      selected_transform_handle,
+      selected_transform_handle.transform_handle,
       observed_scene.tree_paths,
       observed_scene.scene_handles
     );

@@ -11,6 +11,7 @@
 
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
+using GeometryAndTransformHandle = Scene::GeometryAndTransformHandle;
 
 
 template <typename XYZSolveFlags, typename F>
@@ -269,7 +270,7 @@ void
   Scene &scene = observed_scene.scene;
   SceneHandles &scene_handles = observed_scene.scene_handles;
   SceneState &state = observed_scene.scene_state;
-  Optional<TransformHandle> th = scene.selectedObject();
+  Optional<GeometryAndTransformHandle> th = scene.selectedObject();
   updateSceneStateFromSceneObjects(state, scene, scene_handles);
 
   vector<bool> old_flags;
@@ -278,7 +279,7 @@ void
   // old state.
 
   forEachSolveFlagAffectingHandle(
-    *th, scene_handles, state,
+    th->transform_handle, scene_handles, state,
     [&](bool &arg){
       old_flags.push_back(arg);
       arg = false;
@@ -292,7 +293,7 @@ void
     vector<bool>::const_iterator iter = old_flags.begin();
 
     forEachSolveFlagAffectingHandle(
-      *th, scene_handles, state,
+      th->transform_handle, scene_handles, state,
       [&](bool &arg){
         arg = *iter++;
       }

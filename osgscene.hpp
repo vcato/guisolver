@@ -32,24 +32,37 @@ class OSGScene : public Scene {
     LineAndTransformHandle
       createLineAndTransform(TransformHandle parent) override;
 
-    void destroyLineAndTransform(LineAndTransformHandle) override;
-    void destroyObject(TransformHandle) override;
-    void setGeometryScale(TransformHandle handle,const Vec3 &) override;
-    void setGeometryCenter(TransformHandle handle,const Point &) override;
-    Vec3 geometryScale(TransformHandle) const override;
-    Point geometryCenter(TransformHandle) const override;
+    void destroyTransformAndGeometry(GeometryAndTransformHandle) override;
+
+    void
+      setGeometryScale(
+        GeometryAndTransformHandle handle,const Vec3 &
+      ) override;
+
+    void
+      setGeometryCenter(
+        GeometryAndTransformHandle handle,const Point &
+      ) override;
+
+    Vec3 geometryScale(GeometryAndTransformHandle) const override;
+    Point geometryCenter(GeometryAndTransformHandle) const override;
     void setTranslation(TransformHandle,Point) override;
     Point translation(TransformHandle) const override;
     void setCoordinateAxes(TransformHandle,const CoordinateAxes &) override;
     CoordinateAxes coordinateAxes(TransformHandle) const override;
-    void setColor(TransformHandle handle,float r,float g,float b) override;
+
+    void
+      setGeometryColor(
+        GeometryAndTransformHandle handle,float r,float g,float b
+      ) override;
+
     void setStartPoint(LineAndTransformHandle,Point) override;
     void setEndPoint(LineAndTransformHandle,Point) override;
-    Optional<TransformHandle> selectedObject() const override;
-    void selectObject(TransformHandle handle) override;
+    Optional<GeometryAndTransformHandle> selectedObject() const override;
+    void selectObject(GeometryAndTransformHandle handle) override;
 
     Optional<LineAndTransformHandle>
-      maybeLineAndTransform(TransformHandle handle) const override;
+      maybeLineAndTransform(GeometryAndTransformHandle handle) const override;
 
     void attachDraggerToSelectedNode(DraggerType) override;
 
@@ -68,7 +81,7 @@ class OSGScene : public Scene {
     vector<HandleData> _handle_datas;
 
     const MatrixTransformPtr _top_node_ptr;
-    const TransformHandle _top_handle;
+    const GeometryAndTransformHandle _top_handle;
     osgViewer::CompositeViewer _composite_viewer;
     QtTimer _timer;
     std::unique_ptr<SelectionHandler> _selection_handler_ptr;

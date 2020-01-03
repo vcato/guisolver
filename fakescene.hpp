@@ -56,32 +56,30 @@ struct FakeScene : Scene {
   virtual BoxAndTransformHandle createBoxAndTransform(TransformHandle parent);
   virtual LineAndTransformHandle createLineAndTransform(TransformHandle);
 
-  virtual void destroyLineAndTransform(LineAndTransformHandle)
+  virtual void destroyTransformAndGeometry(GeometryAndTransformHandle handle)
+  {
+    assert(nChildren(handle.transform_handle) == 0);
+    bodies.erase(handle.transform_handle.index);
+  }
+
+  void setGeometryScale(GeometryAndTransformHandle,const Vec3 &) override
+  {
+  }
+
+  void
+  setGeometryCenter(
+    GeometryAndTransformHandle handle,const Point &center
+  ) override
+  {
+    bodies[handle.transform_handle.index].geometry_center = center;
+  }
+
+  virtual Vec3 geometryScale(GeometryAndTransformHandle) const
   {
     assert(false); // not needed
   }
 
-  virtual void destroyObject(TransformHandle handle)
-  {
-    assert(nChildren(handle) == 0);
-    bodies.erase(handle.index);
-  }
-
-  void setGeometryScale(TransformHandle,const Vec3 &) override
-  {
-  }
-
-  void setGeometryCenter(TransformHandle handle,const Point &center) override
-  {
-    bodies[handle.index].geometry_center = center;
-  }
-
-  virtual Vec3 geometryScale(TransformHandle) const
-  {
-    assert(false); // not needed
-  }
-
-  virtual Point geometryCenter(TransformHandle) const
+  virtual Point geometryCenter(GeometryAndTransformHandle) const
   {
     assert(false); // not needed
   }
@@ -104,7 +102,10 @@ struct FakeScene : Scene {
     assert(false); // not needed
   }
 
-  virtual void setColor(TransformHandle,float /*r*/,float /*g*/,float /*b*/)
+  virtual void
+  setGeometryColor(
+    GeometryAndTransformHandle,float /*r*/,float /*g*/,float /*b*/
+  )
   {
   }
 
@@ -116,18 +117,18 @@ struct FakeScene : Scene {
   {
   }
 
-  virtual Optional<TransformHandle> selectedObject() const
+  virtual Optional<GeometryAndTransformHandle> selectedObject() const
   {
     assert(false); // not needed
   }
 
-  virtual void selectObject(TransformHandle)
+  virtual void selectObject(GeometryAndTransformHandle)
   {
     assert(false); // not needed
   }
 
   virtual Optional<LineAndTransformHandle>
-  maybeLineAndTransform(TransformHandle) const
+  maybeLineAndTransform(GeometryAndTransformHandle) const
   {
     assert(false); // not needed
   }

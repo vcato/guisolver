@@ -35,19 +35,33 @@ struct Scene {
     }
   };
 
-  struct LineAndTransformHandle {
+  struct GeometryAndTransformHandle {
     TransformHandle transform_handle;
-    LineAndTransformHandle(size_t index) : transform_handle{index} {}
+
+    GeometryAndTransformHandle(size_t index)
+    : transform_handle{index}
+    {
+    }
+
+    bool operator==(const GeometryAndTransformHandle &arg) const
+    {
+      return transform_handle == arg.transform_handle;
+    }
   };
 
-  struct BoxAndTransformHandle {
-    TransformHandle transform_handle;
-    BoxAndTransformHandle(size_t index) : transform_handle{index} {}
+  struct LineAndTransformHandle : GeometryAndTransformHandle {
+    LineAndTransformHandle(size_t index)
+    : GeometryAndTransformHandle{index} {}
   };
 
-  struct SphereAndTransformHandle {
-    TransformHandle transform_handle;
-    SphereAndTransformHandle(size_t index) : transform_handle{index} {}
+  struct BoxAndTransformHandle : GeometryAndTransformHandle {
+    BoxAndTransformHandle(size_t index)
+    : GeometryAndTransformHandle{index} {}
+  };
+
+  struct SphereAndTransformHandle : GeometryAndTransformHandle {
+    SphereAndTransformHandle(size_t index)
+    : GeometryAndTransformHandle{index} {}
   };
 
   std::function<void()> changing_callback;
@@ -65,24 +79,26 @@ struct Scene {
   virtual LineAndTransformHandle
     createLineAndTransform(TransformHandle parent) = 0;
 
-  virtual void destroyLineAndTransform(LineAndTransformHandle) = 0;
-  virtual void destroyObject(TransformHandle) = 0;
-  virtual void setGeometryScale(TransformHandle, const Vec3 &) = 0;
-  virtual void setGeometryCenter(TransformHandle, const Point &) = 0;
-  virtual Vec3 geometryScale(TransformHandle) const = 0;
-  virtual Point geometryCenter(TransformHandle) const = 0;
+  virtual void destroyTransformAndGeometry(GeometryAndTransformHandle) = 0;
+  virtual void setGeometryScale(GeometryAndTransformHandle, const Vec3 &) = 0;
+  virtual void setGeometryCenter(GeometryAndTransformHandle, const Point &) = 0;
+  virtual Vec3 geometryScale(GeometryAndTransformHandle) const = 0;
+  virtual Point geometryCenter(GeometryAndTransformHandle) const = 0;
   virtual void setCoordinateAxes(TransformHandle,const CoordinateAxes &) = 0;
   virtual CoordinateAxes coordinateAxes(TransformHandle) const = 0;
   virtual void setTranslation(TransformHandle,Point) = 0;
   virtual Point translation(TransformHandle) const = 0;
-  virtual void setColor(TransformHandle,float r,float g,float b) = 0;
+
+  virtual void
+    setGeometryColor(GeometryAndTransformHandle,float r,float g,float b) = 0;
+
   virtual void setStartPoint(LineAndTransformHandle,Point) = 0;
   virtual void setEndPoint(LineAndTransformHandle,Point) = 0;
-  virtual Optional<TransformHandle> selectedObject() const = 0;
-  virtual void selectObject(TransformHandle) = 0;
+  virtual Optional<GeometryAndTransformHandle> selectedObject() const = 0;
+  virtual void selectObject(GeometryAndTransformHandle) = 0;
 
   virtual Optional<LineAndTransformHandle>
-    maybeLineAndTransform(TransformHandle) const = 0;
+    maybeLineAndTransform(GeometryAndTransformHandle) const = 0;
 
   virtual void attachDraggerToSelectedNode(DraggerType) = 0;
 
