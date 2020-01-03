@@ -1452,20 +1452,6 @@ GeometryHandle OSGScene::createSphere(TransformHandle transform_handle)
 
 
 auto
-OSGScene::createBoxAndTransform(TransformHandle parent)
-  -> BoxAndTransformHandle
-{
-  TransformHandle transform_handle = createTransform(parent);
-  GeometryHandle geometry_handle = createBox(transform_handle);
-
-  GeometryAndTransformHandle handle =
-    GeometryAndTransformHandle{transform_handle, geometry_handle};
-
-  return BoxAndTransformHandle{handle};
-}
-
-
-auto
 OSGScene::createSphereAndTransform(TransformHandle parent)
   -> SphereAndTransformHandle
 {

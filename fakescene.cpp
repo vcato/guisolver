@@ -87,16 +87,6 @@ FakeScene::createBox(TransformHandle transform_handle)
 }
 
 
-BoxAndTransformHandle
-FakeScene::createBoxAndTransform(TransformHandle parent_handle)
-{
-  TransformHandle transform_handle = createTransform(parent_handle);
-  GeometryHandle geometry_handle = createBox(transform_handle);
-  GeometryAndTransformHandle new_handle = {transform_handle, geometry_handle};
-  return BoxAndTransformHandle{new_handle};
-}
-
-
 LineAndTransformHandle FakeScene::createLineAndTransform(TransformHandle parent)
 {
   return LineAndTransformHandle{createGeometryAndTransform(parent)};

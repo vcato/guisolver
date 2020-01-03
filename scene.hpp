@@ -99,9 +99,6 @@ struct Scene {
   virtual SphereAndTransformHandle
     createSphereAndTransform(TransformHandle parent) = 0;
 
-  virtual BoxAndTransformHandle
-    createBoxAndTransform(TransformHandle parent) = 0;
-
   virtual LineAndTransformHandle
     createLineAndTransform(TransformHandle parent) = 0;
 
@@ -133,11 +130,6 @@ struct Scene {
   SphereAndTransformHandle createSphereAndTransform()
   {
     return createSphereAndTransform(top());
-  }
-
-  BoxAndTransformHandle createBoxAndTransform()
-  {
-    return createBoxAndTransform(top());
   }
 };
 

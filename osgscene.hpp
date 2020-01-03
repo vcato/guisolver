@@ -31,9 +31,6 @@ class OSGScene : public Scene {
     SphereAndTransformHandle
       createSphereAndTransform(TransformHandle parent) override;
 
-    BoxAndTransformHandle
-      createBoxAndTransform(TransformHandle parent) override;
-
     LineAndTransformHandle
       createLineAndTransform(TransformHandle parent) override;
 

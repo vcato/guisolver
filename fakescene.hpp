@@ -40,7 +40,6 @@ struct FakeScene : Scene {
 
   GeometryHandle createBox(TransformHandle parent) override;
   TransformHandle createTransform(TransformHandle parent) override;
-  BoxAndTransformHandle createBoxAndTransform(TransformHandle parent) override;
   LineAndTransformHandle createLineAndTransform(TransformHandle) override;
   void destroyGeometry(GeometryHandle) override;
   void destroyTransform(TransformHandle) override;
