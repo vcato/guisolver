@@ -68,7 +68,8 @@ class SceneState {
       TransformSolveFlags solve_flags;
       Optional<BodyIndex> maybe_parent_index;
 
-      Body(const Name &name, size_t n_boxes) : name(name), boxes(n_boxes) {}
+      void addBox() { boxes.emplace_back(); }
+      Body(const Name &name) : name(name) {}
     };
 
     struct DistanceError {
@@ -173,9 +174,6 @@ using MarkerPosition = SceneState::XYZ;
 
 extern vector<SceneState::Marker::Name> markerNames(const SceneState &state);
 extern vector<SceneState::Body::Name> bodyNames(const SceneState &state);
-
-extern BodyIndex
-  createBodyInState(SceneState &, Optional<BodyIndex> maybe_parent_index);
 
 inline void setAll(SceneState::XYZSolveFlags &flags, bool value)
 {

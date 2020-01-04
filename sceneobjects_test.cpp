@@ -29,8 +29,9 @@ int main()
   Point center = { 1.5, 2.5, 3.5};
   SceneState state;
   BodyIndex parent_index = state.createBody(/*parent*/{});
+  state.body(parent_index).addBox();
   BodyIndex child_index = state.createBody(parent_index);
-  state.body(child_index).boxes.resize(1);
+  state.body(child_index).addBox();
   state.body(child_index).boxes[0].center = xyzState(center);
   SceneHandles scene_handles = createSceneObjects(state, scene);
   assert(sceneGeometryCenter(child_index, scene, scene_handles) == center);

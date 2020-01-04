@@ -32,8 +32,12 @@ struct SceneHandles {
     TransformHandle transform_handle;
     vector<Box> boxes;
 
-    Body(TransformHandle transform_handle, GeometryHandle box_handle)
+    Body(TransformHandle transform_handle)
     : transform_handle(transform_handle)
+    {
+    }
+
+    void addBox(GeometryHandle box_handle)
     {
       boxes.push_back(box_handle);
     }

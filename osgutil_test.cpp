@@ -4,6 +4,7 @@
 #include <random>
 #include <iostream>
 #include <osg/io_utils>
+#include "assertnearfloat.hpp"
 
 using std::cerr;
 
@@ -23,21 +24,6 @@ static osg::Matrix createRandomMatrix()
   }
 
   return m;
-}
-
-
-static void assertNear(float a,float b,float tolerance)
-{
-  float delta = std::abs(a-b);
-  bool is_near = (delta <= tolerance);
-
-  if (!is_near) {
-    cerr << "a: " << a << "\n";
-    cerr << "b: " << b << "\n";
-    cerr << "delta: " << delta << "\n";
-  }
-
-  assert(is_near);
 }
 
 

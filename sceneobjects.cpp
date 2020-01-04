@@ -391,10 +391,13 @@ createBodyObjectInScene(
   const TransformHandle &parent_transform = *maybe_parent_transform;
 
   TransformHandle transform_handle = scene.createTransform(parent_transform);
-  GeometryHandle geometry_handle = scene.createBox(transform_handle);
+  scene_handles.bodies[body_index] = SceneHandles::Body{transform_handle};
+  size_t n_boxes = body_state.boxes.size();
 
-  scene_handles.bodies[body_index] =
-    SceneHandles::Body{transform_handle, geometry_handle};
+  for (size_t i=0; i!=n_boxes; ++i) {
+    GeometryHandle geometry_handle = scene.createBox(transform_handle);
+    scene_handles.bodies[body_index]->addBox(geometry_handle);
+  }
 
   updateBodyInScene(scene, body_state, *scene_handles.bodies[body_index]);
 }

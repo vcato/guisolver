@@ -3,14 +3,15 @@
 #include "randomengine.hpp"
 #include "randomtransform.hpp"
 #include "randompoint.hpp"
-
-#define ADD_TEST 0
+#include "assertnearfloat.hpp"
 
 
 static BodyIndex
   createBodyIn(SceneState &scene_state, Optional<BodyIndex> maybe_parent_index)
 {
-  return scene_state.createBody(maybe_parent_index);
+  BodyIndex body_index = scene_state.createBody(maybe_parent_index);
+  scene_state.body(body_index).addBox();
+  return body_index;
 }
 
 
@@ -49,10 +50,17 @@ static void testWithHierarchy()
 }
 
 
-#if ADD_TEST
+static void
+assertNear(const Point &actual, const Point &expected, float tolerance)
+{
+  assertNear(actual.x(), expected.x(), tolerance);
+  assertNear(actual.y(), expected.y(), tolerance);
+  assertNear(actual.z(), expected.z(), tolerance);
+}
+
+
 static void testGlobalTransform()
 {
-  assert(false); // not finished
   RandomEngine engine(/*seed*/1);
   // The marker predicted position on a body should be the same as the
   // local with the global transform of the body applied.
@@ -76,17 +84,15 @@ static void testGlobalTransform()
 
   assertNear(
     markerPredicted(scene_state, marker_index),
-    bodyGlobalTransform(body2_index, scene_state)*local
+    Point(globalTransform(body2_index, scene_state)*local),
+    0.001
   );
 }
-#endif
 
 
 int main()
 {
   testWithGlobalMarkerAtOrigin();
   testWithHierarchy();
-#if ADD_TEST
   testGlobalTransform();
-#endif
 }

@@ -560,10 +560,8 @@ BodyIndex ObservedScene::addBody(Optional<BodyIndex> maybe_parent_body_index)
 {
   ObservedScene &observed_scene = *this;
   SceneState &scene_state = observed_scene.scene_state;
-
-  BodyIndex body_index =
-    createBodyInState(scene_state, maybe_parent_body_index);
-
+  BodyIndex body_index = scene_state.createBody(maybe_parent_body_index);
+  scene_state.body(body_index).addBox();
   ObservedScene::createBodyInScene(body_index, observed_scene);
   ObservedScene::createBodyInTree(body_index, observed_scene);
 

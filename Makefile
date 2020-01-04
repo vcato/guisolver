@@ -62,7 +62,7 @@ optional_test: optional_test.o osgutil.o
 taggedvalueio_test: taggedvalueio_test.o $(TAGGEDVALUEIO)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
-osgutil_test: osgutil_test.o osgutil.o
+osgutil_test: osgutil_test.o osgutil.o assertnearfloat.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 transform_test: transform_test.o maketransform.o
@@ -71,7 +71,8 @@ transform_test: transform_test.o maketransform.o
 scenestate_test: scenestate_test.o scenestate.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
-globaltransform_test: globaltransform_test.o scenestate.o maketransform.o
+globaltransform_test: globaltransform_test.o scenestate.o maketransform.o \
+  assertnearfloat.o randomtransform.o randompoint.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 scenestatetaggedvalue_test: scenestatetaggedvalue_test.o \

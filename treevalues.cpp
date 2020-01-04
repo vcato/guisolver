@@ -569,8 +569,9 @@ nextPaths(
   TreeItemIndex index = 0;
 
   if (maybe_body_index) {
-    index += 4;
-        // 4 for name, translation, rotation, and geometry
+    int n_boxes = scene_state.body(*maybe_body_index).boxes.size();
+    index += 3; // 3 for name, translation, rotation
+    index += n_boxes;
   }
 
   const TreePath body_path = bodyPath(maybe_body_index, tree_paths);

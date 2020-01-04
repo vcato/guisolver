@@ -10,6 +10,15 @@ using std::string;
 
 
 
+static BodyIndex
+createBodyInState(SceneState &state, Optional<BodyIndex> maybe_parent_index)
+{
+  BodyIndex body_index = state.createBody(maybe_parent_index);
+  state.body(body_index).addBox();
+  return body_index;
+}
+
+
 static string sceneStateString(const SceneState &state)
 {
   ostringstream output_stream;

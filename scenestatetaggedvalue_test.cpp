@@ -9,12 +9,13 @@ using std::cerr;
 
 
 static BodyIndex
-  createBodyIn(
-    SceneState &scene_state,
-    Optional<BodyIndex> maybe_parent_index
-  )
+createBodyIn(
+  SceneState &scene_state,
+  Optional<BodyIndex> maybe_parent_index
+)
 {
   BodyIndex body_index = scene_state.createBody(maybe_parent_index);
+  scene_state.body(body_index).addBox();
   setAll(scene_state.body(body_index).solve_flags, true);
   return body_index;
 }

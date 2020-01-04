@@ -221,7 +221,7 @@ createBodyFromTaggedValue(
   MarkerNameMap &marker_name_map
 )
 {
-  BodyIndex body_index = createBodyInState(result, maybe_parent_index);
+  BodyIndex body_index = result.createBody(maybe_parent_index);
   setAll(result.body(body_index).solve_flags, true);
 
   Optional<StringValue> maybe_old_name =
@@ -248,6 +248,7 @@ createBodyFromTaggedValue(
   if (box_ptr) {
     const TaggedValue &box_tagged_value = *box_ptr;
     // Here, we would add a box to the body.
+    result.body(body_index).addBox();
     SceneState::Box &box_state = result.body(body_index).boxes[0];
     {
       const TaggedValue *scale_ptr = findChild(box_tagged_value, "scale");

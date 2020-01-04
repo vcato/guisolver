@@ -26,9 +26,11 @@ static SceneState::DistanceError& createDistanceError(SceneState &scene_state)
 
 
 static BodyIndex
-  createBodyIn(SceneState &scene_state, Optional<BodyIndex> maybe_parent_index)
+createBodyIn(SceneState &scene_state, Optional<BodyIndex> maybe_parent_index)
 {
-  return scene_state.createBody(maybe_parent_index);
+  BodyIndex body_index = scene_state.createBody(maybe_parent_index);
+  scene_state.body(body_index).addBox();
+  return body_index;
 }
 
 
@@ -71,9 +73,7 @@ struct Example {
 
   static BodyIndex createBody(SceneState &scene_state)
   {
-    BodyIndex result =
-      createBodyInState(scene_state, /*maybe_parent_index*/{});
-
+    BodyIndex result = createGlobalBodyIn(scene_state);
     setAll(scene_state.body(result).solve_flags, true);
     return result;
   }

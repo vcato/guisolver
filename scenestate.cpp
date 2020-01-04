@@ -90,13 +90,6 @@ MarkerIndex SceneState::duplicateMarker(MarkerIndex from_marker_index)
 }
 
 
-BodyIndex
-createBodyInState(SceneState &state, Optional<BodyIndex> maybe_parent_index)
-{
-  return state.createBody(maybe_parent_index);
-}
-
-
 SceneState::SceneState()
 {
 }
@@ -163,8 +156,8 @@ BodyIndex
 SceneState::createBody(Optional<BodyIndex> maybe_parent_index)
 {
   BodyIndex new_index = _bodies.size();
-  _bodies.emplace_back(newBodyName(*this), /*n_boxes*/1);
-  _bodies.back().maybe_parent_index = maybe_parent_index;
+  _bodies.emplace_back(newBodyName(*this));
+  body(new_index).maybe_parent_index = maybe_parent_index;
   return new_index;
 }
 
