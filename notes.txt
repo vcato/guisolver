@@ -53,3 +53,5 @@ Need to be able to translate and rotate bodies that do not have boxes.
 ---
 If you select the second box for a body in a tree, it doesn't put a
 handle on it.
+---
+If you add a box, it is added at the wrong place in the tree.

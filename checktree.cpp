@@ -32,6 +32,9 @@ static void checkEqual(const TreePaths &a,const TreePaths &b);
 static void checkEqual(const TreePaths::Body &a,const TreePaths::Body &b);
 static void checkEqual(const TreePaths::Marker &a,const TreePaths::Marker &b);
 
+template <typename T>
+static void checkEqual(const vector<T> &a, const vector<T> &b);
+
 static void
   checkEqual(
     const TreePaths::DistanceError &a,

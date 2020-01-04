@@ -8,7 +8,6 @@
 #include "optional.hpp"
 #include "matchconst.hpp"
 
-
 struct TreePaths {
   struct Marker;
   struct Body;
@@ -180,7 +179,6 @@ struct TreePaths {
     assert(tree_paths.bodies[i]);
     return *tree_paths.bodies[i];
   }
-
 
   Body &body(MarkerIndex i) { return body(i, *this); }
   const Body &body(MarkerIndex i) const { return body(i, *this); }
