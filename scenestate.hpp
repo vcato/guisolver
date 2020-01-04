@@ -68,7 +68,13 @@ class SceneState {
       TransformSolveFlags solve_flags;
       Optional<BodyIndex> maybe_parent_index;
 
-      void addBox() { boxes.emplace_back(); }
+      BoxIndex addBox()
+      {
+        BoxIndex box_index = boxes.size();
+        boxes.emplace_back();
+        return box_index;
+      }
+
       Body(const Name &name) : name(name) {}
     };
 

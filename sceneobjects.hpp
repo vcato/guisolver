@@ -75,6 +75,14 @@ extern void
   );
 
 extern void
+  createBoxInScene(
+    Scene &scene,
+    SceneHandles &scene_handles,
+    BodyIndex body_index,
+    BoxIndex i
+  );
+
+extern void
   createBodyObjectsInScene(
     BodyIndex body_index,
     Scene &,

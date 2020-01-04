@@ -46,6 +46,11 @@ extern void
   createBodyInTree(TreeWidget &, TreePaths &, const SceneState &, BodyIndex);
 
 extern void
+  createBoxInTree(
+    TreeWidget &, TreePaths &, const SceneState &, BodyIndex, BoxIndex
+  );
+
+extern void
   createBodyItemsInTree(
     BodyIndex, TreeWidget &, TreePaths &, const SceneState &
   );

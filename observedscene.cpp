@@ -544,6 +544,20 @@ ObservedScene::createBodyInTree(
 
 
 void
+ObservedScene::createBoxInTree(
+  BodyIndex body_index,
+  BoxIndex box_index,
+  ObservedScene &observed_scene
+)
+{
+  TreeWidget &tree_widget = observed_scene.tree_widget;
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  SceneState &scene_state = observed_scene.scene_state;
+  ::createBoxInTree(tree_widget, tree_paths, scene_state, body_index, box_index);
+}
+
+
+void
 ObservedScene::createBodyInScene(
   BodyIndex body_index,
   ObservedScene &observed_scene
@@ -553,6 +567,17 @@ ObservedScene::createBodyInScene(
   SceneState &scene_state = observed_scene.scene_state;
   Scene &scene = observed_scene.scene;
   ::createBodyInScene(scene, scene_handles, scene_state, body_index);
+}
+
+
+void
+ObservedScene::createBoxInScene(
+  BodyIndex body_index, BoxIndex box_index, ObservedScene &observed_scene
+)
+{
+  Scene &scene = observed_scene.scene;
+  SceneHandles &scene_handles = observed_scene.scene_handles;
+  ::createBoxInScene(scene, scene_handles, body_index, box_index);
 }
 
 
@@ -566,6 +591,14 @@ BodyIndex ObservedScene::addBody(Optional<BodyIndex> maybe_parent_body_index)
   ObservedScene::createBodyInTree(body_index, observed_scene);
 
   return body_index;
+}
+
+
+void ObservedScene::addBoxTo(BodyIndex body_index)
+{
+  BoxIndex box_index = scene_state.body(body_index).addBox();
+  ObservedScene::createBoxInScene(body_index, box_index, *this);
+  ObservedScene::createBoxInTree(body_index, box_index, *this);
 }
 
 

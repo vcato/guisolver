@@ -205,6 +205,7 @@ struct MainWindowController::Impl {
 
   static void addMarkerPressed(MainWindowController &, const TreePath &);
   static void addBodyPressed(MainWindowController &, const TreePath &);
+  static void addBoxPressed(MainWindowController &, BodyIndex);
   static void removeBodyPressed(MainWindowController &, BodyIndex);
   static void duplicateBodyPressed(MainWindowController &, BodyIndex);
 
@@ -636,6 +637,16 @@ MainWindowController::Impl::addBodyPressed(
 
 
 void
+MainWindowController::Impl::addBoxPressed(
+  MainWindowController &controller,
+  BodyIndex body_index
+)
+{
+  Impl::data(controller).observed_scene.addBoxTo(body_index);
+}
+
+
+void
 MainWindowController::Impl::removeBodyPressed(
   MainWindowController &controller, BodyIndex body_index
 )
@@ -948,9 +959,15 @@ TreeWidget::MenuItems
         Impl::duplicateBodyWithDistanceErrorsPressed(controller, body_index);
       };
 
+    auto add_box_function =
+      [&controller,body_index]{
+        Impl::addBoxPressed(controller, body_index);
+      };
+
     appendTo(menu_items,{
       {"Add Marker", add_marker_function},
       {"Add Body", add_body_function},
+      {"Add Box", add_box_function},
       {"Cut", cut_body_function },
       {"Remove", remove_body_function },
       {"Duplicate", duplicate_body_function },

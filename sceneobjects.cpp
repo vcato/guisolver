@@ -364,6 +364,22 @@ static void
 }
 
 
+void
+createBoxInScene(
+  Scene &scene,
+  SceneHandles &scene_handles,
+  BodyIndex body_index,
+  BoxIndex i
+)
+{
+  SceneHandles::Body &body_handles = *scene_handles.bodies[body_index];
+  TransformHandle transform_handle = body_handles.transform_handle;
+  GeometryHandle geometry_handle = scene.createBox(transform_handle);
+  assert(BoxIndex(scene_handles.bodies[body_index]->boxes.size()) == i);
+  body_handles.addBox(geometry_handle);
+}
+
+
 static void
 createBodyObjectInScene(
   BodyIndex body_index,
@@ -395,8 +411,7 @@ createBodyObjectInScene(
   size_t n_boxes = body_state.boxes.size();
 
   for (size_t i=0; i!=n_boxes; ++i) {
-    GeometryHandle geometry_handle = scene.createBox(transform_handle);
-    scene_handles.bodies[body_index]->addBox(geometry_handle);
+    createBoxInScene(scene, scene_handles, body_index, i);
   }
 
   updateBodyInScene(scene, body_state, *scene_handles.bodies[body_index]);

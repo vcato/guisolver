@@ -867,6 +867,32 @@ createBodyItemInTree(
 }
 
 
+
+void
+createBoxInTree(
+  TreeWidget &tree_widget,
+  TreePaths &tree_paths,
+  const SceneState &scene_state,
+  BodyIndex body_index,
+  BoxIndex box_index
+)
+{
+  TreePaths::Body &body_paths = tree_paths.body(body_index);
+  const SceneState::Body &body_state = scene_state.body(body_index);
+  ItemAdder adder{body_paths.path, tree_widget};
+
+  assert(box_index == BoxIndex(body_paths.boxes.size()));
+  body_paths.boxes.emplace_back();
+
+  createBoxItem(
+    body_paths.boxes[box_index],
+    adder,
+    tree_widget,
+    body_state.boxes[box_index]
+  );
+}
+
+
 void
 createBodyInTree(
   TreeWidget &tree_widget,
