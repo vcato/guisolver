@@ -126,7 +126,7 @@ struct ObservedScene {
   }
 
   void handleSceneStateChanged();
-  static void handleTreeSelectionChanged(ObservedScene &);
+  void handleTreeSelectionChanged();
   static void handleSceneSelectionChanged(ObservedScene &);
 
   static void

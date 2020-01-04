@@ -1095,7 +1095,7 @@ MainWindowController::MainWindowController(
 
   tree_widget.selection_changed_callback =
     [&data](){
-      ObservedScene::handleTreeSelectionChanged(data.observed_scene);
+      data.observed_scene.handleTreeSelectionChanged();
     };
 
   tree_widget.context_menu_items_callback =

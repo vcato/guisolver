@@ -451,8 +451,9 @@ ObservedScene::attachProperDraggerToSelectedObject(
 }
 
 
-void ObservedScene::handleTreeSelectionChanged(ObservedScene &observed_scene)
+void ObservedScene::handleTreeSelectionChanged()
 {
+  ObservedScene &observed_scene = *this;
   TreeWidget &tree_widget = observed_scene.tree_widget;
   Scene &scene = observed_scene.scene;
   Optional<TreePath> maybe_selected_item_path = tree_widget.selectedItem();
@@ -689,14 +690,14 @@ void ObservedScene::replaceSceneStateWith(const SceneState &new_state)
 void ObservedScene::selectMarker(MarkerIndex marker_index)
 {
   tree_widget.selectItem(tree_paths.marker(marker_index).path);
-  ObservedScene::handleTreeSelectionChanged(*this);
+  handleTreeSelectionChanged();
 }
 
 
 void ObservedScene::selectBody(BodyIndex body_index)
 {
   selectBodyInTree(body_index, *this);
-  handleTreeSelectionChanged(*this);
+  handleTreeSelectionChanged();
 }
 
 

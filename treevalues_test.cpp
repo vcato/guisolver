@@ -8,9 +8,6 @@
 #include "faketreewidget.hpp"
 #include "checktree.hpp"
 
-
-#define ADD_TEST 0
-
 using std::string;
 using std::ostringstream;
 using std::ostream;
@@ -255,32 +252,28 @@ static void testChangingNumericValues()
 }
 
 
-#if ADD_TEST
 static void testRemoveBodyFromTree()
 {
   FakeTreeWidget tree_widget;
-  TreePaths tree_paths;
   SceneState scene_state;
   BodyIndex body1_index = scene_state.createBody();
   BodyIndex body2_index = scene_state.createBody();
   BodyIndex body3_index = scene_state.createBody(/*parent*/body1_index);
-  MarkerIndex marker1_index = scene_state.createMarker(body2_index);
+  /*MarkerIndex marker1_index =*/ scene_state.createMarker(body2_index);
+
+  TreePaths tree_paths = fillTree(tree_widget, scene_state);
 
   removeBodyFromTree(
     tree_widget,
     tree_paths,
     scene_state,
-    body1_index
+    body3_index
   );
 
-  removeBodyFromSceneState(
-    scene_state,
-    body1_index
-  );
+  scene_state.removeBody(body3_index);
 
-  checkTree(tree_wigget, tree_paths, scene_state);
+  checkTree(tree_widget, tree_paths, scene_state);
 }
-#endif
 
 
 int main()
@@ -294,7 +287,5 @@ int main()
   testRemovingAGlobalBody();
   testRemovingAChildBody();
   testChangingNumericValues();
-#if ADD_TEST
   testRemoveBodyFromTree();
-#endif
 }
