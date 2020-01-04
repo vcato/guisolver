@@ -516,6 +516,7 @@ nMarkersOn(
 
 namespace {
 struct NextPaths {
+  TreePath box_path;
   TreePath body_path;
   TreePath marker_path;
   TreePath distance_error_path;
@@ -566,15 +567,16 @@ nextPaths(
   int n_distance_errors =
     nDistanceErrorsOn(maybe_body_index, tree_paths, scene_state);
 
+  const TreePath body_path = bodyPath(maybe_body_index, tree_paths);
   TreeItemIndex index = 0;
 
   if (maybe_body_index) {
-    int n_boxes = scene_state.body(*maybe_body_index).boxes.size();
+    int n_boxes = tree_paths.body(*maybe_body_index).boxes.size();
     index += 3; // 3 for name, translation, rotation
     index += n_boxes;
   }
 
-  const TreePath body_path = bodyPath(maybe_body_index, tree_paths);
+  result.box_path = childPath(body_path, index);
   index += n_markers;
   result.marker_path = childPath(body_path, index);
   index += n_bodies;
@@ -879,7 +881,10 @@ createBoxInTree(
 {
   TreePaths::Body &body_paths = tree_paths.body(body_index);
   const SceneState::Body &body_state = scene_state.body(body_index);
+
   ItemAdder adder{body_paths.path, tree_widget};
+  NextPaths next_paths = nextPaths(body_index, tree_paths, scene_state);
+  adder.n_children = next_paths.box_path.back();
 
   assert(box_index == BoxIndex(body_paths.boxes.size()));
   body_paths.boxes.emplace_back();
