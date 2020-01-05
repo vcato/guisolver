@@ -46,7 +46,19 @@ struct SceneHandles {
   };
 
   struct Marker {
-    SphereAndTransformHandle handle;
+    private:
+    TransformHandle transform_handle;
+    GeometryHandle sphere_handle;
+    public:
+
+    Marker(TransformHandle transform_handle, GeometryHandle sphere_handle)
+    : transform_handle(transform_handle),
+      sphere_handle(sphere_handle)
+    {
+    }
+
+    TransformHandle transformHandle() const { return transform_handle; }
+    GeometryHandle sphereHandle() const { return sphere_handle; }
   };
 
   struct DistanceError {

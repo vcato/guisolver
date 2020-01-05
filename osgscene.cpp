@@ -1340,13 +1340,18 @@ static void addFloorTo(osg::MatrixTransform &matrix_transform)
 
 OSGScene::OSGScene()
 : _top_node_ptr(createMatrixTransform()),
-  _top_handle(Impl::makeTopHandle(*this, *_top_node_ptr)),
+  _top_transform(Impl::makeHandleFromTransform(*this, *_top_node_ptr)),
+  _top_geometry(
+    Impl::makeHandleFromGeometryTransform(
+      *this, addTransformToGroup(*_top_node_ptr)
+    )
+  ),
   _selection_handler_ptr(new SelectionHandler(*this))
 {
   osg::MatrixTransform &node = *_top_node_ptr;
 
   osg::MatrixTransform &geometry_transform =
-    Impl::geometryTransformForHandle(*this, _top_handle.geometry_handle);
+    Impl::geometryTransformForHandle(*this, _top_geometry);
 
   addFloorTo(geometry_transform);
   setRotatation(node,worldRotation());
@@ -1489,20 +1494,6 @@ GeometryHandle OSGScene::createSphere(TransformHandle transform_handle)
 }
 
 
-auto
-OSGScene::createSphereAndTransform(TransformHandle parent)
-  -> SphereAndTransformHandle
-{
-  TransformHandle transform_handle = createTransform(parent);
-  GeometryHandle geometry_handle = createSphere(transform_handle);
-
-  GeometryAndTransformHandle handle =
-    GeometryAndTransformHandle{transform_handle, geometry_handle};
-
-  return SphereAndTransformHandle{handle};
-}
-
-
 void OSGScene::Impl::clearHandle(size_t index, OSGScene &scene)
 {
   scene._handle_datas[index] = HandleData{};
@@ -1576,9 +1567,18 @@ OSGScene::Point OSGScene::translation(TransformHandle handle) const
 }
 
 
-void OSGScene::setGeometryColor(GeometryHandle handle,float r,float g,float b)
+static osg::Vec3f vec3f(const Scene::Color &color)
 {
-  ::setColor(Impl::geometryTransformForHandle(*this,handle), osg::Vec3f(r,g,b));
+  return osg::Vec3f(color.red, color.green, color.blue);
+}
+
+
+void OSGScene::setGeometryColor(GeometryHandle handle,const Color &color)
+{
+  osg::MatrixTransform &geometry_transform =
+    Impl::geometryTransformForHandle(*this,handle);
+
+  ::setColor(geometry_transform, vec3f(color));
 }
 
 
@@ -1693,7 +1693,7 @@ void OSGScene::destroyTransform(TransformHandle handle)
 
 auto OSGScene::top() const -> TransformHandle
 {
-  return _top_handle.transform_handle;
+  return _top_transform;
 }
 
 

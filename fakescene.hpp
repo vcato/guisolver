@@ -39,11 +39,9 @@ struct FakeScene : Scene {
     return top_handle;
   }
 
-  SphereAndTransformHandle
-    createSphereAndTransform(TransformHandle parent_handle) override;
-
   GeometryHandle createBox(TransformHandle parent) override;
   LineHandle createLine(TransformHandle parent) override;
+  GeometryHandle createSphere(TransformHandle parent) override;
   TransformHandle createTransform(TransformHandle parent) override;
   TransformHandle parentTransform(GeometryHandle) const override;
   void destroyGeometry(GeometryHandle) override;
@@ -99,10 +97,7 @@ struct FakeScene : Scene {
     assert(false); // not needed
   }
 
-  void
-  setGeometryColor(
-    GeometryHandle,float /*r*/,float /*g*/,float /*b*/
-  ) override
+  void setGeometryColor(GeometryHandle,const Color &) override
   {
   }
 

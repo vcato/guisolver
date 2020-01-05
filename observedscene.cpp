@@ -28,8 +28,8 @@ forEachTransformHandlePath(
     const SceneHandles::Marker &marker_handles = scene_handles.marker(i);
 
     f(
-      marker_handles.handle.transform_handle,
-      marker_handles.handle.geometry_handle,
+      marker_handles.transformHandle(),
+      marker_handles.sphereHandle(),
       tree_paths.marker(i).path
     );
   }

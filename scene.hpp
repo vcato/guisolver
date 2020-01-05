@@ -7,6 +7,7 @@
 #include "coordinateaxes.hpp"
 #include "optional.hpp"
 
+
 struct Scene {
   using Point = ::Point;
   using Vector = Vec3;
@@ -15,6 +16,12 @@ struct Scene {
     translate,
     rotate,
     scale
+  };
+
+  struct Color {
+    float red;
+    float green;
+    float blue;
   };
 
   struct TransformHandle {
@@ -97,14 +104,10 @@ struct Scene {
   virtual TransformHandle createTransform(TransformHandle parent) = 0;
   virtual GeometryHandle createBox(TransformHandle parent) = 0;
   virtual LineHandle createLine(TransformHandle parent) = 0;
-
-  virtual SphereAndTransformHandle
-    createSphereAndTransform(TransformHandle parent) = 0;
-
+  virtual GeometryHandle createSphere(TransformHandle parent) = 0;
   virtual TransformHandle parentTransform(GeometryHandle) const = 0;
   virtual void destroyGeometry(GeometryHandle) = 0;
   virtual void destroyTransform(TransformHandle) = 0;
-
   virtual void setGeometryScale(GeometryHandle handle,const Vec3 &v) = 0;
   virtual void setGeometryCenter(GeometryHandle handle,const Point &v) = 0;
   virtual Vec3 geometryScale(GeometryHandle) const = 0;
@@ -113,18 +116,7 @@ struct Scene {
   virtual CoordinateAxes coordinateAxes(TransformHandle) const = 0;
   virtual void setTranslation(TransformHandle,Point) = 0;
   virtual Point translation(TransformHandle) const = 0;
-
-  virtual void
-    setGeometryColor(GeometryHandle handle,float r,float g,float b) = 0;
-
-  void
-  setGeometryColor(
-    GeometryAndTransformHandle handle,float r,float g,float b
-  )
-  {
-    setGeometryColor(handle.geometry_handle, r,g,b);
-  }
-
+  virtual void setGeometryColor(GeometryHandle, const Color &) = 0;
   virtual void setStartPoint(LineHandle,Point) = 0;
   virtual void setEndPoint(LineHandle,Point) = 0;
   virtual Optional<GeometryHandle> selectedGeometry() const = 0;
@@ -133,11 +125,6 @@ struct Scene {
   virtual void selectTransform(TransformHandle) = 0;
   virtual Optional<LineHandle> maybeLine(GeometryHandle) const = 0;
   virtual void attachDraggerToSelectedNode(DraggerType) = 0;
-
-  SphereAndTransformHandle createSphereAndTransform()
-  {
-    return createSphereAndTransform(top());
-  }
 };
 
 

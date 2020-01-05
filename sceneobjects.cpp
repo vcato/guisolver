@@ -31,7 +31,10 @@ static void
   )
 {
   state_marker.position =
-    makeMarkerPosition(localTranslation(handles_marker.handle.transform_handle, scene));
+    makeMarkerPosition(
+      localTranslation(handles_marker.transformHandle(),
+      scene)
+    );
 }
 
 
@@ -99,33 +102,46 @@ updateSceneStateFromSceneObjects(
 
 
 static SceneHandles::Marker
-  createSceneLocal(
-    Scene &scene,
-    TransformHandle const parent,
-    Scene::Point position
-  )
+createMarker(
+  TransformHandle parent,
+  const Scene::Color &color,
+  const Scene::Point &position,
+  Scene &scene
+)
 {
-  auto point = scene.createSphereAndTransform(parent);
-  scene.setGeometryScale(point.geometry_handle, {0.1, 0.1, 0.1});
-  scene.setGeometryColor(point, 0, 0, 1);
-  scene.setTranslation(point.transform_handle, position);
-  SceneHandles::Marker marker_handles = SceneHandles::Marker{point};
+  TransformHandle transform_handle = scene.createTransform(parent);
+  GeometryHandle sphere_handle = scene.createSphere(transform_handle);
+  scene.setGeometryScale(sphere_handle, {0.1, 0.1, 0.1});
+  scene.setGeometryColor(sphere_handle, color);
+  scene.setTranslation(transform_handle, position);
+
+  SceneHandles::Marker marker_handles =
+    SceneHandles::Marker{transform_handle, sphere_handle};
+
   return marker_handles;
 }
 
 
 static SceneHandles::Marker
-  createSceneGlobal(
-    Scene &scene,
-    Scene::Point position
-  )
+createSceneLocal(
+  Scene &scene,
+  TransformHandle const parent,
+  Scene::Point position
+)
 {
-  auto point = scene.createSphereAndTransform();
-  scene.setGeometryScale(point.geometry_handle, {0.1, 0.1, 0.1});
-  scene.setGeometryColor(point, 0, 1, 0);
-  scene.setTranslation(point.transform_handle, position);
-  SceneHandles::Marker marker_handles = SceneHandles::Marker{point};
-  return marker_handles;
+  Scene::Color color = {0, 0, 1};
+  return createMarker(parent, color, position, scene);
+}
+
+
+static SceneHandles::Marker
+createSceneGlobal(
+  Scene &scene,
+  Scene::Point position
+)
+{
+  Scene::Color color = {0, 1, 0};
+  return createMarker(scene.top(), color, position, scene);
 }
 
 
@@ -158,7 +174,7 @@ static SceneHandles::DistanceError createDistanceError(Scene &scene)
   TransformHandle transform_handle = scene.createTransform(scene.top());
   LineHandle line_handle = scene.createLine(transform_handle);
 
-  scene.setGeometryColor(line_handle, 1,0,0);
+  scene.setGeometryColor(line_handle, {1,0,0});
   return {transform_handle, line_handle};
 }
 
@@ -261,8 +277,8 @@ destroyBodyObjects(
 static void
 destroyMarkerObjects(const SceneHandles::Marker &marker_handles, Scene &scene)
 {
-  scene.destroyGeometry(marker_handles.handle.geometry_handle);
-  scene.destroyTransform(marker_handles.handle.transform_handle);
+  scene.destroyGeometry(marker_handles.sphereHandle());
+  scene.destroyTransform(marker_handles.transformHandle());
 }
 
 
@@ -663,7 +679,10 @@ static void
     const SceneState::Marker &marker_state
   )
 {
-  scene.setTranslation(marker_handles.handle.transform_handle, makePoint(marker_state.position));
+  scene.setTranslation(
+    marker_handles.transformHandle(),
+    makePoint(marker_state.position)
+  );
 }
 
 

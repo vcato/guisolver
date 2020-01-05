@@ -21,22 +21,16 @@ class OSGScene : public Scene {
     ~OSGScene();
     TransformHandle top() const override;
 
-    using Scene::createSphereAndTransform;
-
     TransformHandle createTransform(TransformHandle parent) override;
     GeometryHandle createBox(TransformHandle parent) override;
     LineHandle createLine(TransformHandle parent) override;
-    GeometryHandle createSphere(TransformHandle parent);
-
-    SphereAndTransformHandle
-      createSphereAndTransform(TransformHandle parent) override;
-
+    GeometryHandle createSphere(TransformHandle parent) override;
     TransformHandle parentTransform(GeometryHandle) const override;
     void destroyGeometry(GeometryHandle) override;
     void destroyTransform(TransformHandle) override;
     void setGeometryScale(GeometryHandle handle,const Vec3 &v) override;
     void setGeometryCenter(GeometryHandle handle,const Point &v) override;
-    void setGeometryColor(GeometryHandle handle,float r,float g,float b);
+    void setGeometryColor(GeometryHandle handle,const Color &) override;
 
     Vec3 geometryScale(GeometryHandle) const override;
     Point geometryCenter(GeometryHandle) const override;
@@ -76,7 +70,8 @@ class OSGScene : public Scene {
     vector<HandleData> _handle_datas;
 
     const MatrixTransformPtr _top_node_ptr;
-    const GeometryAndTransformHandle _top_handle;
+    const TransformHandle _top_transform;
+    const GeometryHandle _top_geometry;
     osgViewer::CompositeViewer _composite_viewer;
     QtTimer _timer;
     std::unique_ptr<SelectionHandler> _selection_handler_ptr;

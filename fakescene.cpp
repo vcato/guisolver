@@ -77,16 +77,6 @@ int FakeScene::nChildren(size_t handle_index) const
 }
 
 
-SphereAndTransformHandle
-FakeScene::createSphereAndTransform(TransformHandle parent_handle)
-{
-  TransformHandle transform_handle = createTransform(parent_handle);
-  GeometryHandle geometry_handle = createGeometry(transform_handle);
-  GeometryAndTransformHandle new_handle = {transform_handle, geometry_handle};
-  return SphereAndTransformHandle{new_handle};
-}
-
-
 GeometryHandle FakeScene::createBox(TransformHandle parent)
 {
   return createGeometry(parent);
@@ -96,4 +86,10 @@ GeometryHandle FakeScene::createBox(TransformHandle parent)
 LineHandle FakeScene::createLine(TransformHandle parent)
 {
   return LineHandle(createGeometry(parent));
+}
+
+
+GeometryHandle FakeScene::createSphere(TransformHandle parent)
+{
+  return createGeometry(parent);
 }
