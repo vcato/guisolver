@@ -44,3 +44,5 @@ axis starting at (0,0,0).  We could change the ray origin and direction
 using a body.
 
 Maybe we have a list of rays on a body.
+---
+When we add a box, it should select it.
