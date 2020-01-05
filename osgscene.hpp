@@ -25,19 +25,18 @@ class OSGScene : public Scene {
 
     TransformHandle createTransform(TransformHandle parent) override;
     GeometryHandle createBox(TransformHandle parent) override;
-    GeometryHandle createLine(TransformHandle parent);
+    LineHandle createLine(TransformHandle parent) override;
     GeometryHandle createSphere(TransformHandle parent);
 
     SphereAndTransformHandle
       createSphereAndTransform(TransformHandle parent) override;
 
-    LineAndTransformHandle
-      createLineAndTransform(TransformHandle parent) override;
-
+    TransformHandle parentTransform(GeometryHandle) const override;
     void destroyGeometry(GeometryHandle) override;
     void destroyTransform(TransformHandle) override;
     void setGeometryScale(GeometryHandle handle,const Vec3 &v) override;
     void setGeometryCenter(GeometryHandle handle,const Point &v) override;
+    void setGeometryColor(GeometryHandle handle,float r,float g,float b);
 
     Vec3 geometryScale(GeometryHandle) const override;
     Point geometryCenter(GeometryHandle) const override;
@@ -46,22 +45,15 @@ class OSGScene : public Scene {
     void setCoordinateAxes(TransformHandle,const CoordinateAxes &) override;
     CoordinateAxes coordinateAxes(TransformHandle) const override;
 
-    void
-      setGeometryColor(
-        GeometryAndTransformHandle handle,float r,float g,float b
-      ) override;
-
-    void setStartPoint(LineAndTransformHandle,Point) override;
-    void setEndPoint(LineAndTransformHandle,Point) override;
-    Optional<GeometryAndTransformHandle> selectedObject() const override;
+    void setStartPoint(LineHandle, Point) override;
+    void setEndPoint(LineHandle,Point) override;
+    Optional<GeometryHandle> selectedGeometry() const override;
+    Optional<TransformHandle> selectedTransform() const override;
     void selectGeometry(GeometryHandle handle);
     void selectTransform(TransformHandle handle);
 
-    Optional<LineAndTransformHandle>
-      maybeLineAndTransform(GeometryAndTransformHandle handle) const override;
-
+    Optional<LineHandle> maybeLine(GeometryHandle handle) const override;
     void attachDraggerToSelectedNode(DraggerType) override;
-
     GraphicsWindowPtr createGraphicsWindow(ViewType view_type);
 
   private:

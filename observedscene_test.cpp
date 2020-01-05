@@ -117,10 +117,35 @@ static void testDuplicatingABodyWithDistanceErrors()
 }
 
 
+static void testUserSelectingABodyInTheTree()
+{
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+  BodyIndex body_index = observed_scene.addBody(/*parent*/{});
+  SceneState &scene_state = observed_scene.scene_state;
+
+  assert(scene_state.bodies().size() == 1);
+  { // User selects the body item in the tree.
+    tester.tree_widget.maybe_selected_item =
+      observed_scene.tree_paths.body(body_index).path;
+
+    observed_scene.handleTreeSelectionChanged();
+  }
+
+  assert(tester.scene.maybe_dragger_type == Scene::DraggerType::translate);
+
+  assert(
+    tester.scene.maybe_dragger_index
+    == observed_scene.scene_handles.body(body_index).transform_handle.index
+  );
+}
+
+
 int main()
 {
   testTransferringABody1();
   testTransferringABody2();
   testTransferringAMarker();
   testDuplicatingABodyWithDistanceErrors();
+  testUserSelectingABodyInTheTree();
 }

@@ -11,6 +11,7 @@
 
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
+using GeometryHandle = Scene::GeometryHandle;
 using GeometryAndTransformHandle = Scene::GeometryAndTransformHandle;
 
 
@@ -250,14 +251,14 @@ struct MainWindowController::Impl {
 
 static Optional<TransformHandle> selectedObjectTransform(const Scene &scene)
 {
-  Optional<GeometryAndTransformHandle>
-    maybe_selected_geometry_and_transform_handle = scene.selectedObject();
+  Optional<GeometryHandle>
+    maybe_selected_geometry = scene.selectedGeometry();
 
-  if (!maybe_selected_geometry_and_transform_handle) {
-    return {};
+  if (!maybe_selected_geometry) {
+    return scene.selectedTransform();
   }
 
-  return maybe_selected_geometry_and_transform_handle->transform_handle;
+  return scene.parentTransform(*maybe_selected_geometry);
 }
 
 

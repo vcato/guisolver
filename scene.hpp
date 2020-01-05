@@ -7,7 +7,6 @@
 #include "coordinateaxes.hpp"
 #include "optional.hpp"
 
-
 struct Scene {
   using Point = ::Point;
   using Vector = Vec3;
@@ -46,6 +45,15 @@ struct Scene {
     }
   };
 
+  struct LineHandle : GeometryHandle {
+    using GeometryHandle::GeometryHandle;
+
+    explicit LineHandle(const GeometryHandle &arg)
+    : GeometryHandle(arg)
+    {
+    }
+  };
+
   struct GeometryAndTransformHandle {
     TransformHandle transform_handle;
     GeometryHandle geometry_handle;
@@ -64,13 +72,6 @@ struct Scene {
       return
         transform_handle == arg.transform_handle &&
         geometry_handle == arg.geometry_handle;
-    }
-  };
-
-  struct LineAndTransformHandle : GeometryAndTransformHandle {
-    explicit LineAndTransformHandle(const GeometryAndTransformHandle &arg)
-    : GeometryAndTransformHandle(arg)
-    {
     }
   };
 
@@ -95,13 +96,12 @@ struct Scene {
   virtual TransformHandle top() const = 0;
   virtual TransformHandle createTransform(TransformHandle parent) = 0;
   virtual GeometryHandle createBox(TransformHandle parent) = 0;
+  virtual LineHandle createLine(TransformHandle parent) = 0;
 
   virtual SphereAndTransformHandle
     createSphereAndTransform(TransformHandle parent) = 0;
 
-  virtual LineAndTransformHandle
-    createLineAndTransform(TransformHandle parent) = 0;
-
+  virtual TransformHandle parentTransform(GeometryHandle) const = 0;
   virtual void destroyGeometry(GeometryHandle) = 0;
   virtual void destroyTransform(TransformHandle) = 0;
 
@@ -115,16 +115,23 @@ struct Scene {
   virtual Point translation(TransformHandle) const = 0;
 
   virtual void
-    setGeometryColor(GeometryAndTransformHandle,float r,float g,float b) = 0;
+    setGeometryColor(GeometryHandle handle,float r,float g,float b) = 0;
 
-  virtual void setStartPoint(LineAndTransformHandle,Point) = 0;
-  virtual void setEndPoint(LineAndTransformHandle,Point) = 0;
-  virtual Optional<GeometryAndTransformHandle> selectedObject() const = 0;
+  void
+  setGeometryColor(
+    GeometryAndTransformHandle handle,float r,float g,float b
+  )
+  {
+    setGeometryColor(handle.geometry_handle, r,g,b);
+  }
+
+  virtual void setStartPoint(LineHandle,Point) = 0;
+  virtual void setEndPoint(LineHandle,Point) = 0;
+  virtual Optional<GeometryHandle> selectedGeometry() const = 0;
+  virtual Optional<TransformHandle> selectedTransform() const = 0;
   virtual void selectGeometry(GeometryHandle) = 0;
-
-  virtual Optional<LineAndTransformHandle>
-    maybeLineAndTransform(GeometryAndTransformHandle) const = 0;
-
+  virtual void selectTransform(TransformHandle) = 0;
+  virtual Optional<LineHandle> maybeLine(GeometryHandle) const = 0;
   virtual void attachDraggerToSelectedNode(DraggerType) = 0;
 
   SphereAndTransformHandle createSphereAndTransform()

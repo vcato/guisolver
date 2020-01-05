@@ -50,7 +50,8 @@ struct SceneHandles {
   };
 
   struct DistanceError {
-    Scene::LineAndTransformHandle line;
+    Scene::TransformHandle transform_handle;
+    Scene::LineHandle line_handle;
   };
 
   vector<Optional<Body>> bodies;

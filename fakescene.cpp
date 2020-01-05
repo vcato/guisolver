@@ -2,9 +2,9 @@
 
 
 using TransformHandle = Scene::TransformHandle;
-using LineAndTransformHandle = Scene::LineAndTransformHandle;
 using BoxAndTransformHandle = Scene::BoxAndTransformHandle;
 using GeometryHandle = Scene::GeometryHandle;
+using LineHandle = Scene::LineHandle;
 using SphereAndTransformHandle = Scene::SphereAndTransformHandle;
 using GeometryAndTransformHandle = Scene::GeometryAndTransformHandle;
 using std::cerr;
@@ -25,6 +25,7 @@ FakeScene::createGeometry(TransformHandle transform_handle)
 {
   size_t geometry_index = firstUnusedIndex();
   objects[geometry_index].parent_index = transform_handle.index;
+  objects[geometry_index].maybe_geometry_center = Point{0,0,0};
   GeometryHandle geometry_handle{geometry_index};
   return geometry_handle;
 }
@@ -37,6 +38,12 @@ FakeScene::createGeometryAndTransform(TransformHandle parent_handle)
   GeometryHandle geometry_handle = createGeometry(transform_handle);
   GeometryAndTransformHandle new_handle = {transform_handle, geometry_handle};
   return new_handle;
+}
+
+
+TransformHandle FakeScene::parentTransform(GeometryHandle) const
+{
+  assert(false); // not needed
 }
 
 
@@ -80,14 +87,13 @@ FakeScene::createSphereAndTransform(TransformHandle parent_handle)
 }
 
 
-GeometryHandle
-FakeScene::createBox(TransformHandle transform_handle)
+GeometryHandle FakeScene::createBox(TransformHandle parent)
 {
-  return createGeometry(transform_handle);
+  return createGeometry(parent);
 }
 
 
-LineAndTransformHandle FakeScene::createLineAndTransform(TransformHandle parent)
+LineHandle FakeScene::createLine(TransformHandle parent)
 {
-  return LineAndTransformHandle{createGeometryAndTransform(parent)};
+  return LineHandle(createGeometry(parent));
 }

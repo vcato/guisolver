@@ -18,7 +18,7 @@ sceneGeometryCenter(
     scene.objects.find(body_handles.boxes[0].handle.index);
 
   assert(iter != scene.objects.end());
-  return iter->second.geometry_center;
+  return *iter->second.maybe_geometry_center;
 }
 
 

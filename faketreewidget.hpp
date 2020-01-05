@@ -40,39 +40,41 @@ struct FakeTreeWidget : TreeWidget {
   using Item = FakeTreeItem;
   using LabelText = Item::LabelText;
 
-  static std::string voidValueText() { return ""; }
-
-  static std::string
-    numericValueText(
-      NumericValue value,
-      NumericValue minimum_value,
-      NumericValue maximum_value
-    );
-
-  static LabelText
-    enumerationValueText(
-      int value,
-      const EnumerationOptions &options
-    );
-
-  static LabelText stringValueText(const StringValue &);
-
-  template <typename Item>
-  static Item &
-    item(Item &parent_item, const TreePath &path, size_t path_index = 0)
-  {
-    if (path_index == path.size()) {
-      return parent_item;
-    }
-
-    return item(parent_item.children[path[path_index]], path, path_index + 1);
-  }
-
   Item root_item;
+  Optional<TreePath> maybe_selected_item;
+
+  bool operator==(const FakeTreeWidget &arg) const;
+
+  template <typename F>
+  static void forEachMember(const F &f)
+  {
+    f(&FakeTreeWidget::root_item);
+  }
 
   const Item &item(const TreePath &path) const { return item(root_item, path); }
   Item &item(const TreePath &path)             { return item(root_item, path); }
 
+  void
+    setItemNumericValue(
+      const TreePath &,
+      NumericValue /*value*/,
+      NumericValue /*minimum_value*/,
+      NumericValue /*maximum_value*/
+    )
+  {
+    assert(false); // not implemented
+  }
+
+  void
+    setItemNumericValue(
+      const TreePath &path,
+      NumericValue value
+    ) override
+  {
+    item(path).maybe_numeric_value = value;
+  }
+
+private:
   Item &
     createItem(
       const TreePath &new_item_path,
@@ -154,26 +156,6 @@ struct FakeTreeWidget : TreeWidget {
     );
   }
 
-  void
-    setItemNumericValue(
-      const TreePath &,
-      NumericValue /*value*/,
-      NumericValue /*minimum_value*/,
-      NumericValue /*maximum_value*/
-    )
-  {
-    assert(false); // not implemented
-  }
-
-  void
-    setItemNumericValue(
-      const TreePath &path,
-      NumericValue value
-    ) override
-  {
-    item(path).maybe_numeric_value = value;
-  }
-
   void setItemLabel(const TreePath &path,const std::string &label) override
   {
     item(path).label_text = label;
@@ -203,16 +185,38 @@ struct FakeTreeWidget : TreeWidget {
 
   Optional<TreePath> selectedItem() const override
   {
-    assert(false); // not implemented
+    return maybe_selected_item;
   }
 
-  template <typename F>
-  static void forEachMember(const F &f)
+private:
+  static std::string voidValueText() { return ""; }
+
+  static std::string
+    numericValueText(
+      NumericValue value,
+      NumericValue minimum_value,
+      NumericValue maximum_value
+    );
+
+  static LabelText
+    enumerationValueText(
+      int value,
+      const EnumerationOptions &options
+    );
+
+  static LabelText stringValueText(const StringValue &);
+
+  template <typename Item>
+  static Item &
+    item(Item &parent_item, const TreePath &path, size_t path_index = 0)
   {
-    f(&FakeTreeWidget::root_item);
+    if (path_index == path.size()) {
+      return parent_item;
+    }
+
+    return item(parent_item.children[path[path_index]], path, path_index + 1);
   }
 
-  bool operator==(const FakeTreeWidget &arg) const;
 };
 
 

@@ -11,10 +11,10 @@
 
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
+using LineHandle = Scene::LineHandle;
 using GeometryHandle = Scene::GeometryHandle;
 using BoxAndTransformHandle = Scene::BoxAndTransformHandle;
 using GeometryAndTransformHandle = Scene::GeometryAndTransformHandle;
-using LineAndTransformHandle = Scene::LineAndTransformHandle;
 
 static Point
   localTranslation(Scene::TransformHandle transform_id,const Scene &scene)
@@ -155,9 +155,11 @@ static SceneHandles::Marker
 
 static SceneHandles::DistanceError createDistanceError(Scene &scene)
 {
-  LineAndTransformHandle line = scene.createLineAndTransform(scene.top());
-  scene.setGeometryColor(line, 1,0,0);
-  return {line};
+  TransformHandle transform_handle = scene.createTransform(scene.top());
+  LineHandle line_handle = scene.createLine(transform_handle);
+
+  scene.setGeometryColor(line_handle, 1,0,0);
+  return {transform_handle, line_handle};
 }
 
 
@@ -193,8 +195,8 @@ updateDistanceErrorInScene(
     end = markerPredicted(scene_state, end_marker_index);
   }
 
-  scene.setStartPoint(distance_error_handles.line, start);
-  scene.setEndPoint(distance_error_handles.line, end);
+  scene.setStartPoint(distance_error_handles.line_handle, start);
+  scene.setEndPoint(distance_error_handles.line_handle, end);
 }
 
 
@@ -270,8 +272,8 @@ destroyDistanceErrorObjects(
   Scene &scene
 )
 {
-  scene.destroyGeometry(distance_error_handles.line.geometry_handle);
-  scene.destroyTransform(distance_error_handles.line.transform_handle);
+  scene.destroyGeometry(distance_error_handles.line_handle);
+  scene.destroyTransform(distance_error_handles.transform_handle);
 }
 
 

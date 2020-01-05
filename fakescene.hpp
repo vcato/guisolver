@@ -3,16 +3,20 @@
 
 
 struct FakeScene : Scene {
+  struct Object;
   using TransformIndex = TransformHandle::Index;
-  TransformHandle top_handle = {0};
+  using Objects = std::map<TransformIndex, Object>;
 
   struct Object {
     TransformIndex parent_index;
-    Point geometry_center = {0,0,0};
+    Optional<Point> maybe_geometry_center;
   };
 
-  using Objects = std::map<TransformIndex, Object>;
+  TransformHandle top_handle = {0};
   Objects objects;
+  Optional<size_t> maybe_selected_object_index;
+  Optional<size_t> maybe_dragger_index;
+  Optional<DraggerType> maybe_dragger_type;
 
   bool indexIsUsed(TransformIndex i) const
   {
@@ -39,8 +43,9 @@ struct FakeScene : Scene {
     createSphereAndTransform(TransformHandle parent_handle) override;
 
   GeometryHandle createBox(TransformHandle parent) override;
+  LineHandle createLine(TransformHandle parent) override;
   TransformHandle createTransform(TransformHandle parent) override;
-  LineAndTransformHandle createLineAndTransform(TransformHandle) override;
+  TransformHandle parentTransform(GeometryHandle) const override;
   void destroyGeometry(GeometryHandle) override;
   void destroyTransform(TransformHandle) override;
 
@@ -53,7 +58,7 @@ struct FakeScene : Scene {
     GeometryHandle geometry_handle,const Point &center
   ) override
   {
-    objects[geometry_handle.index].geometry_center = center;
+    *objects[geometry_handle.index].maybe_geometry_center = center;
   }
 
   virtual Vec3 geometryScale(GeometryAndTransformHandle) const
@@ -94,40 +99,82 @@ struct FakeScene : Scene {
     assert(false); // not needed
   }
 
-  virtual void
+  void
   setGeometryColor(
-    GeometryAndTransformHandle,float /*r*/,float /*g*/,float /*b*/
-  )
+    GeometryHandle,float /*r*/,float /*g*/,float /*b*/
+  ) override
   {
   }
 
-  virtual void setStartPoint(LineAndTransformHandle,Point)
+  void setStartPoint(LineHandle,Point) override
   {
   }
 
-  virtual void setEndPoint(LineAndTransformHandle,Point)
+  void setEndPoint(LineHandle,Point) override
   {
   }
 
-  virtual Optional<GeometryAndTransformHandle> selectedObject() const
+  static const Object &
+  elementOf(const std::map<size_t, Object> &objects, size_t index)
+  {
+    auto iter = objects.find(index);
+    assert(iter != objects.end());
+    return iter->second;
+  }
+
+  bool objectIsGeometry(size_t index) const
+  {
+    return elementOf(objects, index).maybe_geometry_center.hasValue();
+  }
+
+  Optional<GeometryHandle> selectedGeometry() const override
+  {
+    if (!maybe_selected_object_index) {
+      // Nothing is selected
+      assert(false); // not needed
+    }
+
+    if (!objectIsGeometry(*maybe_selected_object_index)) {
+      // The selected object isn't geometry.
+      return {};
+    }
+
+    assert(false); // not needed
+  }
+
+  Optional<TransformHandle> selectedTransform() const override
+  {
+    if (!maybe_selected_object_index) {
+      // Nothing is selected
+      assert(false); // not needed
+    }
+
+    if (objectIsGeometry(*maybe_selected_object_index)) {
+      assert(false); // not needed
+    }
+
+    return TransformHandle{*maybe_selected_object_index};
+  }
+
+  void selectGeometry(GeometryHandle) override
   {
     assert(false); // not needed
   }
 
-  virtual void selectGeometry(GeometryHandle)
+  void selectTransform(TransformHandle transform_handle) override
+  {
+    maybe_selected_object_index = transform_handle.index;
+  }
+
+  Optional<LineHandle> maybeLine(GeometryHandle) const override
   {
     assert(false); // not needed
   }
 
-  virtual Optional<LineAndTransformHandle>
-  maybeLineAndTransform(GeometryAndTransformHandle) const
+  virtual void attachDraggerToSelectedNode(DraggerType dragger_type)
   {
-    assert(false); // not needed
-  }
-
-  virtual void attachDraggerToSelectedNode(DraggerType)
-  {
-    assert(false); // not needed
+    maybe_dragger_index = maybe_selected_object_index;
+    maybe_dragger_type = dragger_type;
   }
 
   private:
