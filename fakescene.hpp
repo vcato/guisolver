@@ -10,6 +10,7 @@ struct FakeScene : Scene {
   struct Object {
     TransformIndex parent_index;
     Optional<Point> maybe_geometry_center;
+    bool is_line = false;
   };
 
   TransformHandle top_handle = {0};
@@ -124,7 +125,7 @@ struct FakeScene : Scene {
       return {};
     }
 
-    assert(false); // not needed
+    return GeometryHandle{*maybe_selected_object_index};
   }
 
   Optional<TransformHandle> selectedTransform() const override
@@ -151,10 +152,7 @@ struct FakeScene : Scene {
     maybe_selected_object_index = transform_handle.index;
   }
 
-  Optional<LineHandle> maybeLine(GeometryHandle) const override
-  {
-    assert(false); // not needed
-  }
+  Optional<LineHandle> maybeLine(GeometryHandle) const override;
 
   virtual void attachDraggerToSelectedNode(DraggerType dragger_type)
   {

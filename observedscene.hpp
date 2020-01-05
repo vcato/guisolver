@@ -128,7 +128,7 @@ struct ObservedScene {
 
   void handleSceneStateChanged();
   void handleTreeSelectionChanged();
-  static void handleSceneSelectionChanged(ObservedScene &);
+  void handleSceneSelectionChanged();
 
   static void
   createMarkerInScene(MarkerIndex marker_index, ObservedScene &observed_scene);

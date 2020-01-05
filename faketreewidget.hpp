@@ -176,9 +176,9 @@ private:
     item.value_string = enumerationValueText(value, options);
   }
 
-  void selectItem(const TreePath &) override
+  void selectItem(const TreePath &arg) override
   {
-    assert(false); // not implemented
+    maybe_selected_item = arg;
   }
 
   void removeItem(const TreePath &path) override;

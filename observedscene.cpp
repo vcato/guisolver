@@ -13,9 +13,28 @@ using GeometryHandle = Scene::GeometryHandle;
 using std::cerr;
 
 
+namespace {
+struct SceneObject {
+  Optional<TransformHandle> maybe_transform_handle;
+  Optional<GeometryHandle> maybe_geometry_handle;
+
+  SceneObject() = default;
+
+  SceneObject(
+    Optional<TransformHandle> maybe_transform_handle,
+    Optional<GeometryHandle> maybe_geometry_handle
+  )
+  : maybe_transform_handle(maybe_transform_handle),
+    maybe_geometry_handle(maybe_geometry_handle)
+  {
+  }
+};
+}
+
+
 template <typename F>
 static void
-forEachTransformHandlePath(
+forEachSceneObjectPath(
   const F &f,
   const SceneHandles &scene_handles,
   const TreePaths &tree_paths
@@ -27,8 +46,10 @@ forEachTransformHandlePath(
     const SceneHandles::Marker &marker_handles = scene_handles.marker(i);
 
     f(
-      marker_handles.transformHandle(),
-      marker_handles.sphereHandle(),
+      {
+        {}, // marker_handles.transformHandle(),
+        marker_handles.sphereHandle(),
+      },
       tree_paths.marker(i).path
     );
   }
@@ -41,15 +62,19 @@ forEachTransformHandlePath(
     size_t n_boxes = body_handles.boxes.size();
 
     f(
-      body_handles.transformHandle(),
-      Optional<GeometryHandle>{},
+      {
+        body_handles.transformHandle(),
+        Optional<GeometryHandle>{},
+      },
       body_paths.path
     );
 
     for (size_t box_index = 0; box_index != n_boxes; ++box_index) {
       f(
-        body_handles.transformHandle(),
-        body_handles.boxes[box_index].handle,
+        {
+          body_handles.transformHandle(),
+          body_handles.boxes[box_index].handle,
+        },
         body_paths.boxes[box_index].path
       );
     }
@@ -60,19 +85,13 @@ forEachTransformHandlePath(
       scene_handles.distance_errors[i];
 
     f(
-      distance_error_handles.transform_handle,
-      distance_error_handles.line_handle,
+      {
+        distance_error_handles.transform_handle,
+        distance_error_handles.line_handle,
+      },
       tree_paths.distance_errors[i].path
     );
   }
-}
-
-
-namespace {
-struct SceneObject {
-  Optional<TransformHandle> maybe_transform_handle;
-  Optional<GeometryHandle> maybe_geometry_handle;
-};
 }
 
 
@@ -86,20 +105,20 @@ sceneObjectForTreeItem(
   TreePath matching_path;
   SceneObject scene_object;
 
-  forEachTransformHandlePath(
-    [&](
-      TransformHandle transform_handle,
-      Optional<GeometryHandle> maybe_geometry_handle,
-      const TreePath &object_path
-    ){
+  forEachSceneObjectPath(
+    [&](const SceneObject &object, const TreePath &object_path){
+      const Optional<GeometryHandle> &maybe_geometry_handle =
+        object.maybe_geometry_handle;
+
       if (startsWith(item_path, object_path)) {
         if (object_path.size() > matching_path.size()) {
           matching_path = object_path;
+
           if (maybe_geometry_handle) {
             scene_object.maybe_geometry_handle = *maybe_geometry_handle;
           }
           else {
-            scene_object.maybe_transform_handle = transform_handle;
+            scene_object.maybe_transform_handle = object.maybe_transform_handle;
           }
         }
       }
@@ -114,21 +133,29 @@ sceneObjectForTreeItem(
 
 static Optional<TreePath>
 treeItemForSceneObject(
-  TransformHandle handle,
+  const SceneObject &scene_object,
   const TreePaths &tree_paths,
   const SceneHandles &scene_handles
 )
 {
   Optional<TreePath> maybe_found_path;
 
-  forEachTransformHandlePath(
-    [&](
-      TransformHandle transform_handle,
-      Optional<GeometryHandle>,
-      const TreePath &object_path
-    ){
-      if (transform_handle == handle) {
-        maybe_found_path = object_path;
+  forEachSceneObjectPath(
+    [&](const SceneObject &object, const TreePath &object_path){
+      const Optional<GeometryHandle> &maybe_geometry_handle =
+        object.maybe_geometry_handle;
+
+      if (scene_object.maybe_geometry_handle) {
+        if (scene_object.maybe_geometry_handle == maybe_geometry_handle) {
+          maybe_found_path = object_path;
+        }
+      }
+      else {
+        if (
+          scene_object.maybe_transform_handle == object.maybe_transform_handle
+        ) {
+          maybe_found_path = object_path;
+        }
       }
     },
     scene_handles,
@@ -509,11 +536,9 @@ void ObservedScene::handleTreeSelectionChanged()
 }
 
 
-void
-ObservedScene::handleSceneSelectionChanged(
-  ObservedScene &observed_scene
-)
+void ObservedScene::handleSceneSelectionChanged()
 {
+  ObservedScene &observed_scene = *this;
   Scene &scene = observed_scene.scene;
   TreeWidget &tree_widget = observed_scene.tree_widget;
 
@@ -528,9 +553,13 @@ ObservedScene::handleSceneSelectionChanged(
   TransformHandle transform_handle =
     scene.parentTransform(*maybe_selected_geometry);
 
+  SceneObject scene_object;
+  scene_object.maybe_transform_handle = transform_handle;
+  scene_object.maybe_geometry_handle = *maybe_selected_geometry;
+
   Optional<TreePath> maybe_tree_path =
     treeItemForSceneObject(
-      transform_handle,
+      scene_object,
       observed_scene.tree_paths,
       observed_scene.scene_handles
     );

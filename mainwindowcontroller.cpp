@@ -1083,7 +1083,7 @@ MainWindowController::MainWindowController(
   scene.changing_callback = [&]{ Impl::handleSceneChanging(*this); };
 
   scene.selection_changed_callback =
-    [&data]{ ObservedScene::handleSceneSelectionChanged(data.observed_scene); };
+    [&data]{ data.observed_scene.handleSceneSelectionChanged(); };
 
   tree_widget.spin_box_item_value_changed_callback =
     [this](const TreePath &path, NumericValue value){

@@ -28,9 +28,9 @@ FakeScene::createGeometry(TransformHandle transform_handle)
 }
 
 
-TransformHandle FakeScene::parentTransform(GeometryHandle) const
+TransformHandle FakeScene::parentTransform(GeometryHandle handle) const
 {
-  assert(false); // not needed
+  return TransformHandle{elementOf(objects, handle.index).parent_index};
 }
 
 
@@ -72,11 +72,24 @@ GeometryHandle FakeScene::createBox(TransformHandle parent)
 
 LineHandle FakeScene::createLine(TransformHandle parent)
 {
-  return LineHandle(createGeometry(parent));
+  GeometryHandle geometry = createGeometry(parent);
+  objects[geometry.index].is_line = true;
+  return LineHandle(geometry);
 }
 
 
 GeometryHandle FakeScene::createSphere(TransformHandle parent)
 {
   return createGeometry(parent);
+}
+
+
+Optional<LineHandle> FakeScene::maybeLine(GeometryHandle handle) const
+{
+  if (elementOf(objects, handle.index).is_line) {
+    return LineHandle{handle.index};
+  }
+  else {
+    return {};
+  }
 }

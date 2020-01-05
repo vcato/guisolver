@@ -141,6 +141,39 @@ static void testUserSelectingABodyInTheTree()
 }
 
 
+static void testSelectingSceneInTheTree()
+{
+  Tester tester;
+  SceneState initial_scene_state;
+  initial_scene_state.createMarker(/*parent*/Optional<BodyIndex>{});
+  ObservedScene &observed_scene = tester.observed_scene;
+  observed_scene.replaceSceneStateWith(initial_scene_state);
+  tester.tree_widget.maybe_selected_item = observed_scene.tree_paths.path;
+  observed_scene.handleTreeSelectionChanged();
+}
+
+
+static void testSelectingMarkerInTheScene()
+{
+  Tester tester;
+  SceneState initial_scene_state;
+  ObservedScene &observed_scene = tester.observed_scene;
+
+  MarkerIndex marker_index =
+    initial_scene_state.createMarker(/*parent*/Optional<BodyIndex>{});
+
+  observed_scene.replaceSceneStateWith(initial_scene_state);
+
+  tester.scene.maybe_selected_object_index =
+    observed_scene.scene_handles.marker(marker_index).sphereHandle().index;
+
+  observed_scene.handleSceneSelectionChanged();
+
+  assert(tester.tree_widget.maybe_selected_item ==
+    observed_scene.tree_paths.marker(marker_index).path);
+}
+
+
 int main()
 {
   testTransferringABody1();
@@ -148,4 +181,6 @@ int main()
   testTransferringAMarker();
   testDuplicatingABodyWithDistanceErrors();
   testUserSelectingABodyInTheTree();
+  testSelectingSceneInTheTree();
+  testSelectingMarkerInTheScene();
 }
