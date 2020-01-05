@@ -458,11 +458,12 @@ static void
 }
 
 
+template <typename Paths>
 static void
-  handlePathInsertion(TreePaths &tree_paths, const TreePath &path_to_insert)
+handlePathInsertion(Paths &paths, const TreePath &path_to_insert)
 {
   visitPaths(
-    tree_paths,
+    paths,
     [&](TreePath &path){ updatePathBeforeInsertion(path, path_to_insert); }
   );
 }
@@ -772,15 +773,15 @@ addXYZ(ItemAdder &adder, const string &label, const SceneState::XYZ &xyz)
 }
 
 
-static void
+static BoxPaths
 createBoxItem(
-  BoxPaths &box_paths,
-  ItemAdder &parent_adder,
+  const TreePath &box_path,
   TreeWidget &tree_widget,
   const SceneState::Box &box_state
 )
 {
-  TreePath box_path    = parent_adder.addVoid("[Box]");
+  BoxPaths box_paths;
+  tree_widget.createVoidItem(box_path, LabelProperties{"[Box]"});
   box_paths.path = box_path;
   ItemAdder adder{box_path, tree_widget};
 
@@ -795,6 +796,7 @@ createBoxItem(
   }
 
   box_paths.center = addXYZ(adder, "center: []", box_state.center);
+  return box_paths;
 }
 
 
@@ -839,7 +841,12 @@ createBodyItem(
   body_paths.boxes.resize(n_boxes);
 
   for (size_t i=0; i!=n_boxes; ++i) {
-    createBoxItem(body_paths.boxes[i], adder, tree_widget, body_state.boxes[i]);
+    TreePath box_path = childPath(adder.parent_path, adder.n_children);
+
+    body_paths.boxes[i] =
+      createBoxItem(box_path, tree_widget, body_state.boxes[i]);
+
+    ++adder.n_children;
   }
 
   return body_paths;
@@ -889,15 +896,19 @@ createBoxInTree(
   assert(box_index == BoxIndex(body_paths.boxes.size()));
   body_paths.boxes.emplace_back();
 
-  createBoxItem(
-    body_paths.boxes[box_index],
-    adder,
-    tree_widget,
-    body_state.boxes[box_index]
-  );
+  TreePath box_path = childPath(adder.parent_path, adder.n_children);
+  handlePathInsertion(tree_paths, box_path);
+
+  body_paths.boxes[box_index] =
+    createBoxItem(box_path, tree_widget, body_state.boxes[box_index]);
+
+  ++adder.n_children;
 }
 
 
+// This function creates the body item and all child items and stores
+// the path in the tree_paths at the proper index.  It does not shift
+// any indices.
 void
 createBodyInTree(
   TreeWidget &tree_widget,

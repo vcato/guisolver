@@ -133,4 +133,13 @@ struct Scene {
   }
 };
 
+
+inline std::ostream&
+operator<<(std::ostream &stream, const Scene::GeometryHandle &arg)
+{
+  stream << "Scene::GeometryHandle(index=" << arg.index << ")";
+  return stream;
+}
+
+
 #endif /* SCENE_HPP_ */

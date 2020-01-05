@@ -369,13 +369,13 @@ createBoxInScene(
   Scene &scene,
   SceneHandles &scene_handles,
   BodyIndex body_index,
-  BoxIndex i
+  BoxIndex box_index
 )
 {
   SceneHandles::Body &body_handles = *scene_handles.bodies[body_index];
   TransformHandle transform_handle = body_handles.transform_handle;
   GeometryHandle geometry_handle = scene.createBox(transform_handle);
-  assert(BoxIndex(scene_handles.bodies[body_index]->boxes.size()) == i);
+  assert(BoxIndex(body_handles.boxes.size()) == box_index);
   body_handles.addBox(geometry_handle);
 }
 

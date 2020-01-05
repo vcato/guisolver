@@ -45,7 +45,7 @@ forEachTransformHandlePath(
       f(
         body_handles.transformHandle(),
         body_handles.boxes[box_index].handle,
-        body_paths.path
+        body_paths.boxes[box_index].path
       );
     }
   }

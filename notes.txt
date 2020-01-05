@@ -50,6 +50,3 @@ body seems best.
 Maybe we have a list of boxes and a list of rays on a body.
 ---
 Need to be able to translate and rotate bodies that do not have boxes.
----
-If you select the second box for a body in a tree, it puts the handle
-in the wrong place.

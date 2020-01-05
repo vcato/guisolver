@@ -289,6 +289,19 @@ static void testAddingASecondBox()
 }
 
 
+static void testInsertingABox()
+{
+  FakeTreeWidget tree_widget;
+  SceneState scene_state;
+  BodyIndex body_index = scene_state.createBody();
+  scene_state.createMarker(body_index);
+  TreePaths tree_paths = fillTree(tree_widget, scene_state);
+  BoxIndex box_index = scene_state.body(body_index).addBox();
+  createBoxInTree(tree_widget, tree_paths, scene_state, body_index, box_index);
+  checkTree(tree_widget, tree_paths, scene_state);
+}
+
+
 int main()
 {
   testRemovingDistanceError();
@@ -302,4 +315,5 @@ int main()
   testChangingNumericValues();
   testRemoveBodyFromTree();
   testAddingASecondBox();
+  testInsertingABox();
 }
