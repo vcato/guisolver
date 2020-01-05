@@ -624,11 +624,12 @@ BodyIndex ObservedScene::addBody(Optional<BodyIndex> maybe_parent_body_index)
 }
 
 
-void ObservedScene::addBoxTo(BodyIndex body_index)
+BoxIndex ObservedScene::addBoxTo(BodyIndex body_index)
 {
   BoxIndex box_index = scene_state.body(body_index).addBox();
   ObservedScene::createBoxInScene(body_index, box_index, *this);
   ObservedScene::createBoxInTree(body_index, box_index, *this);
+  return box_index;
 }
 
 
@@ -839,6 +840,13 @@ ObservedScene::addDistanceError(
 void ObservedScene::selectDistanceError(DistanceErrorIndex index)
 {
   tree_widget.selectItem(tree_paths.distance_errors[index].path);
+}
+
+
+void ObservedScene::selectBox(BodyIndex body_index, BoxIndex box_index)
+{
+  tree_widget.selectItem(tree_paths.body(body_index).boxes[box_index].path);
+  handleTreeSelectionChanged();
 }
 
 

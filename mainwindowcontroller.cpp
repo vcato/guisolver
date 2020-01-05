@@ -642,7 +642,9 @@ MainWindowController::Impl::addBoxPressed(
   BodyIndex body_index
 )
 {
-  Impl::data(controller).observed_scene.addBoxTo(body_index);
+  ObservedScene &observed_scene = Impl::data(controller).observed_scene;
+  BoxIndex box_index = observed_scene.addBoxTo(body_index);
+  observed_scene.selectBox(body_index, box_index);
 }
 
 

@@ -45,6 +45,5 @@ using a body.
 
 Maybe we have a list of rays on a body.
 ---
-When we add a box, it should select it.
----
-Need to clean up the scene so it doesn't have the AndGeometry classes.
+Selecting a box in the scene doesn't always select the corresponding box in the
+tree.

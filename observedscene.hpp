@@ -57,7 +57,7 @@ struct ObservedScene {
   );
 
   BodyIndex addBody(Optional<BodyIndex> maybe_parent_index);
-  void addBoxTo(BodyIndex);
+  BoxIndex addBoxTo(BodyIndex);
   MarkerIndex addMarker(Optional<BodyIndex>);
 
   DistanceErrorIndex
@@ -77,6 +77,7 @@ struct ObservedScene {
   void selectBody(BodyIndex);
   void selectMarker(MarkerIndex);
   void selectDistanceError(DistanceErrorIndex);
+  void selectBox(BodyIndex, BoxIndex);
   BodyIndex duplicateBody(BodyIndex body_index);
   BodyIndex duplicateBodyWithDistanceErrors(BodyIndex);
   MarkerIndex duplicateMarker(MarkerIndex);
