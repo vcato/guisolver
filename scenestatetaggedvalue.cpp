@@ -213,6 +213,63 @@ createChildMarkersInSceneState(
 }
 
 
+static SceneState::XYZ
+xyzValueOr(
+  const TaggedValue &tagged_value,
+  const string &tag,
+  const Vec3 &default_value
+)
+{
+  const TaggedValue *child_ptr = findChild(tagged_value, tag);
+
+  if (child_ptr) {
+    return xyzValueOr(*child_ptr, default_value);
+  }
+
+  return {default_value.x, default_value.y, default_value.z};
+}
+
+
+static void
+fillBoxStateFromTaggedValue(
+  SceneState::Box &box_state,
+  const TaggedValue &box_tagged_value
+)
+{
+  {
+    const TaggedValue *scale_ptr = findChild(box_tagged_value, "scale");
+    const Vec3 default_scale = {1,1,1};
+
+    if (scale_ptr) {
+      box_state.scale = xyzValueOr(*scale_ptr, default_scale);
+    }
+    else {
+      box_state.scale.x =
+        numericValueOr(box_tagged_value, "scale_x", default_scale.x);
+
+      box_state.scale.y =
+        numericValueOr(box_tagged_value, "scale_y", default_scale.y);
+
+      box_state.scale.z =
+        numericValueOr(box_tagged_value, "scale_z", default_scale.z);
+    }
+  }
+
+  box_state.center = xyzValueOr(box_tagged_value, "center", {0,0,0});
+}
+
+
+static void
+fillLineStateFromTaggedValue(
+  SceneState::Line &line_state,
+  const TaggedValue &line_tagged_value
+)
+{
+  line_state.start = xyzValueOr(line_tagged_value, "start", {0,0,0});
+  line_state.end = xyzValueOr(line_tagged_value, "end", {1,0,0});
+}
+
+
 BodyIndex
 createBodyFromTaggedValue(
   SceneState &result,
@@ -243,38 +300,21 @@ createBodyFromTaggedValue(
   result.body(body_index).solve_flags =
     makeSolveFlagsFromTaggedValue(tagged_value);
 
-  const TaggedValue *box_ptr = findChild(tagged_value, "Box");
-
-  if (box_ptr) {
-    const TaggedValue &box_tagged_value = *box_ptr;
-    // Here, we would add a box to the body.
-    result.body(body_index).addBox();
-    SceneState::Box &box_state = result.body(body_index).boxes[0];
-    {
-      const TaggedValue *scale_ptr = findChild(box_tagged_value, "scale");
-      const Vec3 default_scale = {1,1,1};
-
-      if (scale_ptr) {
-        box_state.scale =
-          xyzValueOr(*scale_ptr, default_scale);
-      }
-      else {
-        box_state.scale.x =
-          numericValueOr(box_tagged_value, "scale_x", default_scale.x);
-
-        box_state.scale.y =
-          numericValueOr(box_tagged_value, "scale_y", default_scale.y);
-
-        box_state.scale.z =
-          numericValueOr(box_tagged_value, "scale_z", default_scale.z);
-      }
+  for (auto &child : tagged_value.children) {
+    if (child.tag == "Box") {
+      const TaggedValue &box_tagged_value = child;
+      BoxIndex box_index = result.body(body_index).addBox();
+      SceneState::Box &box_state = result.body(body_index).boxes[box_index];
+      fillBoxStateFromTaggedValue(box_state, box_tagged_value);
     }
-    {
-      const TaggedValue *center_ptr = findChild(box_tagged_value, "center");
+  }
 
-      if (center_ptr) {
-        box_state.center = xyzValueOr(*center_ptr, {0,0,0});
-      }
+  for (auto &child : tagged_value.children) {
+    if (child.tag == "Line") {
+      const TaggedValue &line_tagged_value = child;
+      LineIndex line_index = result.body(body_index).addLine();
+      SceneState::Line &line_state = result.body(body_index).lines[line_index];
+      fillLineStateFromTaggedValue(line_state, line_tagged_value);
     }
   }
 
@@ -532,6 +572,16 @@ static TaggedValue &
 }
 
 
+static TaggedValue &
+  createLine(TaggedValue &parent, const SceneState::Line &line_state)
+{
+  auto &box_tagged_value = create(parent, "Line");
+  create(box_tagged_value, "start", line_state.start);
+  create(box_tagged_value, "end", line_state.end);
+  return box_tagged_value;
+}
+
+
 static void
 createMarker(TaggedValue &parent, const SceneState::Marker &marker_state)
 {
@@ -619,6 +669,10 @@ void
 
   for (const SceneState::Box &box_state : body_state.boxes) {
     createBox(transform, box_state);
+  }
+
+  for (const SceneState::Line &line_state : body_state.lines) {
+    createLine(transform, line_state);
   }
 
   createChildBodiesInTaggedValue(transform, scene_state, body_index);

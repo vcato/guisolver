@@ -65,6 +65,30 @@ static void testCreatingABodyFromATaggedValue()
     "      z: 3.5\n"
     "    }\n"
     "  }\n"
+    "  Box {\n"
+    "    scale {\n"
+    "      x: 1\n"
+    "      y: 2.5\n"
+    "      z: 3.5\n"
+    "    }\n"
+    "    center {\n"
+    "      x: 1.5\n"
+    "      y: 2.5\n"
+    "      z: 3.5\n"
+    "    }\n"
+    "  }\n"
+    "  Line {\n"
+    "    start {\n"
+    "      x: 1\n"
+    "      y: 2.5\n"
+    "      z: 3.5\n"
+    "    }\n"
+    "    end {\n"
+    "      x: 1.5\n"
+    "      y: 2.5\n"
+    "      z: 3.5\n"
+    "    }\n"
+    "  }\n"
     "}\n";
 
   istringstream stream(text);
@@ -83,7 +107,7 @@ static void testCreatingABodyFromATaggedValue()
 
   assert(state.bodies().size() == 1);
   const SceneState::Body &body = state.body(0);
-  assert(body.boxes.size() == 1);
+  assert(body.boxes.size() == 2);
   const SceneState::Box &box = body.boxes[0];
   assert(box.scale.x == 1);
   assert(box.scale.y == 2.5);
@@ -93,6 +117,7 @@ static void testCreatingABodyFromATaggedValue()
   assert(box.center.z == 3.5);
   assert(body.solve_flags.translation.x == false);
   assert(body.solve_flags.translation.y == true);
+  assert(body.lines.size() == 1);
 }
 
 
