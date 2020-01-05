@@ -78,7 +78,7 @@ static void testGlobalTransform()
   MarkerIndex marker_index = scene_state.createMarker(body2_index);
 
   scene_state.marker(marker_index).position =
-    makeMarkerPosition(randomPoint(engine));
+    makePositionStateFromPoint(randomPoint(engine));
 
   Point local = point(scene_state.marker(marker_index).position);
 

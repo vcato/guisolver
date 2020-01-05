@@ -6,13 +6,13 @@
 #include "point.hpp"
 
 
-inline Point makePoint(const MarkerPosition &arg)
+inline Point makePointFromPositionState(const PositionState &arg)
 {
   return {arg.x, arg.y, arg.z};
 }
 
 
-inline MarkerPosition makeMarkerPosition(const Eigen::Vector3f &arg)
+inline PositionState makePositionStateFromPoint(const Eigen::Vector3f &arg)
 {
   return {arg.x(), arg.y(), arg.z()};
 }

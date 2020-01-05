@@ -1,5 +1,3 @@
-#include "taggedvalue.hpp"
-#include "transform.hpp"
 #include "scene.hpp"
 #include "treewidget.hpp"
 #include "scenestate.hpp"

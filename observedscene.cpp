@@ -2,11 +2,10 @@
 
 #include "startswith.hpp"
 #include "scenestatetaggedvalue.hpp"
-#include "transformstate.hpp"
-#include "globaltransform.hpp"
 #include "treevalues.hpp"
 #include "sceneobjects.hpp"
 #include "sceneerror.hpp"
+#include "scenestatetransform.hpp"
 
 using TransformHandle = Scene::TransformHandle;
 using GeometryHandle = Scene::GeometryHandle;
@@ -181,17 +180,11 @@ bool ObservedScene::clipboardContainsAMarker() const
 BodyIndex
 ObservedScene::pasteBodyGlobal(Optional<BodyIndex> maybe_new_parent_body_index)
 {
-  Transform new_parent_global_transform =
-    globalTransform(maybe_new_parent_body_index, scene_state);
-
   assert (clipboard.maybe_cut_body_index);
   BodyIndex old_body_index = *clipboard.maybe_cut_body_index;
 
   Optional<BodyIndex> maybe_old_parent_body_index =
     scene_state.body(old_body_index).maybe_parent_index;
-
-  Transform old_parent_global_transform =
-    globalTransform(maybe_old_parent_body_index, scene_state);
 
   removeBodyBranchItemsFromTree(
     old_body_index, tree_widget, tree_paths, scene_state
@@ -208,16 +201,12 @@ ObservedScene::pasteBodyGlobal(Optional<BodyIndex> maybe_new_parent_body_index)
 
   BodyIndex new_body_index = old_body_index;
 
-  SceneState::Body &body_state = scene_state.body(new_body_index);
-  Transform old_body_transform = makeTransformFromState(body_state.transform);
-
-  Transform body_global_transform =
-    old_parent_global_transform*old_body_transform;
-
-  Transform new_body_transform =
-    new_parent_global_transform.inverse()*body_global_transform;
-
-  body_state.transform = transformState(new_body_transform);
+  changeBodyTransformToPreserveGlobal(
+    new_body_index,
+    scene_state,
+    maybe_old_parent_body_index,
+    maybe_new_parent_body_index
+  );
 
   createBodyBranchItemsInTree(
     new_body_index, tree_widget, tree_paths, scene_state
@@ -240,14 +229,8 @@ ObservedScene::pasteMarkerGlobal(
   assert (clipboard.maybe_cut_marker_index);
   MarkerIndex marker_index = *clipboard.maybe_cut_marker_index;
 
-  Transform new_parent_global_transform =
-    globalTransform(maybe_new_parent_body_index, scene_state);
-
   Optional<BodyIndex> maybe_old_parent_body_index =
     scene_state.marker(marker_index).maybe_body_index;
-
-  Transform old_parent_global_transform =
-    globalTransform(maybe_old_parent_body_index, scene_state);
 
   removeMarkerItemFromTree(marker_index, tree_widget, tree_paths);
   removeMarkerObjectFromScene(marker_index, scene, scene_handles);
@@ -255,16 +238,12 @@ ObservedScene::pasteMarkerGlobal(
   scene_state.marker(marker_index).maybe_body_index =
     maybe_new_parent_body_index;
 
-  SceneState::Marker &marker_state = scene_state.marker(marker_index);
-  Point old_marker_position = makePoint(marker_state.position);
-
-  Point marker_global_position =
-    old_parent_global_transform*old_marker_position;
-
-  Point new_marker_position =
-    new_parent_global_transform.inverse()*marker_global_position;
-
-  marker_state.position = makeMarkerPosition(new_marker_position);
+  changeMarkerPositionToPreserveGlobal(
+    marker_index,
+    scene_state,
+    maybe_old_parent_body_index,
+    maybe_new_parent_body_index
+  );
 
   createMarkerItemInTree(
     marker_index, tree_widget, tree_paths, scene_state

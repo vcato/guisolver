@@ -1,7 +1,6 @@
 #ifndef SCENE_HPP_
 #define SCENE_HPP_
 
-#include <cstdlib>
 #include <functional>
 #include "point.hpp"
 #include "coordinateaxes.hpp"
@@ -9,7 +8,7 @@
 
 
 struct Scene {
-  using Point = ::Point;
+  using Point = Vec3;
   using Vector = Vec3;
 
   enum class DraggerType {

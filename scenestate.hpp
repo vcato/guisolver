@@ -25,6 +25,7 @@ class SceneState {
     using Bodies = vector<Body>;
     using DistanceErrors = vector<DistanceError>;
     using String = std::string;
+    using Position = XYZ;
 
     struct XYZ {
       float x = 0;
@@ -34,7 +35,7 @@ class SceneState {
 
     struct Marker {
       using Name = String;
-      XYZ position;
+      Position position;
       Optional<BodyIndex> maybe_body_index;
       Name name;
     };
@@ -57,7 +58,7 @@ class SceneState {
 
     struct Box {
       XYZ scale = {1,1,1};
-      XYZ center = {0,0,0};
+      Position center = {0,0,0};
     };
 
     struct Body {
@@ -176,7 +177,7 @@ class SceneState {
 using TransformState = SceneState::Transform;
 using TranslationState = SceneState::XYZ;
 using RotationState = SceneState::XYZ;
-using MarkerPosition = SceneState::XYZ;
+using PositionState = SceneState::Position;
 
 extern vector<SceneState::Marker::Name> markerNames(const SceneState &state);
 extern vector<SceneState::Body::Name> bodyNames(const SceneState &state);

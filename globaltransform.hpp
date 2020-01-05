@@ -22,8 +22,7 @@ markerPredicted(const SceneState &scene_state, MarkerIndex marker_index)
 {
   const SceneState::Marker &marker = scene_state.marker(marker_index);
   Optional<BodyIndex> maybe_body_index = marker.maybe_body_index;
-
-  Point local = makePoint(marker.position);
+  Point local = makePointFromPositionState(marker.position);
 
   while (maybe_body_index) {
     local = parentPoint(scene_state.body(*maybe_body_index), local);

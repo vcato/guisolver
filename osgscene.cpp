@@ -16,6 +16,7 @@
 #include "osgpickhandler.hpp"
 #include "contains.hpp"
 #include "matchconst.hpp"
+#include "eigenconv.hpp"
 
 namespace {
 struct ScaleDragger;
@@ -1266,7 +1267,7 @@ struct LineShapeParams : ShapeParams {
 
 
 static void
-  setTranslation(osg::MatrixTransform &transform,const Vec3 &v)
+  setTranslation(osg::MatrixTransform &transform,const OSGScene::Point &v)
 {
   osg::Matrix m = transform.getMatrix();
   m.setTrans(v.x, v.y, v.z);
@@ -1274,13 +1275,13 @@ static void
 }
 
 
-static Point translation(const osg::MatrixTransform &transform)
+static OSGScene::Point translation(const osg::MatrixTransform &transform)
 {
   osg::Vec3d t = transform.getMatrix().getTrans();
   float x = t.x();
   float y = t.y();
   float z = t.z();
-  return Point{x,y,z};
+  return OSGScene::Point{x,y,z};
 }
 
 
@@ -1523,7 +1524,7 @@ void OSGScene::setGeometryCenter(GeometryHandle handle,const Point &v)
   osg::MatrixTransform &geometry_transform =
     Impl::geometryTransformForHandle(*this, handle);
 
-  ::setTranslation(geometry_transform, {v.x(), v.y(), v.z()});
+  ::setTranslation(geometry_transform, v);
 
   if (selectedGeometry() == handle) {
     selectionHandler().updateDraggerPosition();
@@ -1537,10 +1538,9 @@ Vec3 OSGScene::geometryScale(GeometryHandle handle) const
 }
 
 
-Point OSGScene::geometryCenter(GeometryHandle handle) const
+OSGScene::Point OSGScene::geometryCenter(GeometryHandle handle) const
 {
-  return
-    ::translation(Impl::geometryTransformForHandle(*this, handle));
+  return ::translation(Impl::geometryTransformForHandle(*this, handle));
 }
 
 
@@ -1550,9 +1550,15 @@ OSGScene::Point OSGScene::translation(TransformHandle handle) const
 }
 
 
-static osg::Vec3f vec3f(const Scene::Color &color)
+static osg::Vec3f osgVec3f(const Scene::Color &color)
 {
   return osg::Vec3f(color.red, color.green, color.blue);
+}
+
+
+static osg::Vec3f osgVec3f(const OSGScene::Point &p)
+{
+  return osg::Vec3f(p.x, p.y, p.z);
 }
 
 
@@ -1561,14 +1567,14 @@ void OSGScene::setGeometryColor(GeometryHandle handle,const Color &color)
   osg::MatrixTransform &geometry_transform =
     Impl::geometryTransformForHandle(*this,handle);
 
-  ::setColor(geometry_transform, vec3f(color));
+  ::setColor(geometry_transform, osgVec3f(color));
 }
 
 
 void OSGScene::setStartPoint(LineHandle handle,Point p)
 {
   LineDrawable &line_drawable = Impl::lineDrawable(*this, handle);
-  line_drawable.start_point = osg::Vec3f(p.x(),p.y(),p.z());
+  line_drawable.start_point = osgVec3f(p);
   line_drawable.setup();
 }
 
@@ -1576,7 +1582,7 @@ void OSGScene::setStartPoint(LineHandle handle,Point p)
 void OSGScene::setEndPoint(LineHandle handle,Point p)
 {
   LineDrawable &line_drawable = Impl::lineDrawable(*this,handle);
-  line_drawable.end_point = osg::Vec3f(p.x(),p.y(),p.z());
+  line_drawable.end_point = osgVec3f(p);
   line_drawable.setup();
 }
 
@@ -1845,7 +1851,7 @@ void OSGScene::setTranslation(TransformHandle handle, Point p)
   osg::MatrixTransform &transform =
     Impl::transformForHandle(*this, handle);
 
-  ::setTranslation(transform, {p.x(), p.y(), p.z()});
+  ::setTranslation(transform, p);
 
   if (selectedTransform() == handle) {
     selectionHandler().updateDraggerPosition();

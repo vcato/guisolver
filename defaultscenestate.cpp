@@ -25,7 +25,7 @@ static void
 static void
   createMarker(
     SceneState &state,
-    const MarkerPosition &position,
+    const PositionState &position,
     Optional<BodyIndex> maybe_body_index
   )
 {
@@ -37,7 +37,7 @@ static void
 static void
   createLocalMarker(
     SceneState &state,
-    const MarkerPosition &position,
+    const PositionState &position,
     BodyIndex body_index
   )
 {
@@ -46,7 +46,7 @@ static void
 
 
 static void
-  createGlobalMarker(SceneState &state, const MarkerPosition &position)
+  createGlobalMarker(SceneState &state, const PositionState &position)
 {
   createMarker(state,position, /*maybe_body_index*/{});
 }

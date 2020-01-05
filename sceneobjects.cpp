@@ -8,16 +8,18 @@
 #include "transformstate.hpp"
 #include "positionstate.hpp"
 #include "globaltransform.hpp"
+#include "scenetransform.hpp"
 
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
 using LineHandle = Scene::LineHandle;
 using GeometryHandle = Scene::GeometryHandle;
 
+
 static Point
   localTranslation(Scene::TransformHandle transform_id,const Scene &scene)
 {
-  return scene.translation(transform_id);
+  return makePointFromScenePoint(scene.translation(transform_id));
 }
 
 
@@ -29,7 +31,7 @@ static void
   )
 {
   state_marker.position =
-    makeMarkerPosition(
+    makePositionStateFromPoint(
       localTranslation(handles_marker.transformHandle(),
       scene)
     );
@@ -54,7 +56,7 @@ updateStateMarkerPositions(
 static Transform
 localTransform(const Scene &scene, Scene::TransformHandle transform_id)
 {
-  Point translation = scene.translation(transform_id);
+  Point translation = localTranslation(transform_id, scene);
   CoordinateAxes coordinate_axes = scene.coordinateAxes(transform_id);
   return makeTransform(coordinate_axes, translation);
 }
@@ -103,7 +105,7 @@ static SceneHandles::Marker
 createMarker(
   TransformHandle parent,
   const Scene::Color &color,
-  const Scene::Point &position,
+  const PositionState &position,
   Scene &scene
 )
 {
@@ -111,7 +113,11 @@ createMarker(
   GeometryHandle sphere_handle = scene.createSphere(transform_handle);
   scene.setGeometryScale(sphere_handle, {0.1, 0.1, 0.1});
   scene.setGeometryColor(sphere_handle, color);
-  scene.setTranslation(transform_handle, position);
+
+  scene.setTranslation(
+    transform_handle,
+    makeScenePointFromPoint(makePointFromPositionState(position))
+  );
 
   SceneHandles::Marker marker_handles =
     SceneHandles::Marker{transform_handle, sphere_handle};
@@ -124,7 +130,7 @@ static SceneHandles::Marker
 createSceneLocal(
   Scene &scene,
   TransformHandle const parent,
-  Scene::Point position
+  const PositionState &position
 )
 {
   Scene::Color color = {0, 0, 1};
@@ -135,7 +141,7 @@ createSceneLocal(
 static SceneHandles::Marker
 createSceneGlobal(
   Scene &scene,
-  Scene::Point position
+  const PositionState &position
 )
 {
   Scene::Color color = {0, 1, 0};
@@ -150,7 +156,7 @@ static SceneHandles::Marker
     const SceneHandles &scene_handles
   )
 {
-  Point position = makePoint(state_marker.position);
+  const PositionState &position = state_marker.position;
   Optional<BodyIndex> maybe_body_index = state_marker.maybe_body_index;
 
   if (maybe_body_index) {
@@ -195,8 +201,8 @@ updateDistanceErrorInScene(
     distance_error_state.optional_start_marker_index &&
     distance_error_state.optional_end_marker_index;
 
-  Scene::Point start = {0,0,0};
-  Scene::Point end = {0,0,0};
+  Point start = {0,0,0};
+  Point end = {0,0,0};
 
   if (have_both_markers) {
     MarkerIndex start_marker_index =
@@ -209,8 +215,13 @@ updateDistanceErrorInScene(
     end = markerPredicted(scene_state, end_marker_index);
   }
 
-  scene.setStartPoint(distance_error_handles.line_handle, start);
-  scene.setEndPoint(distance_error_handles.line_handle, end);
+  scene.setStartPoint(
+    distance_error_handles.line_handle, makeScenePointFromPoint(start)
+  );
+
+  scene.setEndPoint(
+    distance_error_handles.line_handle, makeScenePointFromPoint(end)
+  );
 }
 
 
@@ -375,7 +386,11 @@ static void
     const SceneHandles::Box &box_handles = body_handles.boxes[box_index];
     const SceneState::Box &box_state = body_state.boxes[box_index];
     scene.setGeometryScale(box_handles.handle, vec3(box_state.scale));
-    scene.setGeometryCenter(box_handles.handle, point(box_state.center));
+
+    scene.setGeometryCenter(
+      box_handles.handle,
+      makeScenePointFromPoint(makePointFromPositionState(box_state.center))
+    );
   }
 }
 
@@ -679,7 +694,7 @@ static void
 {
   scene.setTranslation(
     marker_handles.transformHandle(),
-    makePoint(marker_state.position)
+    makeScenePointFromPoint(makePointFromPositionState(marker_state.position))
   );
 }
 

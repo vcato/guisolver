@@ -46,3 +46,6 @@ using a body.
 Maybe we have a list of rays on a body.
 ---
 Compiling observed_scene.cpp is slow.
+We have to use the eigen transform when when pasting a body preserving global.
+---
+A Point uses the Eigen library, but we should be able to remote that.

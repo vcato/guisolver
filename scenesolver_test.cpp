@@ -60,7 +60,7 @@ static MarkerIndex
   )
 {
   MarkerIndex marker_index = result.createUnnamedMarker();
-  result.marker(marker_index).position = makeMarkerPosition(local);
+  result.marker(marker_index).position = makePositionStateFromPoint(local);
   result.marker(marker_index).maybe_body_index = maybe_body_index;
   return marker_index;
 }

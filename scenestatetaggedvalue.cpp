@@ -187,7 +187,7 @@ createMarkerFromTaggedValue(
 
   if (position_ptr) {
     scene_state.marker(marker_index).position =
-      makeMarkerPosition(eigenVector3f(makeVec3FromTaggedValue(*position_ptr)));
+      makePositionStateFromPoint(eigenVector3f(makeVec3FromTaggedValue(*position_ptr)));
   }
 }
 

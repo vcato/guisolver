@@ -41,9 +41,11 @@ SCENESTATEIO=scenestateio.o $(SCENESTATETAGGEDVALUE) $(TAGGEDVALUEIO)
 SCENEERROR=sceneerror.o scenestate.o
 SCENEOBJECTS=sceneobjects.o maketransform.o settransform.o scenestate.o
 OPTIMIZE=optimize.o
-MAINWINDOWCONTROLLER=mainwindowcontroller.o observedscene.o
-OBSERVEDSCENE=observedscene.o \
-  $(SCENESTATETAGGEDVALUE) treevalues.o $(SCENEOBJECTS)
+
+OBSERVEDSCENE=observedscene.o treevalues.o scenestatetransform.o \
+  $(SCENESTATETAGGEDVALUE) $(SCENEOBJECTS)
+
+MAINWINDOWCONTROLLER=mainwindowcontroller.o $(OBSERVEDSCENE)
 
 guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
   osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o $(DEFAULTSCENESTATE) \

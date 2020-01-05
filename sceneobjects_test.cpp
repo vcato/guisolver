@@ -4,7 +4,7 @@
 #include "fakescene.hpp"
 
 
-static Point
+static Scene::Point
 sceneGeometryCenter(
   BodyIndex index,
   const FakeScene &scene,
@@ -26,7 +26,7 @@ int main()
 {
   FakeScene scene;
 
-  Point center = { 1.5, 2.5, 3.5};
+  Scene::Point center = { 1.5, 2.5, 3.5};
   SceneState state;
   BodyIndex parent_index = state.createBody(/*parent*/{});
   state.body(parent_index).addBox();
