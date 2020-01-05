@@ -1,0 +1,117 @@
+Scene {
+  Transform {
+    name: "camera"
+    translation {
+      x: 0 {
+        solve: false
+      }
+      y: 0 {
+        solve: false
+      }
+      z: 0 {
+        solve: false
+      }
+    }
+    rotation {
+      x: -8.32537e-06 {
+        solve: false
+      }
+      y: -44.4888
+      z: 10.4219
+    }
+    Box {
+      scale {
+        x: 1
+        y: 1
+        z: 1
+      }
+      center {
+        x: 0
+        y: 0
+        z: 0
+      }
+    }
+    Transform {
+      name: "ray"
+      translation {
+        x: 0 {
+          solve: false
+        }
+        y: 0 {
+          solve: false
+        }
+        z: 0 {
+          solve: false
+        }
+      }
+      rotation {
+        x: 0 {
+          solve: false
+        }
+        y: 0 {
+          solve: false
+        }
+        z: 0 {
+          solve: false
+        }
+      }
+      Line {
+        start {
+          x: 0
+          y: 0
+          z: 0
+        }
+        end {
+          x: 19
+          y: 0
+          z: 0
+        }
+      }
+      Transform {
+        name: "closest point"
+        translation {
+          x: 6.92994
+          y: 0 {
+            solve: false
+          }
+          z: 0 {
+            solve: false
+          }
+        }
+        rotation {
+          x: 0 {
+            solve: false
+          }
+          y: 0 {
+            solve: false
+          }
+          z: 0 {
+            solve: false
+          }
+        }
+        Marker {
+          name: "closest point marker"
+          position {
+            x: 0
+            y: 0
+            z: 0
+          }
+        }
+      }
+    }
+  }
+  Marker {
+    name: "target"
+    position {
+      x: 4.84227
+      y: 1.13078
+      z: 4.82636
+    }
+  }
+  DistanceError {
+    start: "closest point marker"
+    end: "target"
+    desired_distance: 0
+    weight: 1
+  }
+}
