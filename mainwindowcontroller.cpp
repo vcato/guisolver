@@ -12,7 +12,6 @@
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
 using GeometryHandle = Scene::GeometryHandle;
-using GeometryAndTransformHandle = Scene::GeometryAndTransformHandle;
 
 
 template <typename XYZSolveFlags, typename F>

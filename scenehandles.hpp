@@ -14,8 +14,6 @@ struct SceneHandles {
   struct DistanceError;
   using TransformHandle = Scene::TransformHandle;
   using GeometryHandle = Scene::GeometryHandle;
-  using SphereAndTransformHandle = Scene::SphereAndTransformHandle;
-  using BoxAndTransformHandle = Scene::BoxAndTransformHandle;
   using Markers = vector<Optional<Marker>>;
   using DistanceErrors = vector<DistanceError>;
 

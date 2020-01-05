@@ -61,41 +61,6 @@ struct Scene {
     }
   };
 
-  struct GeometryAndTransformHandle {
-    TransformHandle transform_handle;
-    GeometryHandle geometry_handle;
-
-    GeometryAndTransformHandle(
-      TransformHandle transform_handle,
-      GeometryHandle geometry_handle
-    )
-    : transform_handle(transform_handle),
-      geometry_handle(geometry_handle)
-    {
-    }
-
-    bool operator==(const GeometryAndTransformHandle &arg) const
-    {
-      return
-        transform_handle == arg.transform_handle &&
-        geometry_handle == arg.geometry_handle;
-    }
-  };
-
-  struct BoxAndTransformHandle : GeometryAndTransformHandle {
-    explicit BoxAndTransformHandle(const GeometryAndTransformHandle &arg)
-    : GeometryAndTransformHandle(arg)
-    {
-    }
-  };
-
-  struct SphereAndTransformHandle : GeometryAndTransformHandle {
-    explicit SphereAndTransformHandle(const GeometryAndTransformHandle &arg)
-    : GeometryAndTransformHandle(arg)
-    {
-    }
-  };
-
   std::function<void()> changing_callback;
   std::function<void()> changed_callback;
   std::function<void()> selection_changed_callback;

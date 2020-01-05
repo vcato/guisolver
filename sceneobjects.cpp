@@ -13,8 +13,6 @@ using std::cerr;
 using TransformHandle = Scene::TransformHandle;
 using LineHandle = Scene::LineHandle;
 using GeometryHandle = Scene::GeometryHandle;
-using BoxAndTransformHandle = Scene::BoxAndTransformHandle;
-using GeometryAndTransformHandle = Scene::GeometryAndTransformHandle;
 
 static Point
   localTranslation(Scene::TransformHandle transform_id,const Scene &scene)

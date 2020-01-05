@@ -10,7 +10,6 @@
 
 using TransformHandle = Scene::TransformHandle;
 using GeometryHandle = Scene::GeometryHandle;
-using GeometryAndTransformHandle = Scene::GeometryAndTransformHandle;
 using std::cerr;
 
 

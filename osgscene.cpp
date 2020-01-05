@@ -231,17 +231,7 @@ struct OSGScene::Impl {
   struct DraggerCallback;
 
   static void clearHandle(size_t index, OSGScene &scene);
-
   static void destroyIndex(size_t index, OSGScene &);
-
-  static GeometryAndTransformHandle
-  makeTopHandle(OSGScene &scene, osg::MatrixTransform &top_node)
-  {
-    return
-      Impl::makeHandleFromTransforms(
-        scene, top_node, addTransformToGroup(top_node)
-      );
-  }
 
   static osg::MatrixTransform &
     createTransform(OSGScene &scene, TransformHandle parent);
@@ -314,13 +304,6 @@ struct OSGScene::Impl {
   static GeometryHandle
     makeHandleFromGeometryTransform(
       OSGScene &scene,
-      osg::MatrixTransform &geometry_transform
-    );
-
-  static GeometryAndTransformHandle
-    makeHandleFromTransforms(
-      OSGScene &,
-      osg::MatrixTransform &transform,
       osg::MatrixTransform &geometry_transform
     );
 
@@ -1638,24 +1621,6 @@ OSGScene::Impl::makeHandleFromGeometryTransform(
     &geometry_transform;
 
   return GeometryHandle{geometry_index};
-}
-
-
-auto
-  OSGScene::Impl::makeHandleFromTransforms(
-    OSGScene &scene,
-    osg::MatrixTransform &transform,
-    osg::MatrixTransform &geometry_transform
-  ) -> GeometryAndTransformHandle
-{
-  TransformHandle transform_handle = makeHandleFromTransform(scene, transform);
-
-  GeometryHandle geometry_handle =
-    makeHandleFromGeometryTransform(scene, geometry_transform);
-
-  assert(geometry_handle.index != transform_handle.index);
-
-  return GeometryAndTransformHandle{transform_handle, geometry_handle};
 }
 
 

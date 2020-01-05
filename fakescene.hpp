@@ -59,17 +59,7 @@ struct FakeScene : Scene {
     *objects[geometry_handle.index].maybe_geometry_center = center;
   }
 
-  virtual Vec3 geometryScale(GeometryAndTransformHandle) const
-  {
-    assert(false); // not needed
-  }
-
   virtual Vec3 geometryScale(GeometryHandle) const
-  {
-    assert(false); // not needed
-  }
-
-  virtual Point geometryCenter(GeometryAndTransformHandle) const
   {
     assert(false); // not needed
   }
@@ -174,9 +164,5 @@ struct FakeScene : Scene {
 
   private:
     GeometryHandle createGeometry(TransformHandle parent);
-
-    GeometryAndTransformHandle
-      createGeometryAndTransform(TransformHandle parent_handle);
-
     int nChildren(size_t handle_index) const;
 };
