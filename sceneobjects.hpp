@@ -83,6 +83,15 @@ extern void
   );
 
 extern void
+  createLineInScene(
+    Scene &scene,
+    SceneHandles &scene_handles,
+    BodyIndex body_index,
+    LineIndex line_index,
+    const SceneState &
+  );
+
+extern void
   createBodyObjectsInScene(
     BodyIndex body_index,
     Scene &,

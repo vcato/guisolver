@@ -145,6 +145,15 @@ struct LineDrawable : osg::Geometry {
   osg::Vec3 start_point = osg::Vec3f(0,0,0);
   osg::Vec3 end_point = osg::Vec3(1,1,1);
 
+  LineDrawable(
+    const osg::Vec3 &start_point,
+    const osg::Vec3 &end_point
+  )
+  : start_point(start_point),
+    end_point(end_point)
+  {
+  }
+
   void setup()
   {
     LineDrawable &line_geometry = *this;
@@ -1191,11 +1200,26 @@ static osg::ref_ptr<osg::ShapeDrawable> createSphereDrawable()
 }
 
 
-static osg::ref_ptr<LineDrawable> createLineDrawable()
+static osg::Vec3f osgVec3f(const Scene::Color &color)
 {
-  osg::ref_ptr<LineDrawable> beam_ptr(new LineDrawable);
-  beam_ptr->setup();
-  return beam_ptr;
+  return osg::Vec3f(color.red, color.green, color.blue);
+}
+
+
+static osg::Vec3f osgVec3f(const OSGScene::Point &p)
+{
+  return osg::Vec3f(p.x, p.y, p.z);
+}
+
+
+static osg::ref_ptr<LineDrawable>
+createLineDrawable(const Scene::Point &start, const Scene::Point &end)
+{
+  osg::Vec3f start_vec3f = osgVec3f(start);
+  osg::Vec3f end_vec3f = osgVec3f(end);
+  osg::ref_ptr<LineDrawable> line_ptr(new LineDrawable(start_vec3f, end_vec3f));
+  line_ptr->setup();
+  return line_ptr;
 }
 
 
@@ -1251,11 +1275,19 @@ struct BoxShapeParams : ShapeParams {
 
 namespace {
 struct LineShapeParams : ShapeParams {
-  LineShapeParams() : ShapeParams{"Line Geode"} {}
+  Scene::Point start;
+  Scene::Point end;
+
+  LineShapeParams(const Scene::Point &start, const Scene::Point &end)
+  : ShapeParams{"Line Geode"},
+    start(start),
+    end(end)
+  {
+  }
 
   osg::ref_ptr<osg::Drawable> createDrawable() const override
   {
-    return createLineDrawable();
+    return createLineDrawable(start, end);
   }
 
   osg::Material::ColorMode colorMode() const override
@@ -1468,7 +1500,15 @@ GeometryHandle OSGScene::createBox(TransformHandle transform_handle)
 
 LineHandle OSGScene::createLine(TransformHandle transform_handle)
 {
-  return LineHandle(Impl::createGeometry(LineShapeParams(), transform_handle, *this));
+  Scene::Point start(0,0,0);
+  Scene::Point end{1,1,1};
+
+  LineShapeParams shape_params = LineShapeParams(start, end);
+
+  GeometryHandle geometry =
+    Impl::createGeometry(shape_params, transform_handle, *this);
+
+  return LineHandle(geometry);
 }
 
 
@@ -1547,18 +1587,6 @@ OSGScene::Point OSGScene::geometryCenter(GeometryHandle handle) const
 OSGScene::Point OSGScene::translation(TransformHandle handle) const
 {
   return ::translation(Impl::transformForHandle(*this,handle));
-}
-
-
-static osg::Vec3f osgVec3f(const Scene::Color &color)
-{
-  return osg::Vec3f(color.red, color.green, color.blue);
-}
-
-
-static osg::Vec3f osgVec3f(const OSGScene::Point &p)
-{
-  return osg::Vec3f(p.x, p.y, p.z);
 }
 
 

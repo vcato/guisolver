@@ -14,6 +14,7 @@ using std::cerr;
 using std::string;
 using LabelProperties = TreeWidget::LabelProperties;
 using BoxPaths = TreePaths::Box;
+using LinePaths = TreePaths::Line;
 static int defaultDigitsOfPrecision() { return 2; }
 
 
@@ -518,6 +519,7 @@ nMarkersOn(
 namespace {
 struct NextPaths {
   TreePath box_path;
+  TreePath line_path;
   TreePath body_path;
   TreePath marker_path;
   TreePath distance_error_path;
@@ -576,8 +578,21 @@ nextPaths(
     index += 3; // 3 for name, translation, rotation
     index += n_boxes;
   }
+  else {
+    // Can't add boxes to the scene
+  }
 
   result.box_path = childPath(body_path, index);
+
+  if (maybe_body_index) {
+    int n_lines = tree_paths.body(*maybe_body_index).lines.size();
+    index += n_lines;
+    result.line_path = childPath(body_path, index);
+  }
+  else {
+    // Can't add lines to the scene
+  }
+
   index += n_markers;
   result.marker_path = childPath(body_path, index);
   index += n_bodies;
@@ -786,8 +801,7 @@ createBoxItem(
   ItemAdder adder{box_path, tree_widget};
 
   {
-    string label = "scale: []";
-    TreePath path = adder.addVoid(label);
+    TreePath path = adder.addVoid("scale: []");
     ItemAdder child_adder{path, adder.tree_widget};
     AddNumericItemFunction add(child_adder);
     add.minimum_value = 0;
@@ -797,6 +811,23 @@ createBoxItem(
 
   box_paths.center = addXYZ(adder, "center: []", box_state.center);
   return box_paths;
+}
+
+
+static LinePaths
+createLineItem(
+  const TreePath &line_path,
+  TreeWidget &tree_widget,
+  const SceneState::Line &line_state
+)
+{
+  LinePaths line_paths;
+  tree_widget.createVoidItem(line_path, LabelProperties{"[Line]"});
+  line_paths.path = line_path;
+  ItemAdder adder{line_path, tree_widget};
+  line_paths.start = addXYZ(adder, "start: []", line_state.start);
+  line_paths.end = addXYZ(adder, "end: []", line_state.end);
+  return line_paths;
 }
 
 
@@ -888,21 +919,36 @@ createBoxInTree(
 {
   TreePaths::Body &body_paths = tree_paths.body(body_index);
   const SceneState::Body &body_state = scene_state.body(body_index);
-
-  ItemAdder adder{body_paths.path, tree_widget};
-  NextPaths next_paths = nextPaths(body_index, tree_paths, scene_state);
-  adder.n_children = next_paths.box_path.back();
+  TreePath box_path = nextPaths(body_index, tree_paths, scene_state).box_path;
+  handlePathInsertion(tree_paths, box_path);
 
   assert(box_index == BoxIndex(body_paths.boxes.size()));
   body_paths.boxes.emplace_back();
 
-  TreePath box_path = childPath(adder.parent_path, adder.n_children);
-  handlePathInsertion(tree_paths, box_path);
-
   body_paths.boxes[box_index] =
     createBoxItem(box_path, tree_widget, body_state.boxes[box_index]);
+}
 
-  ++adder.n_children;
+
+void
+createLineInTree(
+  TreeWidget &tree_widget,
+  TreePaths &tree_paths,
+  const SceneState &scene_state,
+  BodyIndex body_index,
+  LineIndex line_index
+)
+{
+  TreePaths::Body &body_paths = tree_paths.body(body_index);
+  const SceneState::Body &body_state = scene_state.body(body_index);
+  TreePath line_path = nextPaths(body_index, tree_paths, scene_state).line_path;
+  handlePathInsertion(tree_paths, line_path);
+
+  assert(line_index == LineIndex(body_paths.lines.size()));
+  body_paths.lines.emplace_back();
+
+  body_paths.lines[line_index] =
+    createLineItem(line_path, tree_widget, body_state.lines[line_index]);
 }
 
 
@@ -1396,6 +1442,53 @@ static bool
 
 
 static bool
+setBoxNumericValue(
+  SceneState::Box &box_state,
+  const TreePath &path,
+  NumericValue value,
+  const TreePaths::Box &box_paths
+)
+{
+  if (startsWith(path, box_paths.path)) {
+    if (startsWith(path, box_paths.scale.path)) {
+      return setVectorValue(box_state.scale, path, value, box_paths.scale);
+    }
+    else if (startsWith(path, box_paths.center.path)) {
+      return
+        setVectorValue(box_state.center, path, value, box_paths.center);
+    }
+    else {
+      assert(false); // not implemented
+    }
+  }
+
+  return false;
+}
+
+
+static bool
+setLineNumericValue(
+  SceneState::Line &line_state,
+  const TreePath &path,
+  NumericValue value,
+  const TreePaths::Line &line_paths
+)
+{
+  if (startsWith(path, line_paths.path)) {
+    if (startsWith(path, line_paths.start.path)) {
+      return setVectorValue(line_state.start, path, value, line_paths.start);
+    }
+
+    if (startsWith(path, line_paths.end.path)) {
+      return setVectorValue(line_state.end, path, value, line_paths.end);
+    }
+  }
+
+  return false;
+}
+
+
+static bool
 setBodyNumericValue(
   SceneState::Body &body_state,
   const TreePath &path,
@@ -1418,17 +1511,19 @@ setBodyNumericValue(
       const BoxPaths &box_paths = body_paths.boxes[box_index];
       SceneState::Box &box_state = body_state.boxes[box_index];
 
-      if (startsWith(path, box_paths.path)) {
-        if (startsWith(path, box_paths.scale.path)) {
-          return setVectorValue(box_state.scale, path, value, box_paths.scale);
-        }
-        else if (startsWith(path, box_paths.center.path)) {
-          return
-            setVectorValue(box_state.center, path, value, box_paths.center);
-        }
-        else {
-          assert(false); // not implemented
-        }
+      if (setBoxNumericValue(box_state, path, value, box_paths)) {
+        return true;
+      }
+    }
+
+    LineIndex n_lines = body_state.lines.size();
+
+    for (LineIndex line_index = 0; line_index != n_lines; ++line_index) {
+      const LinePaths &line_paths = body_paths.lines[line_index];
+      SceneState::Line &line_state = body_state.lines[line_index];
+
+      if (setLineNumericValue(line_state, path, value, line_paths)) {
+        return true;
       }
     }
   }

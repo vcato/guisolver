@@ -44,8 +44,10 @@ axis starting at (0,0,0).  We could change the ray origin and direction
 using a body.
 
 Maybe we have a list of rays on a body.
+
+A body can be thought of as three rays with a common origin.
+
+We could have body markers and ray markers, where a ray marker just has
+a step value.
 ---
-Compiling observed_scene.cpp is slow.
-We have to use the eigen transform when when pasting a body preserving global.
----
-A Point uses the Eigen library, but we should be able to remote that.
+Allow adding lines to bodies.

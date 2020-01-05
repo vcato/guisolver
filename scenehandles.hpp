@@ -14,21 +14,22 @@ struct SceneHandles {
   struct DistanceError;
   using TransformHandle = Scene::TransformHandle;
   using GeometryHandle = Scene::GeometryHandle;
+  using LineHandle = Scene::LineHandle;
   using Markers = vector<Optional<Marker>>;
   using DistanceErrors = vector<DistanceError>;
 
   struct Box {
     GeometryHandle handle;
+  };
 
-    Box(GeometryHandle handle)
-    : handle(handle)
-    {
-    }
+  struct Line {
+    LineHandle handle;
   };
 
   struct Body {
     TransformHandle transform_handle;
     vector<Box> boxes;
+    vector<Line> lines;
 
     Body(TransformHandle transform_handle)
     : transform_handle(transform_handle)
@@ -37,7 +38,12 @@ struct SceneHandles {
 
     void addBox(GeometryHandle box_handle)
     {
-      boxes.push_back(box_handle);
+      boxes.push_back(Box{box_handle});
+    }
+
+    void addLine(LineHandle line_handle)
+    {
+      lines.push_back(Line{line_handle});
     }
 
     TransformHandle transformHandle() const { return transform_handle; }

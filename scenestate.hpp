@@ -12,6 +12,7 @@
 
 
 using BoxIndex = int;
+using LineIndex = int;
 
 class SceneState {
   public:
@@ -60,11 +61,17 @@ class SceneState {
       Position center = {0,0,0};
     };
 
+    struct Line {
+      Position start = {0,0,0};
+      Position end = {1,0,0};
+    };
+
     struct Body {
       using Name = String;
       Name name;
       Transform transform;
       vector<Box> boxes;
+      vector<Line> lines;
       TransformSolveFlags solve_flags;
       Optional<BodyIndex> maybe_parent_index;
 
@@ -73,6 +80,13 @@ class SceneState {
         BoxIndex box_index = boxes.size();
         boxes.emplace_back();
         return box_index;
+      }
+
+      LineIndex addLine()
+      {
+        LineIndex line_index = lines.size();
+        lines.emplace_back();
+        return line_index;
       }
 
       Body(const Name &name) : name(name) {}

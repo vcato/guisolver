@@ -147,15 +147,13 @@ struct MainWindowController::Impl {
     return impl(controller).data_member;
   }
 
+  static ObservedScene &observedScene(MainWindowController &controller)
+  {
+    return data(controller).observed_scene;
+  }
+
   static void handleSceneChanging(MainWindowController &);
   static void handleSceneChanged(MainWindowController &);
-
-  static void selectMarker(MarkerIndex marker_index, Data &data)
-  {
-    ObservedScene &observed_scene = data.observed_scene;
-
-    observed_scene.selectMarker(marker_index);
-  }
 
   static void
     handleTreeNumericValueChanged(
@@ -206,6 +204,7 @@ struct MainWindowController::Impl {
   static void addMarkerPressed(MainWindowController &, const TreePath &);
   static void addBodyPressed(MainWindowController &, const TreePath &);
   static void addBoxPressed(MainWindowController &, BodyIndex);
+  static void addLinePressed(MainWindowController &, BodyIndex);
   static void removeBodyPressed(MainWindowController &, BodyIndex);
   static void duplicateBodyPressed(MainWindowController &, BodyIndex);
 
@@ -244,7 +243,6 @@ struct MainWindowController::Impl {
 
   static void cutBodyPressed(MainWindowController &, const TreePath &);
   static void cutMarkerPressed(MainWindowController &, MarkerIndex);
-  static void removeMarker(Data &, MarkerIndex);
 };
 
 
@@ -266,11 +264,10 @@ void
     MainWindowController &controller
   )
 {
-  Data &data = Impl::data(controller);
+  ObservedScene &observed_scene = Impl::observedScene(controller);
   // The mouse button is down.  The scene is being changed, but we don't
   // consider this change complete.
 
-  ObservedScene &observed_scene = data.observed_scene;
   Scene &scene = observed_scene.scene;
   SceneHandles &scene_handles = observed_scene.scene_handles;
   SceneState &state = observed_scene.scene_state;
@@ -323,8 +320,7 @@ void
     MainWindowController &controller
   )
 {
-  Data &data = Impl::data(controller);
-  ObservedScene &observed_scene = data.observed_scene;
+  ObservedScene &observed_scene = observedScene(controller);
   SceneHandles &scene_handles = observed_scene.scene_handles;
   Scene &scene = observed_scene.scene;
   SceneState &state = observed_scene.scene_state;
@@ -414,8 +410,7 @@ MainWindowController::Impl::handleTreeNumericValueChanged(
   NumericValue value
 )
 {
-  Data &data = Impl::data(controller);
-  ObservedScene &observed_scene = data.observed_scene;
+  ObservedScene &observed_scene = observedScene(controller);
   const TreePaths &tree_paths = observed_scene.tree_paths;
   SceneState &state = observed_scene.scene_state;
 
@@ -459,8 +454,7 @@ MainWindowController::Impl::handleTreeStringValueChanged(
   const StringValue &value
 )
 {
-  Data &data = Impl::data(controller);
-  ObservedScene &observed_scene = data.observed_scene;
+  ObservedScene &observed_scene = observedScene(controller);
   const TreePaths &tree_paths = observed_scene.tree_paths;
   SceneState &state = observed_scene.scene_state;
   TreeWidget &tree_widget = observed_scene.tree_widget;
@@ -485,8 +479,7 @@ void
     int value
   )
 {
-  Data &data = Impl::data(controller);
-  ObservedScene &observed_scene = data.observed_scene;
+  ObservedScene &observed_scene = observedScene(controller);
   const TreePaths &tree_paths = observed_scene.tree_paths;
   SceneState &scene_state = observed_scene.scene_state;
 
@@ -502,8 +495,7 @@ void
     const TreePath &
   )
 {
-  Data &data = Impl::data(controller);
-  ObservedScene &observed_scene = data.observed_scene;
+  ObservedScene &observed_scene = observedScene(controller);
   DistanceErrorIndex index = observed_scene.addDistanceError({}, {});
   observed_scene.selectDistanceError(index);
 }
@@ -540,14 +532,14 @@ void
     const TreePath &path
   )
 {
-  Data &data = Impl::data(controller);
-  TreePaths &tree_paths = data.observed_scene.tree_paths;
+  ObservedScene &observed_scene = observedScene(controller);
+  TreePaths &tree_paths = observed_scene.tree_paths;
 
   Optional<BodyIndex> maybe_body_index =
     maybeBodyIndexFromTreePath(path, tree_paths);;
 
-  MarkerIndex marker_index = data.observed_scene.addMarker(maybe_body_index);
-  selectMarker(marker_index, data);
+  MarkerIndex marker_index = observed_scene.addMarker(maybe_body_index);
+  observed_scene.selectMarker(marker_index);
 }
 
 
@@ -557,8 +549,7 @@ MainWindowController::Impl::pasteGlobalPressed(
   const TreePath &path
 )
 {
-  Data &data = Impl::data(controller);
-  ObservedScene &observed_scene = data.observed_scene;
+  ObservedScene &observed_scene = observedScene(controller);
   SceneState &scene_state = observed_scene.scene_state;
 
   Optional<BodyIndex> maybe_new_parent_body_index =
@@ -597,8 +588,7 @@ MainWindowController::Impl::solveAllPressed(
   bool state
 )
 {
-  Data &data = Impl::data(controller);
-  ObservedScene &observed_scene = data.observed_scene;
+  ObservedScene &observed_scene = observedScene(controller);
   SceneState &scene_state = observed_scene.scene_state;
   using ItemType = TreeItemDescription::Type;
 
@@ -624,8 +614,7 @@ MainWindowController::Impl::addBodyPressed(
   const TreePath &parent_path
 )
 {
-  Data &data = Impl::data(controller);
-  ObservedScene &observed_scene = data.observed_scene;
+  ObservedScene &observed_scene = observedScene(controller);
   TreePaths &tree_paths = observed_scene.tree_paths;
 
   Optional<BodyIndex> maybe_parent_body_index =
@@ -642,9 +631,21 @@ MainWindowController::Impl::addBoxPressed(
   BodyIndex body_index
 )
 {
-  ObservedScene &observed_scene = Impl::data(controller).observed_scene;
+  ObservedScene &observed_scene = observedScene(controller);
   BoxIndex box_index = observed_scene.addBoxTo(body_index);
   observed_scene.selectBox(body_index, box_index);
+}
+
+
+void
+MainWindowController::Impl::addLinePressed(
+  MainWindowController &controller, BodyIndex body_index
+)
+{
+  ObservedScene &observed_scene = observedScene(controller);
+  /*LineIndex line_index =*/ observed_scene.addLineTo(body_index);
+  //observed_scene.selectLine(line_index);
+  cerr << "addLinePressed()\n";
 }
 
 
@@ -653,8 +654,7 @@ MainWindowController::Impl::removeBodyPressed(
   MainWindowController &controller, BodyIndex body_index
 )
 {
-  Data &data = Impl::data(controller);
-  data.observed_scene.removeBody(body_index);
+  observedScene(controller).removeBody(body_index);
 }
 
 
@@ -663,8 +663,7 @@ MainWindowController::Impl::duplicateBodyPressed(
   MainWindowController &controller, BodyIndex body_index
 )
 {
-  Data &data = Impl::data(controller);
-  ObservedScene &observed_scene = data.observed_scene;
+  ObservedScene &observed_scene = observedScene(controller);
   BodyIndex new_body_index = observed_scene.duplicateBody(body_index);
   observed_scene.selectBody(new_body_index);
 }
@@ -675,8 +674,7 @@ MainWindowController::Impl::duplicateBodyWithDistanceErrorsPressed(
   MainWindowController &controller, BodyIndex body_index
 )
 {
-  Data &data = Impl::data(controller);
-  ObservedScene &observed_scene = data.observed_scene;
+  ObservedScene &observed_scene = observedScene(controller);
 
   BodyIndex new_body_index =
     observed_scene.duplicateBodyWithDistanceErrors(body_index);
@@ -690,8 +688,7 @@ MainWindowController::Impl::duplicateMarkerWithDistanceErrorPressed(
   MainWindowController &controller, MarkerIndex marker_index
 )
 {
-  Data &data = Impl::data(controller);
-  ObservedScene &observed_scene = data.observed_scene;
+  ObservedScene &observed_scene = observedScene(controller);
 
   BodyIndex new_marker_index =
     observed_scene.duplicateMarkerWithDistanceError(marker_index);
@@ -706,8 +703,7 @@ void
     int distance_error_index
   )
 {
-  Data &data = Impl::data(controller);
-  ObservedScene &observed_scene = data.observed_scene;
+  ObservedScene &observed_scene = observedScene(controller);
   SceneState &scene_state = observed_scene.scene_state;
   Scene &scene = observed_scene.scene;
   SceneHandles &scene_handles = observed_scene.scene_handles;
@@ -733,23 +729,16 @@ void
 
 
 void
-MainWindowController::Impl::removeMarker(Data &data, MarkerIndex marker_index)
-{
-  data.observed_scene.removeMarker(marker_index);
-}
-
-
-void
   MainWindowController::Impl::removeMarkerPressed(
     MainWindowController &controller,
     MarkerIndex marker_index
   )
 {
-  Data &data = Impl::data(controller);
-  TreePaths &tree_paths = data.observed_scene.tree_paths;
-  TreeWidget &tree_widget = data.observed_scene.tree_widget;
-  SceneState &scene_state = data.observed_scene.scene_state;
-  removeMarker(data, marker_index);
+  ObservedScene &observed_scene = observedScene(controller);
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  TreeWidget &tree_widget = observed_scene.tree_widget;
+  SceneState &scene_state = observed_scene.scene_state;
+  observed_scene.removeMarker( marker_index);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
 }
 
@@ -761,7 +750,7 @@ MainWindowController::Impl::removeBoxPressed(
   BoxIndex box_index
 )
 {
-  Impl::data(controller).observed_scene.removeBox(body_index, box_index);
+  observedScene(controller).removeBox(body_index, box_index);
 }
 
 
@@ -771,8 +760,7 @@ void
     MarkerIndex source_marker_index
   )
 {
-  Data &data = Impl::data(controller);
-  ObservedScene &observed_scene = data.observed_scene;
+  ObservedScene &observed_scene = observedScene(controller);
   TreePaths &tree_paths = observed_scene.tree_paths;
   TreeWidget &tree_widget = observed_scene.tree_widget;
   SceneState &scene_state = observed_scene.scene_state;
@@ -781,7 +769,7 @@ void
     observed_scene.duplicateMarker(source_marker_index);
 
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
-  selectMarker(new_marker_index, data);
+  observed_scene.selectMarker(new_marker_index);
 }
 
 
@@ -791,8 +779,7 @@ MainWindowController::Impl::cutMarkerPressed(
   MarkerIndex marker_index
 )
 {
-  Data &data = Impl::data(controller);
-  data.observed_scene.cutMarker(marker_index);
+  observedScene(controller).cutMarker(marker_index);
 }
 
 
@@ -802,10 +789,10 @@ void
     const TreePath &path
   )
 {
-  Data &data = Impl::data(controller);
-  TreePaths &tree_paths = data.observed_scene.tree_paths;
+  ObservedScene &observed_scene = observedScene(controller);
+  TreePaths &tree_paths = observed_scene.tree_paths;
   BodyIndex body_index = bodyIndexFromTreePath(path, tree_paths);
-  data.observed_scene.cutBody(body_index);
+  observed_scene.cutBody(body_index);
 }
 
 
@@ -864,8 +851,7 @@ void
     const TreePath &path
   )
 {
-  Data &data = Impl::data(controller);
-  ObservedScene &observed_scene = data.observed_scene;
+  ObservedScene &observed_scene = observedScene(controller);
   SceneState &state = observed_scene.scene_state;
   TreePaths &tree_paths = observed_scene.tree_paths;
   flipSolveState(state, path, tree_paths);
@@ -880,9 +866,8 @@ TreeWidget::MenuItems
     const TreePath &path
   )
 {
-  Data &data = Impl::data(controller);
+  ObservedScene &observed_scene = observedScene(controller);
   TreeWidget::MenuItems menu_items;
-  ObservedScene &observed_scene = data.observed_scene;
   const TreePaths &tree_paths = observed_scene.tree_paths;
   const SceneState &scene_state = observed_scene.scene_state;
   TreeItemDescription item = ObservedScene::describePath(path, tree_paths);
@@ -966,10 +951,16 @@ TreeWidget::MenuItems
         Impl::addBoxPressed(controller, body_index);
       };
 
+    auto add_line_function =
+      [&controller,body_index]{
+        Impl::addLinePressed(controller, body_index);
+      };
+
     appendTo(menu_items,{
       {"Add Marker", add_marker_function},
       {"Add Body", add_body_function},
       {"Add Box", add_box_function},
+      {"Add Line", add_line_function},
       {"Cut", cut_body_function },
       {"Remove", remove_body_function },
       {"Duplicate", duplicate_body_function },
@@ -1078,12 +1069,12 @@ MainWindowController::MainWindowController(
 )
 : impl_ptr(new Impl(scene, tree_widget))
 {
-  Impl::Data &data = Impl::data(*this);
+  ObservedScene &observed_scene = Impl::observedScene(*this);
   scene.changed_callback = [&]{ Impl::handleSceneChanged(*this); };
   scene.changing_callback = [&]{ Impl::handleSceneChanging(*this); };
 
   scene.selection_changed_callback =
-    [&data]{ data.observed_scene.handleSceneSelectionChanged(); };
+    [&observed_scene]{ observed_scene.handleSceneSelectionChanged(); };
 
   tree_widget.spin_box_item_value_changed_callback =
     [this](const TreePath &path, NumericValue value){
@@ -1096,8 +1087,8 @@ MainWindowController::MainWindowController(
     };
 
   tree_widget.selection_changed_callback =
-    [&data](){
-      data.observed_scene.handleTreeSelectionChanged();
+    [&observed_scene](){
+      observed_scene.handleTreeSelectionChanged();
     };
 
   tree_widget.context_menu_items_callback =
@@ -1117,8 +1108,7 @@ MainWindowController::~MainWindowController() = default;
 
 void MainWindowController::replaceSceneStateWith(const SceneState &new_state)
 {
-  Impl::Data &data = Impl::data(*this);
-  ObservedScene &observed_scene = data.observed_scene;
+  ObservedScene &observed_scene = Impl::observedScene(*this);
   SceneState solved_new_state = new_state;
   solveScene(solved_new_state);
   observed_scene.replaceSceneStateWith(solved_new_state);
@@ -1127,6 +1117,5 @@ void MainWindowController::replaceSceneStateWith(const SceneState &new_state)
 
 const SceneState &MainWindowController::sceneState()
 {
-  Impl::Data &data = Impl::data(*this);
-  return data.observed_scene.scene_state;
+  return Impl::observedScene(*this).scene_state;
 }

@@ -104,12 +104,19 @@ struct TreePaths {
     }
   };
 
+  struct Line {
+    TreePath path;
+    XYZ start;
+    XYZ end;
+  };
+
   struct Body {
     TreePath path;
     TreePath name;
     Translation translation;
     Rotation rotation;
     vector<Box> boxes;
+    vector<Line> lines;
 
     Body()
     {

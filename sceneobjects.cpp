@@ -367,11 +367,39 @@ createMarkerInScene(
 
 
 static void
-  updateBodyInScene(
-    Scene &scene,
-    const SceneState::Body &body_state,
-    const SceneHandles::Body &body_handles
-  )
+updateBoxInScene(
+  Scene &scene,
+  const SceneState::Box &box_state,
+  const SceneHandles::Box &box_handles
+)
+{
+  scene.setGeometryScale(box_handles.handle, vec3(box_state.scale));
+
+  scene.setGeometryCenter(
+    box_handles.handle,
+    makeScenePointFromPoint(makePointFromPositionState(box_state.center))
+  );
+}
+
+
+static void
+updateLineInScene(
+  Scene &scene,
+  const SceneState::Line &line_state,
+  const SceneHandles::Line &line_handles
+)
+{
+  scene.setStartPoint(line_handles.handle, vec3(line_state.start));
+  scene.setEndPoint(line_handles.handle, vec3(line_state.end));
+}
+
+
+static void
+updateBodyInScene(
+  Scene &scene,
+  const SceneState::Body &body_state,
+  const SceneHandles::Body &body_handles
+)
 {
   setTransform(
     body_handles.transformHandle(),
@@ -380,17 +408,20 @@ static void
   );
 
   assert(body_handles.boxes.size() == body_state.boxes.size());
-  size_t n_boxes = body_state.boxes.size();
+  BoxIndex n_boxes = body_state.boxes.size();
 
-  for (size_t box_index = 0; box_index != n_boxes; ++box_index) {
+  for (BoxIndex box_index = 0; box_index != n_boxes; ++box_index) {
     const SceneHandles::Box &box_handles = body_handles.boxes[box_index];
     const SceneState::Box &box_state = body_state.boxes[box_index];
-    scene.setGeometryScale(box_handles.handle, vec3(box_state.scale));
+    updateBoxInScene(scene, box_state, box_handles);
+  }
 
-    scene.setGeometryCenter(
-      box_handles.handle,
-      makeScenePointFromPoint(makePointFromPositionState(box_state.center))
-    );
+  LineIndex n_lines = body_state.lines.size();
+
+  for (LineIndex line_index = 0; line_index != n_lines; ++line_index) {
+    const SceneHandles::Line &line_handles = body_handles.lines[line_index];
+    const SceneState::Line &line_state = body_state.lines[line_index];
+    updateLineInScene(scene, line_state, line_handles);
   }
 }
 
@@ -408,6 +439,29 @@ createBoxInScene(
   GeometryHandle geometry_handle = scene.createBox(transform_handle);
   assert(BoxIndex(body_handles.boxes.size()) == box_index);
   body_handles.addBox(geometry_handle);
+}
+
+
+void
+createLineInScene(
+  Scene &scene,
+  SceneHandles &scene_handles,
+  BodyIndex body_index,
+  LineIndex line_index,
+  const SceneState &scene_state
+)
+{
+  SceneHandles::Body &body_handles = *scene_handles.bodies[body_index];
+  TransformHandle transform_handle = body_handles.transform_handle;
+  LineHandle line_handle = scene.createLine(transform_handle);
+  assert(LineIndex(body_handles.lines.size()) == line_index);
+  body_handles.addLine(line_handle);
+
+  updateLineInScene(
+    scene,
+    scene_state.body(body_index).lines[line_index],
+    scene_handles.body(body_index).lines[line_index]
+  );
 }
 
 

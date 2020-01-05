@@ -56,6 +56,7 @@ struct ObservedScene {
 
   BodyIndex addBody(Optional<BodyIndex> maybe_parent_index);
   BoxIndex addBoxTo(BodyIndex);
+  LineIndex addLineTo(BodyIndex);
   MarkerIndex addMarker(Optional<BodyIndex>);
 
   DistanceErrorIndex
@@ -102,17 +103,7 @@ struct ObservedScene {
   createBodyInTree(BodyIndex body_index, ObservedScene &observed_scene);
 
   static void
-  createBoxInTree(
-    BodyIndex body_index,
-    BoxIndex box_index,
-    ObservedScene &observed_scene
-  );
-
-  static void
   createBodyInScene(BodyIndex body_index, ObservedScene &observed_scene);
-
-  static void
-  createBoxInScene(BodyIndex, BoxIndex, ObservedScene &observed_scene);
 
   static void attachProperDraggerToSelectedObject(ObservedScene &);
 

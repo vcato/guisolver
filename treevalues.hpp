@@ -51,6 +51,15 @@ extern void
   );
 
 extern void
+  createLineInTree(
+    TreeWidget &tree_widget,
+    TreePaths &tree_paths,
+    const SceneState &scene_state,
+    BodyIndex body_index,
+    LineIndex line_index
+  );
+
+extern void
   createBodyItemsInTree(
     BodyIndex, TreeWidget &, TreePaths &, const SceneState &
   );

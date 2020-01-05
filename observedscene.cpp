@@ -77,6 +77,18 @@ forEachSceneObjectPath(
         body_paths.boxes[box_index].path
       );
     }
+
+    size_t n_lines = body_handles.lines.size();
+
+    for (size_t line_index = 0; line_index != n_lines; ++line_index) {
+      f(
+        {
+          body_handles.transformHandle(),
+          body_handles.lines[line_index].handle,
+        },
+        body_paths.lines[line_index].path
+      );
+    }
   }
 
   for (auto i : indicesOf(tree_paths.distance_errors)) {
@@ -582,20 +594,6 @@ ObservedScene::createBodyInTree(
 
 
 void
-ObservedScene::createBoxInTree(
-  BodyIndex body_index,
-  BoxIndex box_index,
-  ObservedScene &observed_scene
-)
-{
-  TreeWidget &tree_widget = observed_scene.tree_widget;
-  TreePaths &tree_paths = observed_scene.tree_paths;
-  SceneState &scene_state = observed_scene.scene_state;
-  ::createBoxInTree(tree_widget, tree_paths, scene_state, body_index, box_index);
-}
-
-
-void
 ObservedScene::createBodyInScene(
   BodyIndex body_index,
   ObservedScene &observed_scene
@@ -605,17 +603,6 @@ ObservedScene::createBodyInScene(
   SceneState &scene_state = observed_scene.scene_state;
   Scene &scene = observed_scene.scene;
   ::createBodyInScene(scene, scene_handles, scene_state, body_index);
-}
-
-
-void
-ObservedScene::createBoxInScene(
-  BodyIndex body_index, BoxIndex box_index, ObservedScene &observed_scene
-)
-{
-  Scene &scene = observed_scene.scene;
-  SceneHandles &scene_handles = observed_scene.scene_handles;
-  ::createBoxInScene(scene, scene_handles, body_index, box_index);
 }
 
 
@@ -635,9 +622,29 @@ BodyIndex ObservedScene::addBody(Optional<BodyIndex> maybe_parent_body_index)
 BoxIndex ObservedScene::addBoxTo(BodyIndex body_index)
 {
   BoxIndex box_index = scene_state.body(body_index).addBox();
-  ObservedScene::createBoxInScene(body_index, box_index, *this);
-  ObservedScene::createBoxInTree(body_index, box_index, *this);
+  ::createBoxInScene(scene, scene_handles, body_index, box_index);
+
+  ::createBoxInTree(
+    tree_widget, tree_paths, scene_state, body_index, box_index
+  );
+
   return box_index;
+}
+
+
+BoxIndex ObservedScene::addLineTo(BodyIndex body_index)
+{
+  LineIndex line_index = scene_state.body(body_index).addLine();
+
+  ::createLineInScene(
+    scene, scene_handles, body_index, line_index, scene_state
+  );
+
+  ::createLineInTree(
+    tree_widget, tree_paths, scene_state, body_index, line_index
+  );
+
+  return line_index;
 }
 
 
