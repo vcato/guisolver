@@ -174,6 +174,21 @@ static void testSelectingMarkerInTheScene()
 }
 
 
+static void testCutAndPaste()
+{
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+  BodyIndex body_index = observed_scene.addBody(/*parent*/{});
+  /*LineIndex line_index =*/ observed_scene.addLineTo(body_index);
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  TreePaths old_paths = tree_paths;
+  observed_scene.cutBody(body_index);
+  observed_scene.pasteBodyGlobal({});
+  tester.observed_scene.selectBody(body_index);
+  checkTree(tester);
+}
+
+
 int main()
 {
   testTransferringABody1();
@@ -183,4 +198,5 @@ int main()
   testUserSelectingABodyInTheTree();
   testSelectingSceneInTheTree();
   testSelectingMarkerInTheScene();
+  testCutAndPaste();
 }

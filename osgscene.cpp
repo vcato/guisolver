@@ -182,6 +182,7 @@ class OSGScene::SelectionHandler : public OSGSelectionHandler {
     void updateDraggerPosition();
     void changeSelectedGeodeTo(osg::Geode *);
     void changeSelectedTransformTo(osg::MatrixTransform *);
+    void clearSelection();
     void attachDragger(DraggerType);
     osg::Geode *selectedGeodePtr() const { return _selected_geode_ptr; }
 
@@ -212,7 +213,6 @@ class OSGScene::SelectionHandler : public OSGSelectionHandler {
     void attachRotateDraggerToGeode(osg::Geode &);
     void attachRotateDraggerToTransform(osg::MatrixTransform &);
     void attachScaleDraggerTo(osg::Geode &);
-    void clearSelection();
 };
 
 
@@ -1679,6 +1679,14 @@ void OSGScene::Impl::destroyIndex(size_t index, OSGScene &scene)
 
 void OSGScene::destroyGeometry(GeometryHandle handle)
 {
+  Optional<GeometryHandle> maybe_selected_geometry = selectedGeometry();
+
+  if (maybe_selected_geometry) {
+    if (maybe_selected_geometry->index == handle.index) {
+      selectionHandler().clearSelection();
+    }
+  }
+
   size_t geometry_index = handle.index;
   Impl::destroyIndex(geometry_index, *this);
 }
@@ -1686,6 +1694,14 @@ void OSGScene::destroyGeometry(GeometryHandle handle)
 
 void OSGScene::destroyTransform(TransformHandle handle)
 {
+  Optional<TransformHandle> maybe_selected_transform = selectedTransform();
+
+  if (maybe_selected_transform) {
+    if (maybe_selected_transform->index == handle.index) {
+      selectionHandler().clearSelection();
+    }
+  }
+
   Impl::destroyIndex(handle.index, *this);
 }
 

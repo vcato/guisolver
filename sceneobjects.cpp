@@ -265,6 +265,13 @@ destroyBoxObjects(const SceneHandles::Box &box_handles, Scene &scene)
 
 
 static void
+destroyLineObjects(const SceneHandles::Line &line_handles, Scene &scene)
+{
+  scene.destroyGeometry(line_handles.handle);
+}
+
+
+static void
 destroyBodyObjects(
   BodyIndex body_index, Scene &scene, const SceneHandles &scene_handles
 )
@@ -276,6 +283,14 @@ destroyBodyObjects(
 
     for (size_t box_index = 0; box_index != n_boxes; ++box_index) {
       destroyBoxObjects(body_handles.boxes[box_index], scene);
+    }
+  }
+
+  {
+    size_t n_lines = body_handles.lines.size();
+
+    for (size_t line_index = 0; line_index != n_lines; ++line_index) {
+      destroyLineObjects(body_handles.lines[line_index], scene);
     }
   }
 
@@ -470,10 +485,10 @@ createBodyObjectInScene(
   BodyIndex body_index,
   Scene &scene,
   SceneHandles &scene_handles,
-  const SceneState &state
+  const SceneState &scene_state
 )
 {
-  const SceneState::Body &body_state = state.body(body_index);
+  const SceneState::Body &body_state = scene_state.body(body_index);
   assert(!scene_handles.bodies[body_index].hasValue());
   Optional<TransformHandle> maybe_parent_transform;
 
@@ -497,6 +512,12 @@ createBodyObjectInScene(
 
   for (size_t i=0; i!=n_boxes; ++i) {
     createBoxInScene(scene, scene_handles, body_index, i);
+  }
+
+  size_t n_lines = body_state.lines.size();
+
+  for (size_t i=0; i!=n_lines; ++i) {
+    createLineInScene(scene, scene_handles, body_index, i, scene_state);
   }
 
   updateBodyInScene(scene, body_state, *scene_handles.bodies[body_index]);

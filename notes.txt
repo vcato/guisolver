@@ -49,5 +49,3 @@ A body can be thought of as three rays with a common origin.
 
 We could have body markers and ray markers, where a ray marker just has
 a step value.
----
-Allow adding lines to bodies.

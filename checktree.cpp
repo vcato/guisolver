@@ -5,6 +5,7 @@
 using std::cerr;
 using std::string;
 using BoxPaths = TreePaths::Box;
+using LinePaths = TreePaths::Line;
 
 
 static void checkEqual(size_t a,size_t b)
@@ -103,6 +104,12 @@ checkEqual(const TreePaths::Body &a,const TreePaths::Body &b)
 
 
 static void checkEqual(const BoxPaths &a, const BoxPaths &b)
+{
+  checkMembersEqual(a,b);
+}
+
+
+static void checkEqual(const LinePaths &a, const LinePaths &b)
 {
   checkMembersEqual(a,b);
 }

@@ -98,16 +98,23 @@ struct TreePaths {
       f(&Box::center);
     }
 
-    bool operator==(const Box &arg) const
-    {
-      return isEqual(*this, arg);
-    }
+    bool operator==(const Box &arg) const { return isEqual(*this, arg); }
   };
 
   struct Line {
     TreePath path;
     XYZ start;
     XYZ end;
+
+    template <typename F>
+    static void forEachMember(const F &f)
+    {
+      f(&Line::path);
+      f(&Line::start);
+      f(&Line::end);
+    }
+
+    bool operator==(const Line &arg) const { return isEqual(*this, arg); }
   };
 
   struct Body {
@@ -130,6 +137,7 @@ struct TreePaths {
       f(&Body::translation);
       f(&Body::rotation);
       f(&Body::boxes);
+      f(&Body::lines);
     }
 
     bool operator==(const Body &arg) const

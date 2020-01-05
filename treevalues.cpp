@@ -574,8 +574,11 @@ nextPaths(
   TreeItemIndex index = 0;
 
   if (maybe_body_index) {
-    int n_boxes = tree_paths.body(*maybe_body_index).boxes.size();
     index += 3; // 3 for name, translation, rotation
+  }
+
+  if (maybe_body_index) {
+    int n_boxes = tree_paths.body(*maybe_body_index).boxes.size();
     index += n_boxes;
   }
   else {
@@ -587,12 +590,12 @@ nextPaths(
   if (maybe_body_index) {
     int n_lines = tree_paths.body(*maybe_body_index).lines.size();
     index += n_lines;
-    result.line_path = childPath(body_path, index);
   }
   else {
     // Can't add lines to the scene
   }
 
+  result.line_path = childPath(body_path, index);
   index += n_markers;
   result.marker_path = childPath(body_path, index);
   index += n_bodies;
@@ -876,6 +879,18 @@ createBodyItem(
 
     body_paths.boxes[i] =
       createBoxItem(box_path, tree_widget, body_state.boxes[i]);
+
+    ++adder.n_children;
+  }
+
+  size_t n_lines = body_state.lines.size();
+  body_paths.lines.resize(n_lines);
+
+  for (size_t i=0; i!=n_lines; ++i) {
+    TreePath line_path = childPath(adder.parent_path, adder.n_children);
+
+    body_paths.lines[i] =
+      createLineItem(line_path, tree_widget, body_state.lines[i]);
 
     ++adder.n_children;
   }
