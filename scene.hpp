@@ -2,7 +2,6 @@
 #define SCENE_HPP_
 
 #include <functional>
-#include "point.hpp"
 #include "coordinateaxes.hpp"
 #include "optional.hpp"
 

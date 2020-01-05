@@ -5,7 +5,6 @@
 #include "markerindex.hpp"
 #include "bodyindex.hpp"
 #include "distanceerrorindex.hpp"
-#include "vector.hpp"
 #include "optional.hpp"
 #include "removeindexfrom.hpp"
 #include "indicesof.hpp"

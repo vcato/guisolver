@@ -1,5 +1,7 @@
 #include "eigenconv.hpp"
 #include "scene.hpp"
+#include "point.hpp"
+
 
 inline Point
   makePointFromScenePoint(const Scene::Point &p)
