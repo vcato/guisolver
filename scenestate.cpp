@@ -3,6 +3,7 @@
 #include <sstream>
 #include "contains.hpp"
 #include "indicesof.hpp"
+#include "removeindexfrom.hpp"
 
 using std::ostringstream;
 using std::cerr;
@@ -228,4 +229,26 @@ Optional<BodyIndex>
   }
 
   return {};
+}
+
+
+void SceneState::removeMarker(MarkerIndex index_to_remove)
+{
+  removeIndexFrom(_markers, index_to_remove);
+
+  for (auto &distance_error : distance_errors) {
+    _handleMarkerRemoved(
+      distance_error.optional_start_marker_index, index_to_remove
+    );
+
+    _handleMarkerRemoved(
+      distance_error.optional_end_marker_index, index_to_remove
+    );
+  }
+}
+
+
+void SceneState::removeDistanceError(int index)
+{
+  removeIndexFrom(distance_errors, index);
 }

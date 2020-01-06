@@ -1,12 +1,7 @@
 #include "defaultscenestate.hpp"
 
-#include "scene.hpp"
-#include "maketransform.hpp"
-#include "contains.hpp"
-#include "rotationvector.hpp"
-#include "transformstate.hpp"
-
 using std::ostringstream;
+using std::cerr;
 
 static void
   createDistanceError(
@@ -52,23 +47,6 @@ static void
 }
 
 
-static Point defaultBoxTranslation()
-{
-  return {0,1,0};
-}
-
-
-static CoordinateAxes defaultBoxCoordinateAxes()
-{
-  return
-    CoordinateAxes{
-      Scene::Vector(0,0,-1),
-      Scene::Vector(0,1, 0),
-      Scene::Vector(1,0, 0)
-    };
-}
-
-
 SceneState defaultSceneState()
 {
   SceneState result;
@@ -78,10 +56,8 @@ SceneState defaultSceneState()
   setAll(result.body(body_index).solve_flags, true);
   result.body(body_index).boxes[0].scale = scale;
 
-  Transform default_box_transform =
-    makeTransform(defaultBoxCoordinateAxes(), defaultBoxTranslation());
-
-  result.body(body_index).transform = transformState(default_box_transform);
+  result.body(body_index).transform.rotation = {0, 90, 0};
+  result.body(body_index).transform.translation = {0, 1, 0};
 
   createLocalMarker(result,  {1,1,0}, body_index);
   createLocalMarker(result,  {1,1,1}, body_index);

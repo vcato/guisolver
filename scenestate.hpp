@@ -6,9 +6,7 @@
 #include "bodyindex.hpp"
 #include "distanceerrorindex.hpp"
 #include "optional.hpp"
-#include "removeindexfrom.hpp"
 #include "indicesof.hpp"
-#include "vectorio.hpp"
 
 
 using BoxIndex = int;
@@ -132,20 +130,7 @@ class SceneState {
       return createMarker("");
     }
 
-    void removeMarker(MarkerIndex index_to_remove)
-    {
-      removeIndexFrom(_markers, index_to_remove);
-
-      for (auto &distance_error : distance_errors) {
-        _handleMarkerRemoved(
-          distance_error.optional_start_marker_index, index_to_remove
-        );
-
-        _handleMarkerRemoved(
-          distance_error.optional_end_marker_index, index_to_remove
-        );
-      }
-    }
+    void removeMarker(MarkerIndex index_to_remove);
 
     bool bodyHasChildren(BodyIndex body_index) const;
 
@@ -158,10 +143,7 @@ class SceneState {
       return index;
     }
 
-    void removeDistanceError(int index)
-    {
-      removeIndexFrom(distance_errors, index);
-    }
+    void removeDistanceError(int index);
 
   private:
     Markers _markers;
@@ -236,47 +218,12 @@ addMarkersOnBodyTo(
 }
 
 
-template <typename Index, typename Function>
-void removeIndices(vector<Index> &indices, const Function &remove_function)
-{
-  size_t n = indices.size();
-
-  for (size_t i=0; i!=n; ++i) {
-    remove_function(indices[i]);
-
-    for (size_t j=i+1; j!=n; ++j) {
-      if (indices[j] > indices[i]) {
-        --indices[j];
-      }
-    }
-  }
-}
-
-
 inline vector<MarkerIndex>
 markersOnBody(BodyIndex body_index, const SceneState &scene_state)
 {
   vector<MarkerIndex> indices;
   addMarkersOnBodyTo(indices, body_index, scene_state);
   return indices;
-}
-
-
-template <typename Visitor>
-void
-removeMarkersOnBody(
-  BodyIndex body_index,
-  SceneState &scene_state,
-  const Visitor &visitor
-)
-{
-  vector<MarkerIndex> indices_of_markers_to_remove =
-    markersOnBody(body_index, scene_state);
-
-  removeIndices(indices_of_markers_to_remove, [&](MarkerIndex i){
-    visitor.visitMarker(i);
-    scene_state.removeMarker(i);
-  });
 }
 
 
@@ -354,25 +301,6 @@ forEachBranchIndexInPreOrder(
       visitor.visitMarker(marker_index);
     }
   }
-}
-
-
-template <typename Visitor>
-static void
-removeBodyFromSceneState(
-  BodyIndex body_index,
-  SceneState &scene_state,
-  const Visitor &visitor
-)
-{
-  vector<BodyIndex> body_indices_to_remove;
-  postOrderTraverseBodyBranch(body_index, scene_state, body_indices_to_remove);
-
-  removeIndices(body_indices_to_remove, [&](BodyIndex i){
-    removeMarkersOnBody(i, scene_state, visitor);
-    visitor.visitBody(i);
-    scene_state.removeBody(i);
-  });
 }
 
 

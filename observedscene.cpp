@@ -6,10 +6,66 @@
 #include "sceneobjects.hpp"
 #include "sceneerror.hpp"
 #include "scenestatetransform.hpp"
+#include "removeindexfrom.hpp"
 
 using TransformHandle = Scene::TransformHandle;
 using GeometryHandle = Scene::GeometryHandle;
 using std::cerr;
+
+
+template <typename Index, typename Function>
+static void
+removeIndices(vector<Index> &indices, const Function &remove_function)
+{
+  size_t n = indices.size();
+
+  for (size_t i=0; i!=n; ++i) {
+    remove_function(indices[i]);
+
+    for (size_t j=i+1; j!=n; ++j) {
+      if (indices[j] > indices[i]) {
+        --indices[j];
+      }
+    }
+  }
+}
+
+
+template <typename Visitor>
+static void
+removeBodyFromSceneState(
+  BodyIndex body_index,
+  SceneState &scene_state,
+  const Visitor &visitor
+)
+{
+  vector<BodyIndex> body_indices_to_remove;
+  postOrderTraverseBodyBranch(body_index, scene_state, body_indices_to_remove);
+
+  removeIndices(body_indices_to_remove, [&](BodyIndex i){
+    removeMarkersOnBody(i, scene_state, visitor);
+    visitor.visitBody(i);
+    scene_state.removeBody(i);
+  });
+}
+
+
+template <typename Visitor>
+static void
+removeMarkersOnBody(
+  BodyIndex body_index,
+  SceneState &scene_state,
+  const Visitor &visitor
+)
+{
+  vector<MarkerIndex> indices_of_markers_to_remove =
+    markersOnBody(body_index, scene_state);
+
+  removeIndices(indices_of_markers_to_remove, [&](MarkerIndex i){
+    visitor.visitMarker(i);
+    scene_state.removeMarker(i);
+  });
+}
 
 
 namespace {
