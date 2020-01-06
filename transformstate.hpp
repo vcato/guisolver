@@ -14,7 +14,7 @@ inline SceneState::XYZ xyzState(const Point &p)
 }
 
 
-inline SceneState::XYZ xyzState(const Vec3 &v)
+inline SceneState::XYZ xyzStateFromVec3(const Vec3 &v)
 {
   return {v.x, v.y, v.z};
 }
@@ -22,7 +22,9 @@ inline SceneState::XYZ xyzState(const Vec3 &v)
 
 inline TransformState transformState(const Transform &t)
 {
-  SceneState::XYZ rotation_state = xyzState(rotationVectorDeg(t.rotation()));
+  SceneState::XYZ rotation_state =
+    xyzStateFromVec3(rotationVectorDeg(t.rotation()));
+
   SceneState::XYZ translation_state = xyzState(t.translation());
   return {translation_state, rotation_state};
 }
@@ -76,19 +78,6 @@ inline Vec3 rotationValuesDeg(const RotationState &arg)
 inline Vec3 rotationValuesDeg(const TransformState &transform_state)
 {
   return vec3(transform_state.rotation);
-}
-
-
-inline void
-  setTranslationValues(TransformState &result, const Vec3 &translation)
-{
-  result.translation = xyzState(translation);
-}
-
-
-inline void setRotationValuesDeg(TransformState &result,const Vec3 &rotation)
-{
-  result.rotation = xyzState(rotation);
 }
 
 

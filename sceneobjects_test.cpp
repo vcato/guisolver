@@ -32,7 +32,7 @@ int main()
   state.body(parent_index).addBox();
   BodyIndex child_index = state.createBody(parent_index);
   state.body(child_index).addBox();
-  state.body(child_index).boxes[0].center = xyzState(center);
+  state.body(child_index).boxes[0].center = xyzStateFromVec3(center);
   SceneHandles scene_handles = createSceneObjects(state, scene);
   assert(sceneGeometryCenter(child_index, scene, scene_handles) == center);
   destroySceneObjects(scene, state, scene_handles);

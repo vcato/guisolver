@@ -1,8 +1,5 @@
 #include "scenestatetaggedvalue.hpp"
 
-#include "vec3.hpp"
-#include "transformstate.hpp"
-#include "positionstate.hpp"
 #include "indicesof.hpp"
 #include "contains.hpp"
 
@@ -33,7 +30,7 @@ static bool
 }
 
 
-static Vec3 makeVec3FromTaggedValue(const TaggedValue &tagged_value)
+static SceneState::XYZ xyzStateFromTaggedValue(const TaggedValue &tagged_value)
 {
   NumericValue x = numericValueOr(tagged_value, "x", 0);
   NumericValue y = numericValueOr(tagged_value, "y", 0);
@@ -60,11 +57,8 @@ makeTransformFromTaggedValue(const TaggedValue &tagged_value)
     assert(false);
   }
 
-  Vec3 translation = makeVec3FromTaggedValue(*translation_ptr);
-  Vec3 rotation = makeVec3FromTaggedValue(*rotation_ptr);
-
-  setTranslationValues(result, translation);
-  setRotationValuesDeg(result, rotation);
+  result.translation = xyzStateFromTaggedValue(*translation_ptr);
+  result.rotation = xyzStateFromTaggedValue(*rotation_ptr);
 
   return result;
 }
@@ -124,7 +118,7 @@ static SceneState::TransformSolveFlags
 
 
 static SceneState::XYZ
-  xyzValueOr(const TaggedValue &tv, const Vec3 &default_value)
+  xyzValueOr(const TaggedValue &tv, const SceneState::XYZ &default_value)
 {
   SceneState::XYZ result;
   result.x = numericValueOr(tv, "x", default_value.x);
@@ -189,7 +183,7 @@ createMarkerFromTaggedValue(
 
   if (position_ptr) {
     scene_state.marker(marker_index).position =
-      makePositionStateFromPoint(eigenVector3f(makeVec3FromTaggedValue(*position_ptr)));
+      xyzStateFromTaggedValue(*position_ptr);
   }
 }
 
@@ -219,7 +213,7 @@ static SceneState::XYZ
 xyzValueOr(
   const TaggedValue &tagged_value,
   const string &tag,
-  const Vec3 &default_value
+  const SceneState::XYZ &default_value
 )
 {
   const TaggedValue *child_ptr = findChild(tagged_value, tag);
@@ -240,7 +234,7 @@ fillBoxStateFromTaggedValue(
 {
   {
     const TaggedValue *scale_ptr = findChild(box_tagged_value, "scale");
-    const Vec3 default_scale = {1,1,1};
+    const SceneState::XYZ default_scale = {1,1,1};
 
     if (scale_ptr) {
       box_state.scale = xyzValueOr(*scale_ptr, default_scale);
@@ -558,32 +552,22 @@ static void
 static void
   createXYZChildren(
     TaggedValue &parent,
-    const Vec3 &value,
+    const SceneState::XYZ &xyz,
     const SceneState::XYZSolveFlags *xyz_flags_ptr = 0
   )
 {
   using Flags = SceneState::XYZSolveFlags;
-  create2(parent, "x", value.x, maybeSolveFlag(xyz_flags_ptr, &Flags::x));
-  create2(parent, "y", value.y, maybeSolveFlag(xyz_flags_ptr, &Flags::y));
-  create2(parent, "z", value.z, maybeSolveFlag(xyz_flags_ptr, &Flags::z));
-}
-
-
-static void
-  createXYZChildren(
-    TaggedValue &parent,
-    const SceneState::XYZ &xyz
-  )
-{
-  createXYZChildren(parent, vec3(xyz));
+  create2(parent, "x", xyz.x, maybeSolveFlag(xyz_flags_ptr, &Flags::x));
+  create2(parent, "y", xyz.y, maybeSolveFlag(xyz_flags_ptr, &Flags::y));
+  create2(parent, "z", xyz.z, maybeSolveFlag(xyz_flags_ptr, &Flags::z));
 }
 
 
 static TaggedValue &
-create(TaggedValue &parent, const string &tag, const SceneState::XYZ &xyz)
+create(TaggedValue &parent, const string &tag, const SceneState::XYZ &xyz_state)
 {
   TaggedValue &tagged_value = create(parent, tag);
-  createXYZChildren(tagged_value, xyz);
+  createXYZChildren(tagged_value, xyz_state);
   return tagged_value;
 }
 
@@ -606,15 +590,14 @@ static TaggedValue &
 
       createXYZChildren(
         parent,
-        translationValues(transform_state),
+        transform_state.translation,
         &solve_flags.translation
       );
     }
     {
       auto &rotation = create(parent, "rotation");
       auto &parent = rotation;
-      Vec3 r_deg = rotationValuesDeg(transform_state);
-      createXYZChildren(parent, r_deg, &solve_flags.rotation);
+      createXYZChildren(parent, transform_state.rotation, &solve_flags.rotation);
     }
   }
 

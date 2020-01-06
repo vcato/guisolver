@@ -78,8 +78,8 @@ updateBodyStateFromBodyObjects(
   for (size_t box_index=0; box_index!=n_boxes; ++box_index) {
     SceneState::Box &box_state = body_state.boxes[box_index];
     Scene::GeometryHandle box_handle = body_handles.boxes[box_index].handle;
-    box_state.scale = xyzState(scene.geometryScale(box_handle));
-    box_state.center = xyzState(scene.geometryCenter(box_handle));
+    box_state.scale = xyzStateFromVec3(scene.geometryScale(box_handle));
+    box_state.center = xyzStateFromVec3(scene.geometryCenter(box_handle));
   }
 }
 
