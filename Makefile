@@ -33,13 +33,14 @@ run_guisolver: guisolver
 	./$*
 	touch $@
 
-DEFAULTSCENESTATE=defaultscenestate.o scenestate.o maketransform.o
+SCENESTATE=scenestate.o nextunusedname.o
+DEFAULTSCENESTATE=defaultscenestate.o $(SCENESTATE) maketransform.o
 TAGGEDVALUEIO=taggedvalueio.o printindent.o streamparser.o stringutil.o
-SCENESTATETAGGEDVALUE=scenestatetaggedvalue.o scenestate.o taggedvalue.o
+SCENESTATETAGGEDVALUE=scenestatetaggedvalue.o $(SCENESTATE) taggedvalue.o
 SCENESTATEIO=scenestateio.o $(SCENESTATETAGGEDVALUE) $(TAGGEDVALUEIO)
 
-SCENEERROR=sceneerror.o scenestate.o
-SCENEOBJECTS=sceneobjects.o maketransform.o settransform.o scenestate.o
+SCENEERROR=sceneerror.o $(SCENESTATE)
+SCENEOBJECTS=sceneobjects.o maketransform.o settransform.o $(SCENESTATE)
 OPTIMIZE=optimize.o
 
 OBSERVEDSCENE=observedscene.o treevalues.o scenestatetransform.o \
@@ -70,10 +71,10 @@ osgutil_test: osgutil_test.o osgutil.o assertnearfloat.o
 transform_test: transform_test.o maketransform.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
-scenestate_test: scenestate_test.o scenestate.o
+scenestate_test: scenestate_test.o $(SCENESTATE)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
-globaltransform_test: globaltransform_test.o scenestate.o maketransform.o \
+globaltransform_test: globaltransform_test.o $(SCENESTATE) maketransform.o \
   assertnearfloat.o randomtransform.o randompoint.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
@@ -81,7 +82,7 @@ scenestatetaggedvalue_test: scenestatetaggedvalue_test.o \
   $(SCENESTATETAGGEDVALUE) $(TAGGEDVALUEIO)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
-scenestateio_test: scenestateio_test.o scenestate.o \
+scenestateio_test: scenestateio_test.o $(SCENESTATE) \
   $(DEFAULTSCENESTATE) $(SCENESTATEIO)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 

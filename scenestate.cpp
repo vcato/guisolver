@@ -4,24 +4,11 @@
 #include "contains.hpp"
 #include "indicesof.hpp"
 #include "removeindexfrom.hpp"
+#include "nextunusedname.hpp"
 
 using std::ostringstream;
 using std::cerr;
 
-
-template <typename Name>
-static Name nextUnusedName(const vector<Name> &used_names, const Name &prefix)
-{
-  for (int id = 1;; ++id) {
-    ostringstream name_stream;
-    name_stream << prefix << id;
-    Name next_name_to_try = name_stream.str();
-
-    if (!contains(used_names, next_name_to_try)) {
-      return next_name_to_try;
-    }
-  }
-}
 
 static SceneState::Marker::Name namePrefix(bool is_local)
 {

@@ -2,10 +2,10 @@
 
 #include "indicesof.hpp"
 #include "contains.hpp"
-
-#define USE_NEW_BODY_NAME_CONFLICT_RESOLUTION 0
+#include "nextunusedname.hpp"
 
 using std::string;
+using std::cerr;
 
 
 static NumericValue
@@ -284,9 +284,7 @@ createBodyFromTaggedValueWithoutResolvingConflicts(
       maybe_name = maybe_old_name;
     }
     else {
-#if USE_NEW_BODY_NAME_CONFLICT_RESOLUTION
       maybe_name = "$" + *maybe_old_name;
-#endif
     }
   }
 
@@ -331,7 +329,17 @@ createBodyFromTaggedValueWithoutResolvingConflicts(
 }
 
 
-#if USE_NEW_BODY_NAME_CONFLICT_RESOLUTION
+static void
+resolveBodyNameConflicts(BodyIndex body_index, SceneState &scene_state)
+{
+  std::string &name = scene_state.body(body_index).name;
+
+  if (name[0] == '$') {
+    name = nextUnusedName(bodyNames(scene_state), name.substr(1) + "_");
+  }
+}
+
+
 static void
 resolveBodyNameConflictsOnBranch(
   SceneState &scene_state,
@@ -339,15 +347,17 @@ resolveBodyNameConflictsOnBranch(
 )
 {
   struct Visitor {
-    void visitBody(BodyIndex body_index)
+    SceneState &scene_state;
+
+    void visitBody(BodyIndex body_index) const
     {
-      resolveBodyNameConflictsOnBranch(body_index);
+      resolveBodyNameConflicts(body_index, scene_state);
     }
 
-    void visitMarker(MarkerIndex)
+    void visitMarker(MarkerIndex) const
     {
     }
-  } visitor;
+  } visitor = {scene_state};
 
   forEachBranchIndexInPreOrder(
     maybe_body_index,
@@ -355,7 +365,6 @@ resolveBodyNameConflictsOnBranch(
     visitor
   );
 }
-#endif
 
 
 BodyIndex
@@ -374,20 +383,17 @@ createBodyFromTaggedValue(
       marker_name_map
     );
 
-#if USE_NEW_BODY_NAME_CONFLICT_RESOLUTION
   resolveBodyNameConflictsOnBranch(result, body_index);
-#endif
-
   return body_index;
 }
 
 
 void
-  createChildBodiesInSceneState(
-    SceneState &result,
-    const TaggedValue &tagged_value,
-    const Optional<BodyIndex> maybe_parent_index
-  )
+createChildBodiesInSceneState(
+  SceneState &result,
+  const TaggedValue &tagged_value,
+  const Optional<BodyIndex> maybe_parent_index
+)
 {
   for (auto &child_tagged_value : tagged_value.children) {
     if (child_tagged_value.tag == "Transform") {

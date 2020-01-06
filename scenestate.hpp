@@ -229,16 +229,21 @@ markersOnBody(BodyIndex body_index, const SceneState &scene_state)
 
 inline void
 preOrderTraverseBodyBranch(
-  BodyIndex body_index,
+  Optional<BodyIndex> maybe_branch_body_index,
   const SceneState &scene_state,
   vector<BodyIndex> &body_indices
 )
 {
-  body_indices.push_back(body_index);
+  if (maybe_branch_body_index) {
+    body_indices.push_back(*maybe_branch_body_index);
+  }
 
   for (BodyIndex other_body_index : indicesOf(scene_state.bodies())) {
-    if (scene_state.body(other_body_index).maybe_parent_index == body_index) {
-      assert(other_body_index != body_index);
+    if (
+      scene_state.body(other_body_index).maybe_parent_index
+      == maybe_branch_body_index
+    ) {
+      assert(maybe_branch_body_index != other_body_index);
       preOrderTraverseBodyBranch(other_body_index, scene_state, body_indices);
     }
   }
@@ -286,13 +291,13 @@ forEachBranchIndexInPostOrder(
 template <typename Visitor>
 inline void
 forEachBranchIndexInPreOrder(
-  BodyIndex body_index,
+  Optional<BodyIndex> maybe_branch_body_index,
   const SceneState &scene_state,
   const Visitor &visitor
 )
 {
   vector<BodyIndex> body_indices;
-  preOrderTraverseBodyBranch(body_index, scene_state, body_indices);
+  preOrderTraverseBodyBranch(maybe_branch_body_index, scene_state, body_indices);
 
   for (auto body_index : body_indices) {
     visitor.visitBody(body_index);
