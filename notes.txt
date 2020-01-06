@@ -80,7 +80,6 @@ them their preferred name if it can and gives them no name otherwise.
 We then have a second pass which gives any bodies that have no name a
 new name similar to what it wanted.
 
-One way to do this would be to assign the bodies that have conflicting names
-a special name, for example, one starting with a $.  We can then go
-through a second pass which looks for bodies with the special names and
-reassigns them.
+The name resolution isn't quite right yet. We need to make sure that we
+resolve the conflicts as the last step.  The conflict resolution is
+sometimes done per body currently.

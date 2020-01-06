@@ -8,6 +8,35 @@ using std::string;
 using std::cerr;
 
 
+static void
+resolveMarkerNameConflicts(
+  SceneState &scene_state,
+  MarkerNameMap &marker_name_map
+)
+{
+  for (MarkerIndex marker_index : indicesOf(scene_state.markers())) {
+    std::string &name = scene_state.marker(marker_index).name;
+
+    if (name[0] == '$') {
+      const string &old_name = name.substr(1);
+      name = nextUnusedName(markerNames(scene_state), old_name + "_");
+      marker_name_map[old_name] = name;
+    }
+  }
+}
+
+
+static void
+resolveBodyNameConflicts(BodyIndex body_index, SceneState &scene_state)
+{
+  std::string &name = scene_state.body(body_index).name;
+
+  if (name[0] == '$') {
+    name = nextUnusedName(bodyNames(scene_state), name.substr(1) + "_");
+  }
+}
+
+
 static NumericValue
   numericValueOr(
     const TaggedValue &tagged_value,
@@ -148,12 +177,11 @@ bodyNameExists(
 }
 
 
-static void
-createMarkerFromTaggedValue(
+static MarkerIndex
+createMarkerFromTaggedValueWithoutResolvingConflicts(
   SceneState &scene_state,
   const TaggedValue &tagged_value,
-  Optional<BodyIndex> maybe_parent_index,
-  MarkerNameMap &marker_name_map
+  Optional<BodyIndex> maybe_parent_index
 )
 {
   Optional<StringValue> maybe_old_name =
@@ -161,22 +189,19 @@ createMarkerFromTaggedValue(
 
   Optional<StringValue> maybe_name;
 
-  if (maybe_old_name && !markerNameExists(*maybe_old_name, scene_state)) {
-    maybe_name = maybe_old_name;
+  if (maybe_old_name) {
+    if (!markerNameExists(*maybe_old_name, scene_state)) {
+      maybe_name = maybe_old_name;
+    }
+    else {
+      maybe_name = "$" + *maybe_old_name;
+    }
   }
 
   MarkerIndex marker_index = scene_state.createMarker(maybe_parent_index);
 
   if (maybe_name) {
     scene_state.marker(marker_index).name = *maybe_name;
-  }
-  else {
-    // There was either a name conflict, or there was no name in the
-    // tagged value.
-
-    if (maybe_old_name) {
-      marker_name_map[*maybe_old_name] = scene_state.marker(marker_index).name;
-    }
   }
 
   const TaggedValue *position_ptr = findChild(tagged_value, "position");
@@ -185,6 +210,8 @@ createMarkerFromTaggedValue(
     scene_state.marker(marker_index).position =
       xyzStateFromTaggedValue(*position_ptr);
   }
+
+  return marker_index;
 }
 
 
@@ -198,14 +225,15 @@ createChildMarkersInSceneState(
 {
   for (auto &child_tagged_value : tagged_value.children) {
     if (child_tagged_value.tag == "Marker") {
-      createMarkerFromTaggedValue(
+      createMarkerFromTaggedValueWithoutResolvingConflicts(
         scene_state,
         child_tagged_value,
-        maybe_parent_index,
-        marker_name_map
+        maybe_parent_index
       );
     }
   }
+
+  resolveMarkerNameConflicts(scene_state, marker_name_map);
 }
 
 
@@ -326,17 +354,6 @@ createBodyFromTaggedValueWithoutResolvingConflicts(
   );
 
   return body_index;
-}
-
-
-static void
-resolveBodyNameConflicts(BodyIndex body_index, SceneState &scene_state)
-{
-  std::string &name = scene_state.body(body_index).name;
-
-  if (name[0] == '$') {
-    name = nextUnusedName(bodyNames(scene_state), name.substr(1) + "_");
-  }
 }
 
 
