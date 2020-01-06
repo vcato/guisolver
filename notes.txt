@@ -49,3 +49,38 @@ A body can be thought of as three rays with a common origin.
 
 We could have body markers and ray markers, where a ray marker just has
 a step value.
+---
+How would we generalize this to have multiple solving passes?
+* It seems like we are effectively setting up multiple solve tags.
+  Maybe each solver has a solve tag associated with it.  Each value
+  can be tagged with any of the solve tags.
+  * Potentially a value could have a number of tags and a solver could
+    have a number of tags and the values that get solved are the ones
+    where there are matching tags.
+  * Potentially an error could also have a tag, maybe a different set of tags.
+* We may want to have local solvers.
+  * For example, if we are trying to make rays point in the right direction,
+    we could have a local solver for each ray which makes the ray point
+    in the right direction relative to the camera, and then we have a
+    solver for each camera which makes the camera translate and rotate
+    to match rays in 3D, then we have another solver which tries to
+    make 3D points which match the rays. The camera solver and the point
+    solver could be combined into a larger solver which solves both.
+---
+If we duplicate a body or a marker it should give names that are similar
+to the existing names instead of creating completely new names.
+
+We want to make sure that we don't rename bodies unnecessarily.  For
+example, we may have body1 already existing.  We go to create
+a new body with a preferred name of body1, but body1 already exists, so
+it is given the name body2 instead.  Then we go to create body2 and
+that name already exists, so it is given name body3.  This seems to
+indicate we need a first pass which creates all the bodies and gives
+them their preferred name if it can and gives them no name otherwise.
+We then have a second pass which gives any bodies that have no name a
+new name similar to what it wanted.
+
+One way to do this would be to assign the bodies that have conflicting names
+a special name, for example, one starting with a $.  We can then go
+through a second pass which looks for bodies with the special names and
+reassigns them.

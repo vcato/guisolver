@@ -6,6 +6,8 @@
 #include "indicesof.hpp"
 #include "contains.hpp"
 
+#define USE_NEW_BODY_NAME_CONFLICT_RESOLUTION 0
+
 using std::string;
 
 
@@ -270,25 +272,32 @@ fillLineStateFromTaggedValue(
 }
 
 
-BodyIndex
-createBodyFromTaggedValue(
+static BodyIndex
+createBodyFromTaggedValueWithoutResolvingConflicts(
   SceneState &result,
   const TaggedValue &tagged_value,
   const Optional<BodyIndex> maybe_parent_index,
   MarkerNameMap &marker_name_map
 )
 {
-  BodyIndex body_index = result.createBody(maybe_parent_index);
-  setAll(result.body(body_index).solve_flags, true);
-
   Optional<StringValue> maybe_old_name =
     findStringValue(tagged_value, "name");
 
   Optional<StringValue> maybe_name;
 
-  if (maybe_old_name && !bodyNameExists(*maybe_old_name, result)) {
-    maybe_name = maybe_old_name;
+  if (maybe_old_name) {
+    if (!bodyNameExists(*maybe_old_name, result)) {
+      maybe_name = maybe_old_name;
+    }
+    else {
+#if USE_NEW_BODY_NAME_CONFLICT_RESOLUTION
+      maybe_name = "$" + *maybe_old_name;
+#endif
+    }
   }
+
+  BodyIndex body_index = result.createBody(maybe_parent_index);
+  setAll(result.body(body_index).solve_flags, true);
 
   if (maybe_name) {
     result.body(body_index).name = *maybe_name;
@@ -323,6 +332,57 @@ createBodyFromTaggedValue(
   createChildMarkersInSceneState(
     result, tagged_value, body_index, marker_name_map
   );
+
+  return body_index;
+}
+
+
+#if USE_NEW_BODY_NAME_CONFLICT_RESOLUTION
+static void
+resolveBodyNameConflictsOnBranch(
+  SceneState &scene_state,
+  Optional<BodyIndex> maybe_body_index
+)
+{
+  struct Visitor {
+    void visitBody(BodyIndex body_index)
+    {
+      resolveBodyNameConflictsOnBranch(body_index);
+    }
+
+    void visitMarker(MarkerIndex)
+    {
+    }
+  } visitor;
+
+  forEachBranchIndexInPreOrder(
+    maybe_body_index,
+    scene_state,
+    visitor
+  );
+}
+#endif
+
+
+BodyIndex
+createBodyFromTaggedValue(
+  SceneState &result,
+  const TaggedValue &tagged_value,
+  const Optional<BodyIndex> maybe_parent_index,
+  MarkerNameMap &marker_name_map
+)
+{
+  BodyIndex body_index =
+    createBodyFromTaggedValueWithoutResolvingConflicts(
+      result,
+      tagged_value,
+      maybe_parent_index,
+      marker_name_map
+    );
+
+#if USE_NEW_BODY_NAME_CONFLICT_RESOLUTION
+  resolveBodyNameConflictsOnBranch(result, body_index);
+#endif
 
   return body_index;
 }
