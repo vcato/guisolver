@@ -24,6 +24,7 @@ struct ObservedScene {
       scene,
       body,
       box,
+      line,
       marker,
       distance_error,
       translation,
@@ -35,6 +36,7 @@ struct ObservedScene {
     Optional<BodyIndex> maybe_body_index;
     Optional<MarkerIndex> maybe_marker_index;
     Optional<size_t> maybe_box_index;
+    Optional<size_t> maybe_line_index;
     Optional<DistanceErrorIndex> maybe_distance_error_index;
     bool has_rotation_ancestor = false;
     bool has_translation_ancesor = false;
@@ -77,6 +79,7 @@ struct ObservedScene {
   void selectMarker(MarkerIndex);
   void selectDistanceError(DistanceErrorIndex);
   void selectBox(BodyIndex, BoxIndex);
+  void selectLine(BodyIndex, LineIndex);
   BodyIndex duplicateBody(BodyIndex body_index);
   BodyIndex duplicateBodyWithDistanceErrors(BodyIndex);
   MarkerIndex duplicateMarker(MarkerIndex);
@@ -94,6 +97,7 @@ struct ObservedScene {
   void removeBody(BodyIndex);
   void removeMarker(MarkerIndex);
   void removeBox(BodyIndex, BoxIndex);
+  void removeLine(BodyIndex, LineIndex);
   static void clearClipboard(ObservedScene &);
 
   void replaceSceneStateWith(const SceneState &);

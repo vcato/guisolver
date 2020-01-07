@@ -95,11 +95,20 @@ extern void
 
 extern void
   removeBoxFromTree(
-    TreeWidget &tree_widget,
-    TreePaths &tree_paths,
+    TreeWidget &,
+    TreePaths &,
     const SceneState &,
-    BodyIndex body_index,
-    BoxIndex box_index
+    BodyIndex,
+    BoxIndex
+  );
+
+extern void
+  removeLineFromTree(
+    TreeWidget &,
+    TreePaths &,
+    const SceneState &,
+    BodyIndex,
+    LineIndex
   );
 
 extern void

@@ -12,6 +12,7 @@
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
 using GeometryHandle = Scene::GeometryHandle;
+using TreeItemDescription = ObservedScene::TreeItemDescription;
 
 
 template <typename XYZSolveFlags, typename F>
@@ -116,9 +117,6 @@ static void
     }
   }
 }
-
-
-using TreeItemDescription = ObservedScene::TreeItemDescription;
 
 
 struct MainWindowController::Impl {
@@ -643,9 +641,8 @@ MainWindowController::Impl::addLinePressed(
 )
 {
   ObservedScene &observed_scene = observedScene(controller);
-  /*LineIndex line_index =*/ observed_scene.addLineTo(body_index);
-  //observed_scene.selectLine(line_index);
-  cerr << "addLinePressed()\n";
+  LineIndex line_index = observed_scene.addLineTo(body_index);
+  observed_scene.selectLine(body_index, line_index);
 }
 
 
@@ -740,17 +737,6 @@ void
   SceneState &scene_state = observed_scene.scene_state;
   observed_scene.removeMarker( marker_index);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
-}
-
-
-void
-MainWindowController::Impl::removeBoxPressed(
-  MainWindowController &controller,
-  BodyIndex body_index,
-  BoxIndex box_index
-)
-{
-  observedScene(controller).removeBox(body_index, box_index);
 }
 
 
@@ -980,12 +966,26 @@ TreeWidget::MenuItems
     size_t box_index = *item.maybe_box_index;
 
     auto remove_box_function =
-      [&controller, body_index, box_index]{
-        Impl::removeBoxPressed(controller, body_index, box_index);
+      [&observed_scene, body_index, box_index]{
+        observed_scene.removeBox(body_index, box_index);
       };
 
     appendTo(menu_items,{
       {"Remove", remove_box_function}
+    });
+  }
+
+  if (item_type == ItemType::line) {
+    BodyIndex body_index = *item.maybe_body_index;
+    size_t line_index = *item.maybe_line_index;
+
+    auto remove_line_function =
+      [&observed_scene, body_index, line_index]{
+        observed_scene.removeLine(body_index, line_index);
+      };
+
+    appendTo(menu_items,{
+      {"Remove", remove_line_function}
     });
   }
 

@@ -403,8 +403,27 @@ void ObservedScene::removeBox(BodyIndex body_index, BoxIndex box_index)
     tree_widget, tree_paths, scene_state, body_index, box_index
   );
 
-  removeBoxFromScene(scene, scene_handles, scene_state, body_index, box_index);
+  removeBoxFromScene(
+    scene, scene_handles, scene_state, body_index, box_index
+  );
+
   removeIndexFrom(scene_state.body(body_index).boxes, box_index);
+}
+
+
+void ObservedScene::removeLine(BodyIndex body_index, LineIndex line_index)
+{
+  clearClipboard(*this);
+
+  removeLineFromTree(
+    tree_widget, tree_paths, scene_state, body_index, line_index
+  );
+
+  removeLineFromScene(
+    scene, scene_handles, scene_state, body_index, line_index
+  );
+
+  removeIndexFrom(scene_state.body(body_index).lines, line_index);
 }
 
 
@@ -921,6 +940,13 @@ void ObservedScene::selectBox(BodyIndex body_index, BoxIndex box_index)
 }
 
 
+void ObservedScene::selectLine(BodyIndex body_index, LineIndex line_index)
+{
+  tree_widget.selectItem(tree_paths.body(body_index).lines[line_index].path);
+  handleTreeSelectionChanged();
+}
+
+
 void ObservedScene::handleSceneStateChanged()
 {
   updateTreeValues(tree_widget, tree_paths, scene_state);
@@ -977,6 +1003,22 @@ ObservedScene::describePath(const TreePath &path, const TreePaths &tree_paths)
 
         description.maybe_body_index = body_index;
         description.maybe_box_index = box_index;
+        return description;
+      }
+    }
+
+    size_t n_lines = body_paths.lines.size();
+
+    for (size_t line_index = 0; line_index != n_lines; ++line_index) {
+      const TreePaths::Line &line_paths = body_paths.lines[line_index];
+
+      if (startsWith(path, line_paths.path)) {
+        if (path == line_paths.path) {
+          description.type = ItemType::line;
+        }
+
+        description.maybe_body_index = body_index;
+        description.maybe_line_index = line_index;
         return description;
       }
     }

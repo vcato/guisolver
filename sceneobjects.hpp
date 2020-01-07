@@ -117,6 +117,15 @@ extern void
   );
 
 extern void
+  removeLineFromScene(
+    Scene &,
+    SceneHandles &,
+    const SceneState &,
+    BodyIndex,
+    LineIndex
+  );
+
+extern void
   createBodyBranchObjectsInScene(
     BodyIndex body_index,
     Scene &scene,

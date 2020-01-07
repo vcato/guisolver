@@ -656,6 +656,21 @@ removeBoxFromScene(
 }
 
 
+void
+removeLineFromScene(
+  Scene &scene,
+  SceneHandles &scene_handles,
+  const SceneState &,
+  BodyIndex body_index,
+  LineIndex line_index
+)
+{
+  SceneHandles::Body &body_handles = *scene_handles.bodies[body_index];
+  destroyLineObjects(body_handles.lines[line_index], scene);
+  removeIndexFrom(body_handles.lines, line_index);
+}
+
+
 SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
 {
   SceneHandles scene_handles;
