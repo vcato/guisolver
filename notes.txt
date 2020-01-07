@@ -83,3 +83,5 @@ new name similar to what it wanted.
 The name resolution isn't quite right yet. We need to make sure that we
 resolve the conflicts as the last step.  The conflict resolution is
 sometimes done per body currently.
+---
+Need to be able to remove lines.
