@@ -51,6 +51,8 @@ static osg::Node *
   const osg::Viewport &viewport = *viewport_ptr;
   double vx = viewport.x();
   double vy = viewport.y();
+
+  // mx,my is the click position in viewport coordinates.
   double mx = lerp(norm_x, -1, 1, vx, vx + viewport.width());
   double my = lerp(norm_y, -1, 1, vy, vy + viewport.height());
 
@@ -64,13 +66,17 @@ static osg::Node *
     return nullptr;
 
   osgUtil::Intersector::CoordinateFrame cf;
-  if (camera_ptr->getViewport())
+
+  if (camera_ptr->getViewport()) {
     cf = osgUtil::Intersector::WINDOW;
-  else
+  }
+  else {
     cf = osgUtil::Intersector::PROJECTION;
+  }
 
   // The sensible area for the pick operation is handed in WINDOW coordinates,
-  // int this case set to be 4 units from pick point (local_x, local_y) in all directions.
+  // In this case set to be 4 units from pick point (local_x, local_y) in all
+  // directions.
   osg::ref_ptr<IntersectorPrivate> picker =
     new IntersectorPrivate(cf, local_x, local_y, 4.f);
 
