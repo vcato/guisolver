@@ -164,24 +164,28 @@ static void testBody()
 static void testCreatingABodyFromATaggedValueWithConflictingNames()
 {
   SceneState scene_state;
-  BodyIndex body_index = scene_state.createBody();
-  scene_state.createMarker(body_index);
+  BodyIndex body1_index = scene_state.createBody();
+  scene_state.createMarker(body1_index);
+  BodyIndex body2_index = scene_state.createBody(body1_index);
+  scene_state.createMarker(body2_index);
 
   {
     TaggedValue root_tag_value("");
-    createBodyTaggedValue(root_tag_value, body_index, scene_state);
+    createBodyTaggedValue(root_tag_value, body1_index, scene_state);
     const TaggedValue &tagged_value = root_tag_value.children[0];
     MarkerNameMap marker_name_map;
 
     createBodyFromTaggedValue(
       scene_state, tagged_value, /*parent*/{}, marker_name_map
     );
+
+    assert(marker_name_map.size() == 2);
   }
 
-  assert(scene_state.markers().size() == 2);
-  assert(scene_state.marker(0).name != scene_state.marker(1).name);
-  assert(scene_state.bodies().size() == 2);
-  assert(scene_state.body(0).name != scene_state.body(1).name);
+  assert(scene_state.markers().size() == 4);
+  assert(scene_state.marker(0).name != scene_state.marker(2).name);
+  assert(scene_state.bodies().size() == 4);
+  assert(scene_state.body(0).name != scene_state.body(2).name);
 }
 
 

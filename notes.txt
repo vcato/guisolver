@@ -67,21 +67,4 @@ How would we generalize this to have multiple solving passes?
     make 3D points which match the rays. The camera solver and the point
     solver could be combined into a larger solver which solves both.
 ---
-If we duplicate a body or a marker it should give names that are similar
-to the existing names instead of creating completely new names.
-
-We want to make sure that we don't rename bodies unnecessarily.  For
-example, we may have body1 already existing.  We go to create
-a new body with a preferred name of body1, but body1 already exists, so
-it is given the name body2 instead.  Then we go to create body2 and
-that name already exists, so it is given name body3.  This seems to
-indicate we need a first pass which creates all the bodies and gives
-them their preferred name if it can and gives them no name otherwise.
-We then have a second pass which gives any bodies that have no name a
-new name similar to what it wanted.
-
-The name resolution isn't quite right yet. We need to make sure that we
-resolve the conflicts as the last step.  The conflict resolution is
-sometimes done per body currently.
----
-Need to be able to remove lines.
+Selecting a distance error isn't working.

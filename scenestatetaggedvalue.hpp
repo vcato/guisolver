@@ -7,7 +7,8 @@ extern void
   createChildBodiesInSceneState(
     SceneState &result,
     const TaggedValue &tagged_value,
-    const Optional<BodyIndex> maybe_parent_index
+    const Optional<BodyIndex> maybe_parent_index,
+    MarkerNameMap &
   );
 
 extern BodyIndex

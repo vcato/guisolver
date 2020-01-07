@@ -112,8 +112,7 @@ static void testSetCoordinateAxes()
 
   setCoordinateAxesOf(mat, x_axis, y_axis, z_axis);
 
-  osg::Vec3f trans = mat.getTrans();
-  assert(trans == osg::Vec3f(1,2,3));
+  assert(mat.getTrans() == osg::Vec3f(1,2,3));
   osg::Quat rot = mat.getRotate();
   osg::Quat::value_type angle = 0;
   osg::Vec3f axis(0,0,0);

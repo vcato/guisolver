@@ -446,7 +446,10 @@ createBoxInScene(
   Scene &scene,
   SceneHandles &scene_handles,
   BodyIndex body_index,
-  BoxIndex box_index
+  BoxIndex
+#ifndef NDEBUG
+    box_index
+#endif
 )
 {
   SceneHandles::Body &body_handles = *scene_handles.bodies[body_index];
@@ -631,7 +634,11 @@ void
 removeBodyFromScene(
   Scene &scene,
   SceneHandles &scene_handles,
-  const SceneState &state,
+  const SceneState &
+#ifndef NDEBUG
+    state
+#endif
+    ,
   BodyIndex body_index
 )
 {

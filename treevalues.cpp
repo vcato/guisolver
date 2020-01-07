@@ -1013,7 +1013,11 @@ void
 removeBodyFromTree(
   TreeWidget &tree_widget,
   TreePaths &tree_paths,
-  const SceneState &scene_state,
+  const SceneState &
+#ifndef NDEBUG
+    scene_state
+#endif
+    ,
   BodyIndex body_index
 )
 {

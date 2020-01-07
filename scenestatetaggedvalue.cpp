@@ -347,7 +347,9 @@ createBodyFromTaggedValueWithoutResolvingConflicts(
     }
   }
 
-  createChildBodiesInSceneState(result, tagged_value, body_index);
+  createChildBodiesInSceneState(
+    result, tagged_value, body_index, marker_name_map
+  );
 
   createChildMarkersInSceneState(
     result, tagged_value, body_index, marker_name_map
@@ -409,13 +411,12 @@ void
 createChildBodiesInSceneState(
   SceneState &result,
   const TaggedValue &tagged_value,
-  const Optional<BodyIndex> maybe_parent_index
+  const Optional<BodyIndex> maybe_parent_index,
+  MarkerNameMap &marker_name_map
 )
 {
   for (auto &child_tagged_value : tagged_value.children) {
     if (child_tagged_value.tag == "Transform") {
-      MarkerNameMap marker_name_map;
-
       createBodyFromTaggedValue(
         result, child_tagged_value, maybe_parent_index,
         marker_name_map
@@ -484,8 +485,11 @@ SceneState makeSceneStateFromTaggedValue(const TaggedValue &tagged_value)
 {
   SceneState result;
   Optional<BodyIndex> maybe_parent_index;
-  createChildBodiesInSceneState(result, tagged_value, maybe_parent_index);
   MarkerNameMap marker_name_map;
+
+  createChildBodiesInSceneState(
+    result, tagged_value, maybe_parent_index, marker_name_map
+  );
 
   createChildMarkersInSceneState(
     result, tagged_value, maybe_parent_index, marker_name_map
