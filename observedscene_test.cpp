@@ -225,7 +225,7 @@ static void testUserSelectingABodyInTheTree()
     observed_scene.handleTreeSelectionChanged();
   }
 
-  assert(tester.scene.maybe_dragger_type == Scene::DraggerType::translate);
+  assert(tester.scene.maybe_dragger_type == Scene::ManipulatorType::translate);
 
   assert(
     tester.scene.maybe_dragger_index

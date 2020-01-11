@@ -10,6 +10,7 @@
 
 using TransformHandle = Scene::TransformHandle;
 using GeometryHandle = Scene::GeometryHandle;
+using ManipulatorType = Scene::ManipulatorType;
 using std::cerr;
 
 
@@ -535,39 +536,56 @@ void ObservedScene::cutMarker(MarkerIndex marker_index)
 }
 
 
-void
-ObservedScene::attachProperDraggerToSelectedObject(
-  ObservedScene &observed_scene
-)
+Optional<ManipulatorType>
+ObservedScene::properManpiulatorForSelectedObject() const
 {
+  const ObservedScene &observed_scene = *this;
   Scene &scene = observed_scene.scene;
   TreeWidget &tree_widget = observed_scene.tree_widget;
-  TreePaths &tree_paths = observed_scene.tree_paths;
+  const TreePaths &tree_paths = observed_scene.tree_paths;
 
   Optional<GeometryHandle> selected_geometry = scene.selectedGeometry();
 
   if (selected_geometry) {
     if (scene.maybeLine(*selected_geometry)) {
       // There's no dragger for a line.
-      return;
+      return {};
     }
   }
   else if (!scene.selectedTransform()) {
+    return {};
+  }
+
+  ObservedScene::TreeItemDescription item =
+    ObservedScene::describePath(*tree_widget.selectedItem(), tree_paths);
+
+  if (item.has_rotation_ancestor) {
+    return ManipulatorType::rotate;
+  }
+  else if (item.maybe_box_index) {
+    return ManipulatorType::scale;
+  }
+  else {
+    return ManipulatorType::translate;
+  }
+}
+
+
+void
+ObservedScene::attachProperDraggerToSelectedObject(
+  ObservedScene &observed_scene
+)
+{
+  Optional<ManipulatorType> maybe_manipulator_type =
+    observed_scene.properManpiulatorForSelectedObject();
+
+  if (!maybe_manipulator_type) {
     return;
   }
 
-  TreeItemDescription item =
-    describePath(*tree_widget.selectedItem(), tree_paths);
+  Scene &scene = observed_scene.scene;
 
-  if (item.has_rotation_ancestor) {
-    scene.attachDraggerToSelectedNode(Scene::DraggerType::rotate);
-  }
-  else if (item.maybe_box_index) {
-    scene.attachDraggerToSelectedNode(Scene::DraggerType::scale);
-  }
-  else {
-    scene.attachDraggerToSelectedNode(Scene::DraggerType::translate);
-  }
+  scene.attachManipulatorToSelectedNode(*maybe_manipulator_type);
 }
 
 

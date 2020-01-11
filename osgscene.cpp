@@ -27,7 +27,7 @@ struct RotateDragger;
 
 using std::cerr;
 using std::string;
-using DraggerType = Scene::DraggerType;
+using DraggerType = Scene::ManipulatorType;
 using GeodePtr = osg::ref_ptr<osg::Geode>;
 using ViewPtr = osg::ref_ptr<osgViewer::View>;
 using GroupPtr = osg::ref_ptr<osg::Group>;
@@ -1168,7 +1168,7 @@ void OSGScene::SelectionHandler::nodeClicked(osg::Node *new_selected_node_ptr)
 }
 
 
-void OSGScene::attachDraggerToSelectedNode(DraggerType dragger_type)
+void OSGScene::attachManipulatorToSelectedNode(DraggerType dragger_type)
 {
   selectionHandler().attachDragger(dragger_type);
 }

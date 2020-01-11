@@ -10,7 +10,7 @@ struct Scene {
   using Point = Vec3;
   using Vector = Vec3;
 
-  enum class DraggerType {
+  enum class ManipulatorType {
     translate,
     rotate,
     scale
@@ -87,7 +87,7 @@ struct Scene {
   virtual void selectGeometry(GeometryHandle) = 0;
   virtual void selectTransform(TransformHandle) = 0;
   virtual Optional<LineHandle> maybeLine(GeometryHandle) const = 0;
-  virtual void attachDraggerToSelectedNode(DraggerType) = 0;
+  virtual void attachManipulatorToSelectedNode(ManipulatorType) = 0;
 };
 
 

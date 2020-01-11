@@ -113,6 +113,8 @@ struct ObservedScene {
   static void
   createBodyInScene(BodyIndex body_index, ObservedScene &observed_scene);
 
+  Optional<Scene::ManipulatorType> properManpiulatorForSelectedObject() const;
+
   static void attachProperDraggerToSelectedObject(ObservedScene &);
 
   static void

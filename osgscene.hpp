@@ -47,7 +47,7 @@ class OSGScene : public Scene {
     void selectTransform(TransformHandle handle);
 
     Optional<LineHandle> maybeLine(GeometryHandle handle) const override;
-    void attachDraggerToSelectedNode(DraggerType) override;
+    void attachManipulatorToSelectedNode(ManipulatorType) override;
     GraphicsWindowPtr createGraphicsWindow(ViewType view_type);
 
   private:

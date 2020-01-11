@@ -13,23 +13,33 @@ using std::cerr;
 using TransformHandle = Scene::TransformHandle;
 using GeometryHandle = Scene::GeometryHandle;
 using TreeItemDescription = ObservedScene::TreeItemDescription;
+using ManipulatorType = Scene::ManipulatorType;
 
 
 template <typename XYZSolveFlags, typename F>
-static void forEachSolveFlagInXYZ(XYZSolveFlags &solve_flags, const F &f)
+static void
+forEachSolveFlagInXYZ(
+  XYZSolveFlags &solve_flags,
+  const F &f,
+  const SceneState::XYZSolveFlags &visit
+)
 {
-  f(solve_flags.x);
-  f(solve_flags.y);
-  f(solve_flags.z);
+  if (visit.x) f(solve_flags.x);
+  if (visit.y) f(solve_flags.y);
+  if (visit.z) f(solve_flags.z);
 }
 
 
 template <typename TransformSolveFlags, typename F>
 static void
-forEachSolveFlagInTransform(TransformSolveFlags &solve_flags, const F &f)
+forEachSolveFlagInTransform(
+  TransformSolveFlags &solve_flags,
+  const F &f,
+  const SceneState::TransformSolveFlags &visit
+)
 {
-  forEachSolveFlagInXYZ(solve_flags.translation, f);
-  forEachSolveFlagInXYZ(solve_flags.rotation, f);
+  forEachSolveFlagInXYZ(solve_flags.translation, f, visit.translation);
+  forEachSolveFlagInXYZ(solve_flags.rotation, f, visit.rotation);
 }
 
 
@@ -47,10 +57,11 @@ static void
   forEachSolveFlagAffectingBody(
     BodyIndex body_index,
     SceneState &state,
-    const F &f
+    const F &f,
+    const typename SceneState::TransformSolveFlags &visit
   )
 {
-  forEachSolveFlagInTransform(state.body(body_index).solve_flags, f);
+  forEachSolveFlagInTransform(state.body(body_index).solve_flags, f, visit);
 
   Optional<BodyIndex> maybe_parent_index =
     state.body(body_index).maybe_parent_index;
@@ -59,7 +70,7 @@ static void
     return;
   }
 
-  return forEachSolveFlagAffectingBody(*maybe_parent_index, state, f);
+  return forEachSolveFlagAffectingBody(*maybe_parent_index, state, f, visit);
 }
 
 
@@ -69,6 +80,7 @@ forEachSolveFlagAffectingHandle(
   TransformHandle handle,
   const SceneHandles &scene_handles,
   SceneState &state,
+  Optional<ManipulatorType> maybe_manipulator_type,
   const F &f
 )
 {
@@ -76,16 +88,27 @@ forEachSolveFlagAffectingHandle(
   // is going to be affected by the solve.
   for (auto i : indicesOf(state.bodies())) {
     if (handle == scene_handles.body(i).transformHandle()) {
-      forEachSolveFlagAffectingBody(i, state, f);
+      typename SceneState::TransformSolveFlags visit;
+      setAll(visit, true);
+
+      if (maybe_manipulator_type == ManipulatorType::translate) {
+        // If we're using a translation manipulator, the rotations don't
+        // affect it.
+        setAll(visit.rotation, false);
+      }
+
+      forEachSolveFlagAffectingBody(i, state, f, visit);
     }
   }
 
   for (auto i : indicesOf(state.markers())) {
     if (handle == scene_handles.marker(i).transformHandle()) {
+      typename SceneState::TransformSolveFlags visit;
+      setAll(visit, true);
       Optional<BodyIndex> maybe_body_index = state.marker(i).maybe_body_index;
 
       if (maybe_body_index) {
-        forEachSolveFlagAffectingBody(*maybe_body_index, state, f);
+        forEachSolveFlagAffectingBody(*maybe_body_index, state, f, visit);
       }
     }
   }
@@ -285,8 +308,12 @@ void
   // Disable any transforms that would move the handle and remember the
   // old state.
 
+  Optional<ManipulatorType> maybe_manipulator_type =
+    observed_scene.properManpiulatorForSelectedObject();
+
   forEachSolveFlagAffectingHandle(
     transform_handle, scene_handles, state,
+    maybe_manipulator_type,
     [&](bool &arg){
       old_flags.push_back(arg);
       arg = false;
@@ -301,6 +328,7 @@ void
 
     forEachSolveFlagAffectingHandle(
       transform_handle, scene_handles, state,
+      maybe_manipulator_type,
       [&](bool &arg){
         arg = *iter++;
       }
