@@ -22,6 +22,7 @@ class QtComboBox : public QComboBox {
 
   private:
     void addItems(const vector<std::string> &enumeration_names);
+    void wheelEvent(QWheelEvent *event_ptr) override;
 
     bool ignore_signals;
 };
