@@ -716,8 +716,7 @@ void
 
   removeDistanceErrorFromTree(
     distance_error_index,
-    tree_paths,
-    tree_widget
+    { tree_widget, tree_paths }
   );
 
   removeDistanceErrorFromScene(

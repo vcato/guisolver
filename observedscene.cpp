@@ -255,7 +255,7 @@ ObservedScene::pasteBodyGlobal(Optional<BodyIndex> maybe_new_parent_body_index)
     scene_state.body(old_body_index).maybe_parent_index;
 
   removeBodyBranchItemsFromTree(
-    old_body_index, tree_widget, tree_paths, scene_state
+    old_body_index, {tree_widget, tree_paths}, scene_state
   );
 
   removeBodyBranchObjectsFromScene(
@@ -277,7 +277,7 @@ ObservedScene::pasteBodyGlobal(Optional<BodyIndex> maybe_new_parent_body_index)
   );
 
   createBodyBranchItemsInTree(
-    new_body_index, tree_widget, tree_paths, scene_state
+    new_body_index, {tree_widget, tree_paths}, scene_state
   );
 
   createBodyBranchObjectsInScene(
@@ -300,7 +300,7 @@ ObservedScene::pasteMarkerGlobal(
   Optional<BodyIndex> maybe_old_parent_body_index =
     scene_state.marker(marker_index).maybe_body_index;
 
-  removeMarkerItemFromTree(marker_index, tree_widget, tree_paths);
+  removeMarkerItemFromTree(marker_index, {tree_widget, tree_paths});
   removeMarkerObjectFromScene(marker_index, scene, scene_handles);
 
   scene_state.marker(marker_index).maybe_body_index =
@@ -314,7 +314,7 @@ ObservedScene::pasteMarkerGlobal(
   );
 
   createMarkerItemInTree(
-    marker_index, tree_widget, tree_paths, scene_state
+    marker_index, {tree_widget, tree_paths}, scene_state
   );
 
   createMarkerObjectInScene(
@@ -334,7 +334,7 @@ ObservedScene::removingMarker(
   TreeWidget &tree_widget = observed_scene.tree_widget;
   SceneHandles &scene_handles = observed_scene.scene_handles;
   Scene &scene = observed_scene.scene;
-  removeMarkerFromTree(marker_index, tree_paths, tree_widget);
+  removeMarkerFromTree(marker_index, {tree_widget, tree_paths});
   removeMarkerFromScene(scene, scene_handles, marker_index);
 }
 
@@ -350,7 +350,7 @@ ObservedScene::removingBody(
   TreePaths &tree_paths = observed_scene.tree_paths;
   TreeWidget &tree_widget = observed_scene.tree_widget;
   removeBodyFromScene(scene, scene_handles, scene_state, body_index);
-  removeBodyFromTree(tree_widget, tree_paths, scene_state, body_index);
+  removeBodyFromTree({tree_widget, tree_paths}, scene_state, body_index);
 }
 
 
@@ -400,7 +400,7 @@ void ObservedScene::removeBox(BodyIndex body_index, BoxIndex box_index)
   clearClipboard(*this);
 
   removeBoxFromTree(
-    tree_widget, tree_paths, scene_state, body_index, box_index
+    {tree_widget, tree_paths}, scene_state, body_index, box_index
   );
 
   removeBoxFromScene(
@@ -416,7 +416,7 @@ void ObservedScene::removeLine(BodyIndex body_index, LineIndex line_index)
   clearClipboard(*this);
 
   removeLineFromTree(
-    tree_widget, tree_paths, scene_state, body_index, line_index
+    {tree_widget, tree_paths}, scene_state, body_index, line_index
   );
 
   removeLineFromScene(
@@ -664,7 +664,7 @@ ObservedScene::createBodyInTree(
   TreeWidget &tree_widget = observed_scene.tree_widget;
   TreePaths &tree_paths = observed_scene.tree_paths;
   SceneState &scene_state = observed_scene.scene_state;
-  ::createBodyInTree(body_index, tree_widget, tree_paths, scene_state);
+  ::createBodyInTree(body_index, {tree_widget, tree_paths}, scene_state);
 }
 
 
@@ -700,7 +700,7 @@ BoxIndex ObservedScene::addBoxTo(BodyIndex body_index)
   ::createBoxInScene(scene, scene_handles, body_index, box_index);
 
   ::createBoxInTree(
-    tree_widget, tree_paths, scene_state, body_index, box_index
+    {tree_widget, tree_paths}, scene_state, body_index, box_index
   );
 
   return box_index;
@@ -716,7 +716,7 @@ BoxIndex ObservedScene::addLineTo(BodyIndex body_index)
   );
 
   ::createLineInTree(
-    tree_widget, tree_paths, scene_state, body_index, line_index
+    {tree_widget, tree_paths}, scene_state, body_index, line_index
   );
 
   return line_index;
@@ -757,7 +757,7 @@ ObservedScene::createMarkerInTree(
   TreeWidget &tree_widget = observed_scene.tree_widget;
   TreePaths &tree_paths = observed_scene.tree_paths;
   SceneState &scene_state = observed_scene.scene_state;
-  ::createMarkerInTree(marker_index, tree_widget, tree_paths, scene_state);
+  ::createMarkerInTree(marker_index, {tree_widget, tree_paths}, scene_state);
 }
 
 
@@ -914,8 +914,7 @@ ObservedScene::addDistanceError(
 
   createDistanceErrorInTree(
     index,
-    tree_widget,
-    tree_paths,
+    { tree_widget, tree_paths },
     scene_state
   );
 

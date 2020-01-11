@@ -4,9 +4,14 @@
 #include "stringvalue.hpp"
 
 
+struct SceneTreeRef {
+  TreeWidget &tree_widget;
+  TreePaths &tree_paths;
+};
+
+
 extern TreePaths fillTree(TreeWidget &, const SceneState &);
 extern void clearTree(TreeWidget &, const TreePaths &);
-
 
 extern void
   updateTreeValues(
@@ -19,111 +24,64 @@ extern Optional<MarkerIndex>
   markerIndexFromEnumerationValue(int enumeration_value);
 
 extern void
-  createDistanceErrorInTree(
-    DistanceErrorIndex,
-    TreeWidget &tree_widget,
-    TreePaths &tree_paths,
-    const SceneState &scene_state
+  createDistanceErrorInTree(DistanceErrorIndex,
+    SceneTreeRef,
+    const SceneState &
   );
 
 extern void
   createMarkerInTree(
     MarkerIndex marker_index,
-    TreeWidget &tree_widget,
-    TreePaths &tree_paths,
+    SceneTreeRef,
     const SceneState &scene_state
   );
 
 extern void
   createMarkerItemInTree(
     MarkerIndex marker_index,
-    TreeWidget &tree_widget,
-    TreePaths &tree_paths,
+    SceneTreeRef,
     const SceneState &scene_state
   );
 
-extern void
-  createBodyInTree(BodyIndex, TreeWidget &, TreePaths &, const SceneState &);
+extern void createBodyInTree(BodyIndex, SceneTreeRef, const SceneState &);
 
 extern void
-  createBoxInTree(
-    TreeWidget &, TreePaths &, const SceneState &, BodyIndex, BoxIndex
-  );
+  createBoxInTree(SceneTreeRef, const SceneState &, BodyIndex, BoxIndex);
 
 extern void
   createLineInTree(
-    TreeWidget &tree_widget,
-    TreePaths &tree_paths,
+    SceneTreeRef,
     const SceneState &scene_state,
     BodyIndex body_index,
     LineIndex line_index
   );
 
 extern void
-  createBodyItemsInTree(
-    BodyIndex, TreeWidget &, TreePaths &, const SceneState &
-  );
+  removeDistanceErrorFromTree(int distance_error_index, SceneTreeRef);
+
+extern void removeMarkerFromTree(MarkerIndex, SceneTreeRef);
+extern void removeMarkerItemFromTree(MarkerIndex marker_index, SceneTreeRef);
 
 extern void
-  removeDistanceErrorFromTree(
-    int distance_error_index,
-    TreePaths &tree_paths,
-    TreeWidget &tree_widget
-  );
+  removeBodyFromTree(SceneTreeRef, const SceneState &, BodyIndex body_index);
 
 extern void
-  removeMarkerFromTree(
-    MarkerIndex,
-    TreePaths &tree_paths,
-    TreeWidget &tree_widget
-  );
+  removeBoxFromTree(SceneTreeRef, const SceneState &, BodyIndex, BoxIndex);
 
 extern void
-  removeMarkerItemFromTree(
-    MarkerIndex marker_index,
-    TreeWidget &tree_widget,
-    TreePaths &tree_paths
-  );
-
-extern void
-  removeBodyFromTree(
-    TreeWidget &tree_widget,
-    TreePaths &tree_paths,
-    const SceneState &,
-    BodyIndex body_index
-  );
-
-extern void
-  removeBoxFromTree(
-    TreeWidget &,
-    TreePaths &,
-    const SceneState &,
-    BodyIndex,
-    BoxIndex
-  );
-
-extern void
-  removeLineFromTree(
-    TreeWidget &,
-    TreePaths &,
-    const SceneState &,
-    BodyIndex,
-    LineIndex
-  );
+  removeLineFromTree(SceneTreeRef, const SceneState &, BodyIndex, LineIndex);
 
 extern void
   createBodyBranchItemsInTree(
     BodyIndex body_index,
-    TreeWidget &tree_widget,
-    TreePaths &tree_paths,
+    SceneTreeRef,
     const SceneState &scene_state
   );
 
 extern void
   removeBodyBranchItemsFromTree(
     BodyIndex body_index,
-    TreeWidget &tree_widget,
-    TreePaths &tree_paths,
+    SceneTreeRef,
     const SceneState &scene_state
   );
 

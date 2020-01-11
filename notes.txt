@@ -74,3 +74,5 @@ that are being solved.
 ---
 If we had a SceneTree, which referenced a TreeWidget, TreePaths, and SceneState,
 it seems like we could simplify a lot of methods in treevalues.[ch]pp
+---
+If we had ObservedScene::sceneTree(), that might simplify some things.

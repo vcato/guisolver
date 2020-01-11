@@ -643,11 +643,13 @@ nextDistanceErrorPath(
 void
   createDistanceErrorInTree(
     DistanceErrorIndex index,
-    TreeWidget &tree_widget,
-    TreePaths &tree_paths,
+    SceneTreeRef scene_tree,
     const SceneState &scene_state
   )
 {
+  TreeWidget &tree_widget = scene_tree.tree_widget;
+  TreePaths &tree_paths = scene_tree.tree_paths;
+
   const SceneState::DistanceError &distance_error_state =
     scene_state.distance_errors[index];
 
@@ -675,10 +677,11 @@ void
 void
 removeDistanceErrorFromTree(
   DistanceErrorIndex distance_error_index,
-  TreePaths &tree_paths,
-  TreeWidget &tree_widget
+  SceneTreeRef scene_tree
 )
 {
+  TreePaths &tree_paths = scene_tree.tree_paths;
+  TreeWidget &tree_widget = scene_tree.tree_widget;
   TreePaths::DistanceErrors &distance_errors = tree_paths.distance_errors;
   TreePath distance_error_path = distance_errors[distance_error_index].path;
   tree_widget.removeItem(distance_error_path);
@@ -690,10 +693,11 @@ removeDistanceErrorFromTree(
 void
 removeMarkerItemFromTree(
   MarkerIndex marker_index,
-  TreeWidget &tree_widget,
-  TreePaths &tree_paths
+  SceneTreeRef scene_tree
 )
 {
+  TreeWidget &tree_widget = scene_tree.tree_widget;
+  TreePaths &tree_paths = scene_tree.tree_paths;
   TreePath marker_path = tree_paths.marker(marker_index).path;
   tree_widget.removeItem(marker_path);
   tree_paths.markers[marker_index].reset();
@@ -704,11 +708,12 @@ removeMarkerItemFromTree(
 void
 removeMarkerFromTree(
   MarkerIndex marker_index,
-  TreePaths &tree_paths,
-  TreeWidget &tree_widget
+  SceneTreeRef scene_tree
 )
 {
-  removeMarkerItemFromTree(marker_index, tree_widget, tree_paths);
+  TreePaths &tree_paths = scene_tree.tree_paths;
+  TreeWidget &tree_widget = scene_tree.tree_widget;
+  removeMarkerItemFromTree(marker_index, {tree_widget, tree_paths});
   removeIndexFrom(tree_paths.markers, marker_index);
 }
 
@@ -754,11 +759,12 @@ static string totalErrorLabel(float total_error)
 void
 createMarkerItemInTree(
   MarkerIndex marker_index,
-  TreeWidget &tree_widget,
-  TreePaths &tree_paths,
+  SceneTreeRef scene_tree,
   const SceneState &scene_state
 )
 {
+  TreeWidget &tree_widget = scene_tree.tree_widget;
+  TreePaths &tree_paths = scene_tree.tree_paths;
   const SceneState::Marker &state_marker = scene_state.marker(marker_index);
   Optional<BodyIndex> maybe_body_index = state_marker.maybe_body_index;
 
@@ -775,18 +781,18 @@ createMarkerItemInTree(
 void
 createMarkerInTree(
   MarkerIndex marker_index,
-  TreeWidget &tree_widget,
-  TreePaths &tree_paths,
+  SceneTreeRef scene_tree,
   const SceneState &scene_state
 )
 {
+  TreeWidget &tree_widget = scene_tree.tree_widget;
+  TreePaths &tree_paths = scene_tree.tree_paths;
   assert(marker_index == MarkerIndex(tree_paths.markers.size()));
   tree_paths.markers.emplace_back();
 
   createMarkerItemInTree(
     marker_index,
-    tree_widget,
-    tree_paths,
+    {tree_widget, tree_paths},
     scene_state
   );
 }
@@ -911,11 +917,12 @@ createBodyItem(
 static void
 createBodyItemInTree(
   BodyIndex body_index,
-  TreeWidget &tree_widget,
-  TreePaths &tree_paths,
+  SceneTreeRef scene_tree,
   const SceneState &scene_state
 )
 {
+  TreeWidget &tree_widget = scene_tree.tree_widget;
+  TreePaths &tree_paths = scene_tree.tree_paths;
   const SceneState::Body &state_body = scene_state.body(body_index);
   const Optional<BodyIndex> &maybe_parent_index = state_body.maybe_parent_index;
 
@@ -934,13 +941,14 @@ createBodyItemInTree(
 
 void
 createBoxInTree(
-  TreeWidget &tree_widget,
-  TreePaths &tree_paths,
+  SceneTreeRef scene_tree,
   const SceneState &scene_state,
   BodyIndex body_index,
   BoxIndex box_index
 )
 {
+  TreeWidget &tree_widget = scene_tree.tree_widget;
+  TreePaths &tree_paths = scene_tree.tree_paths;
   TreePaths::Body &body_paths = tree_paths.body(body_index);
   const SceneState::Body &body_state = scene_state.body(body_index);
   TreePath box_path = nextPaths(body_index, tree_paths, scene_state).box_path;
@@ -956,13 +964,14 @@ createBoxInTree(
 
 void
 createLineInTree(
-  TreeWidget &tree_widget,
-  TreePaths &tree_paths,
+  SceneTreeRef scene_tree,
   const SceneState &scene_state,
   BodyIndex body_index,
   LineIndex line_index
 )
 {
+  TreeWidget &tree_widget = scene_tree.tree_widget;
+  TreePaths &tree_paths = scene_tree.tree_paths;
   TreePaths::Body &body_paths = tree_paths.body(body_index);
   const SceneState::Body &body_state = scene_state.body(body_index);
   TreePath line_path = nextPaths(body_index, tree_paths, scene_state).line_path;
@@ -982,41 +991,38 @@ createLineInTree(
 void
 createBodyInTree(
   BodyIndex body_index,
-  TreeWidget &tree_widget,
-  TreePaths &tree_paths,
+  SceneTreeRef scene_tree,
   const SceneState &scene_state
 )
 {
+  TreePaths &tree_paths = scene_tree.tree_paths;
+
   if (body_index >= BodyIndex(tree_paths.bodies.size())) {
     tree_paths.bodies.resize(body_index+1);
   }
 
   assert(!tree_paths.bodies[body_index]);
-  createBodyItemInTree(body_index, tree_widget, tree_paths, scene_state);
+  createBodyItemInTree(body_index, scene_tree, scene_state);
 
   for (auto i : indicesOfMarkersOnBody(body_index, scene_state)) {
-    createMarkerInTree(i, tree_widget, tree_paths, scene_state);
+    createMarkerInTree(i, scene_tree, scene_state);
   }
 
   for (auto i : indicesOfDistanceErrorsOnBody(body_index, scene_state)) {
-    createDistanceErrorInTree(
-      i, tree_widget, tree_paths, scene_state
-    );
+    createDistanceErrorInTree(i, scene_tree, scene_state);
   }
 
   for (auto i : indicesOfChildBodies(body_index, scene_state)) {
-    createBodyInTree(i, tree_widget, tree_paths, scene_state);
+    createBodyInTree(i, scene_tree, scene_state);
   }
 }
 
 
-void
-removeBodyItemFromTree(
-  BodyIndex body_index,
-  TreeWidget &tree_widget,
-  TreePaths &tree_paths
-)
+static void
+removeBodyItemFromTree(BodyIndex body_index, SceneTreeRef scene_tree)
 {
+  TreeWidget &tree_widget = scene_tree.tree_widget;
+  TreePaths &tree_paths = scene_tree.tree_paths;
   TreePath body_path = tree_paths.body(body_index).path;
   tree_widget.removeItem(body_path);
   tree_paths.bodies[body_index].reset();
@@ -1026,8 +1032,7 @@ removeBodyItemFromTree(
 
 void
 removeBodyFromTree(
-  TreeWidget &tree_widget,
-  TreePaths &tree_paths,
+  SceneTreeRef scene_tree,
   const SceneState &
 #ifndef NDEBUG
     scene_state
@@ -1036,22 +1041,25 @@ removeBodyFromTree(
   BodyIndex body_index
 )
 {
+  TreeWidget &tree_widget = scene_tree.tree_widget;
+  TreePaths &tree_paths = scene_tree.tree_paths;
   assert(indicesOfMarkersOnBody(body_index, scene_state).empty());
   assert(indicesOfChildBodies(body_index, scene_state).empty());
-  removeBodyItemFromTree(body_index, tree_widget, tree_paths);
+  removeBodyItemFromTree(body_index, {tree_widget, tree_paths});
   removeIndexFrom(tree_paths.bodies, body_index);
 }
 
 
 void
 removeBoxFromTree(
-  TreeWidget &tree_widget,
-  TreePaths &tree_paths,
+  SceneTreeRef scene_tree,
   const SceneState &,
   BodyIndex body_index,
   BoxIndex box_index
 )
 {
+  TreeWidget &tree_widget = scene_tree.tree_widget;
+  TreePaths &tree_paths = scene_tree.tree_paths;
   TreePath box_path = tree_paths.body(body_index).boxes[box_index].path;
   tree_widget.removeItem(box_path);
   removeIndexFrom(tree_paths.bodies[body_index]->boxes, box_index);
@@ -1061,13 +1069,14 @@ removeBoxFromTree(
 
 void
 removeLineFromTree(
-  TreeWidget &tree_widget,
-  TreePaths &tree_paths,
+  SceneTreeRef scene_tree,
   const SceneState &,
   BodyIndex body_index,
   LineIndex line_index
 )
 {
+  TreeWidget &tree_widget = scene_tree.tree_widget;
+  TreePaths &tree_paths = scene_tree.tree_paths;
   TreePath line_path = tree_paths.body(body_index).lines[line_index].path;
   tree_widget.removeItem(line_path);
   removeIndexFrom(tree_paths.bodies[body_index]->lines, line_index);
@@ -1089,16 +1098,18 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
     tree_paths.total_error, LabelProperties{totalErrorLabel(0)}
   );
 
+  SceneTreeRef scene_tree = {tree_widget, tree_paths};
+
   for (auto i : indicesOfChildBodies({}, scene_state)) {
-    createBodyInTree(i, tree_widget, tree_paths, scene_state);
+    createBodyInTree(i, scene_tree, scene_state);
   }
 
   for (auto i : indicesOfMarkersOnBody({}, scene_state)) {
-    createMarkerInTree(i, tree_widget, tree_paths, scene_state);
+    createMarkerInTree(i, scene_tree, scene_state);
   }
 
   for (auto i : indicesOfDistanceErrorsOnBody({}, scene_state)) {
-    createDistanceErrorInTree(i, tree_widget, tree_paths, scene_state);
+    createDistanceErrorInTree(i, scene_tree, scene_state);
   }
 
   assert(
@@ -1659,25 +1670,23 @@ setSceneStateStringValue(
 void
 removeBodyBranchItemsFromTree(
   BodyIndex body_index,
-  TreeWidget &tree_widget,
-  TreePaths &tree_paths,
+  SceneTreeRef scene_tree,
   const SceneState &scene_state
 )
 {
   struct Visitor {
-    TreeWidget &tree_widget;
-    TreePaths &tree_paths;
+    SceneTreeRef scene_tree;
 
     void visitBody(BodyIndex body_index) const
     {
-      removeBodyItemFromTree(body_index, tree_widget, tree_paths);
+      removeBodyItemFromTree(body_index, scene_tree);
     }
 
     void visitMarker(MarkerIndex marker_index) const
     {
-      removeMarkerItemFromTree(marker_index, tree_widget, tree_paths);
+      removeMarkerItemFromTree(marker_index, scene_tree);
     }
-  } visitor = {tree_widget, tree_paths};
+  } visitor = {scene_tree};
 
   forEachBranchIndexInPostOrder(body_index, scene_state, visitor);
 }
@@ -1686,28 +1695,24 @@ removeBodyBranchItemsFromTree(
 void
 createBodyBranchItemsInTree(
   BodyIndex body_index,
-  TreeWidget &tree_widget,
-  TreePaths &tree_paths,
+  SceneTreeRef scene_tree,
   const SceneState &scene_state
 )
 {
   struct Visitor {
-    TreeWidget &tree_widget;
-    TreePaths &tree_paths;
+    SceneTreeRef scene_tree;
     const SceneState &scene_state;
 
     void visitBody(BodyIndex body_index) const
     {
-      createBodyItemInTree(body_index, tree_widget, tree_paths, scene_state);
+      createBodyItemInTree(body_index, scene_tree, scene_state);
     }
 
     void visitMarker(MarkerIndex marker_index) const
     {
-      createMarkerItemInTree(
-        marker_index, tree_widget, tree_paths, scene_state
-      );
+      createMarkerItemInTree(marker_index, scene_tree, scene_state);
     }
-  } visitor = {tree_widget, tree_paths, scene_state};
+  } visitor = {scene_tree, scene_state};
 
   forEachBranchIndexInPreOrder(body_index, scene_state, visitor);
 }

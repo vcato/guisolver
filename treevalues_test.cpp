@@ -74,8 +74,7 @@ static void testRemovingDistanceError()
 
   removeDistanceErrorFromTree(
     distance_error_to_remove_index,
-    tree_paths,
-    tree_widget
+    { tree_widget, tree_paths }
   );
 
   state.removeDistanceError(distance_error_to_remove_index);
@@ -137,7 +136,7 @@ static void testAddingMarker()
   TreePaths tree_paths = fillTree(tree_widget, state);
   MarkerIndex marker_index = state.createMarker(Optional<BodyIndex>{});
   state.marker(marker_index).position = {1.5, 2.5, 3.5};
-  createMarkerInTree(marker_index, tree_widget, tree_paths, state);
+  createMarkerInTree(marker_index, {tree_widget, tree_paths}, state);
 
   assert(
     tree_widget.item(
@@ -157,7 +156,7 @@ static void testRemovingMarker(const string &name)
   TreePaths tree_paths = fillTree(tree_widget, state);
   MarkerIndex marker_index = findIndex(markerNames(state), name);
   state.removeMarker(marker_index);
-  removeMarkerFromTree(marker_index, tree_paths, tree_widget);
+  removeMarkerFromTree(marker_index, {tree_widget, tree_paths});
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, state);
   checkTree(tree_widget, tree_paths, state);
 }
@@ -181,7 +180,7 @@ static void testAddingASceneBody()
   FakeTreeWidget tree_widget;
   TreePaths tree_paths = fillTree(tree_widget, state);
   BodyIndex body_index = createGlobalBodyIn(state);
-  createBodyInTree(body_index, tree_widget, tree_paths, state);
+  createBodyInTree(body_index, {tree_widget, tree_paths}, state);
   checkTree(tree_widget, tree_paths, state);
 }
 
@@ -195,7 +194,7 @@ static void testAddingAChildBody()
   BodyIndex body_index =
     createBodyIn(state, /*parent_body_index*/boxBodyIndex());
 
-  createBodyInTree(body_index, tree_widget, tree_paths, state);
+  createBodyInTree(body_index, {tree_widget, tree_paths}, state);
   checkTree(tree_widget, tree_paths, state);
 }
 
@@ -208,7 +207,7 @@ static void testRemovingAGlobalBody()
   createGlobalBodyIn(state);
   state.createMarker("global");
   TreePaths tree_paths = fillTree(tree_widget, state);
-  removeBodyFromTree(tree_widget, tree_paths, state, body1_index);
+  removeBodyFromTree({tree_widget, tree_paths}, state, body1_index);
   state.removeBody(body1_index);
   checkTree(tree_widget, tree_paths, state);
 }
@@ -224,7 +223,7 @@ static void testRemovingAChildBody()
   MarkerIndex marker_index = state.createMarker("global");
   state.marker(marker_index).maybe_body_index = parent_body_index;
   TreePaths tree_paths = fillTree(tree_widget, state);
-  removeBodyFromTree(tree_widget, tree_paths, state, body1_index);
+  removeBodyFromTree({tree_widget, tree_paths}, state, body1_index);
   state.removeBody(body1_index);
   checkTree(tree_widget, tree_paths, state);
 }
@@ -264,8 +263,7 @@ static void testRemoveBodyFromTree()
   TreePaths tree_paths = fillTree(tree_widget, scene_state);
 
   removeBodyFromTree(
-    tree_widget,
-    tree_paths,
+    { tree_widget, tree_paths },
     scene_state,
     body3_index
   );
@@ -284,7 +282,11 @@ static void testAddingASecondBox()
   scene_state.body(body_index).addBox();
   TreePaths tree_paths = fillTree(tree_widget, scene_state);
   BoxIndex box2_index = scene_state.body(body_index).addBox();
-  createBoxInTree(tree_widget, tree_paths, scene_state, body_index, box2_index);
+
+  createBoxInTree(
+    {tree_widget, tree_paths}, scene_state, body_index, box2_index
+  );
+
   checkTree(tree_widget, tree_paths, scene_state);
 }
 
@@ -297,7 +299,11 @@ static void testInsertingABox()
   scene_state.createMarker(body_index);
   TreePaths tree_paths = fillTree(tree_widget, scene_state);
   BoxIndex box_index = scene_state.body(body_index).addBox();
-  createBoxInTree(tree_widget, tree_paths, scene_state, body_index, box_index);
+
+  createBoxInTree(
+    {tree_widget, tree_paths}, scene_state, body_index, box_index
+  );
+
   checkTree(tree_widget, tree_paths, scene_state);
 }
 
