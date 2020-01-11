@@ -27,12 +27,6 @@ extern void
     MarkerNameMap &marker_name_map
   );
 
-extern void
-  createDistanceErrorsInSceneState(
-    SceneState &result,
-    const TaggedValue &tagged_value
-  );
-
 extern SceneState
   makeSceneStateFromTaggedValue(const TaggedValue &tagged_value);
 

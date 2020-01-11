@@ -20,7 +20,7 @@ extern Optional<MarkerIndex>
 
 extern void
   createDistanceErrorInTree(
-    const SceneState::DistanceError &state_distance_error,
+    DistanceErrorIndex,
     TreeWidget &tree_widget,
     TreePaths &tree_paths,
     const SceneState &scene_state
@@ -28,10 +28,10 @@ extern void
 
 extern void
   createMarkerInTree(
+    MarkerIndex marker_index,
     TreeWidget &tree_widget,
     TreePaths &tree_paths,
-    const SceneState &scene_state,
-    MarkerIndex marker_index
+    const SceneState &scene_state
   );
 
 extern void
@@ -43,7 +43,7 @@ extern void
   );
 
 extern void
-  createBodyInTree(TreeWidget &, TreePaths &, const SceneState &, BodyIndex);
+  createBodyInTree(BodyIndex, TreeWidget &, TreePaths &, const SceneState &);
 
 extern void
   createBoxInTree(
@@ -136,7 +136,6 @@ extern void
   // This updates the list of markers that are shown as possible values for
   // the two markers of a distance error in the tree.
 
-
 extern bool
   setSceneStateNumericValue(
     SceneState &scene_state,
@@ -144,7 +143,6 @@ extern bool
     NumericValue value,
     const TreePaths &tree_paths
   );
-
 
 extern bool
   setSceneStateStringValue(

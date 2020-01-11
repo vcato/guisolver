@@ -61,8 +61,22 @@ How would we generalize this to have multiple solving passes?
     make 3D points which match the rays. The camera solver and the point
     solver could be combined into a larger solver which solves both.
 ---
+Shoudn't be able to change a combobox value in the tree using the mouse wheel.
+---
 Allow adding distance errors to bodies.
 * This will mean removing/adding distance errors to the tree when we
   remove or add bodies.
 * This will make it more natural to think of a body, its markers, and
   its distance errors as a single unit.
+---
+The solve flag should be set to true on all values in the tagged value
+that are being solved.
+---
+If we had a SceneTree, which referenced a TreeWidget, TreePaths, and SceneState,
+it seems like we could simplify a lot of methods in treevalues.[ch]pp
+---
+Crash if we try to load test.scn
+* I think this is happening because the distance errors aren't created in
+  index order in the tree, so the tree paths end up getting out of sync
+  with the scene state.  We should have a similar issue with markers, so
+  I wonder how that is handled.

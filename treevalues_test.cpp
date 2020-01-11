@@ -137,7 +137,7 @@ static void testAddingMarker()
   TreePaths tree_paths = fillTree(tree_widget, state);
   MarkerIndex marker_index = state.createMarker(Optional<BodyIndex>{});
   state.marker(marker_index).position = {1.5, 2.5, 3.5};
-  createMarkerInTree(tree_widget, tree_paths, state, marker_index);
+  createMarkerInTree(marker_index, tree_widget, tree_paths, state);
 
   assert(
     tree_widget.item(
@@ -181,7 +181,7 @@ static void testAddingASceneBody()
   FakeTreeWidget tree_widget;
   TreePaths tree_paths = fillTree(tree_widget, state);
   BodyIndex body_index = createGlobalBodyIn(state);
-  createBodyInTree(tree_widget, tree_paths, state, body_index);
+  createBodyInTree(body_index, tree_widget, tree_paths, state);
   checkTree(tree_widget, tree_paths, state);
 }
 
@@ -195,7 +195,7 @@ static void testAddingAChildBody()
   BodyIndex body_index =
     createBodyIn(state, /*parent_body_index*/boxBodyIndex());
 
-  createBodyInTree(tree_widget, tree_paths, state, body_index);
+  createBodyInTree(body_index, tree_widget, tree_paths, state);
   checkTree(tree_widget, tree_paths, state);
 }
 

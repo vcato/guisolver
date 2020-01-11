@@ -104,7 +104,7 @@ sceneobjects_test: sceneobjects_test.o $(SCENEOBJECTS) fakescene.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 observedscene_test: observedscene_test.o $(OBSERVEDSCENE) faketreewidget.o \
-  fakescene.o checktree.o
+  fakescene.o checktree.o $(SCENESTATEIO)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 clean:

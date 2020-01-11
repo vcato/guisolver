@@ -4,6 +4,7 @@
 #include "fakescene.hpp"
 #include "checktree.hpp"
 #include "startswith.hpp"
+#include "scenestateio.hpp"
 
 using std::cerr;
 
@@ -91,6 +92,97 @@ static void testTransferringAMarker()
   );
 
   checkTree(tester);
+}
+
+
+static void testDuplicatingABody()
+{
+  // Create a body that has a distance error
+  //
+  // * Marker global1
+  // * Body
+  //   * Marker local1
+  //   * DistanceError local1 <-> global1
+  //   * DistanceError global1 <-> local1
+
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+  SceneState &scene_state = observed_scene.scene_state;
+  TreePaths &tree_paths = observed_scene.tree_paths;
+
+  BodyIndex body1_index = observed_scene.addBody(/*parent*/{});
+  MarkerIndex global_marker_index = observed_scene.addMarker(/*parent*/{});
+  MarkerIndex local1_marker_index = observed_scene.addMarker(body1_index);
+
+  observed_scene.addDistanceError(
+    global_marker_index,
+    local1_marker_index,
+    body1_index
+  );
+
+  observed_scene.addDistanceError(
+    local1_marker_index,
+    global_marker_index,
+    body1_index
+  );
+
+  // Duplicate the body
+  BodyIndex body2_index = observed_scene.duplicateBody(body1_index);
+
+  // * Marker global1
+  // * Body
+  //   * Marker local1
+  //   * DistanceError local1 <-> global1
+  //   * DistanceError global1 <-> local1
+  // * Body
+  //   * Marker local2
+  //   * DistanceError local2 <-> global1
+  //   * DistanceError global1 <-> local2
+  assert(scene_state.bodies().size() == 2);
+
+  MarkerIndex local2_marker_index = markersOnBody(body2_index, scene_state)[0];
+
+  DistanceErrorIndex distance_error1_index =
+    distanceErrorsOnBody(body2_index, scene_state)[0];
+
+  SceneState::DistanceError &distance_error1_state =
+    scene_state.distance_errors[distance_error1_index];
+
+  assert(
+    distance_error1_state.optional_start_marker_index == global_marker_index
+  );
+
+  assert(
+    distance_error1_state.optional_end_marker_index == local2_marker_index
+  );
+
+  DistanceErrorIndex distance_error2_index =
+    distanceErrorsOnBody(body2_index, scene_state)[1];
+
+  SceneState::DistanceError &distance_error2_state =
+    scene_state.distance_errors[distance_error2_index];
+
+  assert(
+    distance_error2_state.optional_end_marker_index == global_marker_index
+  );
+
+  assert(
+    distance_error2_state.optional_start_marker_index == local2_marker_index
+  );
+
+  const TreePath &distance_error2_tree_path =
+    tree_paths.distance_errors[distance_error1_index].path;
+
+  const TreePath &body2_tree_path = tree_paths.body(body2_index).path;
+
+  assert(startsWith(distance_error2_tree_path, body2_tree_path));
+
+  assert(
+    distance_error1_index
+    < DistanceErrorIndex(observed_scene.scene_handles.distance_errors.size())
+  );
+
+  printSceneStateOn(cerr, scene_state);
 }
 
 
@@ -214,6 +306,7 @@ int main()
   testTransferringABody1();
   testTransferringABody2();
   testTransferringAMarker();
+  testDuplicatingABody();
   testDuplicatingABodyWithDistanceErrors();
   testUserSelectingABodyInTheTree();
   testSelectingSceneInTheTree();

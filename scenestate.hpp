@@ -93,7 +93,7 @@ class SceneState {
     struct DistanceError {
       Optional<MarkerIndex> optional_start_marker_index;
       Optional<MarkerIndex> optional_end_marker_index;
-      Optional<BodyIndex> optional_body_index;
+      Optional<BodyIndex> maybe_body_index;
       Optional<float> maybe_distance;
       float desired_distance = 0;
       float weight = 1;
@@ -197,6 +197,12 @@ extern vector<MarkerIndex>
     const SceneState &scene_state
   );
 
+extern vector<DistanceErrorIndex>
+  indicesOfDistanceErrorsOnBody(
+    Optional<BodyIndex> maybe_body_index,
+    const SceneState &scene_state
+  );
+
 extern vector<BodyIndex>
   indicesOfChildBodies(
     Optional<BodyIndex> maybe_body_index,
@@ -211,9 +217,24 @@ addMarkersOnBodyTo(
   const SceneState &scene_state
 )
 {
-  for (auto marker_index : indicesOf(scene_state.markers())) {
-    if (scene_state.marker(marker_index).maybe_body_index == body_index) {
-      marker_indices.push_back(marker_index);
+  for (auto i : indicesOf(scene_state.markers())) {
+    if (scene_state.marker(i).maybe_body_index == body_index) {
+      marker_indices.push_back(i);
+    }
+  }
+}
+
+
+inline void
+addDistanceErrorsOnBodyTo(
+  vector<DistanceErrorIndex> &distance_error_indices,
+  BodyIndex body_index,
+  const SceneState &scene_state
+)
+{
+  for (auto i : indicesOf(scene_state.distance_errors)) {
+    if (scene_state.distance_errors[i].maybe_body_index == body_index) {
+      distance_error_indices.push_back(i);
     }
   }
 }
@@ -224,6 +245,15 @@ markersOnBody(BodyIndex body_index, const SceneState &scene_state)
 {
   vector<MarkerIndex> indices;
   addMarkersOnBodyTo(indices, body_index, scene_state);
+  return indices;
+}
+
+
+inline vector<DistanceErrorIndex>
+distanceErrorsOnBody(BodyIndex body_index, const SceneState &scene_state)
+{
+  vector<DistanceErrorIndex> indices;
+  addDistanceErrorsOnBodyTo(indices, body_index, scene_state);
   return indices;
 }
 

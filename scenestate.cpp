@@ -91,9 +91,27 @@ indicesOfMarkersOnBody(
 {
   vector<MarkerIndex> result;
 
-  for (auto marker_index : indicesOf(scene_state.markers())) {
-    if (scene_state.marker(marker_index).maybe_body_index == maybe_body_index) {
-      result.push_back(marker_index);
+  for (auto i : indicesOf(scene_state.markers())) {
+    if (scene_state.marker(i).maybe_body_index == maybe_body_index) {
+      result.push_back(i);
+    }
+  }
+
+  return result;
+}
+
+
+vector<DistanceErrorIndex>
+indicesOfDistanceErrorsOnBody(
+  Optional<BodyIndex> maybe_body_index,
+  const SceneState &scene_state
+)
+{
+  vector<DistanceErrorIndex> result;
+
+  for (auto i : indicesOf(scene_state.distance_errors)) {
+    if (scene_state.distance_errors[i].maybe_body_index == maybe_body_index) {
+      result.push_back(i);
     }
   }
 

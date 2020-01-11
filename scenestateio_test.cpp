@@ -164,6 +164,35 @@ static void testWithMultipleTransforms()
     "        z: 0\n"
     "      }\n"
     "    }\n"
+    "    Transform {\n"
+    "      name: \"body3\"\n"
+    "      translation {\n"
+    "        x: 0 {\n"
+    "          solve: false\n"
+    "        }\n"
+    "        y: 0 {\n"
+    "          solve: false\n"
+    "        }\n"
+    "        z: 0 {\n"
+    "          solve: false\n"
+    "        }\n"
+    "      }\n"
+    "      rotation {\n"
+    "        x: 0 {\n"
+    "          solve: false\n"
+    "        }\n"
+    "        y: 0 {\n"
+    "          solve: false\n"
+    "        }\n"
+    "        z: 0 {\n"
+    "          solve: false\n"
+    "        }\n"
+    "      }\n"
+    "      DistanceError {\n"
+    "        desired_distance: 0\n"
+    "        weight: 1\n"
+    "      }\n"
+    "    }\n"
     "  }\n"
     "  Transform {\n"
     "    name: \"body2\"\n"
@@ -194,12 +223,15 @@ static void testWithMultipleTransforms()
 
   SceneState state;
   SceneState::XYZ box_scale = {5, 0.1, 10};
-  BodyIndex box1_index = createBodyInState(state, /*maybe_parent_index*/{});
-  setAll(state.body(box1_index).solve_flags, true);
-  bodyBox(state.body(box1_index)).scale = box_scale;
-  BodyIndex box2_index = createBodyInState(state, /*maybe_parent_index*/{});
-  setAll(state.body(box2_index).solve_flags, true);
-  bodyBox(state.body(box2_index)).scale = box_scale;
+  BodyIndex body1_index = createBodyInState(state, /*maybe_parent_index*/{});
+  setAll(state.body(body1_index).solve_flags, true);
+  bodyBox(state.body(body1_index)).scale = box_scale;
+  BodyIndex body2_index = createBodyInState(state, /*maybe_parent_index*/{});
+  setAll(state.body(body2_index).solve_flags, true);
+  bodyBox(state.body(body2_index)).scale = box_scale;
+  BodyIndex body3_index = state.createBody(/*parent*/body1_index);
+  DistanceErrorIndex distance_error_index = state.createDistanceError();
+  state.distance_errors[distance_error_index].maybe_body_index = body3_index;
   string state_string = sceneStateString(state);
   assert(state_string == expected_string);
   testWith(state);

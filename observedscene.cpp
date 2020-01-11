@@ -664,7 +664,7 @@ ObservedScene::createBodyInTree(
   TreeWidget &tree_widget = observed_scene.tree_widget;
   TreePaths &tree_paths = observed_scene.tree_paths;
   SceneState &scene_state = observed_scene.scene_state;
-  ::createBodyInTree(tree_widget, tree_paths, scene_state, body_index);
+  ::createBodyInTree(body_index, tree_widget, tree_paths, scene_state);
 }
 
 
@@ -757,7 +757,7 @@ ObservedScene::createMarkerInTree(
   TreeWidget &tree_widget = observed_scene.tree_widget;
   TreePaths &tree_paths = observed_scene.tree_paths;
   SceneState &scene_state = observed_scene.scene_state;
-  ::createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
+  ::createMarkerInTree(marker_index, tree_widget, tree_paths, scene_state);
 }
 
 
@@ -907,12 +907,12 @@ ObservedScene::addDistanceError(
 
   distance_error.optional_start_marker_index = optional_start_marker_index;
   distance_error.optional_end_marker_index = optional_end_marker_index;
-  distance_error.optional_body_index = optional_body_index;
+  distance_error.maybe_body_index = optional_body_index;
   observed_scene.update_errors_function(scene_state);
   createDistanceErrorInScene(scene, scene_handles, scene_state, index);
 
   createDistanceErrorInTree(
-    distance_error,
+    index,
     tree_widget,
     tree_paths,
     scene_state

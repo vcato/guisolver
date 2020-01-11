@@ -294,6 +294,88 @@ fillLineStateFromTaggedValue(
 }
 
 
+static const StringValue &
+mappedMarkerName(
+  const StringValue &marker_name,
+  const MarkerNameMap &marker_name_map
+)
+{
+  auto iter = marker_name_map.find(marker_name);
+
+  if (iter == marker_name_map.end()) {
+    return marker_name;
+  }
+  else {
+    return iter->second;
+  }
+}
+
+
+static void
+  createDistanceErrorsInSceneState(
+    SceneState &result,
+    const TaggedValue &tagged_value,
+    Optional<BodyIndex> maybe_body_index,
+    const MarkerNameMap &marker_name_map
+  )
+{
+  for (auto &child_tagged_value : tagged_value.children) {
+    if (child_tagged_value.tag == "DistanceError") {
+      DistanceErrorIndex index = result.createDistanceError();
+
+      SceneState::DistanceError &distance_error_state =
+        result.distance_errors[index];
+
+      distance_error_state.maybe_body_index = maybe_body_index;
+
+      {
+        Optional<StringValue> maybe_start_marker_name =
+          findStringValue(child_tagged_value, "start");
+
+        if (maybe_start_marker_name) {
+          StringValue mapped_marker_name =
+            mappedMarkerName(*maybe_start_marker_name, marker_name_map);
+
+          distance_error_state.optional_start_marker_index =
+            findMarkerIndex(result, mapped_marker_name);
+        }
+      }
+
+      {
+        Optional<StringValue> maybe_end_marker_name =
+          findStringValue(child_tagged_value, "end");
+
+        if (maybe_end_marker_name) {
+          StringValue mapped_marker_name =
+            mappedMarkerName(*maybe_end_marker_name, marker_name_map);
+
+          distance_error_state.optional_end_marker_index =
+            findMarkerIndex(result, mapped_marker_name);
+        }
+      }
+
+      {
+        auto tag = "desired_distance";
+        auto optional_value = findNumericValue(child_tagged_value, tag);
+
+        if (optional_value) {
+          distance_error_state.desired_distance = *optional_value;
+        }
+      }
+
+      {
+        auto tag = "weight";
+        auto optional_value = findNumericValue(child_tagged_value, tag);
+
+        if (optional_value) {
+          distance_error_state.weight = *optional_value;
+        }
+      }
+    }
+  }
+}
+
+
 static BodyIndex
 createBodyFromTaggedValueWithoutResolvingConflicts(
   SceneState &result,
@@ -352,6 +434,10 @@ createBodyFromTaggedValueWithoutResolvingConflicts(
   );
 
   createChildMarkersInSceneState(
+    result, tagged_value, body_index, marker_name_map
+  );
+
+  createDistanceErrorsInSceneState(
     result, tagged_value, body_index, marker_name_map
   );
 
@@ -426,61 +512,6 @@ createChildBodiesInSceneState(
 }
 
 
-void
-  createDistanceErrorsInSceneState(
-    SceneState &result,
-    const TaggedValue &tagged_value
-  )
-{
-  for (auto &child_tagged_value : tagged_value.children) {
-    if (child_tagged_value.tag == "DistanceError") {
-      DistanceErrorIndex index = result.createDistanceError();
-
-      SceneState::DistanceError &distance_error_state =
-        result.distance_errors[index];
-
-      {
-        Optional<StringValue> maybe_start_marker_name =
-          findStringValue(child_tagged_value, "start");
-
-        if (maybe_start_marker_name) {
-          distance_error_state.optional_start_marker_index =
-            findMarkerIndex(result, *maybe_start_marker_name);
-        }
-      }
-
-      {
-        Optional<StringValue> maybe_end_marker_name =
-          findStringValue(child_tagged_value, "end");
-
-        if (maybe_end_marker_name) {
-          distance_error_state.optional_end_marker_index =
-            findMarkerIndex(result, *maybe_end_marker_name);
-        }
-      }
-
-      {
-        auto tag = "desired_distance";
-        auto optional_value = findNumericValue(child_tagged_value, tag);
-
-        if (optional_value) {
-          distance_error_state.desired_distance = *optional_value;
-        }
-      }
-
-      {
-        auto tag = "weight";
-        auto optional_value = findNumericValue(child_tagged_value, tag);
-
-        if (optional_value) {
-          distance_error_state.weight = *optional_value;
-        }
-      }
-    }
-  }
-}
-
-
 SceneState makeSceneStateFromTaggedValue(const TaggedValue &tagged_value)
 {
   SceneState result;
@@ -495,7 +526,10 @@ SceneState makeSceneStateFromTaggedValue(const TaggedValue &tagged_value)
     result, tagged_value, maybe_parent_index, marker_name_map
   );
 
-  createDistanceErrorsInSceneState(result, tagged_value);
+  createDistanceErrorsInSceneState(
+    result, tagged_value, /*body*/{}, marker_name_map
+  );
+
   return result;
 }
 
@@ -664,8 +698,8 @@ createMarker(TaggedValue &parent, const SceneState::Marker &marker_state)
 static void
   createDistanceError(
     TaggedValue &parent,
-    const SceneState &scene_state,
-    const SceneState::DistanceError &distance_error_state
+    const SceneState::DistanceError &distance_error_state,
+    const SceneState &scene_state
   )
 {
   auto &distance_error = create(parent, "DistanceError");
@@ -698,6 +732,13 @@ static Optional<BodyIndex>
   maybeAttachedBodyIndex(const SceneState::Marker &marker_state)
 {
   return marker_state.maybe_body_index;
+}
+
+
+static Optional<BodyIndex>
+  maybeAttachedBodyIndex(const SceneState::DistanceError &distance_error_state)
+{
+  return distance_error_state.maybe_body_index;
 }
 
 
@@ -747,9 +788,15 @@ void
 
   createChildBodiesInTaggedValue(transform, scene_state, body_index);
 
-  for (const SceneState::Marker &marker_state : scene_state.markers()) {
+  for (auto &marker_state : scene_state.markers()) {
     if (maybeAttachedBodyIndex(marker_state) == body_index) {
       createMarker(transform, marker_state);
+    }
+  }
+
+  for (auto &distance_error_state : scene_state.distance_errors) {
+    if (maybeAttachedBodyIndex(distance_error_state) == body_index) {
+      createDistanceError(transform, distance_error_state, scene_state);
     }
   }
 }
@@ -770,7 +817,9 @@ TaggedValue makeTaggedValueForSceneState(const SceneState &scene_state)
     const SceneState::DistanceError &distance_error_state
     : scene_state.distance_errors
   ) {
-    createDistanceError(result, scene_state, distance_error_state);
+    if (!maybeAttachedBodyIndex(distance_error_state)) {
+      createDistanceError(result, distance_error_state, scene_state);
+    }
   }
 
   return result;

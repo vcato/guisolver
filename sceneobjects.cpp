@@ -549,12 +549,16 @@ createBodyInScene(
     state
   );
 
-  for (auto marker_index : indicesOfMarkersOnBody(body_index, state)) {
-    createMarkerInScene(scene, scene_handles, state, marker_index);
+  for (auto i : indicesOfMarkersOnBody(body_index, state)) {
+    createMarkerInScene(scene, scene_handles, state, i);
   }
 
-  for (auto child_body_index : indicesOfChildBodies(body_index, state)) {
-    createBodyInScene(scene, scene_handles, state, child_body_index);
+  for (auto i : indicesOfChildBodies(body_index, state)) {
+    createBodyInScene(scene, scene_handles, state, i);
+  }
+
+  for (auto i : indicesOfDistanceErrorsOnBody(body_index, state)) {
+    createDistanceErrorInScene(scene, scene_handles, state, i);
   }
 }
 

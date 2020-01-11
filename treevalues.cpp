@@ -642,15 +642,18 @@ nextDistanceErrorPath(
 
 void
   createDistanceErrorInTree(
-    const SceneState::DistanceError &state_distance_error,
+    DistanceErrorIndex index,
     TreeWidget &tree_widget,
     TreePaths &tree_paths,
     const SceneState &scene_state
   )
 {
+  const SceneState::DistanceError &distance_error_state =
+    scene_state.distance_errors[index];
+
   const TreePath next_distance_error_path =
     nextDistanceErrorPath(
-      state_distance_error.optional_body_index,
+      distance_error_state.maybe_body_index,
       tree_paths,
       scene_state
     );
@@ -663,7 +666,7 @@ void
       tree_widget,
       distance_error_path,
       scene_state.markers(),
-      state_distance_error
+      distance_error_state
     )
   );
 }
@@ -771,10 +774,10 @@ createMarkerItemInTree(
 
 void
 createMarkerInTree(
+  MarkerIndex marker_index,
   TreeWidget &tree_widget,
   TreePaths &tree_paths,
-  const SceneState &scene_state,
-  MarkerIndex marker_index
+  const SceneState &scene_state
 )
 {
   assert(marker_index == MarkerIndex(tree_paths.markers.size()));
@@ -978,10 +981,10 @@ createLineInTree(
 // any indices.
 void
 createBodyInTree(
+  BodyIndex body_index,
   TreeWidget &tree_widget,
   TreePaths &tree_paths,
-  const SceneState &scene_state,
-  BodyIndex body_index
+  const SceneState &scene_state
 )
 {
   if (body_index >= BodyIndex(tree_paths.bodies.size())) {
@@ -991,12 +994,18 @@ createBodyInTree(
   assert(!tree_paths.bodies[body_index]);
   createBodyItemInTree(body_index, tree_widget, tree_paths, scene_state);
 
-  for (auto marker_index : indicesOfMarkersOnBody(body_index, scene_state)) {
-    createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
+  for (auto i : indicesOfMarkersOnBody(body_index, scene_state)) {
+    createMarkerInTree(i, tree_widget, tree_paths, scene_state);
   }
 
-  for (auto child_body_index : indicesOfChildBodies(body_index, scene_state)) {
-    createBodyInTree(tree_widget, tree_paths, scene_state, child_body_index);
+  for (auto i : indicesOfDistanceErrorsOnBody(body_index, scene_state)) {
+    createDistanceErrorInTree(
+      i, tree_widget, tree_paths, scene_state
+    );
+  }
+
+  for (auto i : indicesOfChildBodies(body_index, scene_state)) {
+    createBodyInTree(i, tree_widget, tree_paths, scene_state);
   }
 }
 
@@ -1080,21 +1089,16 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
     tree_paths.total_error, LabelProperties{totalErrorLabel(0)}
   );
 
-  for (auto body_index : indicesOfChildBodies({}, scene_state)) {
-    createBodyInTree(tree_widget, tree_paths, scene_state, body_index);
+  for (auto i : indicesOfChildBodies({}, scene_state)) {
+    createBodyInTree(i, tree_widget, tree_paths, scene_state);
   }
 
-  for (auto marker_index : indicesOfMarkersOnBody({}, scene_state)) {
-    createMarkerInTree(tree_widget, tree_paths, scene_state, marker_index);
+  for (auto i : indicesOfMarkersOnBody({}, scene_state)) {
+    createMarkerInTree(i, tree_widget, tree_paths, scene_state);
   }
 
-  for (auto &state_distance_error : scene_state.distance_errors) {
-    createDistanceErrorInTree(
-      state_distance_error,
-      tree_widget,
-      tree_paths,
-      scene_state
-    );
+  for (auto i : indicesOfDistanceErrorsOnBody({}, scene_state)) {
+    createDistanceErrorInTree(i, tree_widget, tree_paths, scene_state);
   }
 
   assert(
