@@ -885,7 +885,11 @@ MarkerIndex
 ObservedScene::duplicateMarkerWithDistanceError(MarkerIndex marker_index)
 {
   MarkerIndex new_marker_index = duplicateMarker(marker_index);
-  addDistanceError(marker_index, new_marker_index, /*body*/{});
+
+  Optional<BodyIndex> maybe_body_index =
+    scene_state.marker(marker_index).maybe_body_index;
+
+  addDistanceError(marker_index, new_marker_index, maybe_body_index);
   return new_marker_index;
 }
 
