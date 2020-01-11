@@ -8,9 +8,9 @@
 #include "optional.hpp"
 #include "indicesof.hpp"
 
-
 using BoxIndex = int;
 using LineIndex = int;
+
 
 class SceneState {
   public:
@@ -93,6 +93,7 @@ class SceneState {
     struct DistanceError {
       Optional<MarkerIndex> optional_start_marker_index;
       Optional<MarkerIndex> optional_end_marker_index;
+      Optional<BodyIndex> optional_body_index;
       Optional<float> maybe_distance;
       float desired_distance = 0;
       float weight = 1;

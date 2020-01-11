@@ -1,10 +1,4 @@
 ---
-Allow adding distance errors to bodies.
-* This will mean removing/adding distance errors to the tree when we
-  remove or add bodies.
-* This will make it more natural to think of a body, its markers, and
-  its distance errors as a single unit.
----
 Allow loading .obj geometry onto a body.
 ---
 Have rays.
@@ -67,5 +61,8 @@ How would we generalize this to have multiple solving passes?
     make 3D points which match the rays. The camera solver and the point
     solver could be combined into a larger solver which solves both.
 ---
-Selecting a line doesn't work if we are too close to it.
-* It seems like the pick rectangle becomes smaller the more we zoom in.
+Allow adding distance errors to bodies.
+* This will mean removing/adding distance errors to the tree when we
+  remove or add bodies.
+* This will make it more natural to think of a body, its markers, and
+  its distance errors as a single unit.

@@ -62,7 +62,11 @@ struct ObservedScene {
   MarkerIndex addMarker(Optional<BodyIndex>);
 
   DistanceErrorIndex
-    addDistanceError(Optional<MarkerIndex> start, Optional<MarkerIndex> end);
+    addDistanceError(
+      Optional<MarkerIndex> start,
+      Optional<MarkerIndex> end,
+      Optional<BodyIndex>
+    );
 
   void cutBody(BodyIndex);
   void cutMarker(MarkerIndex);

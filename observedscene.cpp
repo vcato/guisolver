@@ -876,7 +876,7 @@ ObservedScene::duplicateBodyWithDistanceErrors(BodyIndex body_index)
   for (auto &map_entry : marker_name_map) {
     MarkerIndex marker1_index = *findMarkerIndex(scene_state, map_entry.first);
     MarkerIndex marker2_index = *findMarkerIndex(scene_state, map_entry.second);
-    addDistanceError(marker1_index, marker2_index);
+    addDistanceError(marker1_index, marker2_index, /*body*/{});
   }
 
   return new_body_index;
@@ -887,7 +887,7 @@ MarkerIndex
 ObservedScene::duplicateMarkerWithDistanceError(MarkerIndex marker_index)
 {
   MarkerIndex new_marker_index = duplicateMarker(marker_index);
-  addDistanceError(marker_index, new_marker_index);
+  addDistanceError(marker_index, new_marker_index, /*body*/{});
   return new_marker_index;
 }
 
@@ -895,7 +895,8 @@ ObservedScene::duplicateMarkerWithDistanceError(MarkerIndex marker_index)
 DistanceErrorIndex
 ObservedScene::addDistanceError(
   Optional<MarkerIndex> optional_start_marker_index,
-  Optional<MarkerIndex> optional_end_marker_index
+  Optional<MarkerIndex> optional_end_marker_index,
+  Optional<BodyIndex> optional_body_index
 )
 {
   ObservedScene &observed_scene = *this;
@@ -904,14 +905,10 @@ ObservedScene::addDistanceError(
   SceneState::DistanceError &distance_error =
     scene_state.distance_errors[index];
 
-  scene_state.distance_errors[index].optional_start_marker_index =
-    optional_start_marker_index;
-
-  scene_state.distance_errors[index].optional_end_marker_index =
-    optional_end_marker_index;
-
+  distance_error.optional_start_marker_index = optional_start_marker_index;
+  distance_error.optional_end_marker_index = optional_end_marker_index;
+  distance_error.optional_body_index = optional_body_index;
   observed_scene.update_errors_function(scene_state);
-
   createDistanceErrorInScene(scene, scene_handles, scene_state, index);
 
   createDistanceErrorInTree(

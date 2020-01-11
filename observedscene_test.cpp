@@ -3,6 +3,7 @@
 #include "faketreewidget.hpp"
 #include "fakescene.hpp"
 #include "checktree.hpp"
+#include "startswith.hpp"
 
 using std::cerr;
 
@@ -189,6 +190,25 @@ static void testCutAndPaste()
 }
 
 
+static void testAddingADistanceErrorToABody()
+{
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+  BodyIndex body_index = observed_scene.addBody(/*parent*/{});
+
+  DistanceErrorIndex distance_error_index =
+    observed_scene.addDistanceError(/*start*/{}, /*end*/{}, body_index);
+
+  const TreePath &distance_error_path =
+    observed_scene.tree_paths.distance_errors[distance_error_index].path;
+
+  const TreePath &body_path =
+    observed_scene.tree_paths.body(body_index).path;
+
+  assert(startsWith(distance_error_path, body_path));
+}
+
+
 int main()
 {
   testTransferringABody1();
@@ -199,4 +219,5 @@ int main()
   testSelectingSceneInTheTree();
   testSelectingMarkerInTheScene();
   testCutAndPaste();
+  testAddingADistanceErrorToABody();
 }

@@ -186,7 +186,7 @@ struct MainWindowController::Impl {
   static void
     addDistanceErrorPressed(
       MainWindowController &controller,
-      const TreePath &
+      Optional<BodyIndex>
     );
 
   static void
@@ -490,11 +490,18 @@ void
 void
   MainWindowController::Impl::addDistanceErrorPressed(
     MainWindowController &controller,
-    const TreePath &
+    Optional<BodyIndex> optional_body_index
   )
 {
   ObservedScene &observed_scene = observedScene(controller);
-  DistanceErrorIndex index = observed_scene.addDistanceError({}, {});
+
+  DistanceErrorIndex index =
+    observed_scene.addDistanceError(
+      /*maybe_start_marker_index*/{},
+      /*maybe_end_marker_index*/{},
+      optional_body_index
+    );
+
   observed_scene.selectDistanceError(index);
 }
 
@@ -893,7 +900,7 @@ TreeWidget::MenuItems
   if (item_type == ItemType::scene) {
     auto add_distance_error_function =
       [&controller,path]{
-        Impl::addDistanceErrorPressed(controller, path);
+        Impl::addDistanceErrorPressed(controller, /*optional_body_index*/{});
       };
 
     appendTo(menu_items,{
@@ -942,11 +949,17 @@ TreeWidget::MenuItems
         Impl::addLinePressed(controller, body_index);
       };
 
+    auto add_distance_error_function =
+      [&controller,body_index]{
+        Impl::addDistanceErrorPressed(controller, body_index);
+      };
+
     appendTo(menu_items,{
       {"Add Marker", add_marker_function},
       {"Add Body", add_body_function},
       {"Add Box", add_box_function},
       {"Add Line", add_line_function},
+      {"Add Distance Error", add_distance_error_function},
       {"Cut", cut_body_function },
       {"Remove", remove_body_function },
       {"Duplicate", duplicate_body_function },

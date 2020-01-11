@@ -630,11 +630,13 @@ nextMarkerPath(
 
 static TreePath
 nextDistanceErrorPath(
+  Optional<BodyIndex> maybe_body_index,
   const TreePaths &tree_paths,
   const SceneState &scene_state
 )
 {
-  return nextPaths({}, tree_paths, scene_state).distance_error_path;
+  return
+    nextPaths(maybe_body_index, tree_paths, scene_state).distance_error_path;
 }
 
 
@@ -647,7 +649,11 @@ void
   )
 {
   const TreePath next_distance_error_path =
-    nextDistanceErrorPath(tree_paths, scene_state);
+    nextDistanceErrorPath(
+      state_distance_error.optional_body_index,
+      tree_paths,
+      scene_state
+    );
 
   TreePath distance_error_path = next_distance_error_path;
   handlePathInsertion(tree_paths, distance_error_path);
