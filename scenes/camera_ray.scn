@@ -16,8 +16,12 @@ Scene {
       x: -8.32537e-06 {
         solve: false
       }
-      y: -44.4888
-      z: 10.4219
+      y: -44.4888 {
+        solve: true
+      }
+      z: 10.4219 {
+        solve: true
+      }
     }
     Box {
       scale {
@@ -70,7 +74,9 @@ Scene {
       Transform {
         name: "closest point"
         translation {
-          x: 6.92994
+          x: 6.92994 {
+            solve: true
+          }
           y: 0 {
             solve: false
           }

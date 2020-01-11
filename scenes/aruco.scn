@@ -71,14 +71,26 @@ Scene {
   Transform {
     name: "camera"
     translation {
-      x: 3.58413
-      y: 1.98753
-      z: 0.351997
+      x: 3.58413 {
+        solve: true
+      }
+      y: 1.98753 {
+        solve: true
+      }
+      z: 0.351997 {
+        solve: true
+      }
     }
     rotation {
-      x: 0.0573459
-      y: -5.32853
-      z: -2.17724
+      x: 0.0573459 {
+        solve: true
+      }
+      y: -5.32853 {
+        solve: true
+      }
+      z: -2.17724 {
+        solve: true
+      }
     }
     Box {
       scale {

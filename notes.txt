@@ -68,11 +68,3 @@ Allow adding distance errors to bodies.
   remove or add bodies.
 * This will make it more natural to think of a body, its markers, and
   its distance errors as a single unit.
----
-The solve flag should be set to true on all values in the tagged value
-that are being solved.
----
-If we had a SceneTree, which referenced a TreeWidget, TreePaths, and SceneState,
-it seems like we could simplify a lot of methods in treevalues.[ch]pp
----
-If we had ObservedScene::sceneTree(), that might simplify some things.

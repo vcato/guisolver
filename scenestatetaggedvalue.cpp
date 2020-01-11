@@ -601,9 +601,7 @@ static void
   TaggedValue &tagged_value = create(parent, member_name, value);
 
   if (solve_flag_ptr) {
-    if (!*solve_flag_ptr) {
-      create(tagged_value, "solve", *solve_flag_ptr);
-    }
+    create(tagged_value, "solve", *solve_flag_ptr);
   }
 }
 
