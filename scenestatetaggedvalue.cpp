@@ -321,12 +321,10 @@ static void
 {
   for (auto &child_tagged_value : tagged_value.children) {
     if (child_tagged_value.tag == "DistanceError") {
-      DistanceErrorIndex index = result.createDistanceError();
+      DistanceErrorIndex index = result.createDistanceError(maybe_body_index);
 
       SceneState::DistanceError &distance_error_state =
         result.distance_errors[index];
-
-      distance_error_state.maybe_body_index = maybe_body_index;
 
       {
         Optional<StringValue> maybe_start_marker_name =

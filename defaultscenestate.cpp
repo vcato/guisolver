@@ -4,11 +4,11 @@ using std::ostringstream;
 using std::cerr;
 
 static void
-  createDistanceError(
-    SceneState &state,
-    MarkerIndex local_marker_index,
-    MarkerIndex global_marker_index
-  )
+createDistanceError(
+  SceneState &state,
+  MarkerIndex local_marker_index,
+  MarkerIndex global_marker_index
+)
 {
   DistanceErrorIndex index = state.createDistanceError();
   SceneState::DistanceError &new_distance_error = state.distance_errors[index];

@@ -900,14 +900,15 @@ ObservedScene::addDistanceError(
 )
 {
   ObservedScene &observed_scene = *this;
-  DistanceErrorIndex index = scene_state.createDistanceError();
+
+  DistanceErrorIndex index =
+    scene_state.createDistanceError(optional_body_index);
 
   SceneState::DistanceError &distance_error =
     scene_state.distance_errors[index];
 
   distance_error.optional_start_marker_index = optional_start_marker_index;
   distance_error.optional_end_marker_index = optional_end_marker_index;
-  distance_error.maybe_body_index = optional_body_index;
   observed_scene.update_errors_function(scene_state);
   createDistanceErrorInScene(scene, scene_handles, scene_state, index);
 

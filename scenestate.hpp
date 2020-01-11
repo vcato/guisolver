@@ -137,10 +137,12 @@ class SceneState {
 
     void removeBody(BodyIndex index_to_remove);
 
-    DistanceErrorIndex createDistanceError()
+    DistanceErrorIndex
+    createDistanceError(Optional<BodyIndex> maybe_body_index = {})
     {
       DistanceErrorIndex index = distance_errors.size();
       distance_errors.emplace_back();
+      distance_errors[index].maybe_body_index = maybe_body_index;
       return index;
     }
 

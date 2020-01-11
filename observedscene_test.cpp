@@ -301,6 +301,21 @@ static void testAddingADistanceErrorToABody()
 }
 
 
+static void testReplacingSceneState()
+{
+  // * Scene
+  //   * Body
+  //     * DistanceError
+
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+  SceneState new_scene_state;
+  BodyIndex body_index = new_scene_state.createBody();
+  new_scene_state.createDistanceError(body_index);
+  observed_scene.replaceSceneStateWith(new_scene_state);
+}
+
+
 int main()
 {
   testTransferringABody1();
@@ -313,4 +328,5 @@ int main()
   testSelectingMarkerInTheScene();
   testCutAndPaste();
   testAddingADistanceErrorToABody();
+  testReplacingSceneState();
 }

@@ -686,15 +686,15 @@ SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
 {
   SceneHandles scene_handles;
 
-  for (auto body_index : indicesOfChildBodies({}, state)) {
-    createBodyInScene(scene, scene_handles, state, body_index);
+  for (auto i : indicesOfChildBodies({}, state)) {
+    createBodyInScene(scene, scene_handles, state, i);
   }
 
-  for (auto marker_index : indicesOfMarkersOnBody({}, state)) {
-    createMarkerInScene(scene, scene_handles, state, marker_index);
+  for (auto i : indicesOfMarkersOnBody({}, state)) {
+    createMarkerInScene(scene, scene_handles, state, i);
   }
 
-  for (DistanceErrorIndex i : indicesOf(state.distance_errors)) {
+  for (auto i : indicesOfDistanceErrorsOnBody({}, state)) {
     createDistanceErrorInScene(scene, scene_handles, state, i);
   }
 

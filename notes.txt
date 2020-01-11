@@ -74,9 +74,3 @@ that are being solved.
 ---
 If we had a SceneTree, which referenced a TreeWidget, TreePaths, and SceneState,
 it seems like we could simplify a lot of methods in treevalues.[ch]pp
----
-Crash if we try to load test.scn
-* I think this is happening because the distance errors aren't created in
-  index order in the tree, so the tree paths end up getting out of sync
-  with the scene state.  We should have a similar issue with markers, so
-  I wonder how that is handled.

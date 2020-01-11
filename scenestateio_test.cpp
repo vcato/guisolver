@@ -230,8 +230,7 @@ static void testWithMultipleTransforms()
   setAll(state.body(body2_index).solve_flags, true);
   bodyBox(state.body(body2_index)).scale = box_scale;
   BodyIndex body3_index = state.createBody(/*parent*/body1_index);
-  DistanceErrorIndex distance_error_index = state.createDistanceError();
-  state.distance_errors[distance_error_index].maybe_body_index = body3_index;
+  state.createDistanceError(body3_index);
   string state_string = sceneStateString(state);
   assert(state_string == expected_string);
   testWith(state);
