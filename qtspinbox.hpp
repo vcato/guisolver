@@ -26,6 +26,7 @@ class QtSpinBox
 
   public slots:
     void valueChangedSlot(double);
+    void selectTextSlot();
 
   private:
     bool ignore_signals = false;

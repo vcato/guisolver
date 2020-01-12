@@ -4,6 +4,7 @@
 #include <cmath>
 #include <iostream>
 #include <QWheelEvent>
+#include <QTimer>
 #include <QLineEdit>
 
 using std::cerr;
@@ -91,6 +92,8 @@ void QtSpinBox::focusInEvent(QFocusEvent *event_ptr)
   setFocusPolicy(Qt::WheelFocus);
     // One the user clicks on the widget, we have to turn on WheelFocus so that
     // the mouse wheel events will be recognized.
+
+  QTimer::singleShot(0, this, SLOT(selectTextSlot()));
 }
 
 
@@ -146,4 +149,10 @@ void QtSpinBox::setMinimum(Value arg)
 void QtSpinBox::setMaximum(Value arg)
 {
   QDoubleSpinBox::setMaximum(arg);
+}
+
+
+void QtSpinBox::selectTextSlot()
+{
+  lineEdit()->selectAll();
 }
