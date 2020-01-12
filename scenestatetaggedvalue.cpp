@@ -215,16 +215,43 @@ createMarkerFromTaggedValueWithoutResolvingConflicts(
 }
 
 
-void
-createChildMarkersInSceneState(
-  SceneState &scene_state,
+namespace {
+struct BodyTaggedValue {
+  Optional<BodyIndex> maybe_body_index;
+  TaggedValue child_tagged_value;
+};
+}
+
+
+static void
+buildMarkerTaggedValues(
   const TaggedValue &tagged_value,
   Optional<BodyIndex> maybe_parent_index,
-  MarkerNameMap &marker_name_map
+  vector<BodyTaggedValue> &body_tagged_values
 )
 {
   for (auto &child_tagged_value : tagged_value.children) {
     if (child_tagged_value.tag == "Marker") {
+      body_tagged_values.push_back({maybe_parent_index, child_tagged_value});
+    }
+  }
+}
+
+
+static void
+createMarkersFromTaggedValues(
+  const vector<BodyTaggedValue> &body_tagged_values,
+  SceneState &scene_state
+)
+{
+  for (const BodyTaggedValue &body_tagged_value : body_tagged_values) {
+    const TaggedValue &child_tagged_value =
+      body_tagged_value.child_tagged_value;
+
+    if (child_tagged_value.tag == "Marker") {
+      const Optional<BodyIndex> maybe_parent_index =
+        body_tagged_value.maybe_body_index;
+
       createMarkerFromTaggedValueWithoutResolvingConflicts(
         scene_state,
         child_tagged_value,
@@ -232,8 +259,6 @@ createChildMarkersInSceneState(
       );
     }
   }
-
-  resolveMarkerNameConflicts(scene_state, marker_name_map);
 }
 
 
@@ -312,74 +337,116 @@ mappedMarkerName(
 
 
 static void
-  createDistanceErrorsInSceneState(
-    SceneState &result,
-    const TaggedValue &tagged_value,
-    Optional<BodyIndex> maybe_body_index,
-    const MarkerNameMap &marker_name_map
-  )
+createDistanceErrorFromTaggedValue(
+  SceneState &result,
+  const Optional<BodyIndex> maybe_body_index,
+  const TaggedValue &tagged_value,
+  const MarkerNameMap &marker_name_map
+)
 {
-  for (auto &child_tagged_value : tagged_value.children) {
-    if (child_tagged_value.tag == "DistanceError") {
-      DistanceErrorIndex index = result.createDistanceError(maybe_body_index);
+  DistanceErrorIndex index = result.createDistanceError(maybe_body_index);
 
-      SceneState::DistanceError &distance_error_state =
-        result.distance_errors[index];
+  SceneState::DistanceError &distance_error_state =
+    result.distance_errors[index];
 
-      {
-        Optional<StringValue> maybe_start_marker_name =
-          findStringValue(child_tagged_value, "start");
+  {
+    Optional<StringValue> maybe_start_marker_name =
+      findStringValue(tagged_value, "start");
 
-        if (maybe_start_marker_name) {
-          StringValue mapped_marker_name =
-            mappedMarkerName(*maybe_start_marker_name, marker_name_map);
+    if (maybe_start_marker_name) {
+      StringValue mapped_marker_name =
+        mappedMarkerName(*maybe_start_marker_name, marker_name_map);
 
-          distance_error_state.optional_start_marker_index =
-            findMarkerIndex(result, mapped_marker_name);
-        }
-      }
+      distance_error_state.optional_start_marker_index =
+        findMarkerIndex(result, mapped_marker_name);
+    }
+  }
 
-      {
-        Optional<StringValue> maybe_end_marker_name =
-          findStringValue(child_tagged_value, "end");
+  {
+    Optional<StringValue> maybe_end_marker_name =
+      findStringValue(tagged_value, "end");
 
-        if (maybe_end_marker_name) {
-          StringValue mapped_marker_name =
-            mappedMarkerName(*maybe_end_marker_name, marker_name_map);
+    if (maybe_end_marker_name) {
+      StringValue mapped_marker_name =
+        mappedMarkerName(*maybe_end_marker_name, marker_name_map);
 
-          distance_error_state.optional_end_marker_index =
-            findMarkerIndex(result, mapped_marker_name);
-        }
-      }
+      distance_error_state.optional_end_marker_index =
+        findMarkerIndex(result, mapped_marker_name);
+    }
+  }
 
-      {
-        auto tag = "desired_distance";
-        auto optional_value = findNumericValue(child_tagged_value, tag);
+  {
+    auto tag = "desired_distance";
+    auto optional_value = findNumericValue(tagged_value, tag);
 
-        if (optional_value) {
-          distance_error_state.desired_distance = *optional_value;
-        }
-      }
+    if (optional_value) {
+      distance_error_state.desired_distance = *optional_value;
+    }
+  }
 
-      {
-        auto tag = "weight";
-        auto optional_value = findNumericValue(child_tagged_value, tag);
+  {
+    auto tag = "weight";
+    auto optional_value = findNumericValue(tagged_value, tag);
 
-        if (optional_value) {
-          distance_error_state.weight = *optional_value;
-        }
-      }
+    if (optional_value) {
+      distance_error_state.weight = *optional_value;
     }
   }
 }
 
 
-static BodyIndex
-createBodyFromTaggedValueWithoutResolvingConflicts(
+static void
+buildDistanceErrorTaggedValues(
+  const TaggedValue &tagged_value,
+  Optional<BodyIndex> maybe_body_index,
+  vector<BodyTaggedValue> &body_tagged_values
+)
+{
+  for (auto &child_tagged_value : tagged_value.children) {
+    if (child_tagged_value.tag == "DistanceError") {
+      body_tagged_values.push_back({maybe_body_index, child_tagged_value});
+    }
+  }
+}
+
+
+static void
+createDistanceErrorsFromTaggedValues(
+  const vector<BodyTaggedValue> &body_tagged_values,
+  SceneState &result,
+  const MarkerNameMap &marker_name_map
+)
+{
+  for (auto &body_tagged_value : body_tagged_values) {
+    if (body_tagged_value.child_tagged_value.tag == "DistanceError") {
+      Optional<BodyIndex> maybe_body_index =
+        body_tagged_value.maybe_body_index;
+
+      const TaggedValue &child_tagged_value =
+        body_tagged_value.child_tagged_value;
+
+      createDistanceErrorFromTaggedValue(
+        result, maybe_body_index, child_tagged_value, marker_name_map
+      );
+    }
+  }
+}
+
+
+static void
+createChildBodiesInSceneState(
   SceneState &result,
   const TaggedValue &tagged_value,
   const Optional<BodyIndex> maybe_parent_index,
-  MarkerNameMap &marker_name_map
+  vector<BodyTaggedValue> &body_tagged_values
+);
+
+
+static BodyIndex
+createBodyInSceneState(
+  SceneState &result,
+  const TaggedValue &tagged_value,
+  const Optional<BodyIndex> maybe_parent_index
 )
 {
   Optional<StringValue> maybe_old_name =
@@ -397,11 +464,12 @@ createBodyFromTaggedValueWithoutResolvingConflicts(
   }
 
   BodyIndex body_index = result.createBody(maybe_parent_index);
-  setAll(result.body(body_index).solve_flags, true);
 
   if (maybe_name) {
     result.body(body_index).name = *maybe_name;
   }
+
+  setAll(result.body(body_index).solve_flags, true);
 
   result.body(body_index).transform =
     makeTransformFromTaggedValue(tagged_value);
@@ -427,16 +495,29 @@ createBodyFromTaggedValueWithoutResolvingConflicts(
     }
   }
 
+  return body_index;
+}
+
+
+static BodyIndex
+createBodyFromTaggedValueWithoutResolvingConflicts(
+  SceneState &result,
+  const TaggedValue &tagged_value,
+  const Optional<BodyIndex> maybe_parent_index,
+  vector<BodyTaggedValue> &body_tagged_values
+)
+{
+  BodyIndex body_index =
+    createBodyInSceneState(result, tagged_value, maybe_parent_index);
+
   createChildBodiesInSceneState(
-    result, tagged_value, body_index, marker_name_map
+    result, tagged_value, body_index, body_tagged_values
   );
 
-  createChildMarkersInSceneState(
-    result, tagged_value, body_index, marker_name_map
-  );
+  buildMarkerTaggedValues(tagged_value, body_index, body_tagged_values);
 
-  createDistanceErrorsInSceneState(
-    result, tagged_value, body_index, marker_name_map
+  buildDistanceErrorTaggedValues(
+    tagged_value, body_index, body_tagged_values
   );
 
   return body_index;
@@ -470,6 +551,26 @@ resolveBodyNameConflictsOnBranch(
 }
 
 
+static void
+createFromBodyTaggedValues(
+  const vector<BodyTaggedValue> &body_tagged_values,
+  SceneState &result,
+  MarkerNameMap &marker_name_map,
+  BodyIndex body_index
+)
+{
+  createMarkersFromTaggedValues(body_tagged_values, result);
+
+  resolveMarkerNameConflicts(result, marker_name_map);
+
+  createDistanceErrorsFromTaggedValues(
+    body_tagged_values, result, marker_name_map
+  );
+
+  resolveBodyNameConflictsOnBranch(result, body_index);
+}
+
+
 BodyIndex
 createBodyFromTaggedValue(
   SceneState &result,
@@ -478,32 +579,39 @@ createBodyFromTaggedValue(
   MarkerNameMap &marker_name_map
 )
 {
+  vector<BodyTaggedValue> body_tagged_values;
+
   BodyIndex body_index =
     createBodyFromTaggedValueWithoutResolvingConflicts(
       result,
       tagged_value,
       maybe_parent_index,
-      marker_name_map
+      body_tagged_values
     );
 
-  resolveBodyNameConflictsOnBranch(result, body_index);
+  createFromBodyTaggedValues(
+    body_tagged_values, result, marker_name_map, body_index
+  );
+
   return body_index;
 }
 
 
-void
+static void
 createChildBodiesInSceneState(
   SceneState &result,
   const TaggedValue &tagged_value,
   const Optional<BodyIndex> maybe_parent_index,
-  MarkerNameMap &marker_name_map
+  vector<BodyTaggedValue> &body_tagged_values
 )
 {
   for (auto &child_tagged_value : tagged_value.children) {
     if (child_tagged_value.tag == "Transform") {
-      createBodyFromTaggedValue(
-        result, child_tagged_value, maybe_parent_index,
-        marker_name_map
+      createBodyFromTaggedValueWithoutResolvingConflicts(
+        result,
+        child_tagged_value,
+        maybe_parent_index,
+        body_tagged_values
       );
     }
   }
@@ -516,18 +624,20 @@ SceneState makeSceneStateFromTaggedValue(const TaggedValue &tagged_value)
   Optional<BodyIndex> maybe_parent_index;
   MarkerNameMap marker_name_map;
 
+  vector<BodyTaggedValue> body_tagged_values;
+
   createChildBodiesInSceneState(
-    result, tagged_value, maybe_parent_index, marker_name_map
+    result, tagged_value, maybe_parent_index,
+    body_tagged_values
   );
 
-  createChildMarkersInSceneState(
-    result, tagged_value, maybe_parent_index, marker_name_map
+  buildMarkerTaggedValues(tagged_value, maybe_parent_index, body_tagged_values);
+
+  buildDistanceErrorTaggedValues(
+    tagged_value, maybe_parent_index, body_tagged_values
   );
 
-  createDistanceErrorsInSceneState(
-    result, tagged_value, /*body*/{}, marker_name_map
-  );
-
+  createFromBodyTaggedValues(body_tagged_values, result, marker_name_map, {});
   return result;
 }
 
