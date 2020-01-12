@@ -26,13 +26,24 @@ resolveMarkerNameConflicts(
 }
 
 
+static string withoutTrailingNumber(const string &arg)
+{
+  string::const_iterator i = arg.end();
+
+  while (i != arg.begin() && isdigit(*(i-1))) --i;
+
+  return string(arg.begin(), i);
+}
+
+
 static void
 resolveBodyNameConflicts(BodyIndex body_index, SceneState &scene_state)
 {
   std::string &name = scene_state.body(body_index).name;
 
   if (name[0] == '$') {
-    name = nextUnusedName(bodyNames(scene_state), name.substr(1) + "_");
+    string prefix = withoutTrailingNumber(name.substr(1));
+    name = nextUnusedName(bodyNames(scene_state), prefix);
   }
 }
 
