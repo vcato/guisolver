@@ -35,6 +35,7 @@ class QtSpinBox
   public slots:
     void valueChangedSlot(double);
     void selectTextSlot();
+    void editingFinishedSlot();
 
   private:
     bool _ignore_signals = false;
@@ -42,19 +43,24 @@ class QtSpinBox
     double _minimum = 0;
     double _maximum = 99.99;
     int _decimals = 2;
-    mutable double _value = 0;
+    double _value = 0;
+    std::string _input;
 
     void mousePressEvent(QMouseEvent *) override;
     void wheelEvent(QWheelEvent *) override;
     void focusInEvent(QFocusEvent *) override;
     void focusOutEvent(QFocusEvent *) override;
     StepEnabled stepEnabled() const override;
+    bool event(QEvent *event_ptr) override;
     void keyPressEvent(QKeyEvent *) override;
     void stepBy(int) override;
     QValidator::State validate(QString &input, int &pos) const override;
+    void _setLineEditTextToValue();
     void _updateLineEdit();
     double _clamped(double value) const;
     void _callValueChangedFunction(double value) const;
+    void _updateButtons();
+    bool _inputIsExpression() const;
 };
 
 

@@ -8,6 +8,7 @@
 #include <QTimer>
 #include <QLineEdit>
 #include "optional.hpp"
+#include "startswith.hpp"
 
 using std::cerr;
 using std::string;
@@ -38,6 +39,8 @@ QtSpinBox::QtSpinBox()
     // This is so that if we click on the line edit in the spin box, the
     // button press event will pass through to the tree item so it
     // will be selected.
+
+  connect(this, SIGNAL(editingFinished()), SLOT(editingFinishedSlot()));
 }
 
 
@@ -92,6 +95,10 @@ void QtSpinBox::mousePressEvent(QMouseEvent *event_ptr)
 
 void QtSpinBox::focusInEvent(QFocusEvent *event_ptr)
 {
+  // When we get focus, restore the actual text, since this was replaced by
+  // the evaluated text.
+  lineEdit()->setText(QString::fromStdString(_input));
+  lineEdit()->setReadOnly(false);
   Base::focusInEvent(event_ptr);
 
   setFocusPolicy(Qt::WheelFocus);
@@ -109,8 +116,6 @@ void QtSpinBox::focusOutEvent(QFocusEvent *event_ptr)
   setFocusPolicy(Qt::StrongFocus);
     // Go back to strong focus if this widget loses focus so that the mouse
     // wheel won't cause this widget to gain focus.
-
-  _updateLineEdit();
 }
 
 
@@ -128,7 +133,6 @@ static float toleranceForPrecision(int n_digits_of_precision)
 }
 
 
-#if 1
 static string valueAsString(double arg, int decimals)
 {
   ostringstream stream;
@@ -137,12 +141,18 @@ static string valueAsString(double arg, int decimals)
   stream << arg;
   return stream.str();
 }
-#endif
+
+
+void QtSpinBox::_setLineEditTextToValue()
+{
+  lineEdit()->setText(QString::fromStdString(valueAsString(_value, _decimals)));
+}
 
 
 void QtSpinBox::_updateLineEdit()
 {
-  lineEdit()->setText(QString::fromStdString(valueAsString(_value, _decimals)));
+  _setLineEditTextToValue();
+  _updateButtons();
 }
 
 
@@ -152,8 +162,14 @@ void QtSpinBox::setValue(Value arg)
     // If ignore_signals is true, then we are already in the middle of
     // setting the value, so somehow a signal got back to the caller.
 
+  if (_inputIsExpression()) {
+    // If the input is an expression, then it is effectively read-only.
+    return;
+  }
+
   _ignore_signals = true;
   _value = arg;
+  _input = valueAsString(arg, _decimals);
   _updateLineEdit();
   _ignore_signals = false;
   float delta = std::abs(arg - value());
@@ -187,17 +203,8 @@ void QtSpinBox::selectTextSlot()
 }
 
 
-static Optional<double> maybeValueFromText(const std::string &arg)
+static double evaluate(const string &arg)
 {
-  if (arg.length() == 0) {
-    return {};
-  }
-
-  if (arg[0] == '=') {
-    cerr << "Need to evaluate " << arg.substr(1) << "\n";
-    return {};
-  }
-
   double value = 0;
   istringstream stream(arg);
   stream >> value;
@@ -207,6 +214,22 @@ static Optional<double> maybeValueFromText(const std::string &arg)
   }
 
   return value;
+}
+
+
+static Optional<double> maybeValueFromText(const string &arg)
+{
+  if (arg.length() == 0) {
+    return {};
+  }
+
+  if (arg[0] == '=') {
+    string expr = arg.substr(1);
+    cerr << "Need to evaluate " << expr << "\n";
+    return evaluate(expr);
+  }
+
+  return evaluate(arg);
 }
 
 
@@ -226,22 +249,10 @@ double QtSpinBox::_clamped(double value) const
 
 QValidator::State QtSpinBox::validate(QString &input, int &/*pos*/) const
 {
-  Optional<double> maybe_value = maybeValueFromText(input.toStdString());
+  string text = input.toStdString();
+  Optional<double> maybe_value = maybeValueFromText(text);
 
   if (maybe_value) {
-    if (*maybe_value != _value) {
-      _value = _clamped(*maybe_value);
-
-      if (!_ignore_signals) {
-        _callValueChangedFunction(_value);
-      }
-      else {
-        // The validation happened due to us setting the text on the line
-        // edit as part of setting the value, but we don't want the callback
-        // to be called in that case.
-      }
-    }
-
     return QValidator::State::Acceptable;
   }
 
@@ -275,6 +286,10 @@ void QtSpinBox::setDecimals(int arg)
 
 QtSpinBox::StepEnabled QtSpinBox::stepEnabled() const
 {
+  if (_inputIsExpression()) {
+    return StepNone;
+  }
+
   StepEnabled result = StepNone;
 
   if (_value > _minimum) {
@@ -289,9 +304,60 @@ QtSpinBox::StepEnabled QtSpinBox::stepEnabled() const
 }
 
 
+bool QtSpinBox::event(QEvent *event_ptr)
+{
+  return Base::event(event_ptr);
+}
+
+
 void QtSpinBox::keyPressEvent(QKeyEvent *event_ptr)
 {
   Base::keyPressEvent(event_ptr);
+
+  if (!lineEdit()->isReadOnly()) {
+    _input = lineEdit()->text().toStdString();
+  }
+  else {
+    // If the line edit is read-only, then we've finished editing the
+    // value, and the current value may be the evaluate expression value
+    // instead of what the user input, so we need to ignore it.
+  }
+
+  Optional<double> maybe_value = maybeValueFromText(_input);
+
+  if (maybe_value) {
+    if (*maybe_value != _value) {
+      _value = _clamped(*maybe_value);
+
+      if (!_ignore_signals) {
+        _callValueChangedFunction(_value);
+      }
+      else {
+        // The validation happened due to us setting the text on the line
+        // edit as part of setting the value, but we don't want the callback
+        // to be called in that case.
+      }
+    }
+  }
+
+  _updateButtons();
+}
+
+
+bool QtSpinBox::_inputIsExpression() const
+{
+  return startsWith(_input,string("="));
+}
+
+
+void QtSpinBox::_updateButtons()
+{
+  if (_inputIsExpression()) {
+    setButtonSymbols(NoButtons);
+  }
+  else {
+    setButtonSymbols(UpDownArrows);
+  }
 }
 
 
@@ -299,4 +365,16 @@ void QtSpinBox::stepBy(int arg)
 {
   _value = _clamped(_value + _single_step*arg);
   _updateLineEdit();
+  _callValueChangedFunction(_value);
+}
+
+
+void QtSpinBox::editingFinishedSlot()
+{
+  _setLineEditTextToValue();
+
+  if (_inputIsExpression()) {
+    lineEdit()->setReadOnly(true);
+    lineEdit()->deselect();
+  }
 }
