@@ -3,11 +3,16 @@
 #include <cassert>
 #include <cmath>
 #include <iostream>
+#include <sstream>
 #include <QWheelEvent>
 #include <QTimer>
 #include <QLineEdit>
+#include "optional.hpp"
 
 using std::cerr;
+using std::string;
+using std::istringstream;
+using std::ostringstream;
 
 
 namespace {
@@ -27,12 +32,6 @@ struct PassThroughMouseButtonPresses : QObject {
 
 QtSpinBox::QtSpinBox()
 {
-  connect(
-    this,
-    SIGNAL(valueChanged(double)),
-    SLOT(valueChangedSlot(double))
-  );
-
   setSingleStep(0.1);
 
   lineEdit()->installEventFilter(new PassThroughMouseButtonPresses);
@@ -42,18 +41,24 @@ QtSpinBox::QtSpinBox()
 }
 
 
-void QtSpinBox::valueChangedSlot(double value)
+void QtSpinBox::_callValueChangedFunction(double value) const
 {
-  if (ignore_signals) {
-    return;
-  }
-
   if (!value_changed_function) {
     cerr << "value_changed_function is not set.\n";
     return;
   }
 
   value_changed_function(value);
+}
+
+
+void QtSpinBox::valueChangedSlot(double value)
+{
+  if (_ignore_signals) {
+    return;
+  }
+
+  _callValueChangedFunction(value);
 }
 
 
@@ -68,7 +73,7 @@ void QtSpinBox::wheelEvent(QWheelEvent *event_ptr)
     // tree with the mouse wheel.
   }
   else {
-    QDoubleSpinBox::wheelEvent(event_ptr);
+    Base::wheelEvent(event_ptr);
     // If we've explicitly focused the spin box by clicking on it, then
     // allow the wheel events to be used.
   }
@@ -77,7 +82,7 @@ void QtSpinBox::wheelEvent(QWheelEvent *event_ptr)
 
 void QtSpinBox::mousePressEvent(QMouseEvent *event_ptr)
 {
-  QDoubleSpinBox::mousePressEvent(event_ptr);
+  Base::mousePressEvent(event_ptr);
 
   event_ptr->ignore();
     // Mark the event as ignored (instead of handled), so that it will
@@ -87,7 +92,7 @@ void QtSpinBox::mousePressEvent(QMouseEvent *event_ptr)
 
 void QtSpinBox::focusInEvent(QFocusEvent *event_ptr)
 {
-  QDoubleSpinBox::focusInEvent(event_ptr);
+  Base::focusInEvent(event_ptr);
 
   setFocusPolicy(Qt::WheelFocus);
     // One the user clicks on the widget, we have to turn on WheelFocus so that
@@ -99,11 +104,13 @@ void QtSpinBox::focusInEvent(QFocusEvent *event_ptr)
 
 void QtSpinBox::focusOutEvent(QFocusEvent *event_ptr)
 {
-  QDoubleSpinBox::focusOutEvent(event_ptr);
+  Base::focusOutEvent(event_ptr);
 
   setFocusPolicy(Qt::StrongFocus);
     // Go back to strong focus if this widget loses focus so that the mouse
     // wheel won't cause this widget to gain focus.
+
+  _updateLineEdit();
 }
 
 
@@ -121,12 +128,34 @@ static float toleranceForPrecision(int n_digits_of_precision)
 }
 
 
+#if 1
+static string valueAsString(double arg, int decimals)
+{
+  ostringstream stream;
+  stream.setf(stream.fixed);
+  stream.precision(decimals);
+  stream << arg;
+  return stream.str();
+}
+#endif
+
+
+void QtSpinBox::_updateLineEdit()
+{
+  lineEdit()->setText(QString::fromStdString(valueAsString(_value, _decimals)));
+}
+
+
 void QtSpinBox::setValue(Value arg)
 {
-  assert(!ignore_signals);
-  ignore_signals = true;
-  QDoubleSpinBox::setValue(arg);
-  ignore_signals = false;
+  assert(!_ignore_signals);
+    // If ignore_signals is true, then we are already in the middle of
+    // setting the value, so somehow a signal got back to the caller.
+
+  _ignore_signals = true;
+  _value = arg;
+  _updateLineEdit();
+  _ignore_signals = false;
   float delta = std::abs(arg - value());
   int n_digits_of_precision = decimals();
   float tolerance = toleranceForPrecision(n_digits_of_precision);
@@ -142,17 +171,132 @@ void QtSpinBox::setValue(Value arg)
 
 void QtSpinBox::setMinimum(Value arg)
 {
-  QDoubleSpinBox::setMinimum(arg);
+  _minimum = arg;
 }
 
 
 void QtSpinBox::setMaximum(Value arg)
 {
-  QDoubleSpinBox::setMaximum(arg);
+  _maximum = arg;
 }
 
 
 void QtSpinBox::selectTextSlot()
 {
   lineEdit()->selectAll();
+}
+
+
+static Optional<double> maybeValueFromText(const std::string &arg)
+{
+  if (arg.length() == 0) {
+    return {};
+  }
+
+  if (arg[0] == '=') {
+    cerr << "Need to evaluate " << arg.substr(1) << "\n";
+    return {};
+  }
+
+  double value = 0;
+  istringstream stream(arg);
+  stream >> value;
+
+  if (!stream) {
+    return {};
+  }
+
+  return value;
+}
+
+
+double QtSpinBox::_clamped(double value) const
+{
+  if (value < _minimum) {
+    return _minimum;
+  }
+
+  if (value > _maximum) {
+    return _maximum;
+  }
+
+  return value;
+}
+
+
+QValidator::State QtSpinBox::validate(QString &input, int &/*pos*/) const
+{
+  Optional<double> maybe_value = maybeValueFromText(input.toStdString());
+
+  if (maybe_value) {
+    if (*maybe_value != _value) {
+      _value = _clamped(*maybe_value);
+
+      if (!_ignore_signals) {
+        _callValueChangedFunction(_value);
+      }
+      else {
+        // The validation happened due to us setting the text on the line
+        // edit as part of setting the value, but we don't want the callback
+        // to be called in that case.
+      }
+    }
+
+    return QValidator::State::Acceptable;
+  }
+
+  return QValidator::State::Intermediate;
+}
+
+
+void QtSpinBox::setSingleStep(double arg)
+{
+  _single_step = arg;
+}
+
+
+double QtSpinBox::value() const
+{
+  return _value;
+}
+
+
+int QtSpinBox::decimals() const
+{
+  return _decimals;
+}
+
+
+void QtSpinBox::setDecimals(int arg)
+{
+  _decimals = arg;
+}
+
+
+QtSpinBox::StepEnabled QtSpinBox::stepEnabled() const
+{
+  StepEnabled result = StepNone;
+
+  if (_value > _minimum) {
+    result |= StepDownEnabled;
+  }
+
+  if (_value < _maximum) {
+    result |= StepUpEnabled;
+  }
+
+  return result;
+}
+
+
+void QtSpinBox::keyPressEvent(QKeyEvent *event_ptr)
+{
+  Base::keyPressEvent(event_ptr);
+}
+
+
+void QtSpinBox::stepBy(int arg)
+{
+  _value = _clamped(_value + _single_step*arg);
+  _updateLineEdit();
 }
