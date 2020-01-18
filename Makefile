@@ -50,7 +50,7 @@ OBSERVEDSCENE=observedscene.o treevalues.o scenestatetransform.o \
 
 MAINWINDOWCONTROLLER=mainwindowcontroller.o $(OBSERVEDSCENE)
 
-guisolver: main.o osgscene.o qttimer.o qttimer_moc.o \
+guisolver: main.o qtmainwindow.o osgscene.o qttimer.o qttimer_moc.o \
   osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o $(DEFAULTSCENESTATE) \
   $(SCENEERROR) scenesolver.o $(OPTIMIZE) \
   qttreewidgetitem.o qtcombobox.o qtcombobox_moc.o \

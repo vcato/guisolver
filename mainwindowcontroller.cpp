@@ -8,8 +8,11 @@
 #include "matchconst.hpp"
 #include "scenestatetaggedvalue.hpp"
 #include "observedscene.hpp"
+#include "scenestateio.hpp"
 
+using View = MainWindowView;
 using std::cerr;
+using std::string;
 using TransformHandle = Scene::TransformHandle;
 using GeometryHandle = Scene::GeometryHandle;
 using TreeItemDescription = ObservedScene::TreeItemDescription;
@@ -144,16 +147,17 @@ static void
 
 struct MainWindowController::Impl {
   struct Data {
+    View &view;
     ObservedScene observed_scene;
     Clipboard clipboard;
 
-    Data(Scene &, TreeWidget &);
+    Data(View &, Scene &, TreeWidget &);
   };
 
   Data data_member;
 
-  Impl(Scene &scene, TreeWidget &tree_widget)
-  : data_member(scene, tree_widget)
+  Impl(View &view, Scene &scene, TreeWidget &tree_widget)
+  : data_member(view, scene, tree_widget)
   {
   }
 
@@ -1089,10 +1093,12 @@ TreeWidget::MenuItems
 
 
 MainWindowController::Impl::Data::Data(
+  View &view_arg,
   Scene &scene_arg,
   TreeWidget &tree_widget_arg
 )
-: observed_scene(
+: view(view_arg),
+  observed_scene(
     scene_arg,
     tree_widget_arg,
     [](SceneState &state){
@@ -1103,12 +1109,11 @@ MainWindowController::Impl::Data::Data(
 }
 
 
-MainWindowController::MainWindowController(
-  Scene &scene,
-  TreeWidget &tree_widget
-)
-: impl_ptr(new Impl(scene, tree_widget))
+MainWindowController::MainWindowController(View &view)
+: impl_ptr(new Impl(view, view.scene(), view.treeWidget()))
 {
+  TreeWidget &tree_widget = view.treeWidget();
+  Scene &scene = view.scene();
   ObservedScene &observed_scene = Impl::observedScene(*this);
   scene.changed_callback = [&]{ Impl::handleSceneChanged(*this); };
   scene.changing_callback = [&]{ Impl::handleSceneChanging(*this); };
@@ -1155,7 +1160,35 @@ void MainWindowController::replaceSceneStateWith(const SceneState &new_state)
 }
 
 
-const SceneState &MainWindowController::sceneState()
+void MainWindowController::newPressed()
 {
-  return Impl::observedScene(*this).scene_state;
+  replaceSceneStateWith(SceneState());
+}
+
+
+void MainWindowController::savePressed()
+{
+  Optional<string> maybe_path = Impl::data(*this).view.askForSavePath();
+
+  if (!maybe_path) {
+    // Cancelled
+  }
+  else {
+    saveScene(Impl::observedScene(*this).scene_state, *maybe_path);
+  }
+}
+
+
+void MainWindowController::openPressed()
+{
+  Optional<string> maybe_path = Impl::data(*this).view.askForOpenPath();
+
+  if (!maybe_path) {
+    // Cancelled
+  }
+  else {
+    SceneState new_scene_state;
+    loadScene(new_scene_state, *maybe_path);
+    replaceSceneStateWith(new_scene_state);
+  }
 }

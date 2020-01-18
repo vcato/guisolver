@@ -1,19 +1,25 @@
+#ifndef MAINWINDOWCONTROLLER_HPP_
+#define MAINWINDOWCONTROLLER_HPP_
+
 #include <memory>
 #include "scenestate.hpp"
-#include "scene.hpp"
-#include "treewidget.hpp"
+#include "mainwindowview.hpp"
 
 
 class MainWindowController {
   public:
-    MainWindowController(Scene &,TreeWidget &);
+    MainWindowController(MainWindowView &);
     ~MainWindowController();
 
     void replaceSceneStateWith(const SceneState &);
-    const SceneState &sceneState();
+    void newPressed();
+    void savePressed();
+    void openPressed();
 
   private:
     struct Impl;
-
     std::unique_ptr<Impl> impl_ptr;
 };
+
+
+#endif /* MAINWINDOWCONTROLLER_HPP_ */
