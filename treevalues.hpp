@@ -37,6 +37,13 @@ extern void
   );
 
 extern void
+  createVariableInTree(
+    VariableIndex,
+    SceneTreeRef,
+    const SceneState &scene_state
+  );
+
+extern void
   createMarkerItemInTree(
     MarkerIndex marker_index,
     SceneTreeRef,

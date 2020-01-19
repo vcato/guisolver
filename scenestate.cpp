@@ -33,6 +33,18 @@ vector<SceneState::Marker::Name> markerNames(const SceneState &state)
 }
 
 
+static vector<SceneState::Variable::Name> variableNames(const SceneState &state)
+{
+  vector<SceneState::Variable::Name> result;
+
+  for (auto &variable : state.variables) {
+    result.push_back(variable.name);
+  }
+
+  return result;
+}
+
+
 vector<SceneState::Body::Name> bodyNames(const SceneState &state)
 {
   vector<SceneState::Body::Name> result;
@@ -256,4 +268,14 @@ void SceneState::removeMarker(MarkerIndex index_to_remove)
 void SceneState::removeDistanceError(int index)
 {
   removeIndexFrom(distance_errors, index);
+}
+
+
+VariableIndex SceneState::createVariable()
+{
+  Variable::Name name = nextUnusedName(variableNames(*this), "var");
+  VariableIndex index = variables.size();
+  variables.push_back(Variable());
+  variables[index].name = name;
+  return index;
 }

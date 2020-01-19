@@ -147,6 +147,12 @@ static string bodyLabel(const SceneState::Body &body_state)
 }
 
 
+static string variableLabel(const SceneState::Variable &)
+{
+  return "[Variable]";
+}
+
+
 static TreePaths::Marker
 createMarker(
   TreeWidget &tree_widget,
@@ -168,6 +174,33 @@ createMarker(
 
   TreePaths::Marker marker_paths = {path, name_path, position_paths};
   return marker_paths;
+}
+
+
+static TreePaths::Variable
+createVariable(
+  TreeWidget &tree_widget,
+  const TreePath &path,
+  const SceneState::Variable &variable_state
+)
+{
+  tree_widget.createVoidItem(
+    path,LabelProperties{variableLabel(variable_state)}
+  );
+
+  ItemAdder adder{path, tree_widget};
+  TreePath name_path = adder.addString("name:", variable_state.name);
+
+  TreePath value_path =
+    adder.addNumeric(
+      "value:",
+      variable_state.value,
+      noMinimumNumericValue(),
+      defaultDigitsOfPrecision()
+    );
+
+  TreePaths::Variable variable_paths = {path, name_path, value_path};
+  return variable_paths;
 }
 
 
@@ -523,6 +556,7 @@ struct NextPaths {
   TreePath body_path;
   TreePath marker_path;
   TreePath distance_error_path;
+  TreePath variable_path;
 };
 }
 
@@ -556,6 +590,30 @@ nDistanceErrorsOn(
 }
 
 
+static int
+nVariablesOn(
+  Optional<BodyIndex> maybe_body_index,
+  const TreePaths &tree_paths,
+  const SceneState &/*scene_state*/
+)
+{
+  if (maybe_body_index) {
+    return 0;
+  }
+
+  int n_variables = tree_paths.variables.size();
+  int count = 0;
+
+  for (int i=0; i!=n_variables; ++i) {
+    if (!tree_paths.variables[i].path.empty()) {
+      ++count;
+    }
+  }
+
+  return count;
+}
+
+
 static NextPaths
 nextPaths(
   Optional<BodyIndex> maybe_body_index,
@@ -570,12 +628,17 @@ nextPaths(
   int n_distance_errors =
     nDistanceErrorsOn(maybe_body_index, tree_paths, scene_state);
 
+  int n_variables = nVariablesOn({}, tree_paths, scene_state);
   const TreePath body_path = bodyPath(maybe_body_index, tree_paths);
   TreeItemIndex index = 0;
 
   if (maybe_body_index) {
     index += 3; // 3 for name, translation, rotation
   }
+
+  index += n_variables;
+
+  result.variable_path = childPath(body_path, index);
 
   if (maybe_body_index) {
     int n_boxes = tree_paths.body(*maybe_body_index).boxes.size();
@@ -778,6 +841,29 @@ createMarkerItemInTree(
 }
 
 
+static void
+createVariableItemInTree(
+  VariableIndex variable_index,
+  SceneTreeRef scene_tree,
+  const SceneState &scene_state
+)
+{
+  TreeWidget &tree_widget = scene_tree.tree_widget;
+  TreePaths &tree_paths = scene_tree.tree_paths;
+
+  const SceneState::Variable &variable_state =
+    scene_state.variables[variable_index];
+
+  const TreePath variable_path =
+    nextPaths(/*maybe_body_index*/{}, tree_paths, scene_state).variable_path;
+
+  handlePathInsertion(tree_paths, variable_path);
+
+  tree_paths.variables[variable_index] =
+    createVariable(tree_widget, variable_path, variable_state);
+}
+
+
 void
 createMarkerInTree(
   MarkerIndex marker_index,
@@ -792,6 +878,26 @@ createMarkerInTree(
 
   createMarkerItemInTree(
     marker_index,
+    {tree_widget, tree_paths},
+    scene_state
+  );
+}
+
+
+void
+  createVariableInTree(
+    VariableIndex variable_index,
+    SceneTreeRef scene_tree,
+    const SceneState &scene_state
+  )
+{
+  TreeWidget &tree_widget = scene_tree.tree_widget;
+  TreePaths &tree_paths = scene_tree.tree_paths;
+  assert(variable_index == VariableIndex(tree_paths.variables.size()));
+  tree_paths.variables.emplace_back();
+
+  createVariableItemInTree(
+    variable_index,
     {tree_widget, tree_paths},
     scene_state
   );
@@ -1470,27 +1576,16 @@ static bool
 
 
 static bool
-  setDistanceErrorsValue(
-    SceneState::DistanceErrors &distance_error_states,
+  setVariableValue(
+    SceneState::Variable &variable_state,
     const TreePath &path,
     NumericValue value,
-    const TreePaths::DistanceErrors &distance_errors_paths
+    const TreePaths::Variable &variable_paths
   )
 {
-  assert(distance_errors_paths.size() == distance_error_states.size());
-
-  for (auto i : indicesOf(distance_errors_paths)) {
-    bool value_was_set =
-      setDistanceErrorValue(
-        distance_error_states[i],
-        path,
-        value,
-        distance_errors_paths[i]
-      );
-
-    if (value_was_set) {
-      return true;
-    }
+  if (startsWith(path, variable_paths.value)) {
+    variable_state.value = value;
+    return true;
   }
 
   return false;
@@ -1619,16 +1714,38 @@ setSceneStateNumericValue(
     }
   }
 
-  {
-    bool was_distance_error_value =
-      setDistanceErrorsValue(
-        scene_state.distance_errors,
+  assert(
+    tree_paths.distance_errors.size() == scene_state.distance_errors.size()
+  );
+
+  for (auto i : indicesOf(tree_paths.distance_errors)) {
+    bool value_was_set =
+      setDistanceErrorValue(
+        scene_state.distance_errors[i],
         path,
         value,
-        tree_paths.distance_errors
+        tree_paths.distance_errors[i]
       );
 
-    if (was_distance_error_value) {
+    if (value_was_set) {
+      return true;
+    }
+  }
+
+  assert(
+    tree_paths.variables.size() == scene_state.variables.size()
+  );
+
+  for (auto i : indicesOf(tree_paths.variables)) {
+    bool value_was_set =
+      setVariableValue(
+        scene_state.variables[i],
+        path,
+        value,
+        tree_paths.variables[i]
+      );
+
+    if (value_was_set) {
       return true;
     }
   }

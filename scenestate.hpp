@@ -5,6 +5,7 @@
 #include "markerindex.hpp"
 #include "bodyindex.hpp"
 #include "distanceerrorindex.hpp"
+#include "variableindex.hpp"
 #include "optional.hpp"
 #include "indicesof.hpp"
 
@@ -19,9 +20,11 @@ class SceneState {
     struct Transform;
     struct XYZ;
     struct Body;
+    struct Variable;
     using Markers = vector<Marker>;
     using Bodies = vector<Body>;
     using DistanceErrors = vector<DistanceError>;
+    using Variables = vector<Variable>;
     using String = std::string;
     using Position = XYZ;
 
@@ -100,7 +103,14 @@ class SceneState {
       float error = 0;
     };
 
+    struct Variable {
+      using Name = std::string;
+      Name name;
+      float value = 0;
+    };
+
     DistanceErrors distance_errors;
+    Variables variables;
     float total_error = 0;
 
     SceneState();
@@ -147,6 +157,8 @@ class SceneState {
     }
 
     void removeDistanceError(int index);
+
+    VariableIndex createVariable();
 
   private:
     Markers _markers;

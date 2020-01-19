@@ -239,6 +239,8 @@ struct MainWindowController::Impl {
       Optional<BodyIndex>
     );
 
+  static void addVariablePressed(MainWindowController &controller);
+
   static void
     pasteGlobalPressed(MainWindowController &controller, const TreePath &path);
 
@@ -558,6 +560,17 @@ void
     );
 
   observed_scene.selectDistanceError(index);
+}
+
+
+void
+  MainWindowController::Impl::addVariablePressed(
+    MainWindowController &controller
+  )
+{
+  ObservedScene &observed_scene = observedScene(controller);
+  VariableIndex index = observed_scene.addVariable();
+  observed_scene.selectVariable(index);
 }
 
 
@@ -957,10 +970,16 @@ TreeWidget::MenuItems
         Impl::addDistanceErrorPressed(controller, /*optional_body_index*/{});
       };
 
+    auto add_variable_function =
+      [&controller, path]{
+        Impl::addVariablePressed(controller);
+      };
+
     appendTo(menu_items,{
       {"Add Distance Error", add_distance_error_function },
       {"Add Marker", add_marker_function },
       {"Add Body", add_body_function },
+      {"Add Variable", add_variable_function },
     });
 
     if (observed_scene.canPasteTo({})) {

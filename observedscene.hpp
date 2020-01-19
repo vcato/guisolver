@@ -68,6 +68,8 @@ struct ObservedScene {
       Optional<BodyIndex>
     );
 
+  VariableIndex addVariable();
+
   void cutBody(BodyIndex);
   void cutMarker(MarkerIndex);
 
@@ -82,6 +84,7 @@ struct ObservedScene {
   void selectBody(BodyIndex);
   void selectMarker(MarkerIndex);
   void selectDistanceError(DistanceErrorIndex);
+  void selectVariable(VariableIndex);
   void selectBox(BodyIndex, BoxIndex);
   void selectLine(BodyIndex, LineIndex);
   BodyIndex duplicateBody(BodyIndex body_index);

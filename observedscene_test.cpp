@@ -5,6 +5,7 @@
 #include "checktree.hpp"
 #include "startswith.hpp"
 #include "scenestateio.hpp"
+#include "vectorio.hpp"
 
 using std::cerr;
 
@@ -316,6 +317,18 @@ static void testReplacingSceneState()
 }
 
 
+static void testAddingAVariable()
+{
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+  observed_scene.addVariable();
+  assert(observed_scene.scene_state.variables.size() == 1);
+  TreePath expected_path = {0,0};
+  assert(observed_scene.tree_paths.variables[0].path == expected_path);
+  assert(observed_scene.scene_state.variables[0].name == "var1");
+}
+
+
 int main()
 {
   testTransferringABody1();
@@ -329,4 +342,5 @@ int main()
   testCutAndPaste();
   testAddingADistanceErrorToABody();
   testReplacingSceneState();
+  testAddingAVariable();
 }

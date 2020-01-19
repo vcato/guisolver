@@ -823,13 +823,6 @@ void ObservedScene::replaceSceneStateWith(const SceneState &new_state)
 }
 
 
-void ObservedScene::selectMarker(MarkerIndex marker_index)
-{
-  tree_widget.selectItem(tree_paths.marker(marker_index).path);
-  handleTreeSelectionChanged();
-}
-
-
 void ObservedScene::selectBody(BodyIndex body_index)
 {
   selectBodyInTree(body_index, *this);
@@ -1064,4 +1057,26 @@ ObservedScene::describePath(const TreePath &path, const TreePaths &tree_paths)
   }
 
   return description;
+}
+
+
+VariableIndex ObservedScene::addVariable()
+{
+  VariableIndex index = scene_state.createVariable();
+  createVariableInTree(index, sceneTree(*this), scene_state);
+  return index;
+}
+
+
+void ObservedScene::selectMarker(MarkerIndex marker_index)
+{
+  tree_widget.selectItem(tree_paths.marker(marker_index).path);
+  handleTreeSelectionChanged();
+}
+
+
+void ObservedScene::selectVariable(VariableIndex variable_index)
+{
+  tree_widget.selectItem(tree_paths.variables[variable_index].path);
+  handleTreeSelectionChanged();
 }

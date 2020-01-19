@@ -12,9 +12,11 @@ struct TreePaths {
   struct Marker;
   struct Body;
   struct DistanceError;
+  struct Variable;
   using Markers = vector<Optional<Marker>>;
   using Bodies = vector<Optional<Body>>;
   using DistanceErrors = vector<DistanceError>;
+  using Variables = vector<Variable>;
 
   TreePaths()
   : markers(),
@@ -173,10 +175,17 @@ struct TreePaths {
     }
   };
 
+  struct Variable {
+    TreePath path;
+    TreePath name;
+    TreePath value;
+  };
+
   TreePath path;
   Markers markers;
   Bodies bodies;
   DistanceErrors distance_errors;
+  Variables variables;
   TreePath total_error;
 
   template <typename TreePaths>
