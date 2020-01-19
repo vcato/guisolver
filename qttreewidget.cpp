@@ -15,6 +15,7 @@
 #include "vectorio.hpp"
 #include "numericvalue.hpp"
 #include "numericvaluelimits.hpp"
+#include "parsedouble.hpp"
 
 using std::string;
 using std::cerr;
@@ -34,6 +35,18 @@ struct QtTreeWidget::Impl {
       dynamic_cast<QtItemWrapperWidget*>(widget_ptr);
 
     return item_widget_ptr;
+  }
+
+  static Optional<NumericValue>
+  evaluateNumberInput(
+    QtTreeWidget &tree_widget, const string &input, QTreeWidgetItem &item
+  )
+  {
+    if (tree_widget.evaluate_function) {
+      return tree_widget.evaluate_function(tree_widget.itemPath(item), input);
+    }
+
+    return parseDouble(input);
   }
 
   static QtItemWrapperWidget &
@@ -56,6 +69,13 @@ struct QtTreeWidget::Impl {
     spin_box.value_changed_function =
       [&tree_widget,&item](NumericValue value){
         tree_widget.handleSpinBoxItemValueChanged(&item,value);
+      };
+
+    spin_box.evaluate_function =
+      [&tree_widget, &item](const string &input)
+      -> Optional<NumericValue>
+      {
+        return evaluateNumberInput(tree_widget, input, item);
       };
   }
 

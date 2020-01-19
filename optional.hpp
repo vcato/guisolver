@@ -58,6 +58,15 @@ class Optional {
       }
     }
 
+    template <typename U>
+    Optional(const Optional<U> &arg)
+    : _has_value(arg.hasValue())
+    {
+      if (arg.hasValue()) {
+        createObject(_value, *arg);
+      }
+    }
+
     Optional(Optional&& arg)
     : _has_value(arg._has_value)
     {

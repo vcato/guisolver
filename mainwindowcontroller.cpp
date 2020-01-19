@@ -9,6 +9,8 @@
 #include "scenestatetaggedvalue.hpp"
 #include "observedscene.hpp"
 #include "scenestateio.hpp"
+#include "parsedouble.hpp"
+#include "evaluateexpression.hpp"
 
 using View = MainWindowView;
 using std::cerr;
@@ -145,6 +147,21 @@ static void
 }
 
 
+static Optional<NumericValue> maybeValueFromText(const string &arg)
+{
+  if (arg.length() == 0) {
+    return {};
+  }
+
+  if (arg[0] != '=') {
+    return parseDouble(arg);
+  }
+
+  string expr = arg.substr(1);
+  return evaluateExpression(expr, cerr);
+}
+
+
 struct MainWindowController::Impl {
   struct Data {
     View &view;
@@ -186,6 +203,12 @@ struct MainWindowController::Impl {
       const TreePath &,
       NumericValue
     );
+
+  static Optional<NumericValue>
+  evaluateInput(const string &text, const TreePath &)
+  {
+    return maybeValueFromText(text);
+  }
 
   static void
     handleTreeStringValueChanged(
@@ -1124,6 +1147,11 @@ MainWindowController::MainWindowController(View &view)
   tree_widget.spin_box_item_value_changed_callback =
     [this](const TreePath &path, NumericValue value){
       Impl::handleTreeNumericValueChanged(*this, path, value);
+    };
+
+  tree_widget.evaluate_function =
+    [](const TreePath &path, const string &text){
+      return Impl::evaluateInput(text, path);
     };
 
   tree_widget.enumeration_item_index_changed_callback =

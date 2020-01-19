@@ -16,6 +16,8 @@ run_unit_tests: \
   osgutil_test.pass \
   transform_test.pass \
   scenestate_test.pass \
+  expressionparser_test.pass \
+  evaluateexpression_test.pass \
   globaltransform_test.pass \
   scenestatetaggedvalue_test.pass \
   scenestateio_test.pass \
@@ -48,14 +50,20 @@ OPTIMIZE=optimize.o
 OBSERVEDSCENE=observedscene.o treevalues.o scenestatetransform.o \
   $(SCENESTATETAGGEDVALUE) $(SCENEOBJECTS)
 
-MAINWINDOWCONTROLLER=mainwindowcontroller.o $(OBSERVEDSCENE)
+EVALUATEEXPRESSION=evaluateexpression.o expressionparser.o parsedouble.o
+
+MAINWINDOWCONTROLLER=mainwindowcontroller.o \
+  $(EVALUATEEXPRESSION) $(OBSERVEDSCENE)
+
+QTSPINBOX=qtspinbox.o parsedouble.o
+
 
 guisolver: main.o qtmainwindow.o osgscene.o qttimer.o qttimer_moc.o \
   osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o $(DEFAULTSCENESTATE) \
   $(SCENEERROR) scenesolver.o $(OPTIMIZE) \
   qttreewidgetitem.o qtcombobox.o qtcombobox_moc.o \
   qtlineedit.o qtlineedit_moc.o qtslider.o qtslider.o \
-  qtslider_moc.o qtspinbox.o qtspinbox_moc.o treevalues.o \
+  qtslider_moc.o $(QTSPINBOX) qtspinbox_moc.o treevalues.o \
   qttreewidget.o qttreewidget_moc.o qtmenu.o qtslot.o qtslot_moc.o \
   $(MAINWINDOWCONTROLLER) \
   $(SCENEOBJECTS) intersector.o $(SCENESTATEIO)
@@ -74,6 +82,12 @@ transform_test: transform_test.o maketransform.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 scenestate_test: scenestate_test.o $(SCENESTATE)
+	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
+
+expressionparser_test: expressionparser_test.o expressionparser.o
+	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
+
+evaluateexpression_test: evaluateexpression_test.o $(EVALUATEEXPRESSION)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 globaltransform_test: globaltransform_test.o $(SCENESTATE) maketransform.o \

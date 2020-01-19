@@ -41,6 +41,10 @@ struct TreeWidget {
   std::function<vector<MenuItem>(const TreePath &)>
     context_menu_items_callback;
 
+  std::function<
+    Optional<NumericValue> (const TreePath &, const std::string &text)
+  > evaluate_function;
+
   virtual int itemChildCount(const TreePath &parent_item) const = 0;
 
   virtual void
@@ -103,7 +107,6 @@ struct TreeWidget {
   virtual void selectItem(const TreePath &path) = 0;
   virtual void removeItem(const TreePath &path) = 0;
   virtual Optional<TreePath> selectedItem() const = 0;
-  // virtual int itemChildCount() const = 0;
 };
 
 #endif /* TREEWIDGET_HPP_ */

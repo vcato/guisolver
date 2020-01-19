@@ -18,3 +18,5 @@ taggedvalueio_test
 scenestatetaggedvalue_test
 sceneobjects_test
 observedscene_test
+expressionparser_test
+evaluateexpression_test

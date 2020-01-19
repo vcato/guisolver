@@ -9,6 +9,8 @@
 #include <QLineEdit>
 #include "optional.hpp"
 #include "startswith.hpp"
+#include "evaluateexpression.hpp"
+#include "parsedouble.hpp"
 
 using std::cerr;
 using std::string;
@@ -203,36 +205,6 @@ void QtSpinBox::selectTextSlot()
 }
 
 
-static double evaluate(const string &arg)
-{
-  double value = 0;
-  istringstream stream(arg);
-  stream >> value;
-
-  if (!stream) {
-    return {};
-  }
-
-  return value;
-}
-
-
-static Optional<double> maybeValueFromText(const string &arg)
-{
-  if (arg.length() == 0) {
-    return {};
-  }
-
-  if (arg[0] == '=') {
-    string expr = arg.substr(1);
-    cerr << "Need to evaluate " << expr << "\n";
-    return evaluate(expr);
-  }
-
-  return evaluate(arg);
-}
-
-
 double QtSpinBox::_clamped(double value) const
 {
   if (value < _minimum) {
@@ -247,10 +219,21 @@ double QtSpinBox::_clamped(double value) const
 }
 
 
+Optional<QtSpinBox::Value>
+QtSpinBox::_evaluateInput(const string &text) const
+{
+  if (evaluate_function) {
+    return evaluate_function(text);
+  }
+  else {
+    return Optional<QtSpinBox::Value>(parseDouble(text));
+  }
+}
+
+
 QValidator::State QtSpinBox::validate(QString &input, int &/*pos*/) const
 {
-  string text = input.toStdString();
-  Optional<double> maybe_value = maybeValueFromText(text);
+  Optional<Value> maybe_value = _evaluateInput(input.toStdString());
 
   if (maybe_value) {
     return QValidator::State::Acceptable;
@@ -260,7 +243,7 @@ QValidator::State QtSpinBox::validate(QString &input, int &/*pos*/) const
 }
 
 
-void QtSpinBox::setSingleStep(double arg)
+void QtSpinBox::setSingleStep(Value arg)
 {
   _single_step = arg;
 }
@@ -323,7 +306,7 @@ void QtSpinBox::keyPressEvent(QKeyEvent *event_ptr)
     // instead of what the user input, so we need to ignore it.
   }
 
-  Optional<double> maybe_value = maybeValueFromText(_input);
+  Optional<Value> maybe_value = _evaluateInput(_input);
 
   if (maybe_value) {
     if (*maybe_value != _value) {

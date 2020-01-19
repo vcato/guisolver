@@ -4,6 +4,7 @@
 #include <functional>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
+#include "optional.hpp"
 
 
 using QtSpinBoxBase = QAbstractSpinBox;
@@ -21,13 +22,14 @@ class QtSpinBox
     QtSpinBox();
 
     std::function<void(Value)> value_changed_function;
+    std::function<Optional<Value>(const std::string &)> evaluate_function;
     void setValue(Value);
     void setMinimum(Value);
     void setMaximum(Value);
     void setValue(int) = delete;
     void setMinimum(int) = delete;
     void setMaximum(int) = delete;
-    void setSingleStep(double);
+    void setSingleStep(Value);
     double value() const;
     int decimals() const;
     void setDecimals(int);
@@ -61,6 +63,7 @@ class QtSpinBox
     void _callValueChangedFunction(double value) const;
     void _updateButtons();
     bool _inputIsExpression() const;
+    Optional<Value> _evaluateInput(const std::string &) const;
 };
 
 
