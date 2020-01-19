@@ -368,5 +368,7 @@ extern Optional<MarkerIndex>
 extern Optional<MarkerIndex>
   findBodyIndex(const SceneState &, const SceneState::Body::Name &);
 
+extern Optional<VariableIndex>
+  findVariableIndex(const SceneState &, const SceneState::Variable::Name &);
 
 #endif /* SCENESTATE_HPP_ */

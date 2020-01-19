@@ -249,6 +249,22 @@ Optional<BodyIndex>
 }
 
 
+extern Optional<VariableIndex>
+findVariableIndex(
+  const SceneState &scene_state,
+  const SceneState::Variable::Name &name
+)
+{
+  for (auto i : indicesOf(scene_state.variables)) {
+    if (scene_state.variables[i].name == name) {
+      return i;
+    }
+  }
+
+  return {};
+}
+
+
 void SceneState::removeMarker(MarkerIndex index_to_remove)
 {
   removeIndexFrom(_markers, index_to_remove);

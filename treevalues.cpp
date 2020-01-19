@@ -1528,6 +1528,34 @@ static bool
 
 
 static bool
+  setVariableStringValue(
+    const TreePath &path,
+    const StringValue &value,
+    SceneState &scene_state,
+    const TreePaths &tree_paths,
+    VariableIndex variable_index
+  )
+{
+  const TreePaths::Variable &variable_paths =
+    tree_paths.variables[variable_index];
+
+  SceneState::Variable &variable_state = scene_state.variables[variable_index];
+
+  if (startsWith(path, variable_paths.name)) {
+    if (findVariableIndex(scene_state, value)) {
+      // Name already exists.
+      return false;
+    }
+
+    variable_state.name = value;
+    return true;
+  }
+
+  return false;
+}
+
+
+static bool
   setBodyStringValue(
     const TreePath &path,
     const StringValue &value,
@@ -1774,6 +1802,15 @@ setSceneStateStringValue(
   for (auto i : indicesOf(tree_paths.markers)) {
     bool value_was_set =
       setMarkerStringValue(path, value, scene_state, tree_paths, i);
+
+    if (value_was_set) {
+      return true;
+    }
+  }
+
+  for (auto i : indicesOf(tree_paths.variables)) {
+    bool value_was_set =
+      setVariableStringValue(path, value, scene_state, tree_paths, i);
 
     if (value_was_set) {
       return true;
