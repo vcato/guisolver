@@ -116,3 +116,11 @@ extern bool
     const StringValue &value,
     const TreePaths &tree_paths
   );
+
+extern bool
+  setSceneStateExpression(
+    SceneState &scene_state,
+    const TreePath &path,
+    const std::string &expression,
+    const TreePaths &tree_paths
+  );

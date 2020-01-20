@@ -27,6 +27,7 @@ class SceneState {
     using Variables = vector<Variable>;
     using String = std::string;
     using Position = XYZ;
+    using Expression = String;
 
     struct XYZ {
       float x = 0;
@@ -34,9 +35,16 @@ class SceneState {
       float z = 0;
     };
 
+    struct XYZExpressions {
+      Expression x;
+      Expression y;
+      Expression z;
+    };
+
     struct Marker {
       using Name = String;
       Position position;
+      //XYZExpressions position_expressions;
       Optional<BodyIndex> maybe_body_index;
       Name name;
     };
@@ -370,5 +378,15 @@ extern Optional<MarkerIndex>
 
 extern Optional<VariableIndex>
   findVariableIndex(const SceneState &, const SceneState::Variable::Name &);
+
+inline TranslationState translationStateOf(const TransformState &arg)
+{
+  return arg.translation;
+}
+
+inline RotationState rotationStateOf(const TransformState &arg)
+{
+  return arg.rotation;
+}
 
 #endif /* SCENESTATE_HPP_ */

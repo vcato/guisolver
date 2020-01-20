@@ -6,6 +6,7 @@
 #include "rotationvector.hpp"
 #include "transform.hpp"
 #include "maketransform.hpp"
+#include "vec3state.hpp"
 
 
 inline SceneState::XYZ xyzState(const Point &p)
@@ -30,12 +31,6 @@ inline TransformState transformState(const Transform &t)
 }
 
 
-inline Vec3 vec3(const SceneState::XYZ &arg)
-{
-  return {arg.x, arg.y, arg.z};
-}
-
-
 inline Point point(const SceneState::XYZ &arg)
 {
   return {arg.x, arg.y, arg.z};
@@ -51,27 +46,9 @@ inline Transform makeTransformFromState(const SceneState::Transform &arg)
 }
 
 
-inline TranslationState translationStateOf(const TransformState &arg)
-{
-  return arg.translation;
-}
-
-
-inline RotationState rotationStateOf(const TransformState &arg)
-{
-  return arg.rotation;
-}
-
-
 inline Vec3 translationValues(const TransformState &t)
 {
   return vec3(t.translation);
-}
-
-
-inline Vec3 rotationValuesDeg(const RotationState &arg)
-{
-  return vec3(arg);
 }
 
 

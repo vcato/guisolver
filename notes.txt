@@ -89,66 +89,39 @@ A nice visual representation of error is a line to the closest point.  If
 we have an X error, then a line to the point with the minimum y and z values
 would be a good representation of that error.
 ---
-Work on evaluating spinbox expressions.
+Seems like we're going to want to have a set of expressions and an indication
+of where the value goes.  When we are solving the scene state, we'll go
+through all the expressions and evaluate them and store the values in
+the appropriate fields.
+
+The alternative would be to keep an expression as part of each thing we
+could set.
+
+From the standpoint of the scene solver, any value we are solving is
+a variable.  So we could have a variable in the scene state, which isn't
+being solved, so it is effectively a constant.
+
+Ultimately, we need to build an expression graph.  Some nodes in the graph
+will be solved and others won't.
+
+It seems like the solve flags are similar to the expressions.  The values
+that we might want to solve could also be driven by expressions.
+
+Seems like the idea behind how the spin boxes work isn't quite right.
+We're having the spin boxes evaluate the expression, so we treating
+changing the expression string like putting in a numeric value.  We get a
+callback from the tree widget indicating that the numeric value of an
+item has changed.  But we really need to set the expression on the item
+instead.
+
+We already have an evaluator callback in the tree widget.  We could utilize
+this as a way to update the expressions.
 ---
-Might be good to refactor the evaluateexpression.cpp from
-node_editor/charmapper into an expression parser.  It can keep the expression
-as a series of nodes, where no values are kept.  Numbers, identifiers,
-and string literals are all kept as index ranges into the original string,
-so that no extra data structure needs to be introduced to hold the values.
-A templated evaluator could be used.
-
-evaluate(expression, evaluator)
-
-struct VisitorInterface {
-  virtual void operator()(Expression::Identifier &) = 0;
-  virtual void operator()(Expression::Add &) = 0;
-};
-
-
-template <typename Function> 
-struct FunctionVisitor : VisitorInterface {
-  Optional<Function::Result> maybe_result;
-  const Function &f;
-
-  virtual void operator()(Expression::Identifier &arg)
-  {
-    maybe_result = f(arg);
-  }
-
-  virtual void operator()(Expression::Add &arg)
-  {
-    maybe_result = f(arg);
-  }
-};
-
-
-struct Node {
-  virtual void accept(VisitorInterface &) = 0;
-};
-
-
-template <typename Function>
-struct NodeEvaluator {
-  Function::Result evaluate(Node &node)
-  {
-    FunctionVisitor<Function> visitor(static_cast<Function&>(*this));
-    node.accept(visitor);
-    return *visitor.maybe_result;
-  }
-};
-
-struct MyFunction : NodeEvaluator<MyFunction> {
-  using NodeEvaluator<MyFunction>::evaluate;
-  using Result = MyType;
-
-  MyType operator()(Expression::Identifier &identifier)
-  {
-    return evaluateIdentifier(string, identifier.begin, identifier.length);
-  }
-
-  MyType operator()(Expression::Add &add)
-  {
-    return evaluate(add.left) + evaluate(add.right);
-  }
-};
+It would be nice to have a more generic way to visit scene items.
+* For example, if we have a tree path, it would be nice to be able to
+  visit the corresponding item in the scene state.
+* I could imaging having some kind of generic path:
+  &SceneState::bodies, index, &SceneState::Body::translation, &SceneState::XYZ::x
+* Seems like we'd have some kind of template that could take a path like
+  this and give us something else, like a tree path or a solve flag, or
+  an expression.

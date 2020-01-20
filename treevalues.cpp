@@ -1,6 +1,7 @@
 #include "treevalues.hpp"
 
-#include "rotationvector.hpp"
+#include <sstream>
+#include "vec3.hpp"
 #include "numericvalue.hpp"
 #include "stringvalue.hpp"
 #include "indicesof.hpp"
@@ -8,7 +9,7 @@
 #include "removeindexfrom.hpp"
 #include "startswith.hpp"
 #include "numericvaluelimits.hpp"
-#include "transformstate.hpp"
+#include "vec3state.hpp"
 
 using std::cerr;
 using std::string;
@@ -1501,25 +1502,64 @@ static bool
 }
 
 
+namespace {
+struct SetStringValueVisitor {
+  SceneState &scene_state;
+  const StringValue &value;
+
+  void visitBodyName(BodyIndex body_index)
+  {
+    SceneState::Body &body_state = scene_state.body(body_index);
+
+    if (!findBodyIndex(scene_state, value)) {
+      body_state.name = value;
+    }
+    else {
+      // Can't allow duplicate body names.
+    }
+
+  }
+
+  void visitMarkerName(MarkerIndex marker_index)
+  {
+    SceneState::Marker &marker_state = scene_state.marker(marker_index);
+
+    if (!findMarkerIndex(scene_state, value)) {
+      marker_state.name = value;
+    }
+    else {
+      // Can't allow duplicate marker names.
+    }
+  }
+
+  void visitVariableName(VariableIndex variable_index)
+  {
+    SceneState::Variable &variable_state =
+      scene_state.variables[variable_index];
+
+    if (!findVariableIndex(scene_state, value)) {
+      variable_state.name = value;
+    }
+    else {
+      // Can't allow duplicate variable names.
+    }
+  }
+};
+}
+
+
 static bool
   setMarkerStringValue(
     const TreePath &path,
-    const StringValue &value,
-    SceneState &scene_state,
     const TreePaths &tree_paths,
-    MarkerIndex marker_index
+    MarkerIndex marker_index,
+    SetStringValueVisitor &visitor
   )
 {
   const TreePaths::Marker &marker_path = tree_paths.marker(marker_index);
-  SceneState::Marker &marker_state = scene_state.marker(marker_index);
 
   if (startsWith(path, marker_path.name)) {
-    if (findMarkerIndex(scene_state, value)) {
-      // Name already exists.
-      return false;
-    }
-
-    marker_state.name = value;
+    visitor.visitMarkerName(marker_index);
     return true;
   }
 
@@ -1530,24 +1570,16 @@ static bool
 static bool
   setVariableStringValue(
     const TreePath &path,
-    const StringValue &value,
-    SceneState &scene_state,
     const TreePaths &tree_paths,
-    VariableIndex variable_index
+    VariableIndex variable_index,
+    SetStringValueVisitor &visitor
   )
 {
   const TreePaths::Variable &variable_paths =
     tree_paths.variables[variable_index];
 
-  SceneState::Variable &variable_state = scene_state.variables[variable_index];
-
   if (startsWith(path, variable_paths.name)) {
-    if (findVariableIndex(scene_state, value)) {
-      // Name already exists.
-      return false;
-    }
-
-    variable_state.name = value;
+    visitor.visitVariableName(variable_index);
     return true;
   }
 
@@ -1556,24 +1588,17 @@ static bool
 
 
 static bool
-  setBodyStringValue(
+  visitBodyStringValue(
     const TreePath &path,
-    const StringValue &value,
-    SceneState &scene_state,
     const TreePaths &tree_paths,
-    BodyIndex body_index
+    BodyIndex body_index,
+    SetStringValueVisitor &visitor
   )
 {
   const TreePaths::Body &body_paths = tree_paths.body(body_index);
-  SceneState::Body &body_state = scene_state.body(body_index);
 
   if (startsWith(path, body_paths.name)) {
-    if (findBodyIndex(scene_state, value)) {
-      // Name already exists.
-      return false;
-    }
-
-    body_state.name = value;
+    visitor.visitBodyName(body_index);
     return true;
   }
 
@@ -1790,9 +1815,10 @@ setSceneStateStringValue(
   const TreePaths &tree_paths
 )
 {
+  SetStringValueVisitor visitor{scene_state, value};
+
   for (auto i : indicesOf(tree_paths.bodies)) {
-    bool value_was_set =
-      setBodyStringValue(path, value, scene_state, tree_paths, i);
+    bool value_was_set = visitBodyStringValue(path, tree_paths, i, visitor);
 
     if (value_was_set) {
       return true;
@@ -1801,7 +1827,7 @@ setSceneStateStringValue(
 
   for (auto i : indicesOf(tree_paths.markers)) {
     bool value_was_set =
-      setMarkerStringValue(path, value, scene_state, tree_paths, i);
+      setMarkerStringValue(path, tree_paths, i, visitor);
 
     if (value_was_set) {
       return true;
@@ -1809,14 +1835,26 @@ setSceneStateStringValue(
   }
 
   for (auto i : indicesOf(tree_paths.variables)) {
-    bool value_was_set =
-      setVariableStringValue(path, value, scene_state, tree_paths, i);
+    bool value_was_set = setVariableStringValue(path, tree_paths, i, visitor);
 
     if (value_was_set) {
       return true;
     }
   }
 
+  return false;
+}
+
+
+bool
+setSceneStateExpression(
+  SceneState &/*scene_state*/,
+  const TreePath &path,
+  const std::string &expression,
+  const TreePaths &/*tree_paths*/
+)
+{
+  cerr << "setSceneStateExpression: path=" << path << ", expression=" << expression << "\n";
   return false;
 }
 

@@ -147,21 +147,6 @@ static void
 }
 
 
-static Optional<NumericValue> maybeValueFromText(const string &arg)
-{
-  if (arg.length() == 0) {
-    return {};
-  }
-
-  if (arg[0] != '=') {
-    return parseDouble(arg);
-  }
-
-  string expr = arg.substr(1);
-  return evaluateExpression(expr, cerr);
-}
-
-
 struct MainWindowController::Impl {
   struct Data {
     View &view;
@@ -205,10 +190,36 @@ struct MainWindowController::Impl {
     );
 
   static Optional<NumericValue>
-  evaluateInput(const string &text, const TreePath &)
+  evaluateInput(
+    MainWindowController &controller, const string &text, const TreePath &path
+  )
   {
-    return maybeValueFromText(text);
+    const string &arg = text;
+
+    if (text.length() == 0) {
+      return {};
+    }
+
+    if (text[0] != '=') {
+      return parseDouble(arg);
+    }
+
+    string expr = arg.substr(1);
+    Optional<NumericValue> maybe_result = evaluateExpression(expr, cerr);
+
+    if (maybe_result) {
+      handleTreeExpressionChanged(controller, path, expr);
+    }
+
+    return maybe_result;
   }
+
+  static void
+    handleTreeExpressionChanged(
+      MainWindowController &controller,
+      const TreePath &path,
+      const std::string &
+    );
 
   static void
     handleTreeStringValueChanged(
@@ -499,6 +510,21 @@ MainWindowController::Impl::handleTreeNumericValueChanged(
     cerr << "  path: " << path << "\n";
     cerr << "  value: " << value << "\n";
   }
+}
+
+
+void
+MainWindowController::Impl::handleTreeExpressionChanged(
+  MainWindowController &controller,
+  const TreePath &path,
+  const std::string &expression
+)
+{
+  ObservedScene &observed_scene = observedScene(controller);
+  SceneState &state = observed_scene.scene_state;
+  const TreePaths &tree_paths = observed_scene.tree_paths;
+  setSceneStateExpression(state, path, expression, tree_paths);
+  // cerr << "handleTreeExpressionChanged: path=" << path << ", expression=" << expression << "\n";
 }
 
 
@@ -1169,8 +1195,8 @@ MainWindowController::MainWindowController(View &view)
     };
 
   tree_widget.evaluate_function =
-    [](const TreePath &path, const string &text){
-      return Impl::evaluateInput(text, path);
+    [this](const TreePath &path, const string &text){
+      return Impl::evaluateInput(*this, text, path);
     };
 
   tree_widget.enumeration_item_index_changed_callback =

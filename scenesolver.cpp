@@ -91,7 +91,8 @@ static void updateState(SceneState &scene_state, const vector<float> &variables)
 {
   size_t i = 0;
 
-  forEachSceneValue(scene_state,
+  forEachSceneValue(
+    scene_state,
     [&](float &value, bool solve_flag, float scale){
       updateValue(value, variables, i, 1/scale, solve_flag);
     }
@@ -103,7 +104,8 @@ void solveScene(SceneState &scene_state)
 {
   vector<float> variables;
 
-  forEachSceneValue(scene_state,
+  forEachSceneValue(
+    scene_state,
     [&](const float value, bool solve_flag, float scale)
     {
       getValue(variables, value, scale, solve_flag);
