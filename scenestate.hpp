@@ -65,6 +65,11 @@ class SceneState {
       XYZSolveFlags rotation;
     };
 
+    struct TransformExpressions {
+      XYZExpressions translation;
+      XYZExpressions rotation;
+    };
+
     struct Box {
       XYZ scale = {1,1,1};
       Position center = {0,0,0};
@@ -82,6 +87,7 @@ class SceneState {
       vector<Box> boxes;
       vector<Line> lines;
       TransformSolveFlags solve_flags;
+      TransformExpressions expressions;
       Optional<BodyIndex> maybe_parent_index;
 
       BoxIndex addBox()
