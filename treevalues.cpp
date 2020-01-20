@@ -1485,27 +1485,12 @@ static bool
 }
 
 
-static bool
-  setMarkerNumericValue(
-    const TreePath &path,
-    NumericValue value,
-    const TreePaths::Marker &marker_path,
-    SceneState::Marker &marker_state
-  )
-{
-  if (startsWith(path, marker_path.position.path)) {
-    return
-      setVectorValue(marker_state.position, path, value, marker_path.position);
-  }
-
-  return false;
-}
-
-
 namespace {
 struct SetStringValueVisitor {
   SceneState &scene_state;
+  const TreePaths &tree_paths;
   const StringValue &value;
+  const TreePath &path;
 
   void visitBodyName(BodyIndex body_index)
   {
@@ -1517,7 +1502,6 @@ struct SetStringValueVisitor {
     else {
       // Can't allow duplicate body names.
     }
-
   }
 
   void visitMarkerName(MarkerIndex marker_index)
@@ -1544,65 +1528,48 @@ struct SetStringValueVisitor {
       // Can't allow duplicate variable names.
     }
   }
+
+  bool visitBody(BodyIndex body_index)
+  {
+    const TreePaths::Body &body_paths = tree_paths.body(body_index);
+
+    if (startsWith(path, body_paths.name)) {
+      visitBodyName(body_index);
+      return true;
+    }
+
+    return false;
+  }
+
+  bool visitMarker(MarkerIndex marker_index)
+  {
+    const TreePaths::Marker &marker_paths = tree_paths.marker(marker_index);
+
+    if (startsWith(path, marker_paths.name)) {
+      visitMarkerName(marker_index);
+      return true;
+    }
+
+    return false;
+  }
+
+  bool visitVariable(VariableIndex variable_index)
+  {
+    const TreePaths::Variable &variable_paths = tree_paths.variables[variable_index];
+
+    if (startsWith(path, variable_paths.name)) {
+      visitVariableName(variable_index);
+      return true;
+    }
+
+    return false;
+  }
+
+  bool visitDistanceError(DistanceErrorIndex)
+  {
+    return false;
+  }
 };
-}
-
-
-static bool
-  setMarkerStringValue(
-    const TreePath &path,
-    const TreePaths &tree_paths,
-    MarkerIndex marker_index,
-    SetStringValueVisitor &visitor
-  )
-{
-  const TreePaths::Marker &marker_path = tree_paths.marker(marker_index);
-
-  if (startsWith(path, marker_path.name)) {
-    visitor.visitMarkerName(marker_index);
-    return true;
-  }
-
-  return false;
-}
-
-
-static bool
-  setVariableStringValue(
-    const TreePath &path,
-    const TreePaths &tree_paths,
-    VariableIndex variable_index,
-    SetStringValueVisitor &visitor
-  )
-{
-  const TreePaths::Variable &variable_paths =
-    tree_paths.variables[variable_index];
-
-  if (startsWith(path, variable_paths.name)) {
-    visitor.visitVariableName(variable_index);
-    return true;
-  }
-
-  return false;
-}
-
-
-static bool
-  visitBodyStringValue(
-    const TreePath &path,
-    const TreePaths &tree_paths,
-    BodyIndex body_index,
-    SetStringValueVisitor &visitor
-  )
-{
-  const TreePaths::Body &body_paths = tree_paths.body(body_index);
-
-  if (startsWith(path, body_paths.name)) {
-    visitor.visitBodyName(body_index);
-    return true;
-  }
-
-  return false;
 }
 
 
@@ -1621,23 +1588,6 @@ static bool
 
   if (startsWith(path, distance_error_paths.weight)) {
     distance_error_state.weight = value;
-    return true;
-  }
-
-  return false;
-}
-
-
-static bool
-  setVariableValue(
-    SceneState::Variable &variable_state,
-    const TreePath &path,
-    NumericValue value,
-    const TreePaths::Variable &variable_paths
-  )
-{
-  if (startsWith(path, variable_paths.value)) {
-    variable_state.value = value;
     return true;
   }
 
@@ -1700,35 +1650,128 @@ setBodyNumericValue(
   const TreePaths::Body &body_paths
 )
 {
-  if (startsWith(path, body_paths.path)) {
-    TransformState transform_state = body_state.transform;
+  TransformState transform_state = body_state.transform;
 
-    if (setTransformValue(transform_state, path, value, body_paths)) {
-      body_state.transform = transform_state;
+  if (setTransformValue(transform_state, path, value, body_paths)) {
+    body_state.transform = transform_state;
+    return true;
+  }
+
+  assert(body_paths.boxes.size() == body_state.boxes.size());
+  size_t n_boxes = body_state.boxes.size();
+
+  for (size_t box_index = 0; box_index != n_boxes; ++box_index) {
+    const BoxPaths &box_paths = body_paths.boxes[box_index];
+    SceneState::Box &box_state = body_state.boxes[box_index];
+
+    if (setBoxNumericValue(box_state, path, value, box_paths)) {
+      return true;
+    }
+  }
+
+  LineIndex n_lines = body_state.lines.size();
+
+  for (LineIndex line_index = 0; line_index != n_lines; ++line_index) {
+    const LinePaths &line_paths = body_paths.lines[line_index];
+    SceneState::Line &line_state = body_state.lines[line_index];
+
+    if (setLineNumericValue(line_state, path, value, line_paths)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+namespace {
+struct SetNumericValueVisitor {
+  SceneState &scene_state;
+  const TreePaths &tree_paths;
+  const TreePath &path;
+  NumericValue value;
+
+  bool visitBody(BodyIndex body_index)
+  {
+    SceneState::Body &body_state = scene_state.body(body_index);
+    const TreePaths::Body &body_paths = tree_paths.body(body_index);
+
+    return
+      setBodyNumericValue(
+        body_state,
+        path,
+        value,
+        body_paths
+      );
+  }
+
+  bool visitMarker(MarkerIndex marker_index)
+  {
+    const TreePaths::Marker &marker_path = tree_paths.marker(marker_index);
+    SceneState::Marker &marker_state = scene_state.marker(marker_index);
+    return setVectorValue(marker_state.position, path, value, marker_path.position);
+  }
+
+  bool visitDistanceError(DistanceErrorIndex distance_error_index)
+  {
+    SceneState::DistanceError &distance_error_state =
+      scene_state.distance_errors[distance_error_index];
+
+    const TreePaths::DistanceError &distance_error_paths =
+      tree_paths.distance_errors[distance_error_index];
+
+    return
+      setDistanceErrorValue(
+        distance_error_state,
+        path,
+        value,
+        distance_error_paths
+      );
+  }
+
+  bool visitVariable(VariableIndex variable_index)
+  {
+    const TreePaths::Variable &variable_paths = tree_paths.variables[variable_index];
+
+    if (startsWith(path, variable_paths.value)) {
+      SceneState::Variable &variable_state = scene_state.variables[variable_index];
+      variable_state.value = value;
       return true;
     }
 
-    assert(body_paths.boxes.size() == body_state.boxes.size());
-    size_t n_boxes = body_state.boxes.size();
+    return false;
+  }
+};
+}
 
-    for (size_t box_index = 0; box_index != n_boxes; ++box_index) {
-      const BoxPaths &box_paths = body_paths.boxes[box_index];
-      SceneState::Box &box_state = body_state.boxes[box_index];
 
-      if (setBoxNumericValue(box_state, path, value, box_paths)) {
-        return true;
-      }
+template <typename Visitor>
+static bool
+forMatchingPath(const TreePath &path, Visitor &visitor, const TreePaths &tree_paths)
+{
+  for (auto body_index : indicesOf(tree_paths.bodies)) {
+    if (startsWith(path, tree_paths.body(body_index).path)) {
+      return visitor.visitBody(body_index);
     }
+  }
 
-    LineIndex n_lines = body_state.lines.size();
+  for (auto i : indicesOf(tree_paths.markers)) {
+    if (startsWith(path, tree_paths.marker(i).position.path)) {
+      return visitor.visitMarker(i);
+    }
+  }
 
-    for (LineIndex line_index = 0; line_index != n_lines; ++line_index) {
-      const LinePaths &line_paths = body_paths.lines[line_index];
-      SceneState::Line &line_state = body_state.lines[line_index];
+  for (auto i : indicesOf(tree_paths.distance_errors)) {
+    if (startsWith(path, tree_paths.distance_errors[i].path)) {
+      return visitor.visitDistanceError(i);
+    }
+  }
 
-      if (setLineNumericValue(line_state, path, value, line_paths)) {
-        return true;
-      }
+  for (auto i : indicesOf(tree_paths.variables)) {
+    const TreePaths::Variable &variable_paths = tree_paths.variables[i];
+
+    if (startsWith(path, variable_paths.path)) {
+      return visitor.visitVariable(i);
     }
   }
 
@@ -1744,66 +1787,8 @@ setSceneStateNumericValue(
   const TreePaths &tree_paths
 )
 {
-  for (auto body_index : indicesOf(tree_paths.bodies)) {
-    const TreePaths::Body &body_paths = tree_paths.body(body_index);
-    SceneState::Body &body_state = scene_state.body(body_index);
-
-    if (setBodyNumericValue(body_state, path, value, body_paths)) {
-      return true;
-    }
-  }
-
-  for (auto i : indicesOf(tree_paths.markers)) {
-    bool value_was_set =
-      setMarkerNumericValue(
-        path,
-        value,
-        tree_paths.marker(i),
-        scene_state.marker(i)
-      );
-
-    if (value_was_set) {
-      return true;
-    }
-  }
-
-  assert(
-    tree_paths.distance_errors.size() == scene_state.distance_errors.size()
-  );
-
-  for (auto i : indicesOf(tree_paths.distance_errors)) {
-    bool value_was_set =
-      setDistanceErrorValue(
-        scene_state.distance_errors[i],
-        path,
-        value,
-        tree_paths.distance_errors[i]
-      );
-
-    if (value_was_set) {
-      return true;
-    }
-  }
-
-  assert(
-    tree_paths.variables.size() == scene_state.variables.size()
-  );
-
-  for (auto i : indicesOf(tree_paths.variables)) {
-    bool value_was_set =
-      setVariableValue(
-        scene_state.variables[i],
-        path,
-        value,
-        tree_paths.variables[i]
-      );
-
-    if (value_was_set) {
-      return true;
-    }
-  }
-
-  return false;
+  SetNumericValueVisitor visitor = {scene_state, tree_paths, path, value};
+  return forMatchingPath(path, visitor, tree_paths);
 }
 
 
@@ -1815,34 +1800,8 @@ setSceneStateStringValue(
   const TreePaths &tree_paths
 )
 {
-  SetStringValueVisitor visitor{scene_state, value};
-
-  for (auto i : indicesOf(tree_paths.bodies)) {
-    bool value_was_set = visitBodyStringValue(path, tree_paths, i, visitor);
-
-    if (value_was_set) {
-      return true;
-    }
-  }
-
-  for (auto i : indicesOf(tree_paths.markers)) {
-    bool value_was_set =
-      setMarkerStringValue(path, tree_paths, i, visitor);
-
-    if (value_was_set) {
-      return true;
-    }
-  }
-
-  for (auto i : indicesOf(tree_paths.variables)) {
-    bool value_was_set = setVariableStringValue(path, tree_paths, i, visitor);
-
-    if (value_was_set) {
-      return true;
-    }
-  }
-
-  return false;
+  SetStringValueVisitor visitor{scene_state, tree_paths, value, path};
+  return forMatchingPath(path, visitor, tree_paths);
 }
 
 
