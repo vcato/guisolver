@@ -1682,7 +1682,9 @@ struct SetNumericValueVisitor {
   {
     const TreePaths::Marker &marker_path = tree_paths.marker(marker_index);
     SceneState::Marker &marker_state = scene_state.marker(marker_index);
-    return setVectorValue(marker_state.position, path, value, marker_path.position);
+
+    return
+      setVectorValue(marker_state.position, path, value, marker_path.position);
   }
 
   bool visitDistanceError(DistanceErrorIndex distance_error_index)
@@ -1728,6 +1730,7 @@ struct SetBodyExpressionVisitor {
   bool visitTranslation()
   {
     if (startsWith(path, body_paths.translation.x)) {
+      cerr << "Setting body x translation expression\n";
       body_state.expressions.translation.x = expression;
       return true;
     }
@@ -1764,7 +1767,11 @@ struct SetExpressionVisitor {
   {
     SceneState::Body &body_state = scene_state.body(body_index);
     const TreePaths::Body &body_paths = tree_paths.body(body_index);
-    SetBodyExpressionVisitor visitor = {body_state, path, expression, body_paths};
+
+    SetBodyExpressionVisitor visitor = {
+      body_state, path, expression, body_paths
+    };
+
     return forMatchingBodyPath(path, body_paths, visitor);
   }
 
@@ -1855,9 +1862,13 @@ setSceneStateExpression(
 )
 {
   SetExpressionVisitor visitor = { scene_state, tree_paths, path, expression };
-  return forMatchingPath(path, visitor, tree_paths);
-  cerr << "setSceneStateExpression: path=" << path << ", expression=" << expression << "\n";
-  return false;
+
+  if (!forMatchingPath(path, visitor, tree_paths)) {
+    cerr << "setSceneStateExpression: path=" << path << ", expression=" << expression << "\n";
+    return false;
+  }
+
+  return true;
 }
 
 
