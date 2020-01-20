@@ -42,6 +42,7 @@ class ExpressionParser
 
   private:
     void skipChar() const;
+    void skipWhitespace() const;
     char peekChar() const;
     bool parsePrimaryStartingWithIdentifier(const StringRange &) const;
     bool parsePrimary() const;

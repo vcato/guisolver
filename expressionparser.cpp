@@ -3,19 +3,19 @@
 using std::string;
 
 
-static bool skipNumber(const StringParser &self)
+static bool skipNumber(const StringParser &string_parser)
 {
-  if (!self.isDigit(self.peekChar())) return false;
+  if (!string_parser.isDigit(string_parser.peekChar())) return false;
 
-  while (self.isDigit(self.peekChar())) {
-    self.skipChar();
+  while (string_parser.isDigit(string_parser.peekChar())) {
+    string_parser.skipChar();
   }
 
-  if (self.peekChar() == '.') {
-    self.skipChar();
+  if (string_parser.peekChar() == '.') {
+    string_parser.skipChar();
 
-    while (self.isDigit(self.peekChar())) {
-      self.skipChar();
+    while (string_parser.isDigit(string_parser.peekChar())) {
+      string_parser.skipChar();
     }
   }
 
@@ -24,18 +24,16 @@ static bool skipNumber(const StringParser &self)
 
 
 static Optional<StringRange>
-maybeNumberRange(const StringParser &self)
+maybeNumberRange(const StringParser &string_parser)
 {
-  self.skipWhitespace();
+  string_parser.skipWhitespace();
+  StringIndex start = string_parser.index();
 
-  StringIndex start = self.index();
-
-  if (!skipNumber(self)) {
+  if (!skipNumber(string_parser)) {
     return {};
   }
 
-  StringIndex end = self.index();
-
+  StringIndex end = string_parser.index();
   return StringRange{start, end};
 }
 
@@ -43,6 +41,12 @@ maybeNumberRange(const StringParser &self)
 void ExpressionParser::skipChar() const
 {
   string_parser.skipChar();
+}
+
+
+void ExpressionParser::skipWhitespace() const
+{
+  string_parser.skipWhitespace();
 }
 
 
@@ -191,6 +195,8 @@ bool ExpressionParser::parseFunctionArgument() const
 
 bool ExpressionParser::parseFunctionArguments(int &n_arguments) const
 {
+  skipWhitespace();
+
   if (peekChar()==')') {
     return true;
   }
@@ -221,6 +227,8 @@ bool ExpressionParser::parseFunctionArguments(int &n_arguments) const
 bool ExpressionParser::extendPostfix() const
 {
   for (;;) {
+    skipWhitespace();
+
     if (peekChar()=='.') {
       skipChar();
 
@@ -263,7 +271,7 @@ bool ExpressionParser::extendPostfix() const
 bool ExpressionParser::extendTerm() const
 {
   for (;;) {
-    string_parser.skipWhitespace();
+    skipWhitespace();
 
     if (peekChar()=='+') {
       skipChar();
@@ -293,16 +301,6 @@ bool ExpressionParser::extendTerm() const
   }
 
   return true;
-}
-
-
-bool ExpressionParser::parsePostfix() const
-{
-  if (!parsePrimary()) {
-    return false;
-  }
-
-  return extendPostfix();
 }
 
 
@@ -340,27 +338,21 @@ bool ExpressionParser::extendFactor() const
 }
 
 
+bool ExpressionParser::parsePostfix() const
+{
+  return parsePrimary() && extendPostfix();
+}
+
+
 bool ExpressionParser::parseFactor() const
 {
-  if (!parsePostfix()) {
-    return false;
-  }
-
-  return extendFactor();
+  return parsePostfix() && extendFactor();
 }
 
 
 bool ExpressionParser::parseTerm() const
 {
-  if (!parseFactor()) {
-    return false;
-  }
-
-  if (!extendTerm()) {
-    return false;
-  }
-
-  return true;
+  return parseFactor() && extendTerm();
 }
 
 

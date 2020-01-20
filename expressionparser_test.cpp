@@ -151,7 +151,15 @@ struct Tester {
       evaluator(string_parser, command_stream, error_stream, evaluator_flags);
 
     ExpressionParser parser(string_parser, evaluator, error_stream);
-    return parser.parseExpression();
+    bool could_parse = parser.parseExpression();
+
+    if (!could_parse) {
+      return false;
+    }
+
+    string_parser.skipWhitespace();
+
+    return could_parse;
   }
 
   bool hitEndOfExpression(const string &expression)
@@ -346,6 +354,8 @@ int main()
   testBadVectorMultiplication();
   testFunctionArgumentWithFactors();
   testValid("f()+g()");
+  testValid("f( )+g( )");
+  testValid(" f ( 5.2 ) ");
   testValid("5.2");
   testInvalid("[,2]", "Unexpected ','\n");
   testInvalid("1.x", "");
