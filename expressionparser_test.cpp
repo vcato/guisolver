@@ -170,6 +170,11 @@ struct Tester {
   void parseValidExpression(const string &expression)
   {
     bool was_valid = parseExpression(expression);
+
+    if (!was_valid) {
+      cerr << "errorString(): " << errorString() << "\n";
+    }
+
     assert(was_valid);
     assert(errorString() == "");
     assert(hitEndOfExpression(expression));
@@ -356,7 +361,9 @@ int main()
   testValid("f()+g()");
   testValid("f( )+g( )");
   testValid(" f ( 5.2 ) ");
+  testValid(" [ 1 , 2 ] ");
   testValid("5.2");
+  testValid(" ( 2 ) ");
   testInvalid("[,2]", "Unexpected ','\n");
   testInvalid("1.x", "");
   testTruncated("[");

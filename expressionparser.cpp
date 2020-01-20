@@ -67,6 +67,8 @@ bool
 
 bool ExpressionParser::parsePrimary() const
 {
+  skipWhitespace();
+
   if (peekChar()=='(') {
     skipChar();
 
