@@ -120,33 +120,6 @@ forEachSolveFlagAffectingHandle(
 }
 
 
-static void
-  setSceneStateEnumerationIndex(
-    SceneState &scene_state,
-    const TreePath &path,
-    int value,
-    const TreePaths &tree_paths
-  )
-{
-  for (auto i : indicesOf(tree_paths.distance_errors)) {
-    const TreePaths::DistanceError &distance_error_paths =
-      tree_paths.distance_errors[i];
-
-    auto &state_distance_error = scene_state.distance_errors[i];
-
-    if (path == distance_error_paths.start) {
-      state_distance_error.optional_start_marker_index =
-        markerIndexFromEnumerationValue(value);
-    }
-
-    if (path == distance_error_paths.end) {
-      state_distance_error.optional_end_marker_index =
-        markerIndexFromEnumerationValue(value);
-    }
-  }
-}
-
-
 struct MainWindowController::Impl {
   struct Data {
     View &view;
@@ -181,13 +154,6 @@ struct MainWindowController::Impl {
 
   static void handleSceneChanging(MainWindowController &);
   static void handleSceneChanged(MainWindowController &);
-
-  static void
-    handleTreeNumericValueChanged(
-      MainWindowController &,
-      const TreePath &,
-      NumericValue
-    );
 
   static Optional<NumericValue>
   evaluateInput(
@@ -226,13 +192,6 @@ struct MainWindowController::Impl {
       MainWindowController &,
       const TreePath &,
       const StringValue &
-    );
-
-  static void
-    handleTreeEnumerationIndexChanged(
-      MainWindowController &controller,
-      const TreePath &path,
-      int value
     );
 
   static TreeWidget::MenuItems
@@ -397,122 +356,6 @@ void
 }
 
 
-template <typename XYZSolveFlags>
-static MatchConst_t<bool, XYZSolveFlags> *
-  xyzSolveStatePtr(
-    XYZSolveFlags &xyz_solve_flags,
-    const TreePath &path,
-    const TreePaths::XYZ &xyz_paths
-  )
-{
-  if (path == xyz_paths.x) return &xyz_solve_flags.x;
-  if (path == xyz_paths.y) return &xyz_solve_flags.y;
-  if (path == xyz_paths.z) return &xyz_solve_flags.z;
-  return nullptr;
-}
-
-
-template <typename SceneState>
-static MatchConst_t<bool, SceneState> *
-  bodySolveStatePtr(
-    SceneState &scene_state,
-    const TreePath &path,
-    const TreePaths &tree_paths,
-    BodyIndex body_index
-  )
-{
-  using Bool = MatchConst_t<bool, SceneState>;
-  auto &body_state = scene_state.body(body_index);
-  const TreePaths::Body &body_paths = tree_paths.body(body_index);
-  {
-    const TreePaths::XYZ &xyz_paths = body_paths.translation;
-    auto &xyz_solve_flags = body_state.solve_flags.translation;
-    Bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
-
-    if (result_ptr) {
-      return result_ptr;
-    }
-  }
-  {
-    const TreePaths::XYZ &xyz_paths = body_paths.rotation;
-    auto &xyz_solve_flags = body_state.solve_flags.rotation;
-    Bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
-
-    if (result_ptr) {
-      return result_ptr;
-    }
-  }
-
-  return nullptr;
-}
-
-
-template <typename SceneState>
-static auto*
-  solveStatePtr(
-    SceneState &scene_state,
-    const TreePath &path,
-    const TreePaths &tree_paths
-  )
-{
-  for (auto body_index : indicesOf(scene_state.bodies())) {
-    auto *solve_state_ptr =
-      bodySolveStatePtr(scene_state, path, tree_paths, body_index);
-
-    if (solve_state_ptr) {
-      return solve_state_ptr;
-    }
-  }
-
-  return
-    decltype(bodySolveStatePtr(scene_state, path, tree_paths, 0))(nullptr);
-}
-
-
-void
-MainWindowController::Impl::handleTreeNumericValueChanged(
-  MainWindowController &controller,
-  const TreePath &path,
-  NumericValue value
-)
-{
-  ObservedScene &observed_scene = observedScene(controller);
-  const TreePaths &tree_paths = observed_scene.tree_paths;
-  SceneState &state = observed_scene.scene_state;
-
-  bool value_was_changed =
-    setSceneStateNumericValue(state, path, value, tree_paths);
-
-  if (value_was_changed) {
-    {
-      bool *solve_state_ptr = solveStatePtr(state, path, tree_paths);
-      Optional<bool> maybe_old_state;
-
-      // Turn off the solve state of the value that is being changed, so that
-      // it doesn't give strange feedback to the user.
-
-      if (solve_state_ptr) {
-        maybe_old_state = *solve_state_ptr;
-        *solve_state_ptr = false;
-      }
-
-      solveScene(state);
-
-      if (solve_state_ptr) {
-        *solve_state_ptr = *maybe_old_state;
-      }
-    }
-
-    observed_scene.handleSceneStateChanged();
-  }
-  else {
-    cerr << "Handling spin_box_item_value_changed_function\n";
-    cerr << "  path: " << path << "\n";
-    cerr << "  value: " << value << "\n";
-  }
-}
-
-
 void
 MainWindowController::Impl::handleTreeExpressionChanged(
   MainWindowController &controller,
@@ -521,10 +364,7 @@ MainWindowController::Impl::handleTreeExpressionChanged(
 )
 {
   ObservedScene &observed_scene = observedScene(controller);
-  SceneState &state = observed_scene.scene_state;
-  const TreePaths &tree_paths = observed_scene.tree_paths;
-  setSceneStateExpression(state, path, expression, tree_paths);
-  // cerr << "handleTreeExpressionChanged: path=" << path << ", expression=" << expression << "\n";
+  observed_scene.handleTreeExpressionChanged(path, expression);
 }
 
 
@@ -550,23 +390,6 @@ MainWindowController::Impl::handleTreeStringValueChanged(
   else {
     cerr << "handleTreeStringValueChanged: no match\n";
   }
-}
-
-
-void
-  MainWindowController::Impl::handleTreeEnumerationIndexChanged(
-    MainWindowController &controller,
-    const TreePath &path,
-    int value
-  )
-{
-  ObservedScene &observed_scene = observedScene(controller);
-  const TreePaths &tree_paths = observed_scene.tree_paths;
-  SceneState &scene_state = observed_scene.scene_state;
-
-  setSceneStateEnumerationIndex(scene_state, path, value, tree_paths);
-  solveScene(scene_state);
-  observed_scene.handleSceneStateChanged();
 }
 
 
@@ -1171,6 +994,9 @@ MainWindowController::Impl::Data::Data(
     tree_widget_arg,
     [](SceneState &state){
       updateErrorsInState(state);
+    },
+    [](SceneState &state){
+      solveScene(state);
     }
   )
 {
@@ -1190,8 +1016,8 @@ MainWindowController::MainWindowController(View &view)
     [&observed_scene]{ observed_scene.handleSceneSelectionChanged(); };
 
   tree_widget.spin_box_item_value_changed_callback =
-    [this](const TreePath &path, NumericValue value){
-      Impl::handleTreeNumericValueChanged(*this, path, value);
+    [&observed_scene](const TreePath &path, NumericValue value){
+      observed_scene.handleTreeNumericValueChanged(path, value);
     };
 
   tree_widget.evaluate_function =
@@ -1200,8 +1026,8 @@ MainWindowController::MainWindowController(View &view)
     };
 
   tree_widget.enumeration_item_index_changed_callback =
-    [this](const TreePath &path, int index){
-      Impl::handleTreeEnumerationIndexChanged(*this, path, index);
+    [&observed_scene](const TreePath &path, int index){
+      observed_scene.handleTreeEnumerationIndexChanged(path, index);
     };
 
   tree_widget.selection_changed_callback =

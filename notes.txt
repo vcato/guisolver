@@ -125,3 +125,8 @@ It would be nice to have a more generic way to visit scene items.
 * Seems like we'd have some kind of template that could take a path like
   this and give us something else, like a tree path or a solve flag, or
   an expression.
+---
+Enable ADD_TEST in observedscene_test.cpp
+---
+Remove uses of treevalues.hpp from mainwindowcontroller.cpp
+* Move them to ObservedScene

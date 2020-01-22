@@ -7,6 +7,7 @@
 #include "sceneerror.hpp"
 #include "scenestatetransform.hpp"
 #include "removeindexfrom.hpp"
+#include "vectorio.hpp"
 
 using TransformHandle = Scene::TransformHandle;
 using GeometryHandle = Scene::GeometryHandle;
@@ -661,16 +662,65 @@ void ObservedScene::handleSceneSelectionChanged()
 }
 
 
+void
+ObservedScene::handleTreeExpressionChanged(
+  const TreePath &path, const std::string &expression
+)
+{
+  setSceneStateExpression(scene_state, path, expression, tree_paths);
+}
+
+
+static void
+  setSceneStateEnumerationIndex(
+    SceneState &scene_state,
+    const TreePath &path,
+    int value,
+    const TreePaths &tree_paths
+  )
+{
+  for (auto i : indicesOf(tree_paths.distance_errors)) {
+    const TreePaths::DistanceError &distance_error_paths =
+      tree_paths.distance_errors[i];
+
+    auto &state_distance_error = scene_state.distance_errors[i];
+
+    if (path == distance_error_paths.start) {
+      state_distance_error.optional_start_marker_index =
+        markerIndexFromEnumerationValue(value);
+    }
+
+    if (path == distance_error_paths.end) {
+      state_distance_error.optional_end_marker_index =
+        markerIndexFromEnumerationValue(value);
+    }
+  }
+}
+
+
+void
+ObservedScene::handleTreeEnumerationIndexChanged(
+  const TreePath &path, int value
+)
+{
+  setSceneStateEnumerationIndex(scene_state, path, value, tree_paths);
+  solveScene();
+  handleSceneStateChanged();
+}
+
+
 ObservedScene::ObservedScene(
   Scene &scene,
   TreeWidget &tree_widget,
-  std::function<void(SceneState &)> update_errors_function
+  std::function<void(SceneState &)> update_errors_function,
+  std::function<void(SceneState &)> solve_function
 )
 : scene(scene),
   tree_widget(tree_widget),
   scene_handles(createSceneObjects(scene_state, scene)),
   tree_paths(fillTree(tree_widget,scene_state)),
-  update_errors_function(std::move(update_errors_function))
+  update_errors_function(std::move(update_errors_function)),
+  solve_function(std::move(solve_function))
 {
 }
 
@@ -809,17 +859,18 @@ bool ObservedScene::canPasteTo(Optional<BodyIndex> maybe_body_index)
 
 void ObservedScene::replaceSceneStateWith(const SceneState &new_state)
 {
-  ObservedScene &observed_scene = *this;
-  Scene &scene = observed_scene.scene;
-  SceneHandles &scene_handles = observed_scene.scene_handles;
-  TreeWidget &tree_widget = observed_scene.tree_widget;
-  SceneState &scene_state = observed_scene.scene_state;
   destroySceneObjects(scene, scene_state, scene_handles);
-  clearTree(tree_widget, observed_scene.tree_paths);
+  clearTree(tree_widget, tree_paths);
   clipboard.maybe_cut_body_index.reset();
   scene_state = new_state;
   scene_handles = createSceneObjects(scene_state, scene);
-  observed_scene.tree_paths = fillTree(tree_widget, scene_state);
+  tree_paths = fillTree(tree_widget, scene_state);
+}
+
+
+void ObservedScene::solveScene()
+{
+  solve_function(scene_state);
 }
 
 
@@ -1079,4 +1130,47 @@ void ObservedScene::selectVariable(VariableIndex variable_index)
 {
   tree_widget.selectItem(tree_paths.variables[variable_index].path);
   handleTreeSelectionChanged();
+}
+
+
+void
+ObservedScene::handleTreeNumericValueChanged(
+  const TreePath &path,
+  NumericValue value
+)
+{
+  ObservedScene &observed_scene = *this;
+  const TreePaths &tree_paths = observed_scene.tree_paths;
+  SceneState &state = observed_scene.scene_state;
+
+  bool value_was_changed =
+    setSceneStateNumericValue(state, path, value, tree_paths);
+
+  if (value_was_changed) {
+    {
+      bool *solve_state_ptr = solveStatePtr(state, path, tree_paths);
+      Optional<bool> maybe_old_state;
+
+      // Turn off the solve state of the value that is being changed, so that
+      // it doesn't give strange feedback to the user.
+
+      if (solve_state_ptr) {
+        maybe_old_state = *solve_state_ptr;
+        *solve_state_ptr = false;
+      }
+
+      observed_scene.solveScene();
+
+      if (solve_state_ptr) {
+        *solve_state_ptr = *maybe_old_state;
+      }
+    }
+
+    observed_scene.handleSceneStateChanged();
+  }
+  else {
+    cerr << "Handling spin_box_item_value_changed_function\n";
+    cerr << "  path: " << path << "\n";
+    cerr << "  value: " << value << "\n";
+  }
 }

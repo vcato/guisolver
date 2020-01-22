@@ -49,14 +49,16 @@ struct ObservedScene {
   TreePaths tree_paths;
   Clipboard clipboard;
   std::function<void(SceneState&)> update_errors_function;
+  std::function<void(SceneState&)> solve_function;
 
   ObservedScene(
     Scene &scene,
     TreeWidget &tree_widget,
-    std::function<void(SceneState &)>
+    std::function<void(SceneState &)> update_errors_function,
+    std::function<void(SceneState &)> solve_function
   );
 
-  BodyIndex addBody(Optional<BodyIndex> maybe_parent_index);
+  BodyIndex addBody(Optional<BodyIndex> maybe_parent_index = {});
   BoxIndex addBoxTo(BodyIndex);
   LineIndex addLineTo(BodyIndex);
   MarkerIndex addMarker(Optional<BodyIndex>);
@@ -108,6 +110,7 @@ struct ObservedScene {
   static void clearClipboard(ObservedScene &);
 
   void replaceSceneStateWith(const SceneState &);
+  void solveScene();
   bool canPasteTo(Optional<BodyIndex>);
 
   static void
@@ -131,6 +134,9 @@ struct ObservedScene {
   void handleSceneStateChanged();
   void handleTreeSelectionChanged();
   void handleSceneSelectionChanged();
+  void handleTreeExpressionChanged(const TreePath &, const std::string &);
+  void handleTreeEnumerationIndexChanged(const TreePath &, int value);
+  void handleTreeNumericValueChanged(const TreePath &path, NumericValue value);
 
   static void
   createMarkerInScene(MarkerIndex marker_index, ObservedScene &observed_scene);

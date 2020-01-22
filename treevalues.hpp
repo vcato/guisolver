@@ -124,3 +124,17 @@ extern bool
     const std::string &expression,
     const TreePaths &tree_paths
   );
+
+extern bool*
+  solveStatePtr(
+    SceneState &scene_state,
+    const TreePath &path,
+    const TreePaths &tree_paths
+  );
+
+extern const bool*
+  solveStatePtr(
+    const SceneState &scene_state,
+    const TreePath &path,
+    const TreePaths &tree_paths
+  );

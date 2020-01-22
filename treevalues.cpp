@@ -1921,3 +1921,99 @@ createBodyBranchItemsInTree(
 
   forEachBranchIndexInPreOrder(body_index, scene_state, visitor);
 }
+
+
+
+template <typename XYZSolveFlags>
+static MatchConst_t<bool, XYZSolveFlags> *
+  xyzSolveStatePtr(
+    XYZSolveFlags &xyz_solve_flags,
+    const TreePath &path,
+    const TreePaths::XYZ &xyz_paths
+  )
+{
+  if (path == xyz_paths.x) return &xyz_solve_flags.x;
+  if (path == xyz_paths.y) return &xyz_solve_flags.y;
+  if (path == xyz_paths.z) return &xyz_solve_flags.z;
+  return nullptr;
+}
+
+
+template <typename SceneState>
+static MatchConst_t<bool, SceneState> *
+  bodySolveStatePtr(
+    SceneState &scene_state,
+    const TreePath &path,
+    const TreePaths &tree_paths,
+    BodyIndex body_index
+  )
+{
+  using Bool = MatchConst_t<bool, SceneState>;
+  auto &body_state = scene_state.body(body_index);
+  const TreePaths::Body &body_paths = tree_paths.body(body_index);
+  {
+    const TreePaths::XYZ &xyz_paths = body_paths.translation;
+    auto &xyz_solve_flags = body_state.solve_flags.translation;
+    Bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
+
+    if (result_ptr) {
+      return result_ptr;
+    }
+  }
+  {
+    const TreePaths::XYZ &xyz_paths = body_paths.rotation;
+    auto &xyz_solve_flags = body_state.solve_flags.rotation;
+    Bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
+
+    if (result_ptr) {
+      return result_ptr;
+    }
+  }
+
+  return nullptr;
+}
+
+
+template <typename SceneState>
+static auto*
+  basicSolveStatePtr(
+    SceneState &scene_state,
+    const TreePath &path,
+    const TreePaths &tree_paths
+  )
+{
+  for (auto body_index : indicesOf(scene_state.bodies())) {
+    auto *solve_state_ptr =
+      bodySolveStatePtr(scene_state, path, tree_paths, body_index);
+
+    if (solve_state_ptr) {
+      return solve_state_ptr;
+    }
+  }
+
+  return
+    decltype(bodySolveStatePtr(scene_state, path, tree_paths, 0))(nullptr);
+}
+
+
+
+bool*
+  solveStatePtr(
+    SceneState &scene_state,
+    const TreePath &path,
+    const TreePaths &tree_paths
+  )
+{
+  return basicSolveStatePtr(scene_state, path, tree_paths);
+}
+
+
+const bool*
+  solveStatePtr(
+    const SceneState &scene_state,
+    const TreePath &path,
+    const TreePaths &tree_paths
+  )
+{
+  return basicSolveStatePtr(scene_state, path, tree_paths);
+}

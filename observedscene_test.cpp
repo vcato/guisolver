@@ -7,7 +7,10 @@
 #include "scenestateio.hpp"
 #include "vectorio.hpp"
 
+#define ADD_TEST 0
+
 using std::cerr;
+using VariableName = SceneState::Variable::Name;
 
 
 static void
@@ -38,7 +41,17 @@ namespace {
 struct Tester {
   FakeTreeWidget tree_widget;
   FakeScene scene;
-  ObservedScene observed_scene{scene, tree_widget, [](SceneState &){}};
+
+  static void solveFunction(SceneState &)
+  {
+  }
+
+  static void updateErrorsFunction(SceneState &)
+  {
+  }
+
+  ObservedScene
+    observed_scene{scene, tree_widget, updateErrorsFunction, solveFunction};
 };
 }
 
@@ -182,8 +195,6 @@ static void testDuplicatingABody()
     distance_error1_index
     < DistanceErrorIndex(observed_scene.scene_handles.distance_errors.size())
   );
-
-  printSceneStateOn(cerr, scene_state);
 }
 
 
@@ -329,6 +340,30 @@ static void testAddingAVariable()
 }
 
 
+#if ADD_TEST
+static void testUsingAVariable()
+{
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+  SceneState &scene_state = observed_scene.scene_state;
+  VariableIndex var_index = observed_scene.addVariable();
+  VariableName var_name = scene_state.variables[var_index].name;
+  observed_scene.addBody();
+
+  setSceneStateExpression(
+    tree_paths.body(body_index).transform.translation.x, var_name
+  );
+
+  setVariableValue(var_index, /*new_value*/5, scene_state);
+
+  NumericValue tx =
+    displayedValue(tree_paths.body(body_index).transform.translation.x);
+
+  assert(tx == 5);
+}
+#endif
+
+
 int main()
 {
   testTransferringABody1();
@@ -343,4 +378,7 @@ int main()
   testAddingADistanceErrorToABody();
   testReplacingSceneState();
   testAddingAVariable();
+#if ADD_TEST
+  testUsingAVariable();
+#endif
 }

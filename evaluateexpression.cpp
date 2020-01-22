@@ -7,6 +7,7 @@
 
 using std::ostream;
 using std::string;
+using std::cerr;
 
 
 namespace {
@@ -37,8 +38,9 @@ struct Evaluator : EvaluatorInterface {
     return ::rangeText(number_range, expression);
   }
 
-  virtual bool evaluateVariable(const StringRange &/*identifier_range*/)
+  virtual bool evaluateVariable(const StringRange &identifier_range)
   {
+    cerr << "Unknown variable: " << rangeText(identifier_range) << "\n";
     // No scope
     return false;
   }

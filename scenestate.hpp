@@ -395,4 +395,5 @@ inline RotationState rotationStateOf(const TransformState &arg)
   return arg.rotation;
 }
 
+
 #endif /* SCENESTATE_HPP_ */
