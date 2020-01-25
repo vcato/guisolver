@@ -80,6 +80,20 @@ struct ItemAdder {
     ++n_children;
     return child_path;
   }
+
+#if USE_SOLVE_CHILDREN
+  TreePath
+  addBool(
+    const string &label,
+    bool value
+  )
+  {
+    TreePath child_path = childPath(parent_path, n_children);
+    tree_widget.createBoolItem(child_path, LabelProperties{label}, value);
+    ++n_children;
+    return child_path;
+  }
+#endif
 };
 }
 
@@ -87,15 +101,27 @@ struct ItemAdder {
 namespace {
 struct AddNumericItemFunction {
   ItemAdder &adder;
-  NumericValue minimum_value = noMinimumNumericValue();
   int digits_of_precision = defaultDigitsOfPrecision();
+  NumericValue minimum_value = noMinimumNumericValue();
 
   AddNumericItemFunction(ItemAdder &adder)
   : adder(adder)
   {
   }
+};
+}
 
-  TreePath operator()(const string &label, NumericValue value)
+
+namespace {
+struct AddSimpleNumericItemFunction : AddNumericItemFunction {
+  using ItemPaths = TreePath;
+
+  AddSimpleNumericItemFunction(ItemAdder &adder)
+  : AddNumericItemFunction(adder)
+  {
+  }
+
+  ItemPaths operator()(const string &label, NumericValue value)
   {
     return adder.addNumeric(label, value, minimum_value, digits_of_precision);
   }
@@ -103,14 +129,44 @@ struct AddNumericItemFunction {
 }
 
 
-static TreePaths::XYZ
-  createXYZChildren(
-    AddNumericItemFunction &add,
+#if USE_SOLVE_CHILDREN
+namespace {
+struct AddChannelItemFunction : AddNumericItemFunction {
+  using ItemPaths = TreePaths::Channel;
+
+  AddChannelItemFunction(ItemAdder &adder)
+  : AddNumericItemFunction(adder)
+  {
+  }
+
+  ItemPaths operator()(const string &label, NumericValue value)
+  {
+    TreePath path =
+      adder.addNumeric(label, value, minimum_value, digits_of_precision);
+
+    ItemAdder child_adder{path, adder.tree_widget};
+
+    TreePath solve_path = child_adder.addBool("solve", false);
+    return TreePaths::Channel{ path, solve_path };
+  }
+};
+}
+#endif
+
+
+template <
+  typename AddFunction,
+  typename ItemPaths = typename AddFunction::ItemPaths,
+  typename XYZPaths = TreePaths::BasicXYZ<ItemPaths>
+>
+static XYZPaths
+  createXYZChildren2(
+    AddFunction &add,
     const SceneState::XYZ &value,
     int digits_of_precision = defaultDigitsOfPrecision()
   )
 {
-  TreePaths::XYZ xyz_paths;
+  XYZPaths xyz_paths;
   xyz_paths.path = add.adder.parent_path;
   add.digits_of_precision = digits_of_precision;
 
@@ -131,9 +187,25 @@ static TreePaths::XYZ
   )
 {
   ItemAdder adder{parent_path, tree_widget};
-  AddNumericItemFunction add(adder);
-  return createXYZChildren(add, value, digits_of_precision);
+  AddSimpleNumericItemFunction add(adder);
+  return createXYZChildren2(add, value, digits_of_precision);
 }
+
+
+#if USE_SOLVE_CHILDREN
+static TreePaths::XYZChannels
+createXYZChannels(
+  TreeWidget &tree_widget,
+  const TreePath &parent_path,
+  const SceneState::XYZ &value,
+  int digits_of_precision
+)
+{
+  ItemAdder adder{parent_path, tree_widget};
+  AddChannelItemFunction add(adder);
+  return createXYZChildren2(add, value, digits_of_precision);
+}
+#endif
 
 
 static string markerLabel(const SceneState::Marker &marker_state)
@@ -928,9 +1000,9 @@ createBoxItem(
   {
     TreePath path = adder.addVoid("scale: []");
     ItemAdder child_adder{path, adder.tree_widget};
-    AddNumericItemFunction add(child_adder);
+    AddSimpleNumericItemFunction add(child_adder);
     add.minimum_value = 0;
-    TreePaths::XYZ xyz_paths = createXYZChildren(add, box_state.scale);
+    TreePaths::XYZ xyz_paths = createXYZChildren2(add, box_state.scale);
     box_paths.scale = TreePaths::Scale(xyz_paths);
   }
 
@@ -974,6 +1046,7 @@ createBodyItem(
   body_paths.path = body_path;
   body_paths.name = name_path;
 
+#if !USE_SOLVE_CHILDREN
   body_paths.translation =
     TreePaths::Translation(
       createXYZChildren(
@@ -992,6 +1065,27 @@ createBodyItem(
         /*digits_of_precision*/1
       )
     );
+#else
+  body_paths.translation =
+    TreePaths::Translation(
+      createXYZChannels(
+        tree_widget,
+        translation_path,
+        body_state.transform.translation,
+        defaultDigitsOfPrecision()
+      )
+    );
+
+  body_paths.rotation =
+    TreePaths::Rotation(
+      createXYZChannels(
+        tree_widget,
+        rotation_path,
+        body_state.transform.rotation,
+        /*digits_of_precision*/1
+      )
+    );
+#endif
 
   size_t n_boxes = body_state.boxes.size();
   body_paths.boxes.resize(n_boxes);
@@ -1233,10 +1327,11 @@ void clearTree(TreeWidget &tree_widget, const TreePaths &tree_paths)
 }
 
 
+template <typename XYZPaths>
 static void
   updateXYZValues(
     TreeWidget &tree_widget,
-    const TreePaths::XYZ &paths,
+    const XYZPaths &paths,
     const Vec3 &value
   )
 {
@@ -1412,28 +1507,34 @@ void
 
 
 static bool
+setNumericValue(
+  NumericValue &value_to_set,
+  const TreePath &path,
+  NumericValue value,
+  const TreePath &path_to_check
+)
+{
+  if (path == path_to_check) {
+    value_to_set = value;
+    return true;
+  }
+
+  return false;
+}
+
+
+template <typename Component>
+static bool
   setVectorValue(
     SceneState::XYZ &v,
     const TreePath &path,
     NumericValue value,
-    const TreePaths::XYZ &xyz_path
+    const TreePaths::BasicXYZ<Component> &xyz_path
   )
 {
-  if (path == xyz_path.x) {
-    v.x = value;
-    return true;
-  }
-
-  if (path == xyz_path.y) {
-    v.y = value;
-    return true;
-  }
-
-  if (path == xyz_path.z) {
-    v.z = value;
-    return true;
-  }
-
+  if (setNumericValue(v.x, path, value, xyz_path.x)) return true;
+  if (setNumericValue(v.y, path, value, xyz_path.y)) return true;
+  if (setNumericValue(v.z, path, value, xyz_path.z)) return true;
   assert(false); // not implemented
   return false;
 }
@@ -1599,13 +1700,19 @@ struct SetBodyNumericValueVisitor {
 
   bool visitTranslation()
   {
-    setVectorValue(body_state.transform.translation, path, value, body_paths.translation);
+    setVectorValue(
+      body_state.transform.translation, path, value, body_paths.translation
+    );
+
     return true;
   }
 
   bool visitRotation()
   {
-    setVectorValue(body_state.transform.rotation, path, value, body_paths.rotation);
+    setVectorValue(
+      body_state.transform.rotation, path, value, body_paths.rotation
+    );
+
     return true;
   }
 
@@ -1729,11 +1836,13 @@ struct SetBodyExpressionVisitor {
 
   bool visitTranslation()
   {
+#if 0
     if (startsWith(path, body_paths.translation.x)) {
       cerr << "Setting body x translation expression\n";
       body_state.expressions.translation.x = expression;
       return true;
     }
+#endif
 
     return false;
   }

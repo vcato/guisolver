@@ -72,7 +72,16 @@ static void checkEqual(const vector<T> &a, const vector<T> &b)
 template <typename T>
 static void checkMembersEqual(const T &a,const T &b);
 
-static void checkEqual(const TreePaths::XYZ &a,const TreePaths::XYZ &b);
+template <typename Component>
+static void
+  checkEqual(
+    const TreePaths::BasicXYZ<Component> &a,
+    const TreePaths::BasicXYZ<Component> &b
+  )
+{
+  checkMembersEqual(a,b);
+}
+
 static void checkEqual(const BoxPaths &a, const BoxPaths &b);
 
 static void checkEqual(const FakeTreeItem &a,const FakeTreeItem &b)
@@ -110,12 +119,6 @@ static void checkEqual(const BoxPaths &a, const BoxPaths &b)
 
 
 static void checkEqual(const LinePaths &a, const LinePaths &b)
-{
-  checkMembersEqual(a,b);
-}
-
-
-static void checkEqual(const TreePaths::XYZ &a,const TreePaths::XYZ &b)
 {
   checkMembersEqual(a,b);
 }
