@@ -149,6 +149,3 @@ by opening the item and choosing from an option menu.
     * minimum:
     * maximum:
     * precision
----
-Remove uses of treevalues.hpp from mainwindowcontroller.cpp
-* Move them to ObservedScene

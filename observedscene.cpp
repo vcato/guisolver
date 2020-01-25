@@ -1034,6 +1034,12 @@ void ObservedScene::selectLine(BodyIndex body_index, LineIndex line_index)
 }
 
 
+const bool *ObservedScene::solveStatePtr(const TreePath &path) const
+{
+  return ::solveStatePtr(scene_state, path, tree_paths);
+}
+
+
 void ObservedScene::handleSceneStateChanged()
 {
   updateTreeValues(tree_widget, tree_paths, scene_state);
@@ -1174,7 +1180,7 @@ ObservedScene::handleTreeNumericValueChanged(
 
   if (value_was_changed) {
     {
-      bool *solve_state_ptr = solveStatePtr(state, path, tree_paths);
+      bool *solve_state_ptr = ::solveStatePtr(state, path, tree_paths);
       Optional<bool> maybe_old_state;
 
       // Turn off the solve state of the value that is being changed, so that

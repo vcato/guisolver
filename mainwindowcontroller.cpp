@@ -3,7 +3,6 @@
 #include "vectorio.hpp"
 #include "sceneerror.hpp"
 #include "scenesolver.hpp"
-#include "treevalues.hpp"
 #include "sceneobjects.hpp"
 #include "matchconst.hpp"
 #include "scenestatetaggedvalue.hpp"
@@ -657,23 +656,6 @@ static void appendTo(vector<T> &v, const vector<T> &n)
 }
 
 
-static bool
-  solveState(
-    const SceneState &scene_state,
-    const TreePath &path,
-    const TreePaths &tree_paths
-  )
-{
-  const bool *solve_state_ptr = solveStatePtr(scene_state, path, tree_paths);
-
-  if (!solve_state_ptr) {
-    assert(false); // not implemented
-  }
-
-  return *solve_state_ptr;
-}
-
-
 void
   MainWindowController::Impl::handleSolveToggleChange(
     ObservedScene &observed_scene,
@@ -693,7 +675,6 @@ TreeWidget::MenuItems
   ObservedScene &observed_scene = observedScene(controller);
   TreeWidget::MenuItems menu_items;
   const TreePaths &tree_paths = observed_scene.tree_paths;
-  const SceneState &scene_state = observed_scene.scene_state;
   TreeItemDescription item = ObservedScene::describePath(path, tree_paths);
   using ItemType = TreeItemDescription::Type;
   const ItemType item_type = item.type;
@@ -881,13 +862,13 @@ TreeWidget::MenuItems
     });
   }
 
-  if (solveStatePtr(scene_state, path, tree_paths)) {
+  if (const bool *solve_state_ptr = observed_scene.solveStatePtr(path)) {
     auto solve_function =
       [&observed_scene, path](){
         Impl::handleSolveToggleChange(observed_scene, path);
       };
 
-    bool checked_state = solveState(scene_state, path, tree_paths);
+    bool checked_state = *solve_state_ptr;
 
     appendTo(menu_items,{
       {"Solve", solve_function, checked_state}

@@ -132,6 +132,8 @@ struct ObservedScene {
     tree_widget.selectItem(tree_paths.body(body_index).path);
   }
 
+  const bool *solveStatePtr(const TreePath &) const;
+
   void handleSceneStateChanged();
   void handleTreeSelectionChanged();
   void handleSceneSelectionChanged();
