@@ -241,6 +241,10 @@ treeItemForSceneObject(
 }
 
 
+struct ObservedScene::Impl {
+};
+
+
 bool ObservedScene::clipboardContainsABody() const
 {
   return clipboard.maybe_cut_body_index.hasValue();
@@ -396,6 +400,7 @@ void ObservedScene::removeMarker(MarkerIndex marker_index)
   ObservedScene::removingMarker(*this, marker_index);
   scene_state.removeMarker(marker_index);
   updateSceneObjects(scene, scene_handles, scene_state);
+  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
 }
 
 
@@ -428,6 +433,25 @@ void ObservedScene::removeLine(BodyIndex body_index, LineIndex line_index)
   );
 
   removeIndexFrom(scene_state.body(body_index).lines, line_index);
+}
+
+
+void ObservedScene::removeDistanceError(DistanceErrorIndex distance_error_index)
+{
+  removeDistanceErrorFromTree(
+    distance_error_index,
+    { tree_widget, tree_paths }
+  );
+
+  removeDistanceErrorFromScene(
+    scene,
+    scene_handles.distance_errors,
+    distance_error_index
+  );
+
+  scene_state.removeDistanceError(distance_error_index);
+  solveScene();
+  handleSceneStateChanged();
 }
 
 
@@ -914,13 +938,15 @@ BodyIndex ObservedScene::duplicateBody(BodyIndex body_index)
 }
 
 
-MarkerIndex ObservedScene::duplicateMarker(MarkerIndex marker_index)
+MarkerIndex ObservedScene::duplicateMarker(MarkerIndex source_marker_index)
 {
-  ObservedScene &observed_scene = *this;
-  SceneState &scene_state = observed_scene.scene_state;
-  MarkerIndex new_marker_index = scene_state.duplicateMarker(marker_index);
-  ObservedScene::createMarkerInTree(new_marker_index, observed_scene);
-  ObservedScene::createMarkerInScene(new_marker_index, observed_scene);
+  MarkerIndex new_marker_index =
+    scene_state.duplicateMarker(source_marker_index);
+
+  createMarkerInTree(new_marker_index, *this);
+  createMarkerInScene(new_marker_index, *this);
+
+  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
   return new_marker_index;
 }
 

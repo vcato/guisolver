@@ -6,6 +6,7 @@
 #include "startswith.hpp"
 #include "scenestateio.hpp"
 #include "vectorio.hpp"
+#include "contains.hpp"
 
 #define ADD_TEST 0
 
@@ -377,6 +378,47 @@ static void testChangingMarkerName()
 }
 
 
+static void testDuplicatingAMarkerWithDistanceError()
+{
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  FakeTreeWidget &tree_widget = tester.tree_widget;
+  const SceneState &scene_state = observed_scene.scene_state;
+
+  // Have a scene with a single marker and a distance error
+  // with both markers being None.
+  SceneState initial_state;
+  MarkerIndex marker_index = initial_state.createMarker();
+  MarkerIndex distance_error_index = initial_state.createDistanceError();
+  observed_scene.replaceSceneStateWith(initial_state);
+
+  // Duplicate the marker.
+  MarkerIndex new_marker_index =
+    observed_scene.duplicateMarkerWithDistanceError(marker_index);
+
+  // Make sure that the start and end markers on the distance error in
+  // the tree have options for the new marker.
+
+  const TreePaths::DistanceError &distance_error_paths =
+    tree_paths.distance_errors[distance_error_index];
+
+  const FakeTreeItem::ValueString &start_marker_value_string =
+    tree_widget.item(distance_error_paths.start).value_string;
+
+  const FakeTreeItem::ValueString &end_marker_value_string =
+    tree_widget.item(distance_error_paths.end).value_string;
+
+  using MarkerName = SceneState::Marker::Name;
+
+  const MarkerName &new_marker_name =
+    scene_state.marker(new_marker_index).name;
+
+  assert(contains(start_marker_value_string, new_marker_name));
+  assert(contains(end_marker_value_string, new_marker_name));
+}
+
+
 int main()
 {
   testTransferringABody1();
@@ -392,6 +434,7 @@ int main()
   testReplacingSceneState();
   testAddingAVariable();
   testChangingMarkerName();
+  testDuplicatingAMarkerWithDistanceError();
 #if ADD_TEST
   testUsingAVariable();
 #endif

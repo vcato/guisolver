@@ -238,15 +238,11 @@ struct MainWindowController::Impl {
 
   static void
     removeDistanceErrorPressed(
-      MainWindowController &,
-      int distance_error_index
+      ObservedScene &,
+      DistanceErrorIndex distance_error_index
     );
 
-  static void
-    removeMarkerPressed(
-      MainWindowController &,
-      MarkerIndex
-    );
+  static void removeMarkerPressed(ObservedScene &, MarkerIndex);
 
   static void
     removeBoxPressed(
@@ -255,12 +251,7 @@ struct MainWindowController::Impl {
       BoxIndex
     );
 
-  static void
-    duplicateMarkerPressed(
-      MainWindowController &,
-      MarkerIndex
-    );
-
+  static void duplicateMarkerPressed(ObservedScene &, MarkerIndex);
   static void cutBodyPressed(MainWindowController &, const TreePath &);
   static void cutMarkerPressed(MainWindowController &, MarkerIndex);
 };
@@ -606,64 +597,33 @@ MainWindowController::Impl::duplicateMarkerWithDistanceErrorPressed(
 
 void
   MainWindowController::Impl::removeDistanceErrorPressed(
-    MainWindowController &controller,
-    int distance_error_index
+    ObservedScene &observed_scene,
+    DistanceErrorIndex distance_error_index
   )
 {
-  ObservedScene &observed_scene = observedScene(controller);
-  SceneState &scene_state = observed_scene.scene_state;
-  Scene &scene = observed_scene.scene;
-  SceneHandles &scene_handles = observed_scene.scene_handles;
-  TreePaths &tree_paths = observed_scene.tree_paths;
-  TreeWidget &tree_widget = observed_scene.tree_widget;
-
-  removeDistanceErrorFromTree(
-    distance_error_index,
-    { tree_widget, tree_paths }
-  );
-
-  removeDistanceErrorFromScene(
-    scene,
-    scene_handles.distance_errors,
-    distance_error_index
-  );
-
-  scene_state.removeDistanceError(distance_error_index);
-  solveScene(scene_state);
-  observed_scene.handleSceneStateChanged();
+  observed_scene.removeDistanceError(distance_error_index);
 }
 
 
 void
   MainWindowController::Impl::removeMarkerPressed(
-    MainWindowController &controller,
+    ObservedScene &observed_scene,
     MarkerIndex marker_index
   )
 {
-  ObservedScene &observed_scene = observedScene(controller);
-  TreePaths &tree_paths = observed_scene.tree_paths;
-  TreeWidget &tree_widget = observed_scene.tree_widget;
-  SceneState &scene_state = observed_scene.scene_state;
-  observed_scene.removeMarker( marker_index);
-  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+  observed_scene.removeMarker(marker_index);
 }
 
 
 void
   MainWindowController::Impl::duplicateMarkerPressed(
-    MainWindowController &controller,
+    ObservedScene &observed_scene,
     MarkerIndex source_marker_index
   )
 {
-  ObservedScene &observed_scene = observedScene(controller);
-  TreePaths &tree_paths = observed_scene.tree_paths;
-  TreeWidget &tree_widget = observed_scene.tree_widget;
-  SceneState &scene_state = observed_scene.scene_state;
-
   MarkerIndex new_marker_index =
     observed_scene.duplicateMarker(source_marker_index);
 
-  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
   observed_scene.selectMarker(new_marker_index);
 }
 
@@ -913,12 +873,12 @@ TreeWidget::MenuItems
   if (item_type == ItemType::marker) {
     auto index = *item.maybe_marker_index;
 
-    auto remove_marker_function = [&controller,index]{
-      Impl::removeMarkerPressed(controller, index);
+    auto remove_marker_function = [&observed_scene,index]{
+      Impl::removeMarkerPressed(observed_scene, index);
     };
 
-    auto duplicate_marker_function = [&controller,index]{
-      Impl::duplicateMarkerPressed(controller, index);
+    auto duplicate_marker_function = [&observed_scene,index]{
+      Impl::duplicateMarkerPressed(observed_scene, index);
     };
 
     auto duplicate_marker_with_distance_error_function =
@@ -943,8 +903,8 @@ TreeWidget::MenuItems
     auto index = *item.maybe_distance_error_index;
 
     auto remove_distance_error_function =
-      [&controller,index]{
-        Impl::removeDistanceErrorPressed(controller, index);
+      [&observed_scene,index]{
+        Impl::removeDistanceErrorPressed(observed_scene, index);
       };
 
     appendTo(menu_items,{

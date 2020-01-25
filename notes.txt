@@ -128,5 +128,27 @@ It would be nice to have a more generic way to visit scene items.
 ---
 Enable ADD_TEST in observedscene_test.cpp
 ---
+It seems like we may want to have it where we change the type of a channel
+by opening the item and choosing from an option menu.
+* translation: []
+  * x: 2.5
+    * type: fixed
+    * minimum:
+    * maximum:
+    * precision
+* translation: []
+  * x: 2.5
+    * type: solved
+    * minimum:
+    * maximum:
+    * precision
+* translation: []
+  * x: 2.5
+    * type: expression
+    * expression: "x+2"
+    * minimum:
+    * maximum:
+    * precision
+---
 Remove uses of treevalues.hpp from mainwindowcontroller.cpp
 * Move them to ObservedScene

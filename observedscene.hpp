@@ -95,7 +95,6 @@ struct ObservedScene {
   MarkerIndex duplicateMarker(MarkerIndex);
   MarkerIndex duplicateMarkerWithDistanceError(MarkerIndex);
 
-
   static TreeItemDescription
     describePath(const TreePath &path, const TreePaths &tree_paths);
 
@@ -108,6 +107,7 @@ struct ObservedScene {
   void removeMarker(MarkerIndex);
   void removeBox(BodyIndex, BoxIndex);
   void removeLine(BodyIndex, LineIndex);
+  void removeDistanceError(DistanceErrorIndex);
   static void clearClipboard(ObservedScene &);
 
   void replaceSceneStateWith(const SceneState &);
@@ -150,4 +150,7 @@ struct ObservedScene {
 
   static void
   createMarkerInTree(MarkerIndex marker_index, ObservedScene &observed_scene);
+
+  private:
+    struct Impl;
 };

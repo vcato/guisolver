@@ -20,4 +20,10 @@ static bool contains(const vector<T> &v,T p)
 }
 
 
+inline bool contains(const std::string &haystack, const std::string &needle)
+{
+  return haystack.find(needle) != std::string::npos;
+}
+
+
 #endif /* CONTAINS_HPP_ */

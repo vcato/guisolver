@@ -136,7 +136,7 @@ class SceneState {
     Body &body(BodyIndex index) { return _bodies[index]; }
     const Body &body(BodyIndex index) const { return _bodies[index]; }
 
-    MarkerIndex createMarker(Optional<BodyIndex>);
+    MarkerIndex createMarker(Optional<BodyIndex> = {});
 
     MarkerIndex createMarker(const String &name)
     {

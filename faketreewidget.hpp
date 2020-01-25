@@ -11,8 +11,9 @@
 
 struct FakeTreeItem {
   using LabelText = std::string;
+  using ValueString = std::string;
   LabelText label_text;
-  std::string value_string;
+  ValueString value_string;
   Optional<NumericValue> maybe_numeric_value;
   vector<FakeTreeItem> children;
 
