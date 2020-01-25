@@ -200,8 +200,7 @@ struct MainWindowController::Impl {
       const TreePath &path
     );
 
-  static void
-    handleSolveToggleChange(MainWindowController &, const TreePath &);
+  static void handleSolveToggleChange(ObservedScene &, const TreePath &);
 
   static void
     addDistanceErrorPressed(
@@ -658,12 +657,6 @@ static void appendTo(vector<T> &v, const vector<T> &n)
 }
 
 
-static void flip(bool &arg)
-{
-  arg = !arg;
-}
-
-
 static bool
   solveState(
     const SceneState &scene_state,
@@ -681,37 +674,13 @@ static bool
 }
 
 
-static void
-  flipSolveState(
-    SceneState &scene_state,
-    const TreePath &path,
-    const TreePaths &tree_paths
-  )
-{
-  bool *solve_state_ptr =
-    const_cast<bool *>(solveStatePtr(scene_state, path, tree_paths));
-
-
-  if (!solve_state_ptr) {
-    assert(false); // not implemented
-  }
-
-  flip(*solve_state_ptr);
-}
-
-
 void
   MainWindowController::Impl::handleSolveToggleChange(
-    MainWindowController &controller,
+    ObservedScene &observed_scene,
     const TreePath &path
   )
 {
-  ObservedScene &observed_scene = observedScene(controller);
-  SceneState &state = observed_scene.scene_state;
-  TreePaths &tree_paths = observed_scene.tree_paths;
-  flipSolveState(state, path, tree_paths);
-  solveScene(state);
-  observed_scene.handleSceneStateChanged();
+  observed_scene.handleSolveToggleChange(path);
 }
 
 
@@ -914,8 +883,8 @@ TreeWidget::MenuItems
 
   if (solveStatePtr(scene_state, path, tree_paths)) {
     auto solve_function =
-      [&controller,path](){
-        Impl::handleSolveToggleChange(controller,path);
+      [&observed_scene, path](){
+        Impl::handleSolveToggleChange(observed_scene, path);
       };
 
     bool checked_state = solveState(scene_state, path, tree_paths);

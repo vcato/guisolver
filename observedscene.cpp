@@ -1219,3 +1219,35 @@ ObservedScene::handleTreeStringValueChanged(
     cerr << "handleTreeStringValueChanged: no match\n";
   }
 }
+
+
+static void flip(bool &arg)
+{
+  arg = !arg;
+}
+
+
+static void
+  flipSolveState(
+    SceneState &scene_state,
+    const TreePath &path,
+    const TreePaths &tree_paths
+  )
+{
+  bool *solve_state_ptr =
+    const_cast<bool *>(solveStatePtr(scene_state, path, tree_paths));
+
+  if (!solve_state_ptr) {
+    assert(false); // not implemented
+  }
+
+  flip(*solve_state_ptr);
+}
+
+
+void ObservedScene::handleSolveToggleChange(const TreePath &path)
+{
+  flipSolveState(scene_state, path, tree_paths);
+  solveScene();
+  handleSceneStateChanged();
+}

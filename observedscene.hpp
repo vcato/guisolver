@@ -138,6 +138,7 @@ struct ObservedScene {
   void handleTreeExpressionChanged(const TreePath &, const std::string &);
   void handleTreeEnumerationIndexChanged(const TreePath &, int value);
   void handleTreeNumericValueChanged(const TreePath &path, NumericValue value);
+  void handleSolveToggleChange(const TreePath &path);
 
   void
     handleTreeStringValueChanged(
