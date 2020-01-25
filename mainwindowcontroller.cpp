@@ -189,7 +189,7 @@ struct MainWindowController::Impl {
 
   static void
     handleTreeStringValueChanged(
-      MainWindowController &,
+      ObservedScene &,
       const TreePath &,
       const StringValue &
     );
@@ -370,26 +370,12 @@ MainWindowController::Impl::handleTreeExpressionChanged(
 
 void
 MainWindowController::Impl::handleTreeStringValueChanged(
-  MainWindowController &controller,
+  ObservedScene &observed_scene,
   const TreePath &path,
   const StringValue &value
 )
 {
-  ObservedScene &observed_scene = observedScene(controller);
-  const TreePaths &tree_paths = observed_scene.tree_paths;
-  SceneState &state = observed_scene.scene_state;
-  TreeWidget &tree_widget = observed_scene.tree_widget;
-
-  bool value_was_changed =
-    setSceneStateStringValue(state, path, value, tree_paths);
-
-  if (value_was_changed) {
-    updateTreeValues(tree_widget, tree_paths, state);
-    updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, state);
-  }
-  else {
-    cerr << "handleTreeStringValueChanged: no match\n";
-  }
+  observed_scene.handleTreeStringValueChanged(path, value);
 }
 
 
@@ -1041,8 +1027,8 @@ MainWindowController::MainWindowController(View &view)
     };
 
   tree_widget.line_edit_item_value_changed_callback =
-    [this](const TreePath &path, const StringValue &value){
-      Impl::handleTreeStringValueChanged(*this, path, value);
+    [&observed_scene](const TreePath &path, const StringValue &value){
+      Impl::handleTreeStringValueChanged(observed_scene, path, value);
     };
 }
 

@@ -4,6 +4,7 @@
 #include "scenehandles.hpp"
 #include "treepaths.hpp"
 #include "markernamemap.hpp"
+#include "stringvalue.hpp"
 
 
 struct Clipboard {
@@ -61,7 +62,7 @@ struct ObservedScene {
   BodyIndex addBody(Optional<BodyIndex> maybe_parent_index = {});
   BoxIndex addBoxTo(BodyIndex);
   LineIndex addLineTo(BodyIndex);
-  MarkerIndex addMarker(Optional<BodyIndex>);
+  MarkerIndex addMarker(Optional<BodyIndex> = {});
 
   DistanceErrorIndex
     addDistanceError(
@@ -137,6 +138,12 @@ struct ObservedScene {
   void handleTreeExpressionChanged(const TreePath &, const std::string &);
   void handleTreeEnumerationIndexChanged(const TreePath &, int value);
   void handleTreeNumericValueChanged(const TreePath &path, NumericValue value);
+
+  void
+    handleTreeStringValueChanged(
+      const TreePath &path,
+      const StringValue &value
+    );
 
   static void
   createMarkerInScene(MarkerIndex marker_index, ObservedScene &observed_scene);

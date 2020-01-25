@@ -1174,3 +1174,22 @@ ObservedScene::handleTreeNumericValueChanged(
     cerr << "  value: " << value << "\n";
   }
 }
+
+
+void
+ObservedScene::handleTreeStringValueChanged(
+  const TreePath &path,
+  const StringValue &value
+)
+{
+  bool value_was_changed =
+    setSceneStateStringValue(scene_state, path, value, tree_paths);
+
+  if (value_was_changed) {
+    updateTreeValues(tree_widget, tree_paths, scene_state);
+    updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+  }
+  else {
+    cerr << "handleTreeStringValueChanged: no match\n";
+  }
+}

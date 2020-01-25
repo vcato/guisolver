@@ -364,6 +364,19 @@ static void testUsingAVariable()
 #endif
 
 
+static void testChangingMarkerName()
+{
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  MarkerIndex marker_index = observed_scene.addMarker();
+  SceneState &scene_state = observed_scene.scene_state;
+  const TreePath &name_path = tree_paths.marker(marker_index).name;
+  observed_scene.handleTreeStringValueChanged(name_path, "new_name");
+  assert(scene_state.marker(marker_index).name == "new_name");
+}
+
+
 int main()
 {
   testTransferringABody1();
@@ -378,6 +391,7 @@ int main()
   testAddingADistanceErrorToABody();
   testReplacingSceneState();
   testAddingAVariable();
+  testChangingMarkerName();
 #if ADD_TEST
   testUsingAVariable();
 #endif

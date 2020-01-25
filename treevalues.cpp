@@ -1797,14 +1797,14 @@ template <typename Visitor>
 static bool
 forMatchingPath(const TreePath &path, Visitor &visitor, const TreePaths &tree_paths)
 {
-  for (auto body_index : indicesOf(tree_paths.bodies)) {
-    if (startsWith(path, tree_paths.body(body_index).path)) {
-      return visitor.visitBody(body_index);
+  for (auto i : indicesOf(tree_paths.bodies)) {
+    if (startsWith(path, tree_paths.body(i).path)) {
+      return visitor.visitBody(i);
     }
   }
 
   for (auto i : indicesOf(tree_paths.markers)) {
-    if (startsWith(path, tree_paths.marker(i).position.path)) {
+    if (startsWith(path, tree_paths.marker(i).path)) {
       return visitor.visitMarker(i);
     }
   }
