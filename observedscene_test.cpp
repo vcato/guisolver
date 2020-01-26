@@ -419,6 +419,30 @@ static void testDuplicatingAMarkerWithDistanceError()
 }
 
 
+static void testChangingSolveFlag()
+{
+  Tester tester;
+  SceneState initial_state;
+  BodyIndex body_index = initial_state.createBody();
+  ObservedScene &observed_scene = tester.observed_scene;
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  observed_scene.replaceSceneStateWith(initial_state);
+  SceneState &scene_state = observed_scene.scene_state;
+  bool old_solve = scene_state.body(body_index).solve_flags.translation.x;
+#if !USE_SOLVE_CHILDREN
+  observed_scene.handleSolveToggleChange(
+    tree_paths.body(body_index).translation.x
+  );
+#else
+  observed_scene.handleTreeBoolValueChanged(
+    tree_paths.body(body_index).translation.x.solve_path, !old_solve
+  );
+#endif
+  bool new_solve = scene_state.body(body_index).solve_flags.translation.x;
+  assert(old_solve != new_solve);
+}
+
+
 int main()
 {
   testTransferringABody1();
@@ -435,6 +459,7 @@ int main()
   testAddingAVariable();
   testChangingMarkerName();
   testDuplicatingAMarkerWithDistanceError();
+  testChangingSolveFlag();
 #if ADD_TEST
   testUsingAVariable();
 #endif

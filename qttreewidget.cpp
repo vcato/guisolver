@@ -448,7 +448,12 @@ QtTreeWidget::createCheckBoxItem(
 
   check_box.value_changed_function =
     [this, &item](bool new_value){
-      bool_item_value_changed_callback(itemPath(item), new_value);
+      if (bool_item_value_changed_callback) {
+        bool_item_value_changed_callback(itemPath(item), new_value);
+      }
+      else {
+        cerr << "bool_item_value_changed_callback not set.\n";
+      }
     };
 
   check_box.setValue(value);

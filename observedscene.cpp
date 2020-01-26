@@ -1227,12 +1227,15 @@ ObservedScene::handleTreeStringValueChanged(
 }
 
 
+#if !USE_SOLVE_CHILDREN
 static void flip(bool &arg)
 {
   arg = !arg;
 }
+#endif
 
 
+#if !USE_SOLVE_CHILDREN
 static void
   flipSolveState(
     SceneState &scene_state,
@@ -1249,11 +1252,30 @@ static void
 
   flip(*solve_state_ptr);
 }
+#endif
 
 
+#if !USE_SOLVE_CHILDREN
 void ObservedScene::handleSolveToggleChange(const TreePath &path)
 {
   flipSolveState(scene_state, path, tree_paths);
   solveScene();
   handleSceneStateChanged();
+}
+#endif
+
+
+void ObservedScene::handleTreeBoolValueChanged(const TreePath &path, bool value)
+{
+#if !USE_SOLVE_CHILDREN
+  cerr << "handleTreeBoolValueChanged: "
+    "path=" << path << ", value=" << value << "\n";
+#else
+  bool value_was_changed =
+    setSceneStateBoolValue(scene_state, path, value, tree_paths);
+
+  if (value_was_changed) {
+    // Solve state could have changed, should resolve.
+  }
+#endif
 }

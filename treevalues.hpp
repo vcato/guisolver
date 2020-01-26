@@ -118,6 +118,14 @@ extern bool
   );
 
 extern bool
+  setSceneStateBoolValue(
+    SceneState &scene_state,
+    const TreePath &path,
+    bool value,
+    const TreePaths &tree_paths
+  );
+
+extern bool
   setSceneStateExpression(
     SceneState &scene_state,
     const TreePath &path,

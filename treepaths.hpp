@@ -37,10 +37,10 @@ struct TreePaths {
     template <typename F>
     static void forEachMember(const F &f)
     {
-      f(&XYZ::path);
-      f(&XYZ::x);
-      f(&XYZ::y);
-      f(&XYZ::z);
+      f(&BasicXYZ::path);
+      f(&BasicXYZ::x);
+      f(&BasicXYZ::y);
+      f(&BasicXYZ::z);
     }
 
     bool operator==(const BasicXYZ &arg) const
@@ -54,6 +54,19 @@ struct TreePaths {
 #if USE_SOLVE_CHILDREN
   struct Channel {
     TreePath path;
+    TreePath solve_path;
+
+    template <typename F>
+    static void forEachMember(const F &f)
+    {
+      f(&Channel::path);
+      f(&Channel::solve_path);
+    }
+
+    bool operator==(const Channel &arg) const
+    {
+      return isEqual(*this, arg);
+    }
   };
 #endif
 

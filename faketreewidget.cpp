@@ -33,6 +33,14 @@ std::string
 }
 
 
+std::string FakeTreeWidget::boolValueText(bool value)
+{
+  ostringstream stream;
+  stream << "value=" << value;
+  return stream.str();
+}
+
+
 LabelText
   FakeTreeWidget::enumerationValueText(
     int value,

@@ -11,6 +11,8 @@
 #include "numericvaluelimits.hpp"
 #include "vec3state.hpp"
 
+#define CHANGE_VISITOR 0
+
 using std::cerr;
 using std::string;
 using LabelProperties = TreeWidget::LabelProperties;
@@ -1327,6 +1329,28 @@ void clearTree(TreeWidget &tree_widget, const TreePaths &tree_paths)
 }
 
 
+static void
+updateNumericValue(
+  TreeWidget &tree_widget, const TreePath &path, NumericValue value
+)
+{
+  tree_widget.setItemNumericValue(path, value);
+}
+
+
+#if USE_SOLVE_CHILDREN
+static void
+updateNumericValue(
+  TreeWidget &tree_widget,
+  const TreePaths::Channel &channel,
+  NumericValue value
+)
+{
+  updateNumericValue(tree_widget, channel.path, value);
+}
+#endif
+
+
 template <typename XYZPaths>
 static void
   updateXYZValues(
@@ -1335,9 +1359,9 @@ static void
     const Vec3 &value
   )
 {
-  tree_widget.setItemNumericValue(paths.x, value.x);
-  tree_widget.setItemNumericValue(paths.y, value.y);
-  tree_widget.setItemNumericValue(paths.z, value.z);
+  updateNumericValue(tree_widget, paths.x, value.x);
+  updateNumericValue(tree_widget, paths.y, value.y);
+  updateNumericValue(tree_widget, paths.z, value.z);
 }
 
 
@@ -1506,48 +1530,221 @@ void
 }
 
 
-static bool
-setNumericValue(
-  NumericValue &value_to_set,
-  const TreePath &path,
-  NumericValue value,
-  const TreePath &path_to_check
-)
-{
-  if (path == path_to_check) {
+namespace {
+struct ComponentVisitor {
+  virtual bool visitComponent(NumericValue &value_to_set) = 0;
+};
+}
+
+
+namespace {
+struct SetNumericComponentVisitor : ComponentVisitor {
+  const NumericValue value;
+
+  SetNumericComponentVisitor(NumericValue value)
+  : value(value)
+  {
+  }
+
+  bool visitComponent(NumericValue &value_to_set) override
+  {
     value_to_set = value;
     return true;
+  }
+};
+}
+
+
+#if USE_SOLVE_CHILDREN
+static bool
+visitMatchingComponent(
+  NumericValue &value_to_set,
+  const TreePath &path,
+  const TreePaths::Channel &path_to_check,
+  ComponentVisitor &visitor
+)
+{
+  if (path == path_to_check.path) {
+    return visitor.visitComponent(value_to_set);
   }
 
   return false;
 }
+#endif
 
 
 template <typename Component>
 static bool
-  setVectorValue(
+  forMatchingComponent(
     SceneState::XYZ &v,
     const TreePath &path,
-    NumericValue value,
-    const TreePaths::BasicXYZ<Component> &xyz_path
+    const TreePaths::BasicXYZ<Component> &xyz_path,
+    ComponentVisitor &visitor
   )
 {
-  if (setNumericValue(v.x, path, value, xyz_path.x)) return true;
-  if (setNumericValue(v.y, path, value, xyz_path.y)) return true;
-  if (setNumericValue(v.z, path, value, xyz_path.z)) return true;
+  if (path == xyz_path.x) return visitor.visitComponent(v.x);
+  if (path == xyz_path.y) return visitor.visitComponent(v.y);
+  if (path == xyz_path.z) return visitor.visitComponent(v.z);
   assert(false); // not implemented
   return false;
 }
 
 
 namespace {
-struct SetStringValueVisitor {
-  SceneState &scene_state;
+struct SceneElementVisitor {
+  virtual bool visitBody(BodyIndex) = 0;
+  virtual bool visitMarker(MarkerIndex) = 0;
+  virtual bool visitDistanceError(DistanceErrorIndex) = 0;
+  virtual bool visitVariable(VariableIndex) = 0;
+  virtual bool visitBodyName(BodyIndex) { return false; }
+  virtual bool visitBodyTranslation(BodyIndex) { return false; }
+  virtual bool visitBodyRotation(BodyIndex) { return false; }
+  virtual bool visitBodyBox(BodyIndex, BoxIndex) { return false; }
+  virtual bool visitBodyLine(BodyIndex, LineIndex) { return false; }
+  virtual bool visitMarkerName(MarkerIndex) { return false; }
+};
+}
+
+
+namespace {
+struct ScenePathVisitor : SceneElementVisitor {
   const TreePaths &tree_paths;
-  const StringValue &value;
   const TreePath &path;
 
-  void visitBodyName(BodyIndex body_index)
+  ScenePathVisitor(const TreePaths &tree_paths, const TreePath &path)
+  : tree_paths(tree_paths),
+    path(path)
+  {
+  }
+
+  bool visitBody(BodyIndex body_index) override
+  {
+    const TreePaths::Body &body_paths = tree_paths.body(body_index);
+
+    if (path == body_paths.name) {
+      return visitBodyName(body_index);
+    }
+
+    if (startsWith(path, body_paths.translation.path)) {
+      return visitBodyTranslation(body_index);
+    }
+
+    if (startsWith(path, body_paths.rotation.path)) {
+      return visitBodyRotation(body_index);
+    }
+
+    BoxIndex n_boxes = body_paths.boxes.size();
+
+    for (BoxIndex box_index = 0; box_index != n_boxes; ++box_index) {
+      if (startsWith(path, body_paths.boxes[box_index].path)) {
+        return visitBodyBox(body_index, box_index);
+      }
+    }
+
+    LineIndex n_lines = body_paths.lines.size();
+
+    for (LineIndex line_index = 0; line_index != n_lines; ++line_index) {
+      if (startsWith(path, body_paths.lines[line_index].path)) {
+        return visitBodyLine(body_index, line_index);
+      }
+    }
+
+    return false;
+  }
+
+  bool visitMarker(MarkerIndex marker_index) override
+  {
+    const TreePaths::Marker &marker_paths = tree_paths.marker(marker_index);
+
+    if (startsWith(path, marker_paths.position.path)) {
+      return visitMarkerPosition(marker_index);
+    }
+
+    if (startsWith(path, marker_paths.name)) {
+      return visitMarkerName(marker_index);
+    }
+
+    return false;
+  }
+
+  bool visitDistanceError(DistanceErrorIndex distance_error_index) override
+  {
+    const TreePaths::DistanceError &distance_error_paths =
+      tree_paths.distance_errors[distance_error_index];
+
+    if (startsWith(path, distance_error_paths.desired_distance)) {
+      return visitDistanceErrorDesiredDistance(distance_error_index);
+    }
+
+    if (startsWith(path, distance_error_paths.weight)) {
+      return visitDistanceErrorWeight(distance_error_index);
+    }
+
+    return false;
+  }
+
+  bool visitVariable(VariableIndex variable_index) override
+  {
+    const TreePaths::Variable &variable_paths =
+      tree_paths.variables[variable_index];
+
+    if (startsWith(path, variable_paths.value)) {
+      return visitVariableValue(variable_index);
+    }
+
+    if (startsWith(path, variable_paths.name)) {
+      return visitVariableName(variable_index);
+    }
+
+    return false;
+  }
+
+  virtual bool visitMarkerPosition(MarkerIndex)
+  {
+    return false;
+  }
+
+  virtual bool visitVariableValue(VariableIndex)
+  {
+    return false;
+  }
+
+  virtual bool visitVariableName(VariableIndex)
+  {
+    return false;
+  }
+
+  virtual bool visitDistanceErrorDesiredDistance(DistanceErrorIndex)
+  {
+    return false;
+  }
+
+  virtual bool visitDistanceErrorWeight(DistanceErrorIndex)
+  {
+    return false;
+  }
+};
+}
+
+
+namespace {
+struct SetStringValueVisitor : ScenePathVisitor {
+  SceneState &scene_state;
+  const StringValue &value;
+
+  SetStringValueVisitor(
+    SceneState &scene_state,
+    const TreePaths &tree_paths,
+    const StringValue &value,
+    const TreePath &path
+  )
+  : ScenePathVisitor(tree_paths, path),
+    scene_state(scene_state),
+    value(value)
+  {
+  }
+
+  bool visitBodyName(BodyIndex body_index) override
   {
     SceneState::Body &body_state = scene_state.body(body_index);
 
@@ -1557,9 +1754,11 @@ struct SetStringValueVisitor {
     else {
       // Can't allow duplicate body names.
     }
+
+    return true;
   }
 
-  void visitMarkerName(MarkerIndex marker_index)
+  bool visitMarkerName(MarkerIndex marker_index) override
   {
     SceneState::Marker &marker_state = scene_state.marker(marker_index);
 
@@ -1569,9 +1768,11 @@ struct SetStringValueVisitor {
     else {
       // Can't allow duplicate marker names.
     }
+
+    return true;
   }
 
-  void visitVariableName(VariableIndex variable_index)
+  bool visitVariableName(VariableIndex variable_index) override
   {
     SceneState::Variable &variable_state =
       scene_state.variables[variable_index];
@@ -1582,329 +1783,190 @@ struct SetStringValueVisitor {
     else {
       // Can't allow duplicate variable names.
     }
-  }
 
-  bool visitBody(BodyIndex body_index)
-  {
-    const TreePaths::Body &body_paths = tree_paths.body(body_index);
-
-    if (startsWith(path, body_paths.name)) {
-      visitBodyName(body_index);
-      return true;
-    }
-
-    return false;
-  }
-
-  bool visitMarker(MarkerIndex marker_index)
-  {
-    const TreePaths::Marker &marker_paths = tree_paths.marker(marker_index);
-
-    if (startsWith(path, marker_paths.name)) {
-      visitMarkerName(marker_index);
-      return true;
-    }
-
-    return false;
-  }
-
-  bool visitVariable(VariableIndex variable_index)
-  {
-    const TreePaths::Variable &variable_paths = tree_paths.variables[variable_index];
-
-    if (startsWith(path, variable_paths.name)) {
-      visitVariableName(variable_index);
-      return true;
-    }
-
-    return false;
-  }
-
-  bool visitDistanceError(DistanceErrorIndex)
-  {
-    return false;
+    return true;
   }
 };
 }
 
 
-static bool
-  setDistanceErrorValue(
-    SceneState::DistanceError &distance_error_state,
-    const TreePath &path,
-    NumericValue value,
-    const TreePaths::DistanceError &distance_error_paths
-  )
-{
-  if (startsWith(path, distance_error_paths.desired_distance)) {
-    distance_error_state.desired_distance = value;
-    return true;
-  }
-
-  if (startsWith(path, distance_error_paths.weight)) {
-    distance_error_state.weight = value;
-    return true;
-  }
-
-  return false;
-}
-
-
-static bool
-setBoxNumericValue(
-  SceneState::Box &box_state,
-  const TreePath &path,
-  NumericValue value,
-  const TreePaths::Box &box_paths
-)
-{
-  if (startsWith(path, box_paths.scale.path)) {
-    return setVectorValue(box_state.scale, path, value, box_paths.scale);
-  }
-  else if (startsWith(path, box_paths.center.path)) {
-    return
-      setVectorValue(box_state.center, path, value, box_paths.center);
-  }
-  else {
-    assert(false); // not implemented
-  }
-}
-
-
-static bool
-setLineNumericValue(
-  SceneState::Line &line_state,
-  const TreePath &path,
-  NumericValue value,
-  const TreePaths::Line &line_paths
-)
-{
-  if (startsWith(path, line_paths.start.path)) {
-    return setVectorValue(line_state.start, path, value, line_paths.start);
-  }
-
-  if (startsWith(path, line_paths.end.path)) {
-    return setVectorValue(line_state.end, path, value, line_paths.end);
-  }
-
-  return false;
-}
-
-
 namespace {
-struct SetBodyNumericValueVisitor {
-  SceneState::Body &body_state;
-  const TreePath &path;
-  NumericValue value;
-  const TreePaths::Body &body_paths;
-
-  bool visitTranslation()
-  {
-    setVectorValue(
-      body_state.transform.translation, path, value, body_paths.translation
-    );
-
-    return true;
-  }
-
-  bool visitRotation()
-  {
-    setVectorValue(
-      body_state.transform.rotation, path, value, body_paths.rotation
-    );
-
-    return true;
-  }
-
-  bool visitBox(size_t box_index)
-  {
-    SceneState::Box &box_state = body_state.boxes[box_index];
-    const BoxPaths &box_paths = body_paths.boxes[box_index];
-    return setBoxNumericValue(box_state, path, value, box_paths);
-  }
-
-  bool visitLine(size_t line_index)
-  {
-    const LinePaths &line_paths = body_paths.lines[line_index];
-    SceneState::Line &line_state = body_state.lines[line_index];
-
-    return setLineNumericValue(line_state, path, value, line_paths);
-  }
-};
-}
-
-
-template <typename Visitor>
-static bool
-forMatchingBodyPath(
-  const TreePath &path,
-  const TreePaths::Body &body_paths,
-  Visitor &visitor
-)
-{
-  if (startsWith(path, body_paths.translation.path)) {
-    return visitor.visitTranslation();
-  }
-
-  if (startsWith(path, body_paths.rotation.path)) {
-    return visitor.visitRotation();
-  }
-
-  BoxIndex n_boxes = body_paths.boxes.size();
-
-  for (BoxIndex box_index = 0; box_index != n_boxes; ++box_index) {
-    if (startsWith(path, body_paths.boxes[box_index].path)) {
-      return visitor.visitBox(box_index);
-    }
-  }
-
-  LineIndex n_lines = body_paths.lines.size();
-
-  for (LineIndex line_index = 0; line_index != n_lines; ++line_index) {
-    if (startsWith(path, body_paths.lines[line_index].path)) {
-      return visitor.visitLine(line_index);
-    }
-  }
-
-  return false;
-}
-
-
-namespace {
-struct SetNumericValueVisitor {
+struct SetBoolValueVisitor : ScenePathVisitor {
   SceneState &scene_state;
-  const TreePaths &tree_paths;
-  const TreePath &path;
+  const bool value;
+
+  SetBoolValueVisitor(
+    SceneState &scene_state,
+    const TreePaths &tree_paths,
+    const bool value,
+    const TreePath &path
+  )
+  : ScenePathVisitor(tree_paths, path),
+    scene_state(scene_state),
+    value(value)
+  {
+  }
+};
+}
+
+
+namespace {
+struct SetNumericValueVisitor : ScenePathVisitor {
+  SceneState &scene_state;
   NumericValue value;
 
-  bool visitBody(BodyIndex body_index)
+  SetNumericValueVisitor(
+    SceneState &scene_state,
+    const TreePaths &tree_paths,
+    const TreePath &path,
+    NumericValue value
+  )
+  : ScenePathVisitor(tree_paths, path),
+    scene_state(scene_state),
+    value(value)
+  {
+  }
+
+  bool visitBodyTranslation(BodyIndex body_index) override
   {
     SceneState::Body &body_state = scene_state.body(body_index);
     const TreePaths::Body &body_paths = tree_paths.body(body_index);
-    SetBodyNumericValueVisitor visitor = {body_state, path, value, body_paths};
-    return forMatchingBodyPath(path, body_paths, visitor);
+    SetNumericComponentVisitor visitor{value};
+
+    forMatchingComponent(
+      body_state.transform.translation, path, body_paths.translation,
+      visitor
+    );
+
+    return true;
   }
 
-  bool visitMarker(MarkerIndex marker_index)
+  bool visitBodyRotation(BodyIndex body_index) override
   {
-    const TreePaths::Marker &marker_path = tree_paths.marker(marker_index);
+    SceneState::Body &body_state = scene_state.body(body_index);
+    const TreePaths::Body &body_paths = tree_paths.body(body_index);
+    SetNumericComponentVisitor visitor{value};
+
+    forMatchingComponent(
+      body_state.transform.rotation, path, body_paths.rotation,
+      visitor
+    );
+
+    return true;
+  }
+
+  bool visitBodyBox(BodyIndex body_index, BoxIndex box_index) override
+  {
+    SceneState::Body &body_state = scene_state.body(body_index);
+    const TreePaths::Body &body_paths = tree_paths.body(body_index);
+    SceneState::Box &box_state = body_state.boxes[box_index];
+    const BoxPaths &box_paths = body_paths.boxes[box_index];
+    SetNumericComponentVisitor visitor{value};
+
+    if (startsWith(path, box_paths.scale.path)) {
+      return forMatchingComponent(box_state.scale, path, box_paths.scale, visitor);
+    }
+    else if (startsWith(path, box_paths.center.path)) {
+      return forMatchingComponent(box_state.center, path, box_paths.center, visitor);
+    }
+    else {
+      assert(false); // not implemented
+    }
+
+    return false;
+  }
+
+  bool visitBodyLine(BodyIndex body_index, LineIndex line_index) override
+  {
+    SceneState::Body &body_state = scene_state.body(body_index);
+    const TreePaths::Body &body_paths = tree_paths.body(body_index);
+    const LinePaths &line_paths = body_paths.lines[line_index];
+    SceneState::Line &line_state = body_state.lines[line_index];
+    SetNumericComponentVisitor visitor{value};
+
+    if (startsWith(path, line_paths.start.path)) {
+      return forMatchingComponent(line_state.start, path, line_paths.start, visitor);
+    }
+
+    if (startsWith(path, line_paths.end.path)) {
+      return forMatchingComponent(line_state.end, path, line_paths.end, visitor);
+    }
+
+    return false;
+  }
+
+  bool visitMarkerPosition(MarkerIndex marker_index) override
+  {
+    const TreePaths::Marker &marker_paths = tree_paths.marker(marker_index);
     SceneState::Marker &marker_state = scene_state.marker(marker_index);
+    SetNumericComponentVisitor visitor{value};
 
     return
-      setVectorValue(marker_state.position, path, value, marker_path.position);
+      forMatchingComponent(
+        marker_state.position, path, marker_paths.position, visitor
+      );
   }
 
-  bool visitDistanceError(DistanceErrorIndex distance_error_index)
+  bool
+  visitDistanceErrorDesiredDistance(
+    DistanceErrorIndex distance_error_index
+  ) override
   {
     SceneState::DistanceError &distance_error_state =
       scene_state.distance_errors[distance_error_index];
 
-    const TreePaths::DistanceError &distance_error_paths =
-      tree_paths.distance_errors[distance_error_index];
-
-    return
-      setDistanceErrorValue(
-        distance_error_state,
-        path,
-        value,
-        distance_error_paths
-      );
+    distance_error_state.desired_distance = value;
+    return true;
   }
 
-  bool visitVariable(VariableIndex variable_index)
+  bool
+  visitDistanceErrorWeight(DistanceErrorIndex distance_error_index) override
   {
-    const TreePaths::Variable &variable_paths = tree_paths.variables[variable_index];
+    SceneState::DistanceError &distance_error_state =
+      scene_state.distance_errors[distance_error_index];
 
-    if (startsWith(path, variable_paths.value)) {
-      SceneState::Variable &variable_state = scene_state.variables[variable_index];
-      variable_state.value = value;
-      return true;
-    }
+    distance_error_state.weight = value;
+    return true;
+  }
 
-    return false;
+  bool visitVariableValue(VariableIndex variable_index) override
+  {
+    SceneState::Variable &variable_state =
+      scene_state.variables[variable_index];
+
+    variable_state.value = value;
+    return true;
   }
 };
 }
 
 
 namespace {
-struct SetBodyExpressionVisitor {
-  SceneState::Body &body_state;
-  const TreePath &path;
-  const string &expression;
-  const TreePaths::Body &body_paths;
-
-  bool visitTranslation()
-  {
-#if 0
-    if (startsWith(path, body_paths.translation.x)) {
-      cerr << "Setting body x translation expression\n";
-      body_state.expressions.translation.x = expression;
-      return true;
-    }
-#endif
-
-    return false;
-  }
-
-  bool visitRotation()
-  {
-    return false;
-  }
-
-  bool visitBox(BoxIndex)
-  {
-    return false;
-  }
-
-  bool visitLine(LineIndex)
-  {
-    return false;
-  }
-};
-}
-
-
-namespace {
-struct SetExpressionVisitor {
+struct SetExpressionVisitor : ScenePathVisitor {
   SceneState &scene_state;
-  const TreePaths &tree_paths;
-  const TreePath &path;
   const string &expression;
 
-  bool visitBody(BodyIndex body_index)
+  SetExpressionVisitor(
+    SceneState &scene_state,
+    const TreePaths &tree_paths,
+    const TreePath &path,
+    const string &expression
+  )
+  : ScenePathVisitor(tree_paths, path),
+    scene_state(scene_state),
+    expression(expression)
   {
-    SceneState::Body &body_state = scene_state.body(body_index);
-    const TreePaths::Body &body_paths = tree_paths.body(body_index);
-
-    SetBodyExpressionVisitor visitor = {
-      body_state, path, expression, body_paths
-    };
-
-    return forMatchingBodyPath(path, body_paths, visitor);
-  }
-
-  bool visitMarker(MarkerIndex)
-  {
-    return false;
-  }
-
-  bool visitDistanceError(DistanceErrorIndex)
-  {
-    return false;
-  }
-
-  bool visitVariable(VariableIndex)
-  {
-    return false;
   }
 };
 }
 
 
-template <typename Visitor>
 static bool
-forMatchingPath(const TreePath &path, Visitor &visitor, const TreePaths &tree_paths)
+forMatchingPath(
+  const TreePath &path,
+  SceneElementVisitor &visitor,
+  const TreePaths &tree_paths
+)
 {
   for (auto i : indicesOf(tree_paths.bodies)) {
     if (startsWith(path, tree_paths.body(i).path)) {
@@ -1958,6 +2020,19 @@ setSceneStateStringValue(
 )
 {
   SetStringValueVisitor visitor{scene_state, tree_paths, value, path};
+  return forMatchingPath(path, visitor, tree_paths);
+}
+
+
+bool
+setSceneStateBoolValue(
+  SceneState &scene_state,
+  const TreePath &path,
+  bool value,
+  const TreePaths &tree_paths
+)
+{
+  SetBoolValueVisitor visitor{scene_state, tree_paths, value, path};
   return forMatchingPath(path, visitor, tree_paths);
 }
 
@@ -2033,17 +2108,32 @@ createBodyBranchItemsInTree(
 
 
 
-template <typename XYZSolveFlags>
+static bool isMatchingPath(const TreePath &path1, const TreePath &path2)
+{
+  return path1 == path2;
+}
+
+
+#if USE_SOLVE_CHILDREN
+static bool
+isMatchingPath(const TreePath &path, const TreePaths::Channel &channel)
+{
+  return isMatchingPath(path, channel.path);
+}
+#endif
+
+
+template <typename XYZSolveFlags, typename Component>
 static MatchConst_t<bool, XYZSolveFlags> *
   xyzSolveStatePtr(
     XYZSolveFlags &xyz_solve_flags,
     const TreePath &path,
-    const TreePaths::XYZ &xyz_paths
+    const TreePaths::BasicXYZ<Component> &xyz_paths
   )
 {
-  if (path == xyz_paths.x) return &xyz_solve_flags.x;
-  if (path == xyz_paths.y) return &xyz_solve_flags.y;
-  if (path == xyz_paths.z) return &xyz_solve_flags.z;
+  if (isMatchingPath(path, xyz_paths.x)) return &xyz_solve_flags.x;
+  if (isMatchingPath(path, xyz_paths.y)) return &xyz_solve_flags.y;
+  if (isMatchingPath(path, xyz_paths.z)) return &xyz_solve_flags.z;
   return nullptr;
 }
 
@@ -2061,7 +2151,7 @@ static MatchConst_t<bool, SceneState> *
   auto &body_state = scene_state.body(body_index);
   const TreePaths::Body &body_paths = tree_paths.body(body_index);
   {
-    const TreePaths::XYZ &xyz_paths = body_paths.translation;
+    const TreePaths::Translation &xyz_paths = body_paths.translation;
     auto &xyz_solve_flags = body_state.solve_flags.translation;
     Bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
 
@@ -2070,7 +2160,7 @@ static MatchConst_t<bool, SceneState> *
     }
   }
   {
-    const TreePaths::XYZ &xyz_paths = body_paths.rotation;
+    const TreePaths::Rotation &xyz_paths = body_paths.rotation;
     auto &xyz_solve_flags = body_state.solve_flags.rotation;
     Bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
 

@@ -186,20 +186,11 @@ struct MainWindowController::Impl {
       const std::string &
     );
 
-  static void
-    handleTreeStringValueChanged(
-      ObservedScene &,
-      const TreePath &,
-      const StringValue &
-    );
-
   static TreeWidget::MenuItems
     contextMenuItemsForPath(
       MainWindowController &controller,
       const TreePath &path
     );
-
-  static void handleSolveToggleChange(ObservedScene &, const TreePath &);
 
   static void
     addDistanceErrorPressed(
@@ -354,17 +345,6 @@ MainWindowController::Impl::handleTreeExpressionChanged(
 {
   ObservedScene &observed_scene = observedScene(controller);
   observed_scene.handleTreeExpressionChanged(path, expression);
-}
-
-
-void
-MainWindowController::Impl::handleTreeStringValueChanged(
-  ObservedScene &observed_scene,
-  const TreePath &path,
-  const StringValue &value
-)
-{
-  observed_scene.handleTreeStringValueChanged(path, value);
 }
 
 
@@ -656,16 +636,6 @@ static void appendTo(vector<T> &v, const vector<T> &n)
 }
 
 
-void
-  MainWindowController::Impl::handleSolveToggleChange(
-    ObservedScene &observed_scene,
-    const TreePath &path
-  )
-{
-  observed_scene.handleSolveToggleChange(path);
-}
-
-
 TreeWidget::MenuItems
   MainWindowController::Impl::contextMenuItemsForPath(
     MainWindowController &controller,
@@ -862,10 +832,11 @@ TreeWidget::MenuItems
     });
   }
 
+#if !USE_SOLVE_CHILDREN
   if (const bool *solve_state_ptr = observed_scene.solveStatePtr(path)) {
     auto solve_function =
       [&observed_scene, path](){
-        Impl::handleSolveToggleChange(observed_scene, path);
+        observed_scene.handleSolveToggleChange(path);
       };
 
     bool checked_state = *solve_state_ptr;
@@ -874,6 +845,7 @@ TreeWidget::MenuItems
       {"Solve", solve_function, checked_state}
     });
   }
+#endif
 
   return menu_items;
 }
@@ -938,7 +910,12 @@ MainWindowController::MainWindowController(View &view)
 
   tree_widget.string_item_value_changed_callback =
     [&observed_scene](const TreePath &path, const StringValue &value){
-      Impl::handleTreeStringValueChanged(observed_scene, path, value);
+      observed_scene.handleTreeStringValueChanged(path, value);
+    };
+
+  tree_widget.bool_item_value_changed_callback =
+    [&observed_scene](const TreePath &path, bool new_value){
+      observed_scene.handleTreeBoolValueChanged(path, new_value);
     };
 }
 

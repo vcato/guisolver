@@ -140,13 +140,11 @@ struct ObservedScene {
   void handleTreeExpressionChanged(const TreePath &, const std::string &);
   void handleTreeEnumerationIndexChanged(const TreePath &, int value);
   void handleTreeNumericValueChanged(const TreePath &path, NumericValue value);
+  void handleTreeStringValueChanged(const TreePath &, const StringValue &);
+  void handleTreeBoolValueChanged(const TreePath &, bool);
+#if !USE_SOLVE_CHILDREN
   void handleSolveToggleChange(const TreePath &path);
-
-  void
-    handleTreeStringValueChanged(
-      const TreePath &path,
-      const StringValue &value
-    );
+#endif
 
   static void
   createMarkerInScene(MarkerIndex marker_index, ObservedScene &observed_scene);

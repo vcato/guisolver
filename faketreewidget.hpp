@@ -130,12 +130,12 @@ private:
 
   void
     createBoolItem(
-      const TreePath &/*new_item_path*/,
-      const LabelProperties &,
-      bool /*value*/
+      const TreePath &new_item_path,
+      const LabelProperties &label_properties,
+      bool value
     ) override
   {
-    assert(false);
+    createItem(new_item_path, label_properties, boolValueText(value));
   }
 
   void
@@ -208,6 +208,8 @@ private:
       NumericValue minimum_value,
       NumericValue maximum_value
     );
+
+  static std::string boolValueText(bool);
 
   static LabelText
     enumerationValueText(
