@@ -129,6 +129,16 @@ private:
   }
 
   void
+    createBoolItem(
+      const TreePath &/*new_item_path*/,
+      const LabelProperties &,
+      bool /*value*/
+    ) override
+  {
+    assert(false);
+  }
+
+  void
     createEnumerationItem(
       const TreePath &new_item_path,
       const LabelProperties &label_properties,

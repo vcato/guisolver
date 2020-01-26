@@ -36,6 +36,13 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
       ) override;
 
     void
+      createBoolItem(
+        const TreePath &new_item_path,
+        const LabelProperties &,
+        bool value
+      ) override;
+
+    void
       createEnumerationItem(
         const TreePath &new_item_path,
         const LabelProperties &label_properties,
@@ -89,7 +96,8 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
     static QTreeWidgetItem&
       createChildItem(QTreeWidgetItem &parent_item,const std::string &label);
 
-    QTreeWidgetItem &itemFromPath(const vector<int> &path) const;
+    QTreeWidgetItem &itemFromPath(const TreePath &path) const;
+    QTreeWidgetItem &parentItemFromPath(const TreePath &) const;
     void buildPath(TreePath &path,QTreeWidgetItem &item) const;
     void changeItemToSlider(const TreePath &path);
     void changeItemToSpinBox(const TreePath &path);
@@ -97,6 +105,7 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
     QtSpinBox* itemSpinBoxPtr(const TreePath &path);
     QtComboBox* itemComboBoxPtr(const TreePath &path);
     QLabel *itemLabelPtr(const TreePath &path);
+    QTreeWidgetItem &insertItem(const TreePath &path);
 
     template <typename T>
     T &createItemWidget(
@@ -106,8 +115,7 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
 
     QTreeWidgetItem&
       createComboBoxItem(
-        QTreeWidgetItem &parent_item,
-        int index,
+        const TreePath &new_item_path,
         const LabelProperties &,
         const EnumerationOptions &,
         int value
@@ -115,8 +123,7 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
 
     void
       createSpinBoxItem(
-        QTreeWidgetItem &parent_item,
-        int child_index,
+        const TreePath &new_item_path,
         const LabelProperties &,
         NumericValue value,
         NumericValue minimum_value,
@@ -133,12 +140,18 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
 
     void
       createSliderItem(
-        QTreeWidgetItem &parent_item,
-        int child_index,
+        const TreePath &new_item_path,
         const LabelProperties &,
         int value,
         int minimum_value,
         int maximum_value
+      );
+
+    void
+      createCheckBoxItem(
+        const TreePath &new_item_path,
+        const LabelProperties &label_properties,
+        bool value
       );
 
     QLabel&

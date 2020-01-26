@@ -936,7 +936,7 @@ MainWindowController::MainWindowController(View &view)
       return Impl::contextMenuItemsForPath(*this, path);
     };
 
-  tree_widget.line_edit_item_value_changed_callback =
+  tree_widget.string_item_value_changed_callback =
     [&observed_scene](const TreePath &path, const StringValue &value){
       Impl::handleTreeStringValueChanged(observed_scene, path, value);
     };

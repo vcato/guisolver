@@ -67,6 +67,7 @@ QTTREEWIDGET=\
   qtlineedit.o qtlineedit_moc.o \
   qtslider.o qtslider_moc.o \
   qtslot.o qtslot_moc.o \
+  qtcheckbox.o qtcheckbox_moc.o \
   qttreewidgetitem.o \
   qtmenu.o \
   $(QTSPINBOX)

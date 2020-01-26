@@ -16,6 +16,16 @@ struct TreeWidget {
 
   struct LabelProperties {
     std::string text;
+
+    LabelProperties(const std::string &text)
+    : text(text)
+    {
+    }
+
+    LabelProperties(const char *text)
+    : text(text)
+    {
+    }
   };
 
   struct MenuItem {
@@ -27,16 +37,19 @@ struct TreeWidget {
   std::function<void(const TreePath &,NumericValue)>
     spin_box_item_value_changed_callback;
 
-  std::function<void()> selection_changed_callback;
-
-  std::function<void(const TreePath &,int index)>
-    enumeration_item_index_changed_callback;
-
   std::function<void(const TreePath &,int index)>
     slider_item_value_changed_callback;
 
-  std::function<void(const TreePath &,const std::string &value)>
-    line_edit_item_value_changed_callback;
+  std::function<void()> selection_changed_callback;
+
+  std::function<void(const TreePath &, bool new_value)>
+    bool_item_value_changed_callback;
+
+  std::function<void(const TreePath &, int index)>
+    enumeration_item_index_changed_callback;
+
+  std::function<void(const TreePath &, const std::string &value)>
+    string_item_value_changed_callback;
 
   std::function<vector<MenuItem>(const TreePath &)>
     context_menu_items_callback;
@@ -61,6 +74,13 @@ struct TreeWidget {
       NumericValue minimum_value,
       NumericValue maximum_value,
       int digits_of_precision = 2
+    ) = 0;
+
+  virtual void
+    createBoolItem(
+      const TreePath &new_item_path,
+      const LabelProperties &,
+      bool value
     ) = 0;
 
   virtual void

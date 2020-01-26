@@ -5,6 +5,7 @@
 #include <QBoxLayout>
 #include <QLabel>
 #include <QHeaderView>
+#include <QCheckBox>
 #include <QMenu>
 #include "qtlayout.hpp"
 #include "qtwidget.hpp"
@@ -12,6 +13,7 @@
 #include "qtlineedit.hpp"
 #include "qttreewidgetitem.hpp"
 #include "qtmenu.hpp"
+#include "qtcheckbox.hpp"
 #include "vectorio.hpp"
 #include "numericvalue.hpp"
 #include "numericvaluelimits.hpp"
@@ -239,17 +241,20 @@ static void setItemPending(QTreeWidgetItem &item,const bool new_state)
 }
 
 
+QTreeWidgetItem &QtTreeWidget::insertItem(const TreePath &path)
+{
+  return ::insertChildItem(parentItemFromPath(path), path.back());
+}
+
+
 void
   QtTreeWidget::createVoidItem(
     const TreePath &new_item_path,
     const LabelProperties &label_properties
   )
 {
-  const string &label = label_properties.text;
-  TreePath parent_path = parentPath(new_item_path);
-  QTreeWidgetItem &parent_item = itemFromPath(parent_path);
-  QTreeWidgetItem &item = insertChildItem(parent_item,new_item_path.back());
-  setItemText(item,label);
+  QTreeWidgetItem &item = insertItem(new_item_path);
+  setItemText(item, label_properties.text);
 }
 
 
@@ -274,16 +279,11 @@ void
     int digits_of_precision
   )
 {
-  TreePath parent_path = parentPath(new_item_path);
-  QTreeWidgetItem &parent_item = itemFromPath(parent_path);
-  int child_index = new_item_path.back();
-
   static_assert(std::is_same<NumericValue,float>::value,"");
 
   if (useSliderForRange(minimum_value,maximum_value)) {
     createSliderItem(
-      parent_item,
-      child_index,
+      new_item_path,
       label_properties,
       value,
       minimum_value,
@@ -292,8 +292,7 @@ void
   }
   else {
     createSpinBoxItem(
-      parent_item,
-      child_index,
+      new_item_path,
       label_properties,
       value,
       minimum_value,
@@ -305,6 +304,17 @@ void
 
 
 void
+QtTreeWidget::createBoolItem(
+  const TreePath &new_item_path,
+  const LabelProperties &label_properties,
+  bool value
+)
+{
+  createCheckBoxItem(new_item_path, label_properties, value);
+}
+
+
+void
   QtTreeWidget::createEnumerationItem(
     const TreePath &new_item_path,
     const LabelProperties &label_properties,
@@ -312,10 +322,7 @@ void
     int value
   )
 {
-  TreePath parent_path = parentPath(new_item_path);
-  QTreeWidgetItem &parent_item = itemFromPath(parent_path);
-  int index = new_item_path.back();
-  createComboBoxItem(parent_item,index,label_properties,options,value);
+  createComboBoxItem(new_item_path, label_properties, options, value);
 }
 
 
@@ -326,22 +333,20 @@ void
     const string &value
   )
 {
-  TreePath parent_path = parentPath(new_item_path);
-  QTreeWidgetItem &parent_item = itemFromPath(parent_path);
+  QTreeWidgetItem &parent_item = parentItemFromPath(new_item_path);
   createLineEditItem(parent_item,label_properties,value);
 }
 
 
 QTreeWidgetItem&
   QtTreeWidget::createComboBoxItem(
-    QTreeWidgetItem &parent_item,
-    int index,
+    const TreePath &new_item_path,
     const LabelProperties &label_properties,
     const EnumerationOptions &enumeration_names,
     int value
   )
 {
-  QTreeWidgetItem &item = ::insertChildItem(parent_item,index);
+  QTreeWidgetItem &item = insertItem(new_item_path);
   QtComboBox &combo_box = createItemWidget<QtComboBox>(item,label_properties);
 
   combo_box.current_index_changed_function =
@@ -389,8 +394,7 @@ singleStepForDigitsOfPrecision(int n_digits_of_precision)
 
 void
   QtTreeWidget::createSpinBoxItem(
-    QTreeWidgetItem &parent_item,
-    int child_index,
+    const TreePath &new_item_path,
     const LabelProperties &label_properties,
     NumericValue value,
     NumericValue minimum_value,
@@ -398,12 +402,8 @@ void
     int digits_of_precision
   )
 {
-  QtTreeWidget &tree_widget = *this;
-  QTreeWidgetItem &item = ::insertChildItem(parent_item,child_index);
-
-  QtSpinBox &spin_box =
-    tree_widget.createItemWidget<QtSpinBox>(item,label_properties);
-
+  QTreeWidgetItem &item = insertItem(new_item_path);
+  QtSpinBox &spin_box = createItemWidget<QtSpinBox>(item,label_properties);
   spin_box.setMinimum(minimum_value);
   spin_box.setMaximum(maximum_value);
   spin_box.setDecimals(digits_of_precision);
@@ -415,24 +415,19 @@ void
 
 void
   QtTreeWidget::createSliderItem(
-    QTreeWidgetItem &parent_item,
-    int child_index,
+    const TreePath &new_item_path,
     const LabelProperties &label_properties,
     int value,
     int minimum_value,
     int maximum_value
   )
 {
-  QtTreeWidget &tree_widget = *this;
-  QTreeWidgetItem &item = ::insertChildItem(parent_item,child_index);
+  QTreeWidgetItem &item = insertItem(new_item_path);
 
   // Logic needs to be consistent when we recreate the widget if the value
   // changes.
-  QtSlider &slider =
-    tree_widget.createItemWidget<QtSlider>(item,label_properties);
-
+  QtSlider &slider = createItemWidget<QtSlider>(item, label_properties);
   Impl::setupSlider(*this,slider,item);
-
   slider.setValue(value);
   slider.setMinimum(minimum_value);
   slider.setMaximum(maximum_value);
@@ -440,6 +435,24 @@ void
   // Need to have a value changed function
 }
 
+
+void
+QtTreeWidget::createCheckBoxItem(
+  const TreePath &new_item_path,
+  const LabelProperties &label_properties,
+  bool value
+)
+{
+  QTreeWidgetItem &item = insertItem(new_item_path);
+  QtCheckBox &check_box = createItemWidget<QtCheckBox>(item, label_properties);
+
+  check_box.value_changed_function =
+    [this, &item](bool new_value){
+      bool_item_value_changed_callback(itemPath(item), new_value);
+    };
+
+  check_box.setValue(value);
+}
 
 
 QTreeWidgetItem &QtTreeWidget::itemFromPath(const vector<int> &path) const
@@ -467,6 +480,12 @@ QTreeWidgetItem &QtTreeWidget::itemFromPath(const vector<int> &path) const
   assert(item_ptr);
 
   return *item_ptr;
+}
+
+
+QTreeWidgetItem &QtTreeWidget::parentItemFromPath(const TreePath &path) const
+{
+  return itemFromPath(parentPath(path));
 }
 
 
@@ -543,8 +562,8 @@ void
   )
 {
   assert(item_ptr);
-  assert(line_edit_item_value_changed_callback);
-  line_edit_item_value_changed_callback(itemPath(*item_ptr),value);
+  assert(string_item_value_changed_callback);
+  string_item_value_changed_callback(itemPath(*item_ptr),value);
 }
 
 
@@ -746,17 +765,15 @@ void QtTreeWidget::removeItem(const TreePath &path)
 {
   assert(!_ignore_selelection_changed);
   _ignore_selelection_changed = true;
-  auto parent_path = parentPath(path);
   auto child_index = path.back();
-  ::removeChildItem(itemFromPath(parent_path),child_index);
+  ::removeChildItem(parentItemFromPath(path),child_index);
   _ignore_selelection_changed = false;
 }
 
 
 int QtTreeWidget::itemChildCount(const TreePath &parent_path) const
 {
-  QTreeWidgetItem &parent_item = itemFromPath(parent_path);
-  return parent_item.childCount();
+  return itemFromPath(parent_path).childCount();
 }
 
 
