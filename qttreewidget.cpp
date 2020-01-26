@@ -87,7 +87,7 @@ struct QtTreeWidget::Impl {
     )
   {
     slider.value_changed_function =
-      [&tree_widget,&item](int value){
+      [&tree_widget, &item](int value){
         tree_widget.handleSliderItemValueChanged(&item,value);
       };
   }
@@ -529,7 +529,10 @@ void
   )
 {
   assert(item_ptr);
-  slider_item_value_changed_callback(itemPath(*item_ptr),value);
+
+  if (slider_item_value_changed_callback) {
+    slider_item_value_changed_callback(itemPath(*item_ptr),value);
+  }
 }
 
 

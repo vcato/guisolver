@@ -43,8 +43,10 @@ QtSlider::QtSlider()
   slider_ptr = &slider;
 
   QtLineEdit &line_edit = createWidget<QtLineEdit>(layout);
+
   line_edit.text_changed_function =
     [this](string arg){ lineEditValueChanged(arg); };
+
   line_edit_ptr = &line_edit;
   updateLineEditFromSlider();
 }
@@ -84,7 +86,7 @@ void QtSlider::setSliderValue(int arg)
 
 void QtSlider::setValue(int arg)
 {
-  slider().setValue(arg);
+  setSliderValue(arg);
   setLineEditValue(arg);
 }
 

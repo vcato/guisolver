@@ -8,6 +8,7 @@ CXXFLAGS=-W -Wall -Wundef -pedantic -std=c++14 -MD -MP $(OPTIMIZATION) \
 
 all:
 	$(MAKE) run_unit_tests
+	$(MAKE) build_manual_tests
 	$(MAKE) run_guisolver
 
 run_unit_tests: \
@@ -26,6 +27,9 @@ run_unit_tests: \
   treevalues_test.pass \
   sceneobjects_test.pass \
   observedscene_test.pass
+
+build_manual_tests: \
+  qttreewidget_manualtest
 
 run_guisolver: guisolver
 	./guisolver
@@ -55,19 +59,17 @@ EVALUATEEXPRESSION=evaluateexpression.o expressionparser.o parsedouble.o
 MAINWINDOWCONTROLLER=mainwindowcontroller.o \
   $(EVALUATEEXPRESSION) $(OBSERVEDSCENE)
 
-QTSPINBOX=qtspinbox.o parsedouble.o
+QTSPINBOX=qtspinbox.o qtspinbox_moc.o parsedouble.o
 
-
-guisolver: main.o qtmainwindow.o osgscene.o qttimer.o qttimer_moc.o \
-  osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o $(DEFAULTSCENESTATE) \
-  $(SCENEERROR) scenesolver.o $(OPTIMIZE) \
-  qttreewidgetitem.o qtcombobox.o qtcombobox_moc.o \
-  qtlineedit.o qtlineedit_moc.o qtslider.o qtslider.o \
-  qtslider_moc.o $(QTSPINBOX) qtspinbox_moc.o treevalues.o \
-  qttreewidget.o qttreewidget_moc.o qtmenu.o qtslot.o qtslot_moc.o \
-  $(MAINWINDOWCONTROLLER) \
-  $(SCENEOBJECTS) intersector.o $(SCENESTATEIO)
-	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
+QTTREEWIDGET=\
+  qttreewidget.o qttreewidget_moc.o \
+  qtcombobox.o qtcombobox_moc.o \
+  qtlineedit.o qtlineedit_moc.o \
+  qtslider.o qtslider_moc.o \
+  qtslot.o qtslot_moc.o \
+  qttreewidgetitem.o \
+  qtmenu.o \
+  $(QTSPINBOX)
 
 optional_test: optional_test.o osgutil.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
@@ -119,6 +121,18 @@ sceneobjects_test: sceneobjects_test.o $(SCENEOBJECTS) fakescene.o
 
 observedscene_test: observedscene_test.o $(OBSERVEDSCENE) faketreewidget.o \
   fakescene.o checktree.o $(SCENESTATEIO)
+	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
+
+guisolver: main.o qtmainwindow.o osgscene.o qttimer.o qttimer_moc.o \
+  osgQtGraphicsWindowQt.o osgpickhandler.o osgutil.o $(DEFAULTSCENESTATE) \
+  $(SCENEERROR) scenesolver.o $(OPTIMIZE) \
+  $(QTSPINBOX) treevalues.o \
+  $(QTTREEWIDGET) \
+  $(MAINWINDOWCONTROLLER) \
+  $(SCENEOBJECTS) intersector.o $(SCENESTATEIO)
+	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
+
+qttreewidget_manualtest: qttreewidget_manualtest.o $(QTTREEWIDGET)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 clean:
