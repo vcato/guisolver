@@ -532,12 +532,12 @@ void
 {
   assert(item_ptr);
 
-  if (!spin_box_item_value_changed_callback) {
-    cerr << "spin_box_item_value_changed_function is not set\n";
+  if (!numeric_item_value_changed_callback) {
+    cerr << "numeric_item_value_changed_function is not set\n";
     return;
   }
 
-  spin_box_item_value_changed_callback(itemPath(*item_ptr),value);
+  numeric_item_value_changed_callback(itemPath(*item_ptr), value);
 }
 
 
@@ -549,9 +549,12 @@ void
 {
   assert(item_ptr);
 
-  if (slider_item_value_changed_callback) {
-    slider_item_value_changed_callback(itemPath(*item_ptr),value);
+  if (!numeric_item_value_changed_callback) {
+    cerr << "numeric_item_value_changed_function is not set\n";
+    return;
   }
+
+  numeric_item_value_changed_callback(itemPath(*item_ptr), value);
 }
 
 

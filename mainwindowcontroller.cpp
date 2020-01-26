@@ -911,11 +911,6 @@ MainWindowController::MainWindowController(View &view)
   scene.selection_changed_callback =
     [&observed_scene]{ observed_scene.handleSceneSelectionChanged(); };
 
-  tree_widget.spin_box_item_value_changed_callback =
-    [&observed_scene](const TreePath &path, NumericValue value){
-      observed_scene.handleTreeNumericValueChanged(path, value);
-    };
-
   tree_widget.evaluate_function =
     [this](const TreePath &path, const string &text){
       return Impl::evaluateInput(*this, text, path);
@@ -934,6 +929,11 @@ MainWindowController::MainWindowController(View &view)
   tree_widget.context_menu_items_callback =
     [this](const TreePath &path){
       return Impl::contextMenuItemsForPath(*this, path);
+    };
+
+  tree_widget.numeric_item_value_changed_callback =
+    [&observed_scene](const TreePath &path, NumericValue value){
+      observed_scene.handleTreeNumericValueChanged(path, value);
     };
 
   tree_widget.string_item_value_changed_callback =

@@ -35,10 +35,7 @@ struct TreeWidget {
   };
 
   std::function<void(const TreePath &,NumericValue)>
-    spin_box_item_value_changed_callback;
-
-  std::function<void(const TreePath &,int index)>
-    slider_item_value_changed_callback;
+    numeric_item_value_changed_callback;
 
   std::function<void()> selection_changed_callback;
 

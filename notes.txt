@@ -149,7 +149,3 @@ by opening the item and choosing from an option menu.
     * minimum:
     * maximum:
     * precision
----
-Consolidate
-  spin_box_item_value_changed_callback and
-  slider_item_value_changed_callback;
