@@ -11,8 +11,6 @@
 #include "numericvaluelimits.hpp"
 #include "vec3state.hpp"
 
-#define CHANGE_VISITOR 0
-
 using std::cerr;
 using std::string;
 using LabelProperties = TreeWidget::LabelProperties;
@@ -1531,14 +1529,14 @@ void
 
 
 namespace {
-struct ComponentVisitor {
+struct NumericComponentVisitor {
   virtual bool visitComponent(NumericValue &value_to_set) = 0;
 };
 }
 
 
 namespace {
-struct SetNumericComponentVisitor : ComponentVisitor {
+struct SetNumericComponentVisitor : NumericComponentVisitor {
   const NumericValue value;
 
   SetNumericComponentVisitor(NumericValue value)
@@ -1561,7 +1559,7 @@ visitMatchingComponent(
   NumericValue &value_to_set,
   const TreePath &path,
   const TreePaths::Channel &path_to_check,
-  ComponentVisitor &visitor
+  NumericComponentVisitor &visitor
 )
 {
   if (path == path_to_check.path) {
@@ -1579,7 +1577,7 @@ static bool
     SceneState::XYZ &v,
     const TreePath &path,
     const TreePaths::BasicXYZ<Component> &xyz_path,
-    ComponentVisitor &visitor
+    NumericComponentVisitor &visitor
   )
 {
   if (path == xyz_path.x) return visitor.visitComponent(v.x);
@@ -1829,12 +1827,12 @@ struct SetNumericValueVisitor : ScenePathVisitor {
 
   bool visitBodyTranslation(BodyIndex body_index) override
   {
-    SceneState::Body &body_state = scene_state.body(body_index);
-    const TreePaths::Body &body_paths = tree_paths.body(body_index);
     SetNumericComponentVisitor visitor{value};
 
     forMatchingComponent(
-      body_state.transform.translation, path, body_paths.translation,
+      scene_state.body(body_index).transform.translation,
+      path,
+      tree_paths.body(body_index).translation,
       visitor
     );
 
@@ -1843,12 +1841,12 @@ struct SetNumericValueVisitor : ScenePathVisitor {
 
   bool visitBodyRotation(BodyIndex body_index) override
   {
-    SceneState::Body &body_state = scene_state.body(body_index);
-    const TreePaths::Body &body_paths = tree_paths.body(body_index);
     SetNumericComponentVisitor visitor{value};
 
     forMatchingComponent(
-      body_state.transform.rotation, path, body_paths.rotation,
+      scene_state.body(body_index).transform.rotation,
+      path,
+      tree_paths.body(body_index).rotation,
       visitor
     );
 
@@ -1864,10 +1862,16 @@ struct SetNumericValueVisitor : ScenePathVisitor {
     SetNumericComponentVisitor visitor{value};
 
     if (startsWith(path, box_paths.scale.path)) {
-      return forMatchingComponent(box_state.scale, path, box_paths.scale, visitor);
+      return
+        forMatchingComponent(
+          box_state.scale, path, box_paths.scale, visitor
+        );
     }
     else if (startsWith(path, box_paths.center.path)) {
-      return forMatchingComponent(box_state.center, path, box_paths.center, visitor);
+      return
+        forMatchingComponent(
+          box_state.center, path, box_paths.center, visitor
+        );
     }
     else {
       assert(false); // not implemented
@@ -1885,11 +1889,17 @@ struct SetNumericValueVisitor : ScenePathVisitor {
     SetNumericComponentVisitor visitor{value};
 
     if (startsWith(path, line_paths.start.path)) {
-      return forMatchingComponent(line_state.start, path, line_paths.start, visitor);
+      return
+        forMatchingComponent(
+          line_state.start, path, line_paths.start, visitor
+        );
     }
 
     if (startsWith(path, line_paths.end.path)) {
-      return forMatchingComponent(line_state.end, path, line_paths.end, visitor);
+      return
+        forMatchingComponent(
+          line_state.end, path, line_paths.end, visitor
+        );
     }
 
     return false;
@@ -1962,7 +1972,7 @@ struct SetExpressionVisitor : ScenePathVisitor {
 
 
 static bool
-forMatchingPath(
+forMatchingScenePath(
   const TreePath &path,
   SceneElementVisitor &visitor,
   const TreePaths &tree_paths
@@ -2007,7 +2017,7 @@ setSceneStateNumericValue(
 )
 {
   SetNumericValueVisitor visitor = {scene_state, tree_paths, path, value};
-  return forMatchingPath(path, visitor, tree_paths);
+  return forMatchingScenePath(path, visitor, tree_paths);
 }
 
 
@@ -2020,7 +2030,7 @@ setSceneStateStringValue(
 )
 {
   SetStringValueVisitor visitor{scene_state, tree_paths, value, path};
-  return forMatchingPath(path, visitor, tree_paths);
+  return forMatchingScenePath(path, visitor, tree_paths);
 }
 
 
@@ -2033,7 +2043,7 @@ setSceneStateBoolValue(
 )
 {
   SetBoolValueVisitor visitor{scene_state, tree_paths, value, path};
-  return forMatchingPath(path, visitor, tree_paths);
+  return forMatchingScenePath(path, visitor, tree_paths);
 }
 
 
@@ -2047,7 +2057,7 @@ setSceneStateExpression(
 {
   SetExpressionVisitor visitor = { scene_state, tree_paths, path, expression };
 
-  if (!forMatchingPath(path, visitor, tree_paths)) {
+  if (!forMatchingScenePath(path, visitor, tree_paths)) {
     cerr << "setSceneStateExpression: path=" << path << ", expression=" << expression << "\n";
     return false;
   }
@@ -2138,38 +2148,49 @@ static MatchConst_t<bool, XYZSolveFlags> *
 }
 
 
+namespace {
 template <typename SceneState>
-static MatchConst_t<bool, SceneState> *
-  bodySolveStatePtr(
-    SceneState &scene_state,
+struct GetSolveStatePtrVisitor : ScenePathVisitor {
+  using SolveStatePtr = MatchConst_t<bool,SceneState> *;
+  SolveStatePtr &solve_state_ptr;
+  SceneState &scene_state;
+
+  GetSolveStatePtrVisitor(
+    SolveStatePtr &solve_state_ptr,
+    const TreePaths &paths,
     const TreePath &path,
-    const TreePaths &tree_paths,
-    BodyIndex body_index
+    SceneState &scene_state
   )
-{
-  using Bool = MatchConst_t<bool, SceneState>;
-  auto &body_state = scene_state.body(body_index);
-  const TreePaths::Body &body_paths = tree_paths.body(body_index);
+  : ScenePathVisitor(paths, path),
+    solve_state_ptr(solve_state_ptr),
+    scene_state(scene_state)
   {
+  }
+
+  bool visitBodyTranslation(BodyIndex body_index) override
+  {
+    const TreePaths::Body &body_paths = tree_paths.body(body_index);
+    auto &body_state = scene_state.body(body_index);
+    auto &body_solve_flags = body_state.solve_flags;
     const TreePaths::Translation &xyz_paths = body_paths.translation;
-    auto &xyz_solve_flags = body_state.solve_flags.translation;
-    Bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
-
-    if (result_ptr) {
-      return result_ptr;
-    }
+    auto &xyz_solve_flags = body_solve_flags.translation;
+    solve_state_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
+    assert(solve_state_ptr);
+    return true;
   }
+
+  bool visitBodyRotation(BodyIndex body_index) override
   {
+    const TreePaths::Body &body_paths = tree_paths.body(body_index);
+    auto &body_state = scene_state.body(body_index);
+    auto &body_solve_flags = body_state.solve_flags;
     const TreePaths::Rotation &xyz_paths = body_paths.rotation;
-    auto &xyz_solve_flags = body_state.solve_flags.rotation;
-    Bool *result_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
-
-    if (result_ptr) {
-      return result_ptr;
-    }
+    auto &xyz_solve_flags = body_solve_flags.rotation;
+    solve_state_ptr = xyzSolveStatePtr(xyz_solve_flags, path, xyz_paths);
+    assert(solve_state_ptr);
+    return true;
   }
-
-  return nullptr;
+};
 }
 
 
@@ -2181,17 +2202,14 @@ static auto*
     const TreePaths &tree_paths
   )
 {
-  for (auto body_index : indicesOf(scene_state.bodies())) {
-    auto *solve_state_ptr =
-      bodySolveStatePtr(scene_state, path, tree_paths, body_index);
+  MatchConst_t<bool, SceneState> *solve_state_ptr = nullptr;
 
-    if (solve_state_ptr) {
-      return solve_state_ptr;
-    }
-  }
+  GetSolveStatePtrVisitor<SceneState> visitor = {
+    solve_state_ptr, tree_paths, path, scene_state
+  };
 
-  return
-    decltype(bodySolveStatePtr(scene_state, path, tree_paths, 0))(nullptr);
+  forMatchingScenePath(path, visitor, tree_paths);
+  return solve_state_ptr;
 }
 
 
