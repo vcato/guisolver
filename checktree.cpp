@@ -95,12 +95,10 @@ static void checkEqual(const FakeTreeWidget &a,const FakeTreeWidget &b)
 }
 
 
-#if USE_SOLVE_CHILDREN
 static void checkEqual(const TreePaths::Channel &a, const TreePaths::Channel &b)
 {
   checkMembersEqual(a,b);
 }
-#endif
 
 
 template <typename T>

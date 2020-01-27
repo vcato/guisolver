@@ -133,6 +133,7 @@ struct ObservedScene {
   }
 
   const bool *solveStatePtr(const TreePath &) const;
+  void setSolveFlags(const TreeItemDescription &item, bool state);
 
   void handleSceneStateChanged();
   void handleTreeSelectionChanged();
@@ -142,9 +143,6 @@ struct ObservedScene {
   void handleTreeNumericValueChanged(const TreePath &path, NumericValue value);
   void handleTreeStringValueChanged(const TreePath &, const StringValue &);
   void handleTreeBoolValueChanged(const TreePath &, bool);
-#if !USE_SOLVE_CHILDREN
-  void handleSolveToggleChange(const TreePath &path);
-#endif
 
   static void
   createMarkerInScene(MarkerIndex marker_index, ObservedScene &observed_scene);

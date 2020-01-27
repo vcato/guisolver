@@ -142,6 +142,8 @@ struct QtTreeWidget::Impl {
     wrapper_widget.value_widget_ptr = &spin_box;
     return spin_box;
   }
+
+  static QtCheckBox* itemCheckBoxPtr(QtTreeWidget &, const TreePath &path);
 };
 
 
@@ -653,13 +655,31 @@ QtComboBox* QtTreeWidget::itemComboBoxPtr(const TreePath &path)
 }
 
 
+QtCheckBox*
+QtTreeWidget::Impl::itemCheckBoxPtr(
+  QtTreeWidget &tree_widget,
+  const TreePath &path
+)
+{
+  QTreeWidgetItem &item = tree_widget.itemFromPath(path);
+
+  Impl::QtItemWrapperWidget &wrapper_widget =
+    itemWrapperWidget(tree_widget, item);
+
+  auto check_box_ptr =
+    dynamic_cast<QtCheckBox*>(wrapper_widget.value_widget_ptr);
+
+  return check_box_ptr;
+}
+
+
 void
-  QtTreeWidget::setItemNumericValue(
-    const TreePath &path,
-    NumericValue value,
-    NumericValue minimum_value,
-    NumericValue maximum_value
-  )
+QtTreeWidget::setItemNumericValue(
+  const TreePath &path,
+  NumericValue value,
+  NumericValue minimum_value,
+  NumericValue maximum_value
+)
 {
   bool use_slider = useSliderForRange(minimum_value,maximum_value);
   auto *slider_ptr = itemSliderPtr(path);
@@ -692,6 +712,15 @@ void
     spin_box.setMaximum(maximum_value);
     spin_box.setValue(value);
   }
+}
+
+
+void QtTreeWidget::setItemBoolValue(const TreePath &path, bool value)
+{
+  auto *check_box_ptr = Impl::itemCheckBoxPtr(*this, path);
+
+  assert(check_box_ptr);
+  check_box_ptr->setValue(value);
 }
 
 

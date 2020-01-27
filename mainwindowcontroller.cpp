@@ -205,7 +205,7 @@ struct MainWindowController::Impl {
 
   static void
     solveAllPressed(
-      MainWindowController &controller,
+      ObservedScene &,
       const TreeItemDescription &,
       bool state
     );
@@ -460,27 +460,13 @@ MainWindowController::Impl::pasteGlobalPressed(
 
 void
 MainWindowController::Impl::solveAllPressed(
-  MainWindowController &controller,
+  ObservedScene &observed_scene,
   const TreeItemDescription &item,
   bool state
 )
 {
-  ObservedScene &observed_scene = observedScene(controller);
-  SceneState &scene_state = observed_scene.scene_state;
-  using ItemType = TreeItemDescription::Type;
-
-  SceneState::TransformSolveFlags &solve_flags =
-    scene_state.body(*item.maybe_body_index).solve_flags;
-
-  if (item.type == ItemType::translation) {
-    setAll(solve_flags.translation, state);
-  }
-
-  if (item.type == ItemType::rotation) {
-    setAll(solve_flags.rotation, state);
-  }
-
-  solveScene(scene_state);
+  observed_scene.setSolveFlags(item, state);
+  observed_scene.solveScene();
   observed_scene.handleSceneStateChanged();
 }
 
@@ -664,13 +650,13 @@ TreeWidget::MenuItems
 
   if (item_type == ItemType::translation || item_type == ItemType::rotation) {
     auto solve_all_on_function =
-      [&controller,item]{
-        Impl::solveAllPressed(controller, item, true);
+      [&observed_scene, item]{
+        Impl::solveAllPressed(observed_scene, item, true);
       };
 
     auto solve_all_off_function =
-      [&controller,item]{
-        Impl::solveAllPressed(controller, item, false);
+      [&observed_scene, item]{
+        Impl::solveAllPressed(observed_scene, item, false);
       };
 
     appendTo(menu_items,{
@@ -831,21 +817,6 @@ TreeWidget::MenuItems
       {"Remove", remove_distance_error_function}
     });
   }
-
-#if !USE_SOLVE_CHILDREN
-  if (const bool *solve_state_ptr = observed_scene.solveStatePtr(path)) {
-    auto solve_function =
-      [&observed_scene, path](){
-        observed_scene.handleSolveToggleChange(path);
-      };
-
-    bool checked_state = *solve_state_ptr;
-
-    appendTo(menu_items,{
-      {"Solve", solve_function, checked_state}
-    });
-  }
-#endif
 
   return menu_items;
 }

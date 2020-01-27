@@ -81,19 +81,13 @@ struct ItemAdder {
     return child_path;
   }
 
-#if USE_SOLVE_CHILDREN
-  TreePath
-  addBool(
-    const string &label,
-    bool value
-  )
+  TreePath addBool(const string &label, bool value)
   {
     TreePath child_path = childPath(parent_path, n_children);
     tree_widget.createBoolItem(child_path, LabelProperties{label}, value);
     ++n_children;
     return child_path;
   }
-#endif
 };
 }
 
@@ -129,7 +123,6 @@ struct AddSimpleNumericItemFunction : AddNumericItemFunction {
 }
 
 
-#if USE_SOLVE_CHILDREN
 namespace {
 struct AddChannelItemFunction : AddNumericItemFunction {
   using ItemPaths = TreePaths::Channel;
@@ -151,7 +144,6 @@ struct AddChannelItemFunction : AddNumericItemFunction {
   }
 };
 }
-#endif
 
 
 template <
@@ -192,7 +184,6 @@ static TreePaths::XYZ
 }
 
 
-#if USE_SOLVE_CHILDREN
 static TreePaths::XYZChannels
 createXYZChannels(
   TreeWidget &tree_widget,
@@ -204,9 +195,6 @@ createXYZChannels(
 {
   ItemAdder adder{parent_path, tree_widget};
   AddChannelItemFunction add(adder);
-#if 0
-  return createXYZChildren2(add, value, digits_of_precision);
-#else
   TreePaths::XYZChannels xyz_paths;
   xyz_paths.path = add.adder.parent_path;
   add.digits_of_precision = digits_of_precision;
@@ -216,9 +204,7 @@ createXYZChannels(
   xyz_paths.z = add("z:", value.z, solve_flags.z);
 
   return xyz_paths;
-#endif
 }
-#endif
 
 
 static string markerLabel(const SceneState::Marker &marker_state)
@@ -1059,26 +1045,6 @@ createBodyItem(
   body_paths.path = body_path;
   body_paths.name = name_path;
 
-#if !USE_SOLVE_CHILDREN
-  body_paths.translation =
-    TreePaths::Translation(
-      createXYZChildren(
-        tree_widget,
-        translation_path,
-        body_state.transform.translation
-      )
-    );
-
-  body_paths.rotation =
-    TreePaths::Rotation(
-      createXYZChildren(
-        tree_widget,
-        rotation_path,
-        body_state.transform.rotation,
-        /*digits_of_precision*/1
-      )
-    );
-#else
   body_paths.translation =
     TreePaths::Translation(
       createXYZChannels(
@@ -1100,7 +1066,6 @@ createBodyItem(
         /*digits_of_precision*/1
       )
     );
-#endif
 
   size_t n_boxes = body_state.boxes.size();
   body_paths.boxes.resize(n_boxes);
@@ -1351,7 +1316,6 @@ updateNumericValue(
 }
 
 
-#if USE_SOLVE_CHILDREN
 static void
 updateNumericValue(
   TreeWidget &tree_widget,
@@ -1361,7 +1325,6 @@ updateNumericValue(
 {
   updateNumericValue(tree_widget, channel.path, value);
 }
-#endif
 
 
 template <typename XYZPaths>
@@ -1543,6 +1506,17 @@ void
 }
 
 
+void
+updateTreeBoolValue(
+  TreeWidget &tree_widget,
+  const TreePath &path,
+  bool new_state
+)
+{
+  tree_widget.setItemBoolValue(path, new_state);
+}
+
+
 namespace {
 struct NumericComponentVisitor {
   virtual bool visitComponent(NumericValue &value_to_set) = 0;
@@ -1574,13 +1548,11 @@ static bool isMatchingPath(const TreePath &path1, const TreePath &path2)
 }
 
 
-#if USE_SOLVE_CHILDREN
 static bool
 isMatchingPath(const TreePath &path, const TreePaths::Channel &channel)
 {
   return isMatchingPath(path, channel.path);
 }
-#endif
 
 
 template <typename Component>
@@ -2119,24 +2091,13 @@ static MatchConst_t<bool, XYZSolveFlags> *
   xyzSolveStatePtr(
     XYZSolveFlags &xyz_solve_flags,
     const TreePath &path,
-#if !USE_SOLVE_CHILDREN
-    const TreePaths::BasicXYZ<TreePath> &xyz_paths
-#else
     const TreePaths::BasicXYZ<TreePaths::Channel> &xyz_paths
-#endif
   )
 {
-#if !USE_SOLVE_CHILDREN
-  if (isMatchingPath(path, xyz_paths.x)) return &xyz_solve_flags.x;
-  if (isMatchingPath(path, xyz_paths.y)) return &xyz_solve_flags.y;
-  if (isMatchingPath(path, xyz_paths.z)) return &xyz_solve_flags.z;
-  return nullptr;
-#else
   if (startsWith(path, xyz_paths.x.path)) return &xyz_solve_flags.x;
   if (startsWith(path, xyz_paths.y.path)) return &xyz_solve_flags.y;
   if (startsWith(path, xyz_paths.z.path)) return &xyz_solve_flags.z;
   return nullptr;
-#endif
 }
 
 

@@ -1227,55 +1227,58 @@ ObservedScene::handleTreeStringValueChanged(
 }
 
 
-#if !USE_SOLVE_CHILDREN
-static void flip(bool &arg)
-{
-  arg = !arg;
-}
-#endif
-
-
-#if !USE_SOLVE_CHILDREN
-static void
-  flipSolveState(
-    SceneState &scene_state,
-    const TreePath &path,
-    const TreePaths &tree_paths
-  )
-{
-  bool *solve_state_ptr =
-    const_cast<bool *>(solveStatePtr(scene_state, path, tree_paths));
-
-  if (!solve_state_ptr) {
-    assert(false); // not implemented
-  }
-
-  flip(*solve_state_ptr);
-}
-#endif
-
-
-#if !USE_SOLVE_CHILDREN
-void ObservedScene::handleSolveToggleChange(const TreePath &path)
-{
-  flipSolveState(scene_state, path, tree_paths);
-  solveScene();
-  handleSceneStateChanged();
-}
-#endif
-
-
 void ObservedScene::handleTreeBoolValueChanged(const TreePath &path, bool value)
 {
-#if !USE_SOLVE_CHILDREN
-  cerr << "handleTreeBoolValueChanged: "
-    "path=" << path << ", value=" << value << "\n";
-#else
   bool value_was_changed =
     setSceneStateBoolValue(scene_state, path, value, tree_paths);
 
   if (value_was_changed) {
-    // Solve state could have changed, should resolve.
+    solveScene();
+    handleSceneStateChanged();
   }
-#endif
+}
+
+
+static void
+updateXYZSolveFlags(
+  TreeWidget &tree_widget,
+  const TreePaths::XYZChannels &xyz_paths,
+  const SceneState::XYZSolveFlags &xyz_solve_flags
+)
+{
+  updateTreeBoolValue(tree_widget, xyz_paths.x.solve_path, xyz_solve_flags.x);
+  updateTreeBoolValue(tree_widget, xyz_paths.y.solve_path, xyz_solve_flags.y);
+  updateTreeBoolValue(tree_widget, xyz_paths.z.solve_path, xyz_solve_flags.z);
+}
+
+
+void ObservedScene::setSolveFlags(const TreeItemDescription &item, bool state)
+{
+  using ItemType = TreeItemDescription::Type;
+  BodyIndex body_index = *item.maybe_body_index;
+
+  SceneState::TransformSolveFlags &transform_solve_flags =
+    scene_state.body(body_index).solve_flags;
+
+  const TreePaths::Body &body_paths = tree_paths.body(body_index);
+
+  if (item.type == ItemType::translation) {
+    setAll(transform_solve_flags.translation, state);
+
+    updateXYZSolveFlags(
+      tree_widget,
+      body_paths.translation,
+      transform_solve_flags.translation
+    );
+  }
+
+  if (item.type == ItemType::rotation) {
+    setAll(transform_solve_flags.rotation, state);
+
+    updateXYZSolveFlags(
+      tree_widget,
+      body_paths.rotation,
+      transform_solve_flags.rotation
+    );
+  }
 }

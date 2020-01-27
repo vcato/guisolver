@@ -75,6 +75,13 @@ struct FakeTreeWidget : TreeWidget {
     item(path).maybe_numeric_value = value;
   }
 
+  void setItemBoolValue(const TreePath &path, bool value) override
+  {
+    item(path).value_string = boolValueText(value);
+  }
+
+  static FakeTreeItem::ValueString boolValueText(bool);
+
 private:
   Item &
     createItem(
@@ -199,7 +206,6 @@ private:
     return maybe_selected_item;
   }
 
-private:
   static std::string voidValueText() { return ""; }
 
   static std::string
@@ -208,8 +214,6 @@ private:
       NumericValue minimum_value,
       NumericValue maximum_value
     );
-
-  static std::string boolValueText(bool);
 
   static LabelText
     enumerationValueText(

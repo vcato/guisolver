@@ -8,8 +8,6 @@
 #include "optional.hpp"
 #include "matchconst.hpp"
 
-#define USE_SOLVE_CHILDREN 0
-
 
 struct TreePaths {
   struct Marker;
@@ -51,7 +49,6 @@ struct TreePaths {
 
   using XYZ = BasicXYZ<TreePath>;
 
-#if USE_SOLVE_CHILDREN
   struct Channel {
     TreePath path;
     TreePath solve_path;
@@ -68,12 +65,9 @@ struct TreePaths {
       return isEqual(*this, arg);
     }
   };
-#endif
 
 
-#if USE_SOLVE_CHILDREN
   using XYZChannels = BasicXYZ<Channel>;
-#endif
 
   struct Position : XYZ {
     Position() {}
@@ -99,19 +93,6 @@ struct TreePaths {
     }
   };
 
-#if !USE_SOLVE_CHILDREN
-  struct Translation : XYZ
-  {
-    Translation() {}
-    explicit Translation(const XYZ &xyz_arg) : XYZ(xyz_arg) {}
-  };
-
-  struct Rotation : XYZ
-  {
-    Rotation() {}
-    explicit Rotation(const XYZ &xyz_arg) : XYZ(xyz_arg) {}
-  };
-#else
   struct Translation : XYZChannels
   {
     Translation() {}
@@ -123,7 +104,6 @@ struct TreePaths {
     Rotation() {}
     explicit Rotation(const XYZChannels &xyz_arg) : XYZChannels(xyz_arg) {}
   };
-#endif
 
   struct Scale : XYZ
   {

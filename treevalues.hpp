@@ -20,6 +20,13 @@ extern void
     const SceneState &state
   );
 
+extern void
+  updateTreeBoolValue(
+    TreeWidget &tree_widget,
+    const TreePath &path,
+    bool new_state
+  );
+
 extern Optional<MarkerIndex>
   markerIndexFromEnumerationValue(int enumeration_value);
 
