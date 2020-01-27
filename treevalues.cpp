@@ -139,14 +139,14 @@ struct AddChannelItemFunction : AddNumericItemFunction {
   {
   }
 
-  ItemPaths operator()(const string &label, NumericValue value)
+  ItemPaths operator()(const string &label, NumericValue value, bool state)
   {
     TreePath path =
       adder.addNumeric(label, value, minimum_value, digits_of_precision);
 
     ItemAdder child_adder{path, adder.tree_widget};
 
-    TreePath solve_path = child_adder.addBool("solve", false);
+    TreePath solve_path = child_adder.addBool("solve", state);
     return TreePaths::Channel{ path, solve_path };
   }
 };
@@ -198,12 +198,25 @@ createXYZChannels(
   TreeWidget &tree_widget,
   const TreePath &parent_path,
   const SceneState::XYZ &value,
+  const SceneState::XYZSolveFlags &solve_flags,
   int digits_of_precision
 )
 {
   ItemAdder adder{parent_path, tree_widget};
   AddChannelItemFunction add(adder);
+#if 0
   return createXYZChildren2(add, value, digits_of_precision);
+#else
+  TreePaths::XYZChannels xyz_paths;
+  xyz_paths.path = add.adder.parent_path;
+  add.digits_of_precision = digits_of_precision;
+
+  xyz_paths.x = add("x:", value.x, solve_flags.x);
+  xyz_paths.y = add("y:", value.y, solve_flags.y);
+  xyz_paths.z = add("z:", value.z, solve_flags.z);
+
+  return xyz_paths;
+#endif
 }
 #endif
 
@@ -1072,6 +1085,7 @@ createBodyItem(
         tree_widget,
         translation_path,
         body_state.transform.translation,
+        body_state.solve_flags.translation,
         defaultDigitsOfPrecision()
       )
     );
@@ -1082,6 +1096,7 @@ createBodyItem(
         tree_widget,
         rotation_path,
         body_state.transform.rotation,
+        body_state.solve_flags.rotation,
         /*digits_of_precision*/1
       )
     );
@@ -1553,20 +1568,17 @@ struct SetNumericComponentVisitor : NumericComponentVisitor {
 }
 
 
+static bool isMatchingPath(const TreePath &path1, const TreePath &path2)
+{
+  return path1 == path2;
+}
+
+
 #if USE_SOLVE_CHILDREN
 static bool
-visitMatchingComponent(
-  NumericValue &value_to_set,
-  const TreePath &path,
-  const TreePaths::Channel &path_to_check,
-  NumericComponentVisitor &visitor
-)
+isMatchingPath(const TreePath &path, const TreePaths::Channel &channel)
 {
-  if (path == path_to_check.path) {
-    return visitor.visitComponent(value_to_set);
-  }
-
-  return false;
+  return isMatchingPath(path, channel.path);
 }
 #endif
 
@@ -1580,9 +1592,9 @@ static bool
     NumericComponentVisitor &visitor
   )
 {
-  if (path == xyz_path.x) return visitor.visitComponent(v.x);
-  if (path == xyz_path.y) return visitor.visitComponent(v.y);
-  if (path == xyz_path.z) return visitor.visitComponent(v.z);
+  if (isMatchingPath(path, xyz_path.x)) return visitor.visitComponent(v.x);
+  if (isMatchingPath(path, xyz_path.y)) return visitor.visitComponent(v.y);
+  if (isMatchingPath(path, xyz_path.z)) return visitor.visitComponent(v.z);
   assert(false); // not implemented
   return false;
 }
@@ -1783,26 +1795,6 @@ struct SetStringValueVisitor : ScenePathVisitor {
     }
 
     return true;
-  }
-};
-}
-
-
-namespace {
-struct SetBoolValueVisitor : ScenePathVisitor {
-  SceneState &scene_state;
-  const bool value;
-
-  SetBoolValueVisitor(
-    SceneState &scene_state,
-    const TreePaths &tree_paths,
-    const bool value,
-    const TreePath &path
-  )
-  : ScenePathVisitor(tree_paths, path),
-    scene_state(scene_state),
-    value(value)
-  {
   }
 };
 }
@@ -2042,8 +2034,12 @@ setSceneStateBoolValue(
   const TreePaths &tree_paths
 )
 {
-  SetBoolValueVisitor visitor{scene_state, tree_paths, value, path};
-  return forMatchingScenePath(path, visitor, tree_paths);
+  if (bool *solve_state_ptr = solveStatePtr(scene_state, path, tree_paths)) {
+    *solve_state_ptr = value;
+    return true;
+  }
+
+  return false;
 }
 
 
@@ -2118,33 +2114,29 @@ createBodyBranchItemsInTree(
 
 
 
-static bool isMatchingPath(const TreePath &path1, const TreePath &path2)
-{
-  return path1 == path2;
-}
-
-
-#if USE_SOLVE_CHILDREN
-static bool
-isMatchingPath(const TreePath &path, const TreePaths::Channel &channel)
-{
-  return isMatchingPath(path, channel.path);
-}
-#endif
-
-
-template <typename XYZSolveFlags, typename Component>
+template <typename XYZSolveFlags>
 static MatchConst_t<bool, XYZSolveFlags> *
   xyzSolveStatePtr(
     XYZSolveFlags &xyz_solve_flags,
     const TreePath &path,
-    const TreePaths::BasicXYZ<Component> &xyz_paths
+#if !USE_SOLVE_CHILDREN
+    const TreePaths::BasicXYZ<TreePath> &xyz_paths
+#else
+    const TreePaths::BasicXYZ<TreePaths::Channel> &xyz_paths
+#endif
   )
 {
+#if !USE_SOLVE_CHILDREN
   if (isMatchingPath(path, xyz_paths.x)) return &xyz_solve_flags.x;
   if (isMatchingPath(path, xyz_paths.y)) return &xyz_solve_flags.y;
   if (isMatchingPath(path, xyz_paths.z)) return &xyz_solve_flags.z;
   return nullptr;
+#else
+  if (startsWith(path, xyz_paths.x.path)) return &xyz_solve_flags.x;
+  if (startsWith(path, xyz_paths.y.path)) return &xyz_solve_flags.y;
+  if (startsWith(path, xyz_paths.z.path)) return &xyz_solve_flags.z;
+  return nullptr;
+#endif
 }
 
 

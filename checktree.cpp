@@ -8,7 +8,8 @@ using BoxPaths = TreePaths::Box;
 using LinePaths = TreePaths::Line;
 
 
-static void checkEqual(size_t a,size_t b)
+template <typename T>
+static void checkValueEqual(const T &a, const T &b)
 {
   if (a != b) {
     cerr << "a: " << a << "\n";
@@ -18,13 +19,15 @@ static void checkEqual(size_t a,size_t b)
 }
 
 
+static void checkEqual(int a,int b)
+{
+  checkValueEqual(a, b);
+}
+
+
 static void checkEqual(const string &a,const string &b)
 {
-  if (a != b) {
-    cerr << "a: " << a << "\n";
-    cerr << "b: " << b << "\n";
-    assert(false);
-  }
+  checkValueEqual(a, b);
 }
 
 
@@ -57,11 +60,7 @@ static void checkEqual(const Optional<T> &a, const Optional<T> &b)
 template <typename T>
 static void checkEqual(const vector<T> &a, const vector<T> &b)
 {
-  if (a.size() != b.size()) {
-    cerr << "a.size() = " << a.size() << "\n";
-    cerr << "b.size() = " << b.size() << "\n";
-    assert(false);
-  }
+  checkEqual(a.size(), b.size());
 
   for (auto index : indicesOf(a)) {
     checkEqual(a[index], b[index]);

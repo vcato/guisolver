@@ -149,3 +149,5 @@ by opening the item and choosing from an option menu.
     * minimum:
     * maximum:
     * precision
+---
+When using "Solve All On/Off", the toggles in the tree aren't changed.

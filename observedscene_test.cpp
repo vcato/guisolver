@@ -426,20 +426,52 @@ static void testChangingSolveFlag()
   BodyIndex body_index = initial_state.createBody();
   ObservedScene &observed_scene = tester.observed_scene;
   TreePaths &tree_paths = observed_scene.tree_paths;
+  bool old_solve = true;
+  initial_state.body(body_index).solve_flags.translation.x = old_solve;
   observed_scene.replaceSceneStateWith(initial_state);
+
   SceneState &scene_state = observed_scene.scene_state;
-  bool old_solve = scene_state.body(body_index).solve_flags.translation.x;
 #if !USE_SOLVE_CHILDREN
   observed_scene.handleSolveToggleChange(
     tree_paths.body(body_index).translation.x
   );
 #else
+  FakeTreeItem::ValueString solve_value_string =
+    tester.tree_widget.item(
+      tree_paths.body(body_index).translation.x.solve_path
+    ).value_string;
+
+  cerr << "solve_value_string: " << solve_value_string << "\n";
+  assert(solve_value_string == "value=1");
+
   observed_scene.handleTreeBoolValueChanged(
     tree_paths.body(body_index).translation.x.solve_path, !old_solve
   );
 #endif
   bool new_solve = scene_state.body(body_index).solve_flags.translation.x;
   assert(old_solve != new_solve);
+}
+
+
+static void testChangingSolvedValueInTree()
+{
+  SceneState initial_state;
+  BodyIndex body_index = initial_state.createBody();
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+  observed_scene.replaceSceneStateWith(initial_state);
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  const TreePaths::Body &body_paths = tree_paths.body(body_index);
+
+#if !USE_SOLVE_CHILDREN
+  observed_scene.handleTreeNumericValueChanged(
+    body_paths.translation.x, 2
+  );
+#else
+  observed_scene.handleTreeNumericValueChanged(
+    body_paths.translation.x.path, 2
+  );
+#endif
 }
 
 
@@ -460,6 +492,7 @@ int main()
   testChangingMarkerName();
   testDuplicatingAMarkerWithDistanceError();
   testChangingSolveFlag();
+  testChangingSolvedValueInTree();
 #if ADD_TEST
   testUsingAVariable();
 #endif
