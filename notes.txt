@@ -132,13 +132,15 @@ It seems like we may want to have it where we change the type of a channel
 by opening the item and choosing from an option menu.
 * translation: []
   * x: 2.5
-    * type: fixed
+    * type: constant
+    * solve: false
     * minimum:
     * maximum:
     * precision
 * translation: []
   * x: 2.5
-    * type: solved
+    * type: constant
+    * solve: true
     * minimum:
     * maximum:
     * precision
@@ -150,4 +152,42 @@ by opening the item and choosing from an option menu.
     * maximum:
     * precision
 ---
-When using "Solve All On/Off", the toggles in the tree aren't changed.
+BodyChannels
+body_id tx_channel_id ty_channel_id tz_channel_id rx_channel_id ry_channel_id rz_channel_id
+
+ChannelExpressions
+channel_id expression
+
+In some ways, it seems like it would be nice to have generic channels.  When
+we create a body, we would allocate channels for the body transform components.
+We could then iterate through all the channels. When we use expressions, we
+could reference channels.  So if something like body.translation.x was used in
+an expression, we would just be mapping that to the appropriate channel.
+When we build the error evaluator, the channels will become nodes in a graph.
+We'd need to make sure to deallocate channels when we remove bodies.
+
+Another approach is to have the transform components be channels.  With this
+approach, we no longer have a generic way to refer to a channel. We'd have
+to have different kinds of channels (BodyTranslationXChannelRef,
+BodyTranslationYChannelRef, etc.)
+
+Another approach would be to have channels but on a per-body basis. i.e.
+each body has a set of channels associated with it.  This would give us
+a way to to refer to any channel by a (body_id, channel_number) pair.
+In our particular case, we could have hard-coded channel numbers since we
+know exactly which things in a body have channels.  This is basically
+the same as having an enum for the different channels.
+---
+Working on observedscene_test.cpp: ADD_TEST
+
+Changing the expression of a tree item is handled when we evaluate input.
+MainWindowController::Impl::evaluateInput()
+
+QtSpinBox::setValue() ignores the value if we have an expression, but I
+don't think that's right.  When the user enters an expression, we'll be
+evaluating the expression, and it seems to make sense that we'll change
+the spin box value to whatever the expression evaluates to.
+
+Need to refactor handleTreeExpressionChanged().  It should first find
+the channel for the path, then it should set the expression for the channel
+then it should set the tree item value for the channel.

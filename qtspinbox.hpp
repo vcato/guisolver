@@ -46,6 +46,7 @@ class QtSpinBox
     double _maximum = 99.99;
     int _decimals = 2;
     double _value = 0;
+    bool _is_being_edited = false;
     std::string _input;
 
     void mousePressEvent(QMouseEvent *) override;

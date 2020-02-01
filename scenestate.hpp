@@ -8,9 +8,13 @@
 #include "variableindex.hpp"
 #include "optional.hpp"
 #include "indicesof.hpp"
+#include "xyzcomponent.hpp"
+#include "variablename.hpp"
+#include "matchconst.hpp"
 
 using BoxIndex = int;
 using LineIndex = int;
+using Expression = std::string;
 
 
 class SceneState {
@@ -27,18 +31,48 @@ class SceneState {
     using Variables = vector<Variable>;
     using String = std::string;
     using Position = XYZ;
-    using Expression = String;
+    using Expression = ::Expression;
 
     struct XYZ {
       float x = 0;
       float y = 0;
       float z = 0;
+
+      template <typename XYZ>
+      static MatchConst_t<float, XYZ> &
+      component(XYZ &self, XYZComponent component)
+      {
+        switch (component) {
+          case XYZComponent::x: return self.x;
+          case XYZComponent::y: return self.y;
+          case XYZComponent::z: return self.z;
+        }
+
+        assert(false);
+        return self.x;
+      }
+
+      float &component(XYZComponent component)
+      {
+        return this->component(*this, component);
+      }
+
+      const float &component(XYZComponent component) const
+      {
+        return this->component(*this, component);
+      }
     };
 
     struct XYZExpressions {
       Expression x;
       Expression y;
       Expression z;
+    };
+
+    struct XYZSolveFlags {
+      bool x = false;
+      bool y = false;
+      bool z = false;
     };
 
     struct Marker {
@@ -52,12 +86,6 @@ class SceneState {
     struct Transform {
       XYZ translation;
       XYZ rotation;
-    };
-
-    struct XYZSolveFlags {
-      bool x = false;
-      bool y = false;
-      bool z = false;
     };
 
     struct TransformSolveFlags {
@@ -118,7 +146,7 @@ class SceneState {
     };
 
     struct Variable {
-      using Name = std::string;
+      using Name = VariableName;
       Name name;
       float value = 0;
     };
@@ -385,14 +413,33 @@ extern Optional<MarkerIndex>
 extern Optional<VariableIndex>
   findVariableIndex(const SceneState &, const SceneState::Variable::Name &);
 
+
 inline TranslationState translationStateOf(const TransformState &arg)
 {
   return arg.translation;
 }
 
+
 inline RotationState rotationStateOf(const TransformState &arg)
 {
   return arg.rotation;
+}
+
+
+inline SceneState::Expression &
+xyzExpressionsComponent(
+  SceneState::XYZExpressions &xyz_expressions,
+  XYZComponent xyz_component
+)
+{
+  switch (xyz_component) {
+    case XYZComponent::x: return xyz_expressions.x;
+    case XYZComponent::y: return xyz_expressions.y;
+    case XYZComponent::z: return xyz_expressions.z;
+  }
+
+  assert(false);
+  return xyz_expressions.x;
 }
 
 

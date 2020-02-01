@@ -8,6 +8,8 @@
 #include "scenestatetransform.hpp"
 #include "removeindexfrom.hpp"
 #include "vectorio.hpp"
+#include "xyzcomponent.hpp"
+#include "evaluateexpression.hpp"
 
 using TransformHandle = Scene::TransformHandle;
 using GeometryHandle = Scene::GeometryHandle;
@@ -242,6 +244,7 @@ treeItemForSceneObject(
 
 
 struct ObservedScene::Impl {
+  static void evaluateExpressions(ObservedScene &);
 };
 
 
@@ -1165,6 +1168,308 @@ void ObservedScene::selectVariable(VariableIndex variable_index)
 }
 
 
+namespace {
+struct BodyTranslationChannel;
+struct BodyRotationChannel;
+}
+
+
+namespace {
+struct Channel {
+  struct Visitor {
+    virtual void visit(const BodyTranslationChannel &) const = 0;
+    virtual void visit(const BodyRotationChannel &) const = 0;
+  };
+
+  virtual void accept(const Visitor &) const = 0;
+};
+}
+
+
+namespace {
+struct BodyXYZComponentChannel : Channel {
+  BodyIndex body_index;
+  XYZComponent component;
+
+  BodyXYZComponentChannel(BodyIndex body_index, XYZComponent component)
+  : body_index(body_index),
+    component(component)
+  {
+  }
+};
+}
+
+
+namespace {
+struct BodyTranslationChannel : BodyXYZComponentChannel {
+  using BodyXYZComponentChannel::BodyXYZComponentChannel;
+
+  virtual void accept(const Visitor &visitor) const
+  {
+    visitor.visit(*this);
+  }
+};
+}
+
+
+namespace {
+struct BodyRotationChannel : BodyXYZComponentChannel {
+  using BodyXYZComponentChannel::BodyXYZComponentChannel;
+
+  virtual void accept(const Visitor &visitor) const
+  {
+    visitor.visit(*this);
+  }
+};
+}
+
+
+#if 0
+static auto
+xyzExpressionsComponent(auto &xyz_expressions, ComponentIndex component_index)
+{
+  assert(false);
+  // I think we already have something like this.
+}
+#endif
+
+
+namespace {
+struct SceneStateChannel {
+  SceneState &scene_state;
+  const Channel &channel;
+
+  SceneState::Expression *expressionPtr() const
+  {
+    SceneState::Expression *expression_ptr;
+
+    struct Visitor : Channel::Visitor {
+      SceneState::Expression *&expression_ptr;
+      SceneState &scene_state;
+
+      Visitor(SceneState::Expression *&expression_ptr, SceneState &scene_state)
+      : expression_ptr(expression_ptr),
+        scene_state(scene_state)
+      {
+      }
+
+      virtual void visit(const BodyTranslationChannel &channel) const
+      {
+        SceneState::XYZExpressions &translation_expressions =
+          scene_state
+          .body(channel.body_index)
+          .expressions
+          .translation;
+
+        expression_ptr =
+          &xyzExpressionsComponent(translation_expressions, channel.component);
+      }
+
+      virtual void visit(const BodyRotationChannel &channel) const
+      {
+        expression_ptr =
+          &xyzExpressionsComponent(
+            scene_state
+            .body(channel.body_index)
+            .expressions
+            .rotation,
+            channel.component
+          );
+      }
+    };
+
+    channel.accept(Visitor{expression_ptr, scene_state});
+    assert(expression_ptr);
+
+    if (expression_ptr->empty()) {
+      return nullptr;
+    }
+
+    return expression_ptr;
+  }
+
+};
+}
+
+
+static void
+setChannelValue(
+  const Channel &channel,
+  NumericValue value,
+  SceneState &scene_state
+)
+{
+  struct Visitor : Channel::Visitor {
+    const NumericValue value;
+    SceneState &scene_state;
+
+    Visitor(NumericValue value, SceneState &scene_state)
+    : value(value),
+      scene_state(scene_state)
+    {
+    }
+
+    virtual void
+    visit(const BodyTranslationChannel &channel) const
+    {
+      scene_state
+      .body(channel.body_index)
+      .transform
+      .translation
+      .component(channel.component) = value;
+    }
+
+    virtual void visit(const BodyRotationChannel &) const
+    {
+      assert(false); // not implemented
+    }
+  };
+
+  channel.accept(Visitor{value, scene_state});
+}
+
+
+static NumericValue
+channelValue(const Channel &channel, const SceneState &scene_state)
+{
+  struct Visitor : Channel::Visitor {
+    const NumericValue *&value_ptr;
+    const SceneState &scene_state;
+
+    Visitor(const NumericValue *&value_ptr, const SceneState &scene_state)
+    : value_ptr(value_ptr),
+      scene_state(scene_state)
+    {
+    }
+
+    virtual void
+    visit(const BodyTranslationChannel &channel) const
+    {
+      value_ptr =
+        &scene_state
+        .body(channel.body_index)
+        .transform
+        .translation
+        .component(channel.component);
+    }
+
+    virtual void visit(const BodyRotationChannel &) const
+    {
+      assert(false); // not implemented
+    }
+  };
+
+  const NumericValue *value_ptr = nullptr;
+  channel.accept(Visitor{value_ptr, scene_state});
+  assert(value_ptr);
+  return *value_ptr;
+}
+
+
+static void
+evaluateExpression(
+  SceneStateChannel channel, EvaluationEnvironment &environment
+)
+{
+  Expression *expression_ptr = channel.expressionPtr();
+
+  assert(expression_ptr);
+
+  Optional<NumericValue> maybe_result =
+    evaluateExpression(*expression_ptr, /*error_stream*/cerr, environment);
+
+  if (!maybe_result) {
+    assert(false); // not implemented
+  }
+  else {
+    setChannelValue(channel.channel, *maybe_result, channel.scene_state);
+  }
+}
+
+
+static void
+updateTreeChannelValue(
+  TreeWidget &tree_widget,
+  const TreePaths &tree_paths,
+  const Channel &channel,
+  const SceneState &scene_state
+)
+{
+  struct Visitor : Channel::Visitor {
+    const TreePaths &tree_paths;
+    const TreePath *&tree_path_ptr;
+
+    Visitor(const TreePaths &tree_paths, const TreePath *&tree_path_ptr)
+    : tree_paths(tree_paths), tree_path_ptr(tree_path_ptr)
+    {
+    }
+
+    virtual void visit(const BodyTranslationChannel &channel) const
+    {
+      tree_path_ptr = &
+        tree_paths.body(channel.body_index)
+        .translation
+        .component(channel.component).path;
+    }
+
+    virtual void visit(const BodyRotationChannel &) const
+    {
+      assert(false); // not implemented
+    }
+  };
+
+  const TreePath *tree_path_ptr = nullptr;
+  channel.accept(Visitor{tree_paths, tree_path_ptr});
+  assert(tree_path_ptr);
+  NumericValue value = channelValue(channel, scene_state);
+  tree_widget.setItemNumericValue(*tree_path_ptr, value);
+}
+
+
+template <typename F>
+static void
+forEachChannel(const SceneState &scene_state, const F &f)
+{
+  BodyIndex n_bodies = scene_state.bodies().size();
+
+  for (BodyIndex body_index = 0; body_index != n_bodies; ++body_index) {
+    f(BodyTranslationChannel{body_index, XYZComponent::x});
+    f(BodyTranslationChannel{body_index, XYZComponent::y});
+    f(BodyTranslationChannel{body_index, XYZComponent::z});
+    f(BodyRotationChannel{body_index, XYZComponent::x});
+    f(BodyRotationChannel{body_index, XYZComponent::y});
+    f(BodyRotationChannel{body_index, XYZComponent::z});
+  }
+}
+
+
+void
+ObservedScene::Impl::evaluateExpressions(ObservedScene &observed_scene)
+{
+  SceneState &scene_state = observed_scene.scene_state;
+  TreeWidget &tree_widget = observed_scene.tree_widget;
+  const TreePaths &tree_paths = observed_scene.tree_paths;
+  EvaluationEnvironment environment;
+
+  for (VariableIndex variable_index : indicesOf(scene_state.variables)) {
+    const SceneState::Variable &variable =
+      scene_state.variables[variable_index];
+
+    environment[variable.name] = variable.value;
+  }
+
+  forEachChannel(scene_state, [&](const Channel& channel){
+    SceneStateChannel scene_state_channel = { scene_state, channel };
+    Expression *expression_ptr = scene_state_channel.expressionPtr();
+
+    if (expression_ptr) {
+      evaluateExpression(scene_state_channel, environment);
+      updateTreeChannelValue(tree_widget, tree_paths, channel, scene_state);
+    }
+  });
+}
+
+
 void
 ObservedScene::handleTreeNumericValueChanged(
   const TreePath &path,
@@ -1179,6 +1484,8 @@ ObservedScene::handleTreeNumericValueChanged(
     setSceneStateNumericValue(state, path, value, tree_paths);
 
   if (value_was_changed) {
+    Impl::evaluateExpressions(*this);
+
     {
       bool *solve_state_ptr = ::solveStatePtr(state, path, tree_paths);
       Optional<bool> maybe_old_state;

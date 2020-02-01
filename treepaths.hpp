@@ -7,6 +7,7 @@
 #include "bodyindex.hpp"
 #include "optional.hpp"
 #include "matchconst.hpp"
+#include "xyzcomponent.hpp"
 
 
 struct TreePaths {
@@ -31,6 +32,18 @@ struct TreePaths {
     Component x;
     Component y;
     Component z;
+
+    const Component &component(XYZComponent component) const
+    {
+      switch (component) {
+        case XYZComponent::x: return x;
+        case XYZComponent::y: return y;
+        case XYZComponent::z: return z;
+      }
+
+      assert(false);
+      return x;
+    }
 
     template <typename F>
     static void forEachMember(const F &f)

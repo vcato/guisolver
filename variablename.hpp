@@ -1,0 +1,1 @@
+using VariableName = std::string;

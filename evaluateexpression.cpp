@@ -10,14 +10,29 @@ using std::string;
 using std::cerr;
 
 
+template <typename Key, typename Value>
+static const Value* getPtrFrom(const std::map<Key, Value> &map, const Key &key)
+{
+  auto iter = map.find(key);
+
+  if (iter == map.end()) {
+    return nullptr;
+  }
+
+  return &iter->second;
+}
+
+
 namespace {
 struct Evaluator : EvaluatorInterface {
   const std::string &expression;
+  EvaluationEnvironment &environment;
   using Float = double;
   vector<Float> stack;
 
-  Evaluator(const std::string &expression)
-  : expression(expression)
+  Evaluator(const std::string &expression, EvaluationEnvironment &environment)
+  : expression(expression),
+    environment(environment)
   {
   }
 
@@ -40,8 +55,21 @@ struct Evaluator : EvaluatorInterface {
 
   virtual bool evaluateVariable(const StringRange &identifier_range)
   {
-    cerr << "Unknown variable: " << rangeText(identifier_range) << "\n";
-    // No scope
+    VariableName variable_name = rangeText(identifier_range);
+
+    if (!environment.empty()) {
+      const NumericValue *variable_ptr = getPtrFrom(environment, variable_name);
+
+      if (variable_ptr) {
+        push(*variable_ptr);
+        return true;
+      }
+      else {
+        assert(false);
+      }
+    }
+
+    cerr << "Unknown variable: " << variable_name << "\n";
     return false;
   }
 
@@ -125,12 +153,16 @@ struct Evaluator : EvaluatorInterface {
 }
 
 
-Optional<float>
-evaluateExpression(const std::string &expression, ostream &error_stream)
+Optional<NumericValue>
+evaluateExpression(
+  const std::string &expression,
+  std::ostream &error_stream,
+  EvaluationEnvironment &environment
+)
 {
   StringIndex index = 0;
   StringParser string_parser(expression, index);
-  Evaluator evaluator(expression);
+  Evaluator evaluator(expression, environment);
 
   ExpressionParser parser(string_parser, evaluator, error_stream);
 
@@ -139,4 +171,12 @@ evaluateExpression(const std::string &expression, ostream &error_stream)
   }
 
   return evaluator.stack.back();
+}
+
+
+Optional<NumericValue>
+evaluateExpression(const std::string &expression, ostream &error_stream)
+{
+  EvaluationEnvironment environment;
+  return evaluateExpression(expression, error_stream, environment);
 }

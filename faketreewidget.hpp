@@ -61,7 +61,7 @@ struct FakeTreeWidget : TreeWidget {
       NumericValue /*value*/,
       NumericValue /*minimum_value*/,
       NumericValue /*maximum_value*/
-    )
+    ) override
   {
     assert(false); // not implemented
   }

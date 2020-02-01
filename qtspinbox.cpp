@@ -97,6 +97,7 @@ void QtSpinBox::mousePressEvent(QMouseEvent *event_ptr)
 
 void QtSpinBox::focusInEvent(QFocusEvent *event_ptr)
 {
+  _is_being_edited = true;
   // When we get focus, restore the actual text, since this was replaced by
   // the evaluated text.
   lineEdit()->setText(QString::fromStdString(_input));
@@ -164,13 +165,13 @@ void QtSpinBox::setValue(Value arg)
     // If ignore_signals is true, then we are already in the middle of
     // setting the value, so somehow a signal got back to the caller.
 
-  if (_inputIsExpression()) {
-    // If the input is an expression, then it is effectively read-only.
+  _value = arg;
+
+  if (_is_being_edited) {
     return;
   }
 
   _ignore_signals = true;
-  _value = arg;
   _input = valueAsString(arg, _decimals);
   _updateLineEdit();
   _ignore_signals = false;
@@ -354,6 +355,7 @@ void QtSpinBox::stepBy(int arg)
 
 void QtSpinBox::editingFinishedSlot()
 {
+  _is_being_edited = false;
   _setLineEditTextToValue();
 
   if (_inputIsExpression()) {

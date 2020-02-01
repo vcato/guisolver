@@ -159,6 +159,7 @@ struct MainWindowController::Impl {
     MainWindowController &controller, const string &text, const TreePath &path
   )
   {
+    ObservedScene &observed_scene = observedScene(controller);
     const string &arg = text;
 
     if (text.length() == 0) {
@@ -170,21 +171,9 @@ struct MainWindowController::Impl {
     }
 
     string expr = arg.substr(1);
-    Optional<NumericValue> maybe_result = evaluateExpression(expr, cerr);
-
-    if (maybe_result) {
-      handleTreeExpressionChanged(controller, path, expr);
-    }
-
-    return maybe_result;
+    observed_scene.handleTreeExpressionChanged(path, expr);
+    return {};
   }
-
-  static void
-    handleTreeExpressionChanged(
-      MainWindowController &controller,
-      const TreePath &path,
-      const std::string &
-    );
 
   static TreeWidget::MenuItems
     contextMenuItemsForPath(
@@ -333,18 +322,6 @@ void
   updateSceneStateFromSceneObjects(state, scene, scene_handles);
   solveScene(state);
   observed_scene.handleSceneStateChanged();
-}
-
-
-void
-MainWindowController::Impl::handleTreeExpressionChanged(
-  MainWindowController &controller,
-  const TreePath &path,
-  const std::string &expression
-)
-{
-  ObservedScene &observed_scene = observedScene(controller);
-  observed_scene.handleTreeExpressionChanged(path, expression);
 }
 
 

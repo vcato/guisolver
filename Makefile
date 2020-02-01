@@ -51,8 +51,9 @@ SCENEERROR=sceneerror.o $(SCENESTATE)
 SCENEOBJECTS=sceneobjects.o maketransform.o settransform.o $(SCENESTATE)
 OPTIMIZE=optimize.o
 
-OBSERVEDSCENE=observedscene.o treevalues.o scenestatetransform.o \
-  $(SCENESTATETAGGEDVALUE) $(SCENEOBJECTS)
+OBSERVEDSCENE=observedscene.o \
+  treevalues.o scenestatetransform.o \
+  $(EVALUATEEXPRESSION) $(SCENESTATETAGGEDVALUE) $(SCENEOBJECTS)
 
 EVALUATEEXPRESSION=evaluateexpression.o expressionparser.o parsedouble.o
 

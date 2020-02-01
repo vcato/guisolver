@@ -6,18 +6,31 @@ using std::ostringstream;
 using std::string;
 
 
+namespace {
+struct Tester {
+  ostringstream error_stream;
+  EvaluationEnvironment environment;
+
+  Optional<float> evaluate(const string &expression)
+  {
+    return evaluateExpression(expression, error_stream, environment);
+  }
+};
+}
+
+
 static void testValid(const string &expression, float expected_value)
 {
-  ostringstream error_stream;
-  Optional<float> arg = evaluateExpression(expression, error_stream);
+  Tester tester;
+  Optional<float> arg = tester.evaluate(expression);
   assert(arg == expected_value);
 }
 
 
 static void testInvalid(const string &expression)
 {
-  ostringstream error_stream;
-  Optional<float> arg = evaluateExpression(expression, error_stream);
+  Tester tester;
+  Optional<float> arg = tester.evaluate(expression);
   assert(!arg);
 }
 
@@ -25,6 +38,16 @@ static void testInvalid(const string &expression)
 static void testEmptyString()
 {
   testInvalid("");
+}
+
+
+static void testVariable()
+{
+  Tester tester;
+  EvaluationEnvironment &environment = tester.environment;
+  environment["x"] = 1.5;
+  Optional<float> arg = tester.evaluate("x");
+  assert(arg == 1.5);
 }
 
 
@@ -43,4 +66,5 @@ int main()
   testInvalid("(2)(2)");
   testInvalid("(2)(x=2)");
   testEmptyString();
+  testVariable();
 }

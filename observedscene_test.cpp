@@ -341,28 +341,39 @@ static void testAddingAVariable()
 }
 
 
-#if ADD_TEST
 static void testUsingAVariable()
 {
   Tester tester;
   ObservedScene &observed_scene = tester.observed_scene;
   SceneState &scene_state = observed_scene.scene_state;
-  VariableIndex var_index = observed_scene.addVariable();
-  VariableName var_name = scene_state.variables[var_index].name;
-  observed_scene.addBody();
+  VariableIndex variable_index = observed_scene.addVariable();
+  VariableName var_name = scene_state.variables[variable_index].name;
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  BodyIndex body_index = observed_scene.addBody();
 
-  setSceneStateExpression(
-    tree_paths.body(body_index).transform.translation.x, var_name
+  TreePath variable_value_path =
+    tree_paths.variables[variable_index].value;
+
+  const TreePath tx_path = tree_paths.body(body_index).translation.x.path;
+  observed_scene.handleTreeNumericValueChanged(variable_value_path, 4);
+#if ADD_TEST
+  assert(tester.tree_widget.item(tx_path).maybe_numeric_value == 4);
+#endif
+
+  observed_scene.handleTreeExpressionChanged(
+    tree_paths.body(body_index).translation.x.path,
+    /*expr*/var_name
   );
 
-  setVariableValue(var_index, /*new_value*/5, scene_state);
+  assert(scene_state.body(body_index).expressions.translation.x == var_name);
 
-  NumericValue tx =
-    displayedValue(tree_paths.body(body_index).transform.translation.x);
+  observed_scene.handleTreeNumericValueChanged(variable_value_path, 5);
 
-  assert(tx == 5);
+  NumericValue tx_value =
+    *tester.tree_widget.item(tx_path).maybe_numeric_value;
+
+  assert(tx_value == 5);
 }
-#endif
 
 
 static void testChangingMarkerName()
@@ -531,7 +542,5 @@ int main()
   testChangingSolveFlag();
   testChangingSolvedValueInTree();
   testSetSolveFlags();
-#if ADD_TEST
   testUsingAVariable();
-#endif
 }
