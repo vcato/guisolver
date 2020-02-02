@@ -125,12 +125,6 @@ extern bool
     const TreePaths &tree_paths
   );
 
-extern bool
-  forPathChannel(
-    const TreePath &path, const TreePaths &tree_paths,
-    const std::function<void(const Channel &)> &channel_function
-  );
-
 struct SolvableSceneValueVisitor {
   virtual void
   visitBodyTranslationComponent(
@@ -149,4 +143,10 @@ extern void
     const TreePath &path,
     const TreePaths &tree_paths,
     const SolvableSceneValueVisitor &value_visitor
+  );
+
+extern const TreePath &
+  channelPath(
+    const Channel &channel,
+    const TreePaths &tree_paths
   );

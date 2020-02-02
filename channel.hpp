@@ -3,12 +3,14 @@
 
 struct BodyTranslationChannel;
 struct BodyRotationChannel;
+struct BodyBoxScaleChannel;
 
 
 struct Channel {
   struct Visitor {
     virtual void visit(const BodyTranslationChannel &) const = 0;
     virtual void visit(const BodyRotationChannel &) const = 0;
+    virtual void visit(const BodyBoxScaleChannel &) const = 0;
   };
 
   virtual void accept(const Visitor &) const = 0;
@@ -39,6 +41,24 @@ struct BodyTranslationChannel : BodyXYZComponentChannel {
 
 struct BodyRotationChannel : BodyXYZComponentChannel {
   using BodyXYZComponentChannel::BodyXYZComponentChannel;
+
+  virtual void accept(const Visitor &visitor) const
+  {
+    visitor.visit(*this);
+  }
+};
+
+
+struct BodyBoxScaleChannel : BodyXYZComponentChannel {
+  BoxIndex box_index;
+
+  BodyBoxScaleChannel(
+    BodyIndex body_index, BoxIndex box_index, XYZComponent component
+  )
+  : BodyXYZComponentChannel(body_index, component),
+    box_index(box_index)
+  {
+  }
 
   virtual void accept(const Visitor &visitor) const
   {

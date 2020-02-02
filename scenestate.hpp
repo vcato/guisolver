@@ -101,6 +101,7 @@ class SceneState {
     struct Box {
       XYZ scale = {1,1,1};
       Position center = {0,0,0};
+      XYZExpressions scale_expressions;
     };
 
     struct Line {

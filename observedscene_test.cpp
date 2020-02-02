@@ -610,6 +610,27 @@ static void testSetSolveFlags()
 }
 
 
+static void testSettingBoxScaleExpression()
+{
+  SceneState initial_state;
+  BodyIndex body_index = initial_state.createBody();
+  BoxIndex box_index = initial_state.body(body_index).addBox();
+
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+  observed_scene.replaceSceneStateWith(initial_state);
+  const SceneState &scene_state = observed_scene.scene_state;
+  const TreePaths &tree_paths = observed_scene.tree_paths;
+
+  TreePath box_scale_x_path =
+    tree_paths.body(body_index).boxes[box_index].scale.x;
+
+  observed_scene.handleTreeExpressionChanged(box_scale_x_path, "5");
+  NumericValue value = scene_state.body(body_index).boxes[box_index].scale.x;
+  assert(value == 5);
+}
+
+
 int main()
 {
   testTransferringABody1();
@@ -632,4 +653,5 @@ int main()
   testUsingAVariable(BodyChannelType::translation_x);
   testUsingAVariable(BodyChannelType::rotation_x);
   testUsingABadExpression();
+  testSettingBoxScaleExpression();
 }
