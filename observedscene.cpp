@@ -877,6 +877,18 @@ channelExpression(const Channel &channel, SceneState &scene_state)
           channel.component
         );
     }
+
+    virtual void visit(const BodyBoxCenterChannel &channel) const
+    {
+      expression_ptr =
+        &xyzExpressionsComponent(
+          scene_state
+          .body(channel.body_index)
+          .boxes[channel.box_index]
+          .center_expressions,
+          channel.component
+        );
+    }
   };
 
   channel.accept(Visitor{expression_ptr, scene_state});
@@ -949,6 +961,16 @@ channelValue(
           .scale
           .component(channel.component);
     }
+
+    virtual void visit(const BodyBoxCenterChannel &channel) const
+    {
+      value_ptr = &
+        scene_state
+          .body(channel.body_index)
+          .boxes[channel.box_index]
+          .center
+          .component(channel.component);
+    }
   };
 
   channel.accept(Visitor{scene_state, value_ptr});
@@ -990,6 +1012,9 @@ forEachChannel(const SceneState &scene_state, const F &f)
       f(BodyBoxScaleChannel{body_index, box_index, XYZComponent::x});
       f(BodyBoxScaleChannel{body_index, box_index, XYZComponent::y});
       f(BodyBoxScaleChannel{body_index, box_index, XYZComponent::z});
+      f(BodyBoxCenterChannel{body_index, box_index, XYZComponent::x});
+      f(BodyBoxCenterChannel{body_index, box_index, XYZComponent::y});
+      f(BodyBoxCenterChannel{body_index, box_index, XYZComponent::z});
     }
   }
 }

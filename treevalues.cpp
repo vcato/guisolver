@@ -2267,6 +2267,16 @@ channelPath(
           .scale
           .component(channel.component);
     }
+
+    virtual void visit(const BodyBoxCenterChannel &channel) const
+    {
+      tree_path_ptr = &
+        tree_paths
+          .body(channel.body_index)
+          .boxes[channel.box_index]
+          .center
+          .component(channel.component);
+    }
   };
 
   const TreePath *tree_path_ptr = nullptr;
