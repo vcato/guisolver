@@ -8,8 +8,6 @@
 #include "vectorio.hpp"
 #include "contains.hpp"
 
-#define ADD_TEST 0
-
 using std::cerr;
 using VariableName = SceneState::Variable::Name;
 
@@ -341,7 +339,55 @@ static void testAddingAVariable()
 }
 
 
-static void testUsingAVariable()
+namespace {
+enum class BodyChannelType {
+  translation_x,
+  rotation_x
+};
+}
+
+
+static TreePath
+bodyChannelPath(
+  BodyChannelType body_attribute,
+  BodyIndex body_index,
+  const TreePaths &tree_paths
+)
+{
+  switch (body_attribute) {
+    case BodyChannelType::translation_x:
+      return tree_paths.body(body_index).translation.x.path;
+    case BodyChannelType::rotation_x:
+      return tree_paths.body(body_index).rotation.x.path;
+  }
+
+  assert(false); // shouldn't happen
+}
+
+
+static Expression
+bodyChannelExpression(
+  BodyChannelType body_attribute,
+  BodyIndex body_index,
+  const SceneState &scene_state
+)
+{
+  switch (body_attribute) {
+    case BodyChannelType::translation_x:
+      return scene_state.body(body_index).expressions.translation.x;
+    case BodyChannelType::rotation_x:
+      return scene_state.body(body_index).expressions.rotation.x;
+  }
+
+  assert(false); // shouldn't happen
+}
+
+
+static void
+testUsingAVariableInAnExpression(
+  BodyChannelType body_attribute,
+  bool with_good_expression
+)
 {
   Tester tester;
   ObservedScene &observed_scene = tester.observed_scene;
@@ -354,25 +400,51 @@ static void testUsingAVariable()
   TreePath variable_value_path =
     tree_paths.variables[variable_index].value;
 
-  const TreePath tx_path = tree_paths.body(body_index).translation.x.path;
+  const TreePath channel_path =
+    bodyChannelPath(body_attribute, body_index, tree_paths);
+
+  tester.tree_widget.item(variable_value_path).maybe_numeric_value = 4;
   observed_scene.handleTreeNumericValueChanged(variable_value_path, 4);
-#if ADD_TEST
-  assert(tester.tree_widget.item(tx_path).maybe_numeric_value == 4);
-#endif
+  Expression expr = (with_good_expression) ? var_name : "blah";
+  observed_scene.handleTreeExpressionChanged(channel_path, expr);
 
-  observed_scene.handleTreeExpressionChanged(
-    tree_paths.body(body_index).translation.x.path,
-    /*expr*/var_name
-  );
+  if (with_good_expression) {
+    assert(tester.tree_widget.item(channel_path).maybe_numeric_value == 4);
+  }
 
-  assert(scene_state.body(body_index).expressions.translation.x == var_name);
+  Expression channel_expression =
+    bodyChannelExpression(body_attribute, body_index, scene_state);
 
+  assert(channel_expression == expr);
   observed_scene.handleTreeNumericValueChanged(variable_value_path, 5);
 
-  NumericValue tx_value =
-    *tester.tree_widget.item(tx_path).maybe_numeric_value;
+  NumericValue channel_value =
+    *tester.tree_widget.item(channel_path).maybe_numeric_value;
 
-  assert(tx_value == 5);
+  if (with_good_expression) {
+    assert(channel_value == 5);
+  }
+  else {
+    assert(channel_value == 0);
+  }
+}
+
+
+static void testUsingAVariable(BodyChannelType body_attribute)
+{
+  testUsingAVariableInAnExpression(
+    body_attribute,
+    /*with_good_expression*/true
+  );
+}
+
+
+static void testUsingABadExpression()
+{
+  testUsingAVariableInAnExpression(
+    BodyChannelType::rotation_x,
+    /*with_good_expression*/false
+  );
 }
 
 
@@ -542,5 +614,7 @@ int main()
   testChangingSolveFlag();
   testChangingSolvedValueInTree();
   testSetSolveFlags();
-  testUsingAVariable();
+  testUsingAVariable(BodyChannelType::translation_x);
+  testUsingAVariable(BodyChannelType::rotation_x);
+  testUsingABadExpression();
 }

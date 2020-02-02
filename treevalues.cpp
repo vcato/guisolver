@@ -11,12 +11,15 @@
 #include "numericvaluelimits.hpp"
 #include "vec3state.hpp"
 #include "xyzcomponent.hpp"
+#include "channel.hpp"
 
 using std::cerr;
 using std::string;
 using LabelProperties = TreeWidget::LabelProperties;
 using BoxPaths = TreePaths::Box;
 using LinePaths = TreePaths::Line;
+
+
 static int defaultDigitsOfPrecision() { return 2; }
 
 
@@ -1979,20 +1982,22 @@ struct SetNumericValueVisitor : ScenePathVisitor {
 
 
 namespace {
-struct SetExpressionVisitor : ScenePathVisitor {
-  SceneState &scene_state;
-  const string &expression;
+struct PathChannelVisitor : ScenePathVisitor {
+  const std::function<void(const Channel &)> &channel_function;
 
-  SetExpressionVisitor(
-    SceneState &scene_state,
+  PathChannelVisitor(
     const TreePaths &tree_paths,
     const TreePath &path,
-    const string &expression
+    const std::function<void(const Channel &)> &channel_function
   )
   : ScenePathVisitor(tree_paths, path),
-    scene_state(scene_state),
-    expression(expression)
+    channel_function(channel_function)
   {
+  }
+
+  void visitChannel(const Channel &channel)
+  {
+    channel_function(channel);
   }
 
   bool
@@ -2001,10 +2006,7 @@ struct SetExpressionVisitor : ScenePathVisitor {
     XYZComponent component
   ) override
   {
-    SceneState::XYZExpressions &xyz_expressions =
-      scene_state.body(body_index).expressions.translation;
-
-    xyzExpressionsComponent(xyz_expressions, component) = expression;
+    visitChannel(BodyTranslationChannel(body_index, component));
     return true;
   }
 
@@ -2014,18 +2016,8 @@ struct SetExpressionVisitor : ScenePathVisitor {
     XYZComponent component
   ) override
   {
-    assert(false); // not tested
-    SceneState::XYZExpressions &xyz_expressions =
-      scene_state.body(body_index).expressions.rotation;
-
-    switch (component) {
-      case XYZComponent::x: xyz_expressions.x = expression; return true;
-      case XYZComponent::y: xyz_expressions.y = expression; return true;
-      case XYZComponent::z: xyz_expressions.z = expression; return true;
-    }
-
-    assert(false); // shouldn't happen
-    return false;
+    visitChannel(BodyRotationChannel(body_index, component));
+    return true;
   }
 };
 }
@@ -2112,23 +2104,14 @@ setSceneStateBoolValue(
 
 
 bool
-setSceneStateExpression(
-  SceneState &scene_state,
-  const TreePath &path,
-  const std::string &expression,
-  const TreePaths &tree_paths
+forPathChannel(
+  const TreePath &path, const TreePaths &tree_paths,
+  const std::function<void(const Channel &)> &channel_function
 )
 {
-  SetExpressionVisitor visitor = {
-    scene_state, tree_paths, path, expression
-  };
-
-  if (!forMatchingScenePath(path, visitor, tree_paths)) {
-    cerr << "setSceneStateExpression: path=" << path << ", expression=" << expression << "\n";
-    return false;
-  }
-
-  return true;
+  PathChannelVisitor visitor = { tree_paths, path, channel_function };
+  bool path_was_channel = forMatchingScenePath(path, visitor, tree_paths);
+  return path_was_channel;
 }
 
 

@@ -4,6 +4,7 @@
 
 using std::ostringstream;
 using std::string;
+using std::cerr;
 
 
 namespace {
@@ -14,6 +15,11 @@ struct Tester {
   Optional<float> evaluate(const string &expression)
   {
     return evaluateExpression(expression, error_stream, environment);
+  }
+
+  string errorString()
+  {
+    return error_stream.str();
   }
 };
 }
@@ -41,13 +47,24 @@ static void testEmptyString()
 }
 
 
-static void testVariable()
+static void testGoodVariable()
 {
   Tester tester;
   EvaluationEnvironment &environment = tester.environment;
   environment["x"] = 1.5;
   Optional<float> arg = tester.evaluate("x");
   assert(arg == 1.5);
+}
+
+
+static void testBadVariable()
+{
+  Tester tester;
+  EvaluationEnvironment &environment = tester.environment;
+  environment["x"] = 1.5;
+  Optional<float> arg = tester.evaluate("y");
+  assert(!arg);
+  assert(tester.errorString() == "Unknown variable: y\n");
 }
 
 
@@ -66,5 +83,6 @@ int main()
   testInvalid("(2)(2)");
   testInvalid("(2)(x=2)");
   testEmptyString();
-  testVariable();
+  testGoodVariable();
+  testBadVariable();
 }

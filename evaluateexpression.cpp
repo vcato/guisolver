@@ -25,14 +25,21 @@ static const Value* getPtrFrom(const std::map<Key, Value> &map, const Key &key)
 
 namespace {
 struct Evaluator : EvaluatorInterface {
+  using Float = double;
+
   const std::string &expression;
   EvaluationEnvironment &environment;
-  using Float = double;
+  ostream &error_stream;
   vector<Float> stack;
 
-  Evaluator(const std::string &expression, EvaluationEnvironment &environment)
+  Evaluator(
+    const std::string &expression,
+    EvaluationEnvironment &environment,
+    ostream &error_stream
+  )
   : expression(expression),
-    environment(environment)
+    environment(environment),
+    error_stream(error_stream)
   {
   }
 
@@ -56,20 +63,14 @@ struct Evaluator : EvaluatorInterface {
   virtual bool evaluateVariable(const StringRange &identifier_range)
   {
     VariableName variable_name = rangeText(identifier_range);
+    const NumericValue *variable_ptr = getPtrFrom(environment, variable_name);
 
-    if (!environment.empty()) {
-      const NumericValue *variable_ptr = getPtrFrom(environment, variable_name);
-
-      if (variable_ptr) {
-        push(*variable_ptr);
-        return true;
-      }
-      else {
-        assert(false);
-      }
+    if (variable_ptr) {
+      push(*variable_ptr);
+      return true;
     }
 
-    cerr << "Unknown variable: " << variable_name << "\n";
+    error_stream << "Unknown variable: " << variable_name << "\n";
     return false;
   }
 
@@ -156,13 +157,13 @@ struct Evaluator : EvaluatorInterface {
 Optional<NumericValue>
 evaluateExpression(
   const std::string &expression,
-  std::ostream &error_stream,
+  ostream &error_stream,
   EvaluationEnvironment &environment
 )
 {
   StringIndex index = 0;
   StringParser string_parser(expression, index);
-  Evaluator evaluator(expression, environment);
+  Evaluator evaluator(expression, environment, error_stream);
 
   ExpressionParser parser(string_parser, evaluator, error_stream);
 

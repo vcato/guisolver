@@ -2,6 +2,7 @@
 #include "treewidget.hpp"
 #include "scenestate.hpp"
 #include "stringvalue.hpp"
+#include "channel.hpp"
 
 
 struct SceneTreeRef {
@@ -132,14 +133,6 @@ extern bool
     const TreePaths &tree_paths
   );
 
-extern bool
-  setSceneStateExpression(
-    SceneState &scene_state,
-    const TreePath &path,
-    const std::string &expression,
-    const TreePaths &tree_paths
-  );
-
 extern bool*
   solveStatePtr(
     SceneState &scene_state,
@@ -152,4 +145,10 @@ extern const bool*
     const SceneState &scene_state,
     const TreePath &path,
     const TreePaths &tree_paths
+  );
+
+extern bool
+  forPathChannel(
+    const TreePath &path, const TreePaths &tree_paths,
+    const std::function<void(const Channel &)> &channel_function
   );

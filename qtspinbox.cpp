@@ -171,10 +171,15 @@ void QtSpinBox::setValue(Value arg)
     return;
   }
 
+
+  if (!_inputIsExpression()) {
+    _input = valueAsString(arg, _decimals);
+  }
+
   _ignore_signals = true;
-  _input = valueAsString(arg, _decimals);
   _updateLineEdit();
   _ignore_signals = false;
+
   float delta = std::abs(arg - value());
   int n_digits_of_precision = decimals();
   float tolerance = toleranceForPrecision(n_digits_of_precision);
@@ -348,6 +353,7 @@ void QtSpinBox::_updateButtons()
 void QtSpinBox::stepBy(int arg)
 {
   _value = _clamped(_value + _single_step*arg);
+  _input = valueAsString(_value, _decimals);
   _updateLineEdit();
   _callValueChangedFunction(_value);
 }
