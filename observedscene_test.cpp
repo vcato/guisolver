@@ -529,19 +529,37 @@ static void testChangingSolveFlag()
 }
 
 
+static bool itemValueIsOn(const FakeTreeItem &item)
+{
+  FakeTreeItem::ValueString on_value_string =
+    FakeTreeWidget::boolValueText(true);
+
+  return (item.value_string == on_value_string);
+}
+
+
 static void testChangingSolvedValueInTree()
 {
   SceneState initial_state;
   BodyIndex body_index = initial_state.createBody();
+  initial_state.body(body_index).solve_flags.translation.x = true;
   Tester tester;
   ObservedScene &observed_scene = tester.observed_scene;
   observed_scene.replaceSceneStateWith(initial_state);
   TreePaths &tree_paths = observed_scene.tree_paths;
   const TreePaths::Body &body_paths = tree_paths.body(body_index);
+  const FakeTreeWidget &tree_widget = tester.tree_widget;
+
+  const FakeTreeItem &solve_item =
+    tree_widget.item(body_paths.translation.x.solve_path);
+
+  assert(itemValueIsOn(solve_item));
 
   observed_scene.handleTreeNumericValueChanged(
     body_paths.translation.x.path, 2
   );
+
+  assert(!itemValueIsOn(solve_item));
 }
 
 
@@ -551,18 +569,15 @@ expectAllSolveFlagsAreOn(
   const FakeTreeWidget &tree_widget
 )
 {
-  FakeTreeItem::ValueString on_value_string =
-    tree_widget.boolValueText(true);
-
   const TreePath &x_solve_path = xyz_paths.x.solve_path;
   const TreePath &y_solve_path = xyz_paths.y.solve_path;
   const TreePath &z_solve_path = xyz_paths.z.solve_path;
   const FakeTreeItem &x_solve_item = tree_widget.item(x_solve_path);
   const FakeTreeItem &y_solve_item = tree_widget.item(y_solve_path);
   const FakeTreeItem &z_solve_item = tree_widget.item(z_solve_path);
-  assert(x_solve_item.value_string == on_value_string);
-  assert(y_solve_item.value_string == on_value_string);
-  assert(z_solve_item.value_string == on_value_string);
+  assert(itemValueIsOn(x_solve_item));
+  assert(itemValueIsOn(y_solve_item));
+  assert(itemValueIsOn(z_solve_item));
 }
 
 

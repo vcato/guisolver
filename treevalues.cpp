@@ -13,6 +13,7 @@
 #include "xyzcomponent.hpp"
 #include "channel.hpp"
 
+
 using std::cerr;
 using std::string;
 using LabelProperties = TreeWidget::LabelProperties;
@@ -1511,7 +1512,7 @@ void
 
 
 void
-updateTreeBoolValue(
+setTreeBoolValue(
   TreeWidget &tree_widget,
   const TreePath &path,
   bool new_state
@@ -2087,23 +2088,6 @@ setSceneStateStringValue(
 
 
 bool
-setSceneStateBoolValue(
-  SceneState &scene_state,
-  const TreePath &path,
-  bool value,
-  const TreePaths &tree_paths
-)
-{
-  if (bool *solve_state_ptr = solveStatePtr(scene_state, path, tree_paths)) {
-    *solve_state_ptr = value;
-    return true;
-  }
-
-  return false;
-}
-
-
-bool
 forPathChannel(
   const TreePath &path, const TreePaths &tree_paths,
   const std::function<void(const Channel &)> &channel_function
@@ -2167,52 +2151,19 @@ createBodyBranchItemsInTree(
 
 
 
-template <typename XYZSolveFlags>
-static MatchConst_t<bool, XYZSolveFlags> *
-xyzSolveStateComponentPtr(
-  XYZSolveFlags &xyz_solve_flags,
-  XYZComponent component
-)
-{
-  switch (component) {
-    case XYZComponent::x: return &xyz_solve_flags.x;
-    case XYZComponent::y: return &xyz_solve_flags.y;
-    case XYZComponent::z: return &xyz_solve_flags.z;
-  }
-
-  return nullptr;
-}
-
-
-template <typename XYZSolveFlags>
-static MatchConst_t<bool, XYZSolveFlags> *
-  xyzSolveStatePtr(
-    XYZSolveFlags &xyz_solve_flags,
-    const TreePath &path,
-    const TreePaths::BasicXYZ<TreePaths::Channel> &xyz_paths
-  )
-{
-  int component_index = matchingComponent(path, xyz_paths);
-  return xyzSolveStateComponentPtr(xyz_solve_flags, component_index);
-}
-
-
+// Seems like we need a SolvableSceneValueVisitor
+// This would make it more obvious which things need to be solved.
 namespace {
-template <typename SceneState>
-struct GetSolveStatePtrVisitor : ScenePathVisitor {
-  using SolveStatePtr = MatchConst_t<bool,SceneState> *;
-  SolveStatePtr &solve_state_ptr;
-  SceneState &scene_state;
+struct SolvableScenePathVisitor : ScenePathVisitor {
+  const SolvableSceneValueVisitor &value_visitor;
 
-  GetSolveStatePtrVisitor(
-    SolveStatePtr &solve_state_ptr,
+  SolvableScenePathVisitor(
     const TreePaths &paths,
     const TreePath &path,
-    SceneState &scene_state
+    const SolvableSceneValueVisitor &value_visitor
   )
   : ScenePathVisitor(paths, path),
-    solve_state_ptr(solve_state_ptr),
-    scene_state(scene_state)
+    value_visitor(value_visitor)
   {
   }
 
@@ -2221,10 +2172,7 @@ struct GetSolveStatePtrVisitor : ScenePathVisitor {
     BodyIndex body_index, XYZComponent component
   ) override
   {
-    auto &body_state = scene_state.body(body_index);
-    auto &body_solve_flags = body_state.solve_flags;
-    auto &xyz_solve_flags = body_solve_flags.translation;
-    solve_state_ptr = xyzSolveStateComponentPtr(xyz_solve_flags, component);
+    value_visitor.visitBodyTranslationComponent(body_index, component);
     return true;
   }
 
@@ -2233,53 +2181,23 @@ struct GetSolveStatePtrVisitor : ScenePathVisitor {
     BodyIndex body_index, XYZComponent component
   ) override
   {
-    auto &body_state = scene_state.body(body_index);
-    auto &body_solve_flags = body_state.solve_flags;
-    auto &xyz_solve_flags = body_solve_flags.rotation;
-    solve_state_ptr = xyzSolveStateComponentPtr(xyz_solve_flags, component);
+    value_visitor.visitBodyRotationComponent(body_index, component);
     return true;
   }
 };
 }
 
 
-template <typename SceneState>
-static auto*
-  basicSolveStatePtr(
-    SceneState &scene_state,
-    const TreePath &path,
-    const TreePaths &tree_paths
-  )
+void
+forSolvableSceneValue(
+  const TreePath &path,
+  const TreePaths &tree_paths,
+  const SolvableSceneValueVisitor &value_visitor
+)
 {
-  MatchConst_t<bool, SceneState> *solve_state_ptr = nullptr;
-
-  GetSolveStatePtrVisitor<SceneState> visitor = {
-    solve_state_ptr, tree_paths, path, scene_state
+  SolvableScenePathVisitor visitor = {
+    tree_paths, path, value_visitor
   };
 
   forMatchingScenePath(path, visitor, tree_paths);
-  return solve_state_ptr;
-}
-
-
-
-bool*
-  solveStatePtr(
-    SceneState &scene_state,
-    const TreePath &path,
-    const TreePaths &tree_paths
-  )
-{
-  return basicSolveStatePtr(scene_state, path, tree_paths);
-}
-
-
-const bool*
-  solveStatePtr(
-    const SceneState &scene_state,
-    const TreePath &path,
-    const TreePaths &tree_paths
-  )
-{
-  return basicSolveStatePtr(scene_state, path, tree_paths);
 }

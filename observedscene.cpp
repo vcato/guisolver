@@ -18,6 +18,142 @@ using ManipulatorType = Scene::ManipulatorType;
 using std::cerr;
 
 
+template <typename XYZSolveFlags>
+static MatchConst_t<bool, XYZSolveFlags> *
+xyzSolveStateComponentPtr(
+  XYZSolveFlags &xyz_solve_flags,
+  XYZComponent component
+)
+{
+  switch (component) {
+    case XYZComponent::x: return &xyz_solve_flags.x;
+    case XYZComponent::y: return &xyz_solve_flags.y;
+    case XYZComponent::z: return &xyz_solve_flags.z;
+  }
+
+  return nullptr;
+}
+
+
+template <typename SceneState>
+static auto*
+basicSolveStatePtr(
+  SceneState &scene_state,
+  const TreePath &path,
+  const TreePaths &tree_paths
+)
+{
+  using SolveStatePtr = MatchConst_t<bool,SceneState> *;
+  SolveStatePtr solve_state_ptr = nullptr;
+
+  struct ValueVisitor : SolvableSceneValueVisitor {
+    SolveStatePtr &solve_state_ptr;
+    SceneState &scene_state;
+
+    ValueVisitor(
+      SolveStatePtr &solve_state_ptr,
+      SceneState &scene_state
+    )
+    : solve_state_ptr(solve_state_ptr),
+      scene_state(scene_state)
+    {
+    }
+
+    void
+    visitBodyTranslationComponent(
+      BodyIndex body_index, XYZComponent component
+    ) const override
+    {
+      auto &body_state = scene_state.body(body_index);
+      auto &body_solve_flags = body_state.solve_flags;
+      auto &xyz_solve_flags = body_solve_flags.translation;
+      solve_state_ptr = xyzSolveStateComponentPtr(xyz_solve_flags, component);
+    }
+
+    void
+    visitBodyRotationComponent(
+      BodyIndex body_index, XYZComponent component
+    ) const override
+    {
+      auto &body_state = scene_state.body(body_index);
+      auto &body_solve_flags = body_state.solve_flags;
+      auto &xyz_solve_flags = body_solve_flags.rotation;
+      solve_state_ptr = xyzSolveStateComponentPtr(xyz_solve_flags, component);
+    }
+  };
+
+  ValueVisitor value_visitor(solve_state_ptr, scene_state);
+  forSolvableSceneValue(path, tree_paths, value_visitor);
+  return solve_state_ptr;
+}
+
+
+static const TreePath &
+solvePath(const TreePath &path, const TreePaths &tree_paths)
+{
+  const TreePath *tree_path_ptr = nullptr;
+
+  struct ValueVisitor : SolvableSceneValueVisitor {
+    const TreePaths &tree_paths;
+    const TreePath *&tree_path_ptr;
+
+    ValueVisitor(
+      const TreePaths &tree_paths,
+      const TreePath *&tree_path_ptr
+    )
+    : tree_paths(tree_paths),
+      tree_path_ptr(tree_path_ptr)
+    {
+    }
+
+    void
+    visitBodyTranslationComponent(
+      BodyIndex body_index, XYZComponent component
+    ) const override
+    {
+      auto &body_paths = tree_paths.body(body_index);
+      tree_path_ptr = &body_paths.translation.component(component).solve_path;
+    }
+
+    void
+    visitBodyRotationComponent(
+      BodyIndex body_index, XYZComponent component
+    ) const override
+    {
+      auto &body_paths = tree_paths.body(body_index);
+      tree_path_ptr = &body_paths.rotation.component(component).solve_path;
+    }
+  };
+
+  ValueVisitor value_visitor(tree_paths, tree_path_ptr);
+  forSolvableSceneValue(path, tree_paths, value_visitor);
+  assert(tree_path_ptr);
+  return *tree_path_ptr;
+}
+
+
+static bool*
+solveStatePtr(
+  SceneState &scene_state,
+  const TreePath &path,
+  const TreePaths &tree_paths
+)
+{
+  return basicSolveStatePtr(scene_state, path, tree_paths);
+}
+
+
+static const bool*
+solveStatePtr(
+  const SceneState &scene_state,
+  const TreePath &path,
+  const TreePaths &tree_paths
+)
+{
+  return basicSolveStatePtr(scene_state, path, tree_paths);
+}
+
+
 template <typename Index, typename Function>
 static void
 removeIndices(vector<Index> &indices, const Function &remove_function)
@@ -830,13 +966,22 @@ ObservedScene::handleTreeExpressionChanged(
       [&](const Channel &channel){
         setChannelExpression(channel, expression, scene_state);
         Impl::evaluateChannelExpression(channel, *this);
-        //updateChannelTreeValue(channel, tree_widget, tree_paths, scene_state);
+        const bool *solve_state_ptr = solveStatePtr(path);
+
+        if (solve_state_ptr) {
+          TreePath solve_path = solvePath(path, tree_paths);
+          setTreeBoolValue(tree_widget, solve_path, false);
+        }
+
         handleSceneStateChanged();
       }
     );
 
   if (!path_was_channel) {
-    cerr << "setSceneStateExpression: path=" << path << ", expression=" << expression << "\n";
+    cerr << "setSceneStateExpression: "
+      "path=" << path << ", "
+      "expression=" << expression << "\n";
+
     return;
   }
 }
@@ -1501,20 +1646,19 @@ ObservedScene::handleTreeNumericValueChanged(
 
     {
       bool *solve_state_ptr = ::solveStatePtr(state, path, tree_paths);
-      Optional<bool> maybe_old_state;
 
       // Turn off the solve state of the value that is being changed, so that
       // it doesn't give strange feedback to the user.
 
       if (solve_state_ptr) {
-        maybe_old_state = *solve_state_ptr;
         *solve_state_ptr = false;
       }
 
       observed_scene.solveScene();
 
       if (solve_state_ptr) {
-        *solve_state_ptr = *maybe_old_state;
+        TreePath solve_path = solvePath(path, tree_paths);
+        setTreeBoolValue(tree_widget, solve_path, false);
       }
     }
 
@@ -1547,6 +1691,23 @@ ObservedScene::handleTreeStringValueChanged(
 }
 
 
+static bool
+setSceneStateBoolValue(
+  SceneState &scene_state,
+  const TreePath &path,
+  bool value,
+  const TreePaths &tree_paths
+)
+{
+  if (bool *solve_state_ptr = solveStatePtr(scene_state, path, tree_paths)) {
+    *solve_state_ptr = value;
+    return true;
+  }
+
+  return false;
+}
+
+
 void ObservedScene::handleTreeBoolValueChanged(const TreePath &path, bool value)
 {
   bool value_was_changed =
@@ -1566,9 +1727,9 @@ updateXYZSolveFlags(
   const SceneState::XYZSolveFlags &xyz_solve_flags
 )
 {
-  updateTreeBoolValue(tree_widget, xyz_paths.x.solve_path, xyz_solve_flags.x);
-  updateTreeBoolValue(tree_widget, xyz_paths.y.solve_path, xyz_solve_flags.y);
-  updateTreeBoolValue(tree_widget, xyz_paths.z.solve_path, xyz_solve_flags.z);
+  setTreeBoolValue(tree_widget, xyz_paths.x.solve_path, xyz_solve_flags.x);
+  setTreeBoolValue(tree_widget, xyz_paths.y.solve_path, xyz_solve_flags.y);
+  setTreeBoolValue(tree_widget, xyz_paths.z.solve_path, xyz_solve_flags.z);
 }
 
 

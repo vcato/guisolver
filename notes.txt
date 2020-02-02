@@ -89,7 +89,7 @@ A nice visual representation of error is a line to the closest point.  If
 we have an X error, then a line to the point with the minimum y and z values
 would be a good representation of that error.
 ---
-If we're changing the value of a variable and that variable is being used
+If we're changing the value of a variable, and that variable is being used
 in an expression for a body transform (i.e. x translation), and that transform
 is being solved, the behavior is surprising.  When you change the variable, the
 body doesn't move because the scene is re-solved.  Seems like we have a few

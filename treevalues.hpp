@@ -22,7 +22,7 @@ extern void
   );
 
 extern void
-  updateTreeBoolValue(
+  setTreeBoolValue(
     TreeWidget &tree_widget,
     const TreePath &path,
     bool new_state
@@ -126,29 +126,27 @@ extern bool
   );
 
 extern bool
-  setSceneStateBoolValue(
-    SceneState &scene_state,
-    const TreePath &path,
-    bool value,
-    const TreePaths &tree_paths
-  );
-
-extern bool*
-  solveStatePtr(
-    SceneState &scene_state,
-    const TreePath &path,
-    const TreePaths &tree_paths
-  );
-
-extern const bool*
-  solveStatePtr(
-    const SceneState &scene_state,
-    const TreePath &path,
-    const TreePaths &tree_paths
-  );
-
-extern bool
   forPathChannel(
     const TreePath &path, const TreePaths &tree_paths,
     const std::function<void(const Channel &)> &channel_function
+  );
+
+struct SolvableSceneValueVisitor {
+  virtual void
+  visitBodyTranslationComponent(
+    BodyIndex body_index, XYZComponent component
+  ) const = 0;
+
+  virtual void
+  visitBodyRotationComponent(
+    BodyIndex body_index, XYZComponent component
+  ) const = 0;
+};
+
+
+extern void
+  forSolvableSceneValue(
+    const TreePath &path,
+    const TreePaths &tree_paths,
+    const SolvableSceneValueVisitor &value_visitor
   );
