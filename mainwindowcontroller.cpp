@@ -167,6 +167,7 @@ struct MainWindowController::Impl {
     }
 
     if (text[0] != '=') {
+      observed_scene.handleTreeExpressionChanged(path, "");
       return parseDouble(arg);
     }
 

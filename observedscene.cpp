@@ -1074,11 +1074,13 @@ ObservedScene::handleTreeExpressionChanged(
       [&](const Channel &channel){
         setChannelExpression(channel, expression, scene_state);
         Impl::evaluateChannelExpression(channel, *this);
-        const bool *solve_state_ptr = solveStatePtr(path);
+        bool *solve_state_ptr = solveStatePtr(path);
 
         if (solve_state_ptr) {
+          bool new_solve_state = false;
           TreePath solve_path = solvePath(path, tree_paths);
-          setTreeBoolValue(tree_widget, solve_path, false);
+          *solve_state_ptr = new_solve_state;
+          setTreeBoolValue(tree_widget, solve_path, new_solve_state);
         }
 
         solveScene();
@@ -1436,6 +1438,12 @@ void ObservedScene::selectLine(BodyIndex body_index, LineIndex line_index)
 
 
 const bool *ObservedScene::solveStatePtr(const TreePath &path) const
+{
+  return ::solveStatePtr(scene_state, path, tree_paths);
+}
+
+
+bool *ObservedScene::solveStatePtr(const TreePath &path)
 {
   return ::solveStatePtr(scene_state, path, tree_paths);
 }

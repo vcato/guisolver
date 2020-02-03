@@ -228,8 +228,13 @@ double QtSpinBox::_clamped(double value) const
 Optional<QtSpinBox::Value>
 QtSpinBox::_evaluateInput(const string &text) const
 {
+  assert(!_evaluating);
+
   if (evaluate_function) {
-    return evaluate_function(text);
+    _evaluating = true;
+    Optional<QtSpinBox::Value> result = evaluate_function(text);
+    _evaluating = false;
+    return result;
   }
   else {
     return Optional<QtSpinBox::Value>(parseDouble(text));
@@ -239,6 +244,13 @@ QtSpinBox::_evaluateInput(const string &text) const
 
 QValidator::State QtSpinBox::validate(QString &input, int &/*pos*/) const
 {
+  if (_ignore_signals) {
+    // validate is called when we update the line edit text, but we
+    // updated the text to match the value, so there's no point
+    // in validating.
+    return QValidator::State::Acceptable;
+  }
+
   Optional<Value> maybe_value = _evaluateInput(input.toStdString());
 
   if (maybe_value) {

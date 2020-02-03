@@ -47,6 +47,7 @@ class QtSpinBox
     int _decimals = 2;
     double _value = 0;
     bool _is_being_edited = false;
+    mutable bool _evaluating = false;
     std::string _input;
 
     void mousePressEvent(QMouseEvent *) override;
