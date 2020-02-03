@@ -346,9 +346,29 @@ bool ExpressionParser::parsePostfix() const
 }
 
 
+bool ExpressionParser::parsePrefix() const
+{
+  if (peekChar() == '-') {
+    skipChar();
+
+    if (!parsePrefix()) {
+      return false;
+    }
+
+    if (!evaluator.evaluateNegation()) {
+      return false;
+    }
+
+    return true;
+  }
+
+  return parsePostfix();
+}
+
+
 bool ExpressionParser::parseFactor() const
 {
-  return parsePostfix() && extendFactor();
+  return parsePrefix() && extendFactor();
 }
 
 

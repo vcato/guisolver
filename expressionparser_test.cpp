@@ -15,6 +15,7 @@ struct FakeEvaluator : EvaluatorInterface {
   struct Flags {
     bool evaluate_number_fails = false;
     bool evaluate_dollar_fails = false;
+    bool evaluate_negation_fails = false;
     bool allow_empty_vector = true;
     bool multiply_fails = false;
   };
@@ -79,6 +80,17 @@ struct FakeEvaluator : EvaluatorInterface {
         error_stream << "Empty vector not allowed\n";
         return false;
       }
+    }
+
+    return true;
+  }
+
+  virtual bool evaluateNegation()
+  {
+    command_stream << "negate()\n";
+
+    if (flags.evaluate_negation_fails) {
+      return false;
     }
 
     return true;
@@ -172,7 +184,8 @@ struct Tester {
     bool was_valid = parseExpression(expression);
 
     if (!was_valid) {
-      cerr << "errorString(): " << errorString() << "\n";
+      cerr << "errorString(): " << errorString();
+      cerr << "expression: " << expression << "\n";
     }
 
     assert(was_valid);
@@ -243,6 +256,21 @@ static void testBadNumber()
 
   Tester tester;
   tester.evaluator_flags.evaluate_number_fails = true;
+  tester.parseInvalidExpression(expression);
+  string command_string = tester.commandString();
+  assert(command_string == expected_command_string);
+}
+
+
+static void testBadNegation()
+{
+  const string expression = "-5";
+  string expected_command_string =
+    "number(5)\n"
+    "negate()\n";
+
+  Tester tester;
+  tester.evaluator_flags.evaluate_negation_fails = true;
   tester.parseInvalidExpression(expression);
   string command_string = tester.commandString();
   assert(command_string == expected_command_string);
@@ -353,6 +381,7 @@ int main()
 {
   testSingleNumber();
   testBadNumber();
+  testBadNegation();
   testBadDollar();
   testBadMember();
   testBadVector();
@@ -364,11 +393,13 @@ int main()
   testValid(" [ 1 , 2 ] ");
   testValid("5.2");
   testValid(" ( 2 ) ");
+  testValid("-5");
   testInvalid("[,2]", "Unexpected ','\n");
   testInvalid("1.x", "");
   testTruncated("[");
   testTruncated("2*");
   testTruncated("[1,2] +");
+  testTruncated("-");
   testInvalidWhenEmptyVectorsAreNotAllowed("[[],2] + [3,4]");
   testInvalidWhenEmptyVectorsAreNotAllowed("[1,2] + [[],4]");
 }

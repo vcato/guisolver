@@ -99,6 +99,12 @@ struct Evaluator : EvaluatorInterface {
     return false;
   }
 
+  virtual bool evaluateNegation()
+  {
+    push(-pop());
+    return true;
+  }
+
   virtual bool evaluateAddition()
   {
     Float b = pop();

@@ -8,6 +8,7 @@ struct EvaluatorInterface {
   virtual bool evaluateNumber(const StringRange &number_range) = 0;
   virtual bool evaluateDollar() = 0;
   virtual bool evaluateVector(int n_elements) = 0;
+  virtual bool evaluateNegation() = 0;
   virtual bool evaluateAddition() = 0;
   virtual bool evaluateSubtraction() = 0;
   virtual bool evaluateMultiplication() = 0;
@@ -47,6 +48,7 @@ class ExpressionParser
     bool parsePrimaryStartingWithIdentifier(const StringRange &) const;
     bool parsePrimary() const;
     bool parsePostfix() const;
+    bool parsePrefix() const;
     bool parseFactor() const;
     bool parseTerm() const;
     bool extendPostfix() const;
