@@ -912,6 +912,7 @@ channelExpression(const Channel &channel, SceneState &scene_state)
 }
 
 
+#if 0
 static string componentName(const XYZComponent &component)
 {
   switch (component) {
@@ -923,8 +924,10 @@ static string componentName(const XYZComponent &component)
   assert(false);
   return "";
 }
+#endif
 
 
+#if 0
 static string channelName(const Channel &channel)
 {
   string name;
@@ -977,6 +980,7 @@ static string channelName(const Channel &channel)
   channel.accept(Visitor(name_stream));
   return name_stream.str();
 }
+#endif
 
 
 static void

@@ -91,3 +91,5 @@ would be a good representation of that error.
 ---
 I think the next step is to have it where more values can use expressions.
 * Marker positions
+---
+Expression parser needs to handle negation.

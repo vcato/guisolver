@@ -2086,15 +2086,15 @@ forMatchingScenePath(
   const TreePaths &tree_paths
 )
 {
-  for (auto i : indicesOf(tree_paths.bodies)) {
-    if (startsWith(path, tree_paths.body(i).path)) {
-      return visitor.visitBody(i);
-    }
-  }
-
   for (auto i : indicesOf(tree_paths.markers)) {
     if (startsWith(path, tree_paths.marker(i).path)) {
       return visitor.visitMarker(i);
+    }
+  }
+
+  for (auto i : indicesOf(tree_paths.bodies)) {
+    if (startsWith(path, tree_paths.body(i).path)) {
+      return visitor.visitBody(i);
     }
   }
 
