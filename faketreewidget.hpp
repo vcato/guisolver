@@ -80,6 +80,11 @@ struct FakeTreeWidget : TreeWidget {
     item(path).value_string = boolValueText(value);
   }
 
+  void setItemInput(const TreePath &, const Input &) override
+  {
+    assert(false); // not implemented
+  }
+
   static FakeTreeItem::ValueString boolValueText(bool);
 
 private:

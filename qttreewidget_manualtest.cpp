@@ -1,6 +1,7 @@
 #include <QApplication>
 #include "qttreewidget.hpp"
 #include "vectorio.hpp"
+#include "numericvaluelimits.hpp"
 
 using std::cerr;
 
@@ -10,14 +11,17 @@ int main(int argc, char** argv)
   QApplication app(argc,argv);
   QtTreeWidget tree_widget;
 
-  tree_widget.createNumericItem(
-    /*path*/{0},
-    /*label*/"numeric",
-    /*value*/7.5,
-    /*minimum*/0,
-    /*maximum*/100,
-    /*digits_of_precision*/2
-  );
+  TreePath numeric_item_path = {0};
+    tree_widget.createNumericItem(
+      numeric_item_path,
+      /*label*/"numeric",
+      /*value*/7.5,
+      /*minimum*/noMinimumNumericValue(),
+      /*maximum*/noMaximumNumericValue(),
+      /*digits_of_precision*/2
+    );
+
+  tree_widget.setItemInput(numeric_item_path, "input");
 
   tree_widget.createBoolItem(
     /*path*/{1},

@@ -6,6 +6,7 @@
 
 using std::string;
 using std::cerr;
+using XYZChannels = SceneState::XYZChannels;
 
 
 static void
@@ -70,11 +71,49 @@ static bool
 }
 
 
+static string
+  stringValueOr(
+    const TaggedValue &tagged_value,
+    const TaggedValue::Tag &child_name,
+    const string &default_value
+  )
+{
+  return findStringValue(tagged_value, child_name).valueOr(default_value);
+}
+
+
 static SceneState::XYZ xyzStateFromTaggedValue(const TaggedValue &tagged_value)
 {
   NumericValue x = numericValueOr(tagged_value, "x", 0);
   NumericValue y = numericValueOr(tagged_value, "y", 0);
   NumericValue z = numericValueOr(tagged_value, "z", 0);
+
+  return {x,y,z};
+}
+
+
+static Expression
+expressionFor(
+  const TaggedValue &xyz_tagged_value,
+  const string &child_name
+)
+{
+  const TaggedValue *child_ptr = findChild(xyz_tagged_value, child_name);
+
+  if (!child_ptr) {
+    assert(false); // not implemented
+  }
+
+  return stringValueOr(*child_ptr, "expression", "");
+}
+
+
+static SceneState::XYZExpressions
+xyzExpressionsFromTaggedValue(const TaggedValue &tagged_value)
+{
+  Expression x = expressionFor(tagged_value, "x");
+  Expression y = expressionFor(tagged_value, "y");
+  Expression z = expressionFor(tagged_value, "z");
 
   return {x,y,z};
 }
@@ -105,10 +144,10 @@ makeTransformFromTaggedValue(const TaggedValue &tagged_value)
 
 
 static bool
-  solveFlagFor(
-    const TaggedValue &xyz_tagged_value,
-    const string &child_name
-  )
+solveFlagFor(
+  const TaggedValue &xyz_tagged_value,
+  const string &child_name
+)
 {
   const TaggedValue *child_ptr = findChild(xyz_tagged_value, child_name);
 
@@ -220,6 +259,9 @@ createMarkerFromTaggedValueWithoutResolvingConflicts(
   if (position_ptr) {
     scene_state.marker(marker_index).position =
       xyzStateFromTaggedValue(*position_ptr);
+
+    scene_state.marker(marker_index).position_expressions =
+      xyzExpressionsFromTaggedValue(*position_ptr);
   }
 
   return marker_index;
@@ -235,7 +277,7 @@ struct BodyTaggedValue {
 
 
 static void
-buildMarkerTaggedValues(
+addMarkerTaggedValues(
   const TaggedValue &tagged_value,
   Optional<BodyIndex> maybe_parent_index,
   vector<BodyTaggedValue> &body_tagged_values
@@ -302,6 +344,9 @@ fillBoxStateFromTaggedValue(
 
     if (scale_ptr) {
       box_state.scale = xyzValueOr(*scale_ptr, default_scale);
+
+      box_state.scale_expressions =
+        xyzExpressionsFromTaggedValue(*scale_ptr);
     }
     else {
       box_state.scale.x =
@@ -525,7 +570,7 @@ createBodyFromTaggedValueWithoutResolvingConflicts(
     result, tagged_value, body_index, body_tagged_values
   );
 
-  buildMarkerTaggedValues(tagged_value, body_index, body_tagged_values);
+  addMarkerTaggedValues(tagged_value, body_index, body_tagged_values);
 
   buildDistanceErrorTaggedValues(
     tagged_value, body_index, body_tagged_values
@@ -567,7 +612,7 @@ createFromBodyTaggedValues(
   const vector<BodyTaggedValue> &body_tagged_values,
   SceneState &result,
   MarkerNameMap &marker_name_map,
-  BodyIndex body_index
+  Optional<BodyIndex> maybe_body_index
 )
 {
   createMarkersFromTaggedValues(body_tagged_values, result);
@@ -578,7 +623,7 @@ createFromBodyTaggedValues(
     body_tagged_values, result, marker_name_map
   );
 
-  resolveBodyNameConflictsOnBranch(result, body_index);
+  resolveBodyNameConflictsOnBranch(result, maybe_body_index);
 }
 
 
@@ -629,6 +674,36 @@ createChildBodiesInSceneState(
 }
 
 
+static void
+createVariableFromTaggedValue(
+  SceneState &result, const TaggedValue &tagged_value
+)
+{
+  Optional<StringValue> maybe_old_name =
+    findStringValue(tagged_value, "name");
+
+  VariableIndex variable_index = result.createVariable();
+
+  if (maybe_old_name) {
+    result.variables[variable_index].name = *maybe_old_name;
+  }
+
+  result.variables[variable_index].value =
+    findNumericValue(tagged_value, "value").valueOr(0);
+}
+
+
+static void
+createVariablesInSceneState(SceneState &result, const TaggedValue &tagged_value)
+{
+  for (auto &child_tagged_value : tagged_value.children) {
+    if (child_tagged_value.tag == "Variable") {
+      createVariableFromTaggedValue(result, child_tagged_value);
+    }
+  }
+}
+
+
 SceneState makeSceneStateFromTaggedValue(const TaggedValue &tagged_value)
 {
   SceneState result;
@@ -642,13 +717,35 @@ SceneState makeSceneStateFromTaggedValue(const TaggedValue &tagged_value)
     body_tagged_values
   );
 
-  buildMarkerTaggedValues(tagged_value, maybe_parent_index, body_tagged_values);
+  addMarkerTaggedValues(tagged_value, maybe_parent_index, body_tagged_values);
 
   buildDistanceErrorTaggedValues(
     tagged_value, maybe_parent_index, body_tagged_values
   );
 
   createFromBodyTaggedValues(body_tagged_values, result, marker_name_map, {});
+
+  createVariablesInSceneState(
+    result, tagged_value
+  );
+
+  return result;
+}
+
+
+static TaggedValue &
+create(TaggedValue &parent, const string &tag, bool value)
+{
+  parent.children.push_back(TaggedValue(tag));
+  TaggedValue &result = parent.children.back();
+
+  if (value) {
+    result.value = EnumerationValue{"true"};
+  }
+  else {
+    result.value = EnumerationValue{"false"};
+  }
+
   return result;
 }
 
@@ -680,23 +777,6 @@ static TaggedValue &
 }
 
 
-static TaggedValue &
-  create(TaggedValue &parent, const string &tag, bool value)
-{
-  parent.children.push_back(TaggedValue(tag));
-  TaggedValue &result = parent.children.back();
-
-  if (value) {
-    result.value = EnumerationValue{"true"};
-  }
-  else {
-    result.value = EnumerationValue{"false"};
-  }
-
-  return result;
-}
-
-
 static const bool *
 maybeSolveFlag(
   const SceneState::XYZSolveFlags *xyz_solve_flags_ptr,
@@ -711,18 +791,39 @@ maybeSolveFlag(
 }
 
 
+static const Expression *
+maybeExpression(
+  const SceneState::XYZExpressions *xyz_expressions_ptr,
+  Expression SceneState::XYZExpressions::* member_ptr
+)
+{
+  if (!xyz_expressions_ptr) {
+    return nullptr;
+  }
+
+  return &(xyz_expressions_ptr->*member_ptr);
+}
+
+
 static void
   create2(
     TaggedValue &parent,
     const string &member_name,
     NumericValue value,
-    const bool *solve_flag_ptr
+    const bool *solve_flag_ptr,
+    const Expression *expression_ptr
   )
 {
   TaggedValue &tagged_value = create(parent, member_name, value);
 
   if (solve_flag_ptr) {
     create(tagged_value, "solve", *solve_flag_ptr);
+  }
+
+  if (expression_ptr) {
+    if (!expression_ptr->empty()) {
+      create(tagged_value, "expression", *expression_ptr);
+    }
   }
 }
 
@@ -731,13 +832,53 @@ static void
   createXYZChildren(
     TaggedValue &parent,
     const SceneState::XYZ &xyz,
-    const SceneState::XYZSolveFlags *xyz_flags_ptr = 0
+    const SceneState::XYZSolveFlags *xyz_flags_ptr = nullptr,
+    const SceneState::XYZExpressions *expressions_ptr = nullptr
   )
 {
   using Flags = SceneState::XYZSolveFlags;
-  create2(parent, "x", xyz.x, maybeSolveFlag(xyz_flags_ptr, &Flags::x));
-  create2(parent, "y", xyz.y, maybeSolveFlag(xyz_flags_ptr, &Flags::y));
-  create2(parent, "z", xyz.z, maybeSolveFlag(xyz_flags_ptr, &Flags::z));
+  using XYZExpressions = SceneState::XYZExpressions;
+
+  create2(
+    parent,
+    "x",
+    xyz.x,
+    maybeSolveFlag(xyz_flags_ptr, &Flags::x),
+    maybeExpression(expressions_ptr, &XYZExpressions::x)
+  );
+
+  create2(
+    parent,
+    "y",
+    xyz.y,
+    maybeSolveFlag(xyz_flags_ptr, &Flags::y),
+    maybeExpression(expressions_ptr, &XYZExpressions::y)
+  );
+
+  create2(
+    parent,
+    "z",
+    xyz.z,
+    maybeSolveFlag(xyz_flags_ptr, &Flags::z),
+    maybeExpression(expressions_ptr, &XYZExpressions::z)
+  );
+}
+
+
+static TaggedValue &
+create(TaggedValue &parent, const string &tag, XYZChannels channel_state)
+{
+  parent.children.push_back(TaggedValue(tag));
+  TaggedValue &result = parent.children.back();
+
+  createXYZChildren(
+    result,
+    channel_state.values,
+    /*solve_flags_ptr*/nullptr,
+    &channel_state.expressions
+  );
+
+  return result;
 }
 
 
@@ -767,15 +908,16 @@ static TaggedValue &
       auto &parent = translation;
 
       createXYZChildren(
-        parent,
-        transform_state.translation,
-        &solve_flags.translation
+        parent, transform_state.translation, &solve_flags.translation
       );
     }
     {
       auto &rotation = create(parent, "rotation");
       auto &parent = rotation;
-      createXYZChildren(parent, transform_state.rotation, &solve_flags.rotation);
+
+      createXYZChildren(
+        parent, transform_state.rotation, &solve_flags.rotation
+      );
     }
   }
 
@@ -784,17 +926,17 @@ static TaggedValue &
 
 
 static TaggedValue &
-  createBox(TaggedValue &parent, const SceneState::Box &box_state)
+createBoxInTaggedValue(TaggedValue &parent, const SceneState::Box &box_state)
 {
   auto &box_tagged_value = create(parent, "Box");
-  create(box_tagged_value, "scale", box_state.scale);
+  create(box_tagged_value, "scale", box_state.scaleChannels());
   create(box_tagged_value, "center", box_state.center);
   return box_tagged_value;
 }
 
 
 static TaggedValue &
-  createLine(TaggedValue &parent, const SceneState::Line &line_state)
+createLineInTaggedValue(TaggedValue &parent, const SceneState::Line &line_state)
 {
   auto &box_tagged_value = create(parent, "Line");
   create(box_tagged_value, "start", line_state.start);
@@ -804,16 +946,30 @@ static TaggedValue &
 
 
 static void
-createMarker(TaggedValue &parent, const SceneState::Marker &marker_state)
+createMarkerInTaggedValue(
+  TaggedValue &parent, const SceneState::Marker &marker_state
+)
 {
   auto &marker = create(parent, "Marker");
   create(marker, "name", marker_state.name);
-  create(marker, "position", marker_state.position);
+  create(marker, "position", marker_state.positionChannels());
 }
 
 
 static void
-  createDistanceError(
+createVariableInTaggedValue(
+  TaggedValue &parent,
+  const SceneState::Variable &variable_state
+)
+{
+  auto &variable = create(parent, "Variable");
+  create(variable, "name", variable_state.name);
+  create(variable, "value", variable_state.value);
+}
+
+
+static void
+  createDistanceErrorInTaggedValue(
     TaggedValue &parent,
     const SceneState::DistanceError &distance_error_state,
     const SceneState &scene_state
@@ -896,24 +1052,26 @@ void
     );
 
   for (const SceneState::Box &box_state : body_state.boxes) {
-    createBox(transform, box_state);
+    createBoxInTaggedValue(transform, box_state);
   }
 
   for (const SceneState::Line &line_state : body_state.lines) {
-    createLine(transform, line_state);
+    createLineInTaggedValue(transform, line_state);
   }
 
   createChildBodiesInTaggedValue(transform, scene_state, body_index);
 
   for (auto &marker_state : scene_state.markers()) {
     if (maybeAttachedBodyIndex(marker_state) == body_index) {
-      createMarker(transform, marker_state);
+      createMarkerInTaggedValue(transform, marker_state);
     }
   }
 
   for (auto &distance_error_state : scene_state.distance_errors) {
     if (maybeAttachedBodyIndex(distance_error_state) == body_index) {
-      createDistanceError(transform, distance_error_state, scene_state);
+      createDistanceErrorInTaggedValue(
+        transform, distance_error_state, scene_state
+      );
     }
   }
 }
@@ -922,11 +1080,19 @@ void
 TaggedValue makeTaggedValueForSceneState(const SceneState &scene_state)
 {
   TaggedValue result("Scene");
+
+  for (
+    const SceneState::Variable &variable_state
+    : scene_state.variables
+  ) {
+    createVariableInTaggedValue(result, variable_state);
+  }
+
   createChildBodiesInTaggedValue(result, scene_state, /*maybe_parent_index*/{});
 
   for (const SceneState::Marker &marker_state : scene_state.markers()) {
     if (!maybeAttachedBodyIndex(marker_state)) {
-      createMarker(result, marker_state);
+      createMarkerInTaggedValue(result, marker_state);
     }
   }
 
@@ -935,7 +1101,9 @@ TaggedValue makeTaggedValueForSceneState(const SceneState &scene_state)
     : scene_state.distance_errors
   ) {
     if (!maybeAttachedBodyIndex(distance_error_state)) {
-      createDistanceError(result, distance_error_state, scene_state);
+      createDistanceErrorInTaggedValue(
+        result, distance_error_state, scene_state
+      );
     }
   }
 

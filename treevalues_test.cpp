@@ -149,6 +149,21 @@ static void testAddingMarker()
 }
 
 
+static void testAddingAMarkerToABodyAfterAddingAVariable()
+{
+  SceneState state;
+  VariableIndex variable_index = state.createVariable();
+  BodyIndex body_index = state.createBody();
+
+  FakeTreeWidget tree_widget;
+  TreePaths tree_paths = fillTree(tree_widget, state);
+  MarkerIndex marker_index = state.createMarker(body_index);
+  assert(!tree_paths.variables[variable_index].path.empty());
+  createMarkerInTree(marker_index, {tree_widget, tree_paths}, state);
+  checkTree(tree_widget, tree_paths, state);
+}
+
+
 static void testRemovingMarker(const string &name)
 {
   SceneState state = defaultSceneState();
@@ -312,6 +327,7 @@ int main()
 {
   testRemovingDistanceError();
   testAddingMarker();
+  testAddingAMarkerToABodyAfterAddingAVariable();
   testRemovingAGlobalMarker();
   testRemovingALocalMarker();
   testAddingASceneBody();

@@ -13,6 +13,7 @@ struct TreeWidget {
   struct MenuItem;
   using EnumerationOptions = vector<std::string>;
   using MenuItems = vector<MenuItem>;
+  using Input = std::string;
 
   struct LabelProperties {
     std::string text;
@@ -109,6 +110,7 @@ struct TreeWidget {
       NumericValue value
     ) = 0;
 
+  virtual void setItemInput(const TreePath &, const Input &) = 0;
   virtual void setItemBoolValue(const TreePath &path, bool value) = 0;
 
   virtual void

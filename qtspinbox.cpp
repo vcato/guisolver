@@ -36,6 +36,7 @@ struct PassThroughMouseButtonPresses : QObject {
 QtSpinBox::QtSpinBox()
 {
   setSingleStep(0.1);
+  setFocusPolicy(Qt::StrongFocus);
 
   lineEdit()->installEventFilter(new PassThroughMouseButtonPresses);
     // This is so that if we click on the line edit in the spin box, the
@@ -190,6 +191,12 @@ void QtSpinBox::setValue(Value arg)
     cerr << "delta: " << delta << "\n";
     assert(false);
   }
+}
+
+
+void QtSpinBox::setInput(const Input &arg)
+{
+  _input = arg;
 }
 
 

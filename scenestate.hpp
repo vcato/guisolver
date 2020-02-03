@@ -75,12 +75,22 @@ class SceneState {
       bool z = false;
     };
 
+    struct XYZChannels {
+      const XYZ &values;
+      const XYZExpressions &expressions;
+    };
+
     struct Marker {
       using Name = String;
       Position position;
       XYZExpressions position_expressions;
       Optional<BodyIndex> maybe_body_index;
       Name name;
+
+      XYZChannels positionChannels() const
+      {
+        return XYZChannels{position, position_expressions};
+      }
     };
 
     struct Transform {
@@ -103,6 +113,11 @@ class SceneState {
       Position center = {0,0,0};
       XYZExpressions scale_expressions;
       XYZExpressions center_expressions;
+
+      XYZChannels scaleChannels() const
+      {
+        return XYZChannels{scale, scale_expressions};
+      }
     };
 
     struct Line {

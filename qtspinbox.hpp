@@ -17,13 +17,15 @@ class QtSpinBox
   using Base = QtSpinBoxBase;
 
   public:
-    typedef float Value;
+    using Value = float;
+    using Input = std::string;
 
     QtSpinBox();
 
     std::function<void(Value)> value_changed_function;
-    std::function<Optional<Value>(const std::string &)> evaluate_function;
+    std::function<Optional<Value>(const Input &)> evaluate_function;
     void setValue(Value);
+    void setInput(const Input &);
     void setMinimum(Value);
     void setMaximum(Value);
     void setValue(int) = delete;

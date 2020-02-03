@@ -715,6 +715,14 @@ QtTreeWidget::setItemNumericValue(
 }
 
 
+void QtTreeWidget::setItemInput(const TreePath &path, const string &input)
+{
+  auto *spin_box_ptr = itemSpinBoxPtr(path);
+  assert(spin_box_ptr);
+  spin_box_ptr->setInput(input);
+}
+
+
 void QtTreeWidget::setItemBoolValue(const TreePath &path, bool value)
 {
   auto *check_box_ptr = Impl::itemCheckBoxPtr(*this, path);

@@ -285,10 +285,56 @@ static void testWithMultipleTransforms()
 }
 
 
+static void testWithVariable()
+{
+  string expected_string =
+    "Scene {\n"
+    "  Variable {\n"
+    "    name: \"var1\"\n"
+    "    value: 5.5\n"
+    "  }\n"
+    "}\n";
+
+  SceneState state;
+  VariableIndex variable_index = state.createVariable();
+  state.variables[variable_index].name = "var1";
+  state.variables[variable_index].value = 5.5;
+  string state_string = sceneStateString(state);
+  assert(state_string == expected_string);
+  testWith(state);
+}
+
+
+static void testWithExpression()
+{
+  string expected_string =
+    "Scene {\n"
+    "  Marker {\n"
+    "    name: \"global1\"\n"
+    "    position {\n"
+    "      x: 0 {\n"
+    "        expression: \"1+2\"\n"
+    "      }\n"
+    "      y: 0\n"
+    "      z: 0\n"
+    "    }\n"
+    "  }\n"
+    "}\n";
+
+  SceneState state;
+  MarkerIndex marker_index = state.createMarker();
+  state.marker(marker_index).position_expressions.x = "1+2";
+  assert(sceneStateString(state) == expected_string);
+  testWith(state);
+}
+
+
 int main()
 {
   testWith(defaultSceneState());
   testWithAdditionalDistanceError();
   testWithChildTransform();
   testWithMultipleTransforms();
+  testWithVariable();
+  testWithExpression();
 }

@@ -35,7 +35,8 @@ struct ItemAdder {
       const string &label,
       NumericValue value,
       NumericValue minimum_value,
-      int digits_of_precision = defaultDigitsOfPrecision()
+      int digits_of_precision = defaultDigitsOfPrecision(),
+      const Expression &expression = Expression()
     )
   {
     TreePath child_path = childPath(parent_path, n_children);
@@ -48,6 +49,10 @@ struct ItemAdder {
       noMaximumNumericValue(),
       digits_of_precision
     );
+
+    if (!expression.empty()) {
+      tree_widget.setItemInput(child_path, "=" + expression);
+    }
 
     ++n_children;
     return child_path;
@@ -122,7 +127,15 @@ struct AddSimpleNumericItemFunction : AddNumericItemFunction {
 
   ItemPaths operator()(const string &label, NumericValue value)
   {
-    return adder.addNumeric(label, value, minimum_value, digits_of_precision);
+    return adder.addNumeric(label, value, minimum_value, digits_of_precision, /*expression*/"");
+  }
+
+  ItemPaths
+  operator()(
+    const string &label, NumericValue value, const Expression &expression
+  )
+  {
+    return adder.addNumeric(label, value, minimum_value, digits_of_precision, expression);
   }
 };
 }
@@ -157,11 +170,11 @@ template <
   typename XYZPaths = TreePaths::BasicXYZ<ItemPaths>
 >
 static XYZPaths
-  createXYZChildren2(
-    AddFunction &add,
-    const SceneState::XYZ &value,
-    int digits_of_precision = defaultDigitsOfPrecision()
-  )
+createXYZChildren2(
+  AddFunction &add,
+  const SceneState::XYZ &value,
+  int digits_of_precision = defaultDigitsOfPrecision()
+)
 {
   XYZPaths xyz_paths;
   xyz_paths.path = add.adder.parent_path;
@@ -170,6 +183,32 @@ static XYZPaths
   xyz_paths.x = add("x:", value.x);
   xyz_paths.y = add("y:", value.y);
   xyz_paths.z = add("z:", value.z);
+
+  return xyz_paths;
+}
+
+
+template <
+  typename AddFunction,
+  typename ItemPaths = typename AddFunction::ItemPaths,
+  typename XYZPaths = TreePaths::BasicXYZ<ItemPaths>
+>
+static XYZPaths
+createXYZChildren2(
+  AddFunction &add,
+  SceneState::XYZChannels channels,
+  int digits_of_precision = defaultDigitsOfPrecision()
+)
+{
+  XYZPaths xyz_paths;
+  const SceneState::XYZ &values = channels.values;
+  const SceneState::XYZExpressions &expressions = channels.expressions;
+  xyz_paths.path = add.adder.parent_path;
+  add.digits_of_precision = digits_of_precision;
+
+  xyz_paths.x = add("x:", values.x, expressions.x);
+  xyz_paths.y = add("y:", values.y, expressions.y);
+  xyz_paths.z = add("z:", values.z, expressions.z);
 
   return xyz_paths;
 }
@@ -713,7 +752,9 @@ nextPaths(
     index += 3; // 3 for name, translation, rotation
   }
 
-  index += n_variables;
+  if (!maybe_body_index) {
+    index += n_variables;
+  }
 
   result.variable_path = childPath(body_path, index);
 
@@ -1006,7 +1047,10 @@ createBoxItem(
     ItemAdder child_adder{path, adder.tree_widget};
     AddSimpleNumericItemFunction add(child_adder);
     add.minimum_value = 0;
-    TreePaths::XYZ xyz_paths = createXYZChildren2(add, box_state.scale);
+
+    TreePaths::XYZ xyz_paths =
+      createXYZChildren2(add, box_state.scaleChannels());
+
     box_paths.scale = TreePaths::Scale(xyz_paths);
   }
 
@@ -1292,6 +1336,10 @@ TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
 
   for (auto i : indicesOfMarkersOnBody({}, scene_state)) {
     createMarkerInTree(i, scene_tree, scene_state);
+  }
+
+  for (auto i : indicesOf(scene_state.variables)) {
+    createVariableInTree(i, scene_tree, scene_state);
   }
 
   for (auto i : indicesOfDistanceErrorsOnBody({}, scene_state)) {
