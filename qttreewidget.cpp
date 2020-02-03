@@ -501,12 +501,12 @@ void QtTreeWidget::buildPath(vector<int> &path,QTreeWidgetItem &item) const
   QTreeWidgetItem *parent_item_ptr = item.parent();
 
   if (!parent_item_ptr) {
-    path.push_back(indexOfTopLevelItem(&item));
+    addChildToPath(path, indexOfTopLevelItem(&item));
     return;
   }
 
   buildPath(path,*parent_item_ptr);
-  path.push_back(parent_item_ptr->indexOfChild(&item));
+  addChildToPath(path, parent_item_ptr->indexOfChild(&item));
 }
 
 

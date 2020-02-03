@@ -1,6 +1,7 @@
 #ifndef TREEPATH_HPP_
 #define TREEPATH_HPP_
 
+#include <cassert>
 #include "vector.hpp"
 
 
@@ -14,6 +15,14 @@ inline TreePath childPath(TreePath path)
 }
 
 
+inline void
+addChildToPath(TreePath &path, TreeItemIndex child_index)
+{
+  assert(child_index >= 0);
+  path.push_back(child_index);
+}
+
+
 template <typename... Indices>
 inline TreePath
   childPath(
@@ -22,7 +31,7 @@ inline TreePath
     Indices... rest
   )
 {
-  path.push_back(child_index1);
+  addChildToPath(path, child_index1);
   return childPath(path,rest...);
 }
 

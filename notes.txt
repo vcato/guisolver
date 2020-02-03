@@ -90,5 +90,6 @@ we have an X error, then a line to the point with the minimum y and z values
 would be a good representation of that error.
 ---
 Duplicating a body needs to preserve expressions.
-
-Some things are being preserved but not all.
+* translation
+* rotation
+* box center

@@ -214,11 +214,12 @@ createXYZChildren2(
 }
 
 
+template <typename Values>
 static TreePaths::XYZ
   createXYZChildren(
     TreeWidget &tree_widget,
     const TreePath &parent_path,
-    const SceneState::XYZ &value,
+    const Values &value,
     int digits_of_precision = defaultDigitsOfPrecision()
   )
 {
@@ -273,19 +274,18 @@ static TreePaths::Marker
 createMarker(
   TreeWidget &tree_widget,
   const TreePath &path,
-  const SceneState::Marker &state_marker
+  const SceneState::Marker &marker_state
 )
 {
-  const string &name = state_marker.name;
-  const SceneState::XYZ &position = state_marker.position;
-  tree_widget.createVoidItem(path,LabelProperties{markerLabel(state_marker)});
+  const string &name = marker_state.name;
+  tree_widget.createVoidItem(path,LabelProperties{markerLabel(marker_state)});
   ItemAdder adder{path, tree_widget};
   TreePath name_path = adder.addString("name:", name);
   TreePath position_path = adder.addVoid("position: []");
 
   TreePaths::Position position_paths =
     TreePaths::Position(
-      createXYZChildren(tree_widget, position_path, position)
+      createXYZChildren(tree_widget, position_path, marker_state.positionChannels())
     );
 
   TreePaths::Marker marker_paths = {path, name_path, position_paths};
