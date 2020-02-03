@@ -49,6 +49,18 @@ struct BodyBoxCenterComponent : BodyComponent {
 };
 
 
+struct MarkerPositionComponent {
+  MarkerIndex marker_index;
+  XYZComponent component;
+
+  MarkerPositionComponent(MarkerIndex marker_index, XYZComponent component)
+  : marker_index(marker_index),
+    component(component)
+  {
+  }
+};
+
+
 template <typename ValueDescriptor> struct BasicChannel;
 
 
@@ -56,6 +68,7 @@ using BodyTranslationChannel = BasicChannel<BodyTranslationComponent>;
 using BodyRotationChannel = BasicChannel<BodyRotationComponent>;
 using BodyBoxScaleChannel = BasicChannel<BodyBoxScaleComponent>;
 using BodyBoxCenterChannel = BasicChannel<BodyBoxCenterComponent>;
+using MarkerPositionChannel = BasicChannel<MarkerPositionComponent>;
 
 
 struct Channel {
@@ -64,6 +77,7 @@ struct Channel {
     virtual void visit(const BodyRotationChannel &) const = 0;
     virtual void visit(const BodyBoxScaleChannel &) const = 0;
     virtual void visit(const BodyBoxCenterChannel &) const = 0;
+    virtual void visit(const MarkerPositionChannel &) const = 0;
   };
 
   virtual void accept(const Visitor &) const = 0;

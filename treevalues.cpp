@@ -2277,6 +2277,15 @@ channelPath(
           .center
           .component(channel.component);
     }
+
+    virtual void visit(const MarkerPositionChannel &channel) const
+    {
+      tree_path_ptr = &
+        tree_paths
+          .marker(channel.marker_index)
+          .position
+          .component(channel.component);
+    }
   };
 
   const TreePath *tree_path_ptr = nullptr;

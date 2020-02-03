@@ -842,7 +842,7 @@ channelExpression(const Channel &channel, SceneState &scene_state)
     {
     }
 
-    virtual void visit(const BodyTranslationChannel &channel) const
+    void visit(const BodyTranslationChannel &channel) const override
     {
       SceneState::XYZExpressions &translation_expressions =
         scene_state
@@ -854,7 +854,7 @@ channelExpression(const Channel &channel, SceneState &scene_state)
         &xyzExpressionsComponent(translation_expressions, channel.component);
     }
 
-    virtual void visit(const BodyRotationChannel &channel) const
+    void visit(const BodyRotationChannel &channel) const override
     {
       expression_ptr =
         &xyzExpressionsComponent(
@@ -866,7 +866,7 @@ channelExpression(const Channel &channel, SceneState &scene_state)
         );
     }
 
-    virtual void visit(const BodyBoxScaleChannel &channel) const
+    void visit(const BodyBoxScaleChannel &channel) const override
     {
       expression_ptr =
         &xyzExpressionsComponent(
@@ -878,7 +878,7 @@ channelExpression(const Channel &channel, SceneState &scene_state)
         );
     }
 
-    virtual void visit(const BodyBoxCenterChannel &channel) const
+    void visit(const BodyBoxCenterChannel &channel) const override
     {
       expression_ptr =
         &xyzExpressionsComponent(
@@ -886,6 +886,17 @@ channelExpression(const Channel &channel, SceneState &scene_state)
           .body(channel.body_index)
           .boxes[channel.box_index]
           .center_expressions,
+          channel.component
+        );
+    }
+
+    virtual void visit(const MarkerPositionChannel &channel) const
+    {
+      expression_ptr =
+        &xyzExpressionsComponent(
+          scene_state
+          .marker(channel.marker_index)
+          .position_expressions,
           channel.component
         );
     }
@@ -931,8 +942,7 @@ channelValue(
     {
     }
 
-    virtual void
-    visit(const BodyTranslationChannel &channel) const
+    void visit(const BodyTranslationChannel &channel) const override
     {
       value_ptr = &
         scene_state
@@ -942,7 +952,7 @@ channelValue(
           .component(channel.component);
     }
 
-    virtual void visit(const BodyRotationChannel &channel) const
+    void visit(const BodyRotationChannel &channel) const override
     {
       value_ptr = &
         scene_state
@@ -952,7 +962,7 @@ channelValue(
           .component(channel.component);
     }
 
-    virtual void visit(const BodyBoxScaleChannel &channel) const
+    void visit(const BodyBoxScaleChannel &channel) const override
     {
       value_ptr = &
         scene_state
@@ -962,13 +972,22 @@ channelValue(
           .component(channel.component);
     }
 
-    virtual void visit(const BodyBoxCenterChannel &channel) const
+    void visit(const BodyBoxCenterChannel &channel) const override
     {
       value_ptr = &
         scene_state
           .body(channel.body_index)
           .boxes[channel.box_index]
           .center
+          .component(channel.component);
+    }
+
+    void visit(const MarkerPositionChannel &channel) const override
+    {
+      value_ptr = &
+        scene_state
+          .marker(channel.marker_index)
+          .position
           .component(channel.component);
     }
   };
@@ -997,9 +1016,7 @@ template <typename F>
 static void
 forEachChannel(const SceneState &scene_state, const F &f)
 {
-  BodyIndex n_bodies = scene_state.bodies().size();
-
-  for (BodyIndex body_index = 0; body_index != n_bodies; ++body_index) {
+  for (BodyIndex body_index : indicesOf(scene_state.bodies())) {
     f(BodyTranslationChannel{body_index, XYZComponent::x});
     f(BodyTranslationChannel{body_index, XYZComponent::y});
     f(BodyTranslationChannel{body_index, XYZComponent::z});
@@ -1016,6 +1033,12 @@ forEachChannel(const SceneState &scene_state, const F &f)
       f(BodyBoxCenterChannel{body_index, box_index, XYZComponent::y});
       f(BodyBoxCenterChannel{body_index, box_index, XYZComponent::z});
     }
+  }
+
+  for (MarkerIndex marker_index : indicesOf(scene_state.markers())) {
+    f(MarkerPositionChannel{marker_index, XYZComponent::x});
+    f(MarkerPositionChannel{marker_index, XYZComponent::y});
+    f(MarkerPositionChannel{marker_index, XYZComponent::z});
   }
 }
 
@@ -1058,6 +1081,7 @@ ObservedScene::handleTreeExpressionChanged(
           setTreeBoolValue(tree_widget, solve_path, false);
         }
 
+        solveScene();
         handleSceneStateChanged();
       }
     );

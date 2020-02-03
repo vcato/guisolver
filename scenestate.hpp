@@ -78,7 +78,7 @@ class SceneState {
     struct Marker {
       using Name = String;
       Position position;
-      //XYZExpressions position_expressions;
+      XYZExpressions position_expressions;
       Optional<BodyIndex> maybe_body_index;
       Name name;
     };
