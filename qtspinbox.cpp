@@ -148,7 +148,9 @@ static string valueAsString(double arg, int decimals)
 
 void QtSpinBox::_setLineEditTextToValue()
 {
+  _ignore_signals = true;
   lineEdit()->setText(QString::fromStdString(valueAsString(_value, _decimals)));
+  _ignore_signals = false;
 }
 
 
@@ -176,9 +178,7 @@ void QtSpinBox::setValue(Value arg)
     _input = valueAsString(arg, _decimals);
   }
 
-  _ignore_signals = true;
   _updateLineEdit();
-  _ignore_signals = false;
 
   float delta = std::abs(arg - value());
   int n_digits_of_precision = decimals();

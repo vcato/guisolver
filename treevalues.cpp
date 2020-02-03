@@ -224,9 +224,9 @@ static string bodyLabel(const SceneState::Body &body_state)
 }
 
 
-static string variableLabel(const SceneState::Variable &)
+static string variableLabel(const SceneState::Variable &variable)
 {
-  return "[Variable]";
+  return "[Variable] " + variable.name;
 }
 
 
@@ -1390,6 +1390,21 @@ static void
 
 
 static void
+updateVariable(
+  VariableIndex i,
+  TreeWidget &tree_widget,
+  const TreePaths &tree_paths,
+  const SceneState &scene_state
+)
+{
+  tree_widget.setItemLabel(
+    tree_paths.variables[i].path,
+    variableLabel(scene_state.variables[i])
+  );
+}
+
+
+static void
 updateBody(
   TreeWidget &tree_widget,
   const TreePaths &tree_paths,
@@ -1453,6 +1468,10 @@ void
 
   for (auto i : indicesOf(tree_paths.distance_errors)) {
     updateDistanceError(i, tree_widget, tree_paths, state);
+  }
+
+  for (auto i : indicesOf(tree_paths.variables)) {
+    updateVariable(i, tree_widget, tree_paths, state);
   }
 
   tree_widget.setItemLabel(

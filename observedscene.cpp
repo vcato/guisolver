@@ -1,5 +1,6 @@
 #include "observedscene.hpp"
 
+#include <sstream>
 #include "startswith.hpp"
 #include "scenestatetaggedvalue.hpp"
 #include "treevalues.hpp"
@@ -12,6 +13,9 @@
 #include "evaluateexpression.hpp"
 #include "channel.hpp"
 
+using std::string;
+using std::ostringstream;
+using std::ostream;
 using TransformHandle = Scene::TransformHandle;
 using GeometryHandle = Scene::GeometryHandle;
 using ManipulatorType = Scene::ManipulatorType;
@@ -908,6 +912,73 @@ channelExpression(const Channel &channel, SceneState &scene_state)
 }
 
 
+static string componentName(const XYZComponent &component)
+{
+  switch (component) {
+    case XYZComponent::x: return "x";
+    case XYZComponent::y: return "y";
+    case XYZComponent::z: return "z";
+  }
+
+  assert(false);
+  return "";
+}
+
+
+static string channelName(const Channel &channel)
+{
+  string name;
+
+  struct Visitor : Channel::Visitor {
+    ostream &stream;
+
+    Visitor(ostream &stream)
+    : stream(stream)
+    {
+    }
+
+    void visit(const BodyTranslationChannel &channel) const override
+    {
+      stream << "body(" << channel.body_index << ").transform.translation";
+      stream << "." << componentName(channel.component);
+    }
+
+    void visit(const BodyRotationChannel &channel) const override
+    {
+      stream << "body(" << channel.body_index << ").transform.rotation";
+      stream << "." << componentName(channel.component);
+    }
+
+    void visit(const BodyBoxScaleChannel &channel) const override
+    {
+      stream << "body(" << channel.body_index << ")";
+      stream << ".box(" << channel.box_index << ")";
+      stream << ".scale";
+      stream << "." << componentName(channel.component);
+    }
+
+    void visit(const BodyBoxCenterChannel &channel) const override
+    {
+      stream << "body(" << channel.body_index << ")";
+      stream << ".box(" << channel.box_index << ")";
+      stream << ".center";
+      stream << "." << componentName(channel.component);
+    }
+
+    void visit(const MarkerPositionChannel &channel) const override
+    {
+      stream << "marker(" << channel.marker_index << ")";
+      stream << ".position";
+      stream << "." << componentName(channel.component);
+    }
+  };
+
+  ostringstream name_stream;
+  channel.accept(Visitor(name_stream));
+  return name_stream.str();
+}
+
+
 static void
 setChannelExpression(
   const Channel &channel,
@@ -1089,11 +1160,13 @@ ObservedScene::handleTreeExpressionChanged(
     );
 
   if (!path_was_channel) {
-    cerr << "setSceneStateExpression: "
-      "path=" << path << ", "
-      "expression=" << expression << "\n";
+    if (expression != "" ) {
+      cerr << "setSceneStateExpression: path is not a channel "
+        "path=" << path << ", "
+        "expression=" << expression << "\n";
 
-    return;
+      return;
+    }
   }
 }
 
