@@ -31,6 +31,14 @@ static Expression noExpression()
 
 
 namespace {
+struct NumericProperties {
+  int digits_of_precision = defaultDigitsOfPrecision();
+  NumericValue minimum_value = noMinimumNumericValue();
+};
+}
+
+
+namespace {
 struct ItemAdder {
   const TreePath &parent_path;
   TreeWidget &tree_widget;
@@ -40,8 +48,7 @@ struct ItemAdder {
     addNumeric(
       const string &label,
       NumericValue value,
-      NumericValue minimum_value,
-      int digits_of_precision = defaultDigitsOfPrecision(),
+      const NumericProperties &properties,
       const Expression &expression = Expression()
     )
   {
@@ -51,9 +58,9 @@ struct ItemAdder {
       child_path,
       LabelProperties{label},
       value,
-      minimum_value,
+      properties.minimum_value,
       noMaximumNumericValue(),
-      digits_of_precision
+      properties.digits_of_precision
     );
 
     if (expression != noExpression()) {
@@ -62,6 +69,17 @@ struct ItemAdder {
 
     ++n_children;
     return child_path;
+  }
+
+  TreePath
+    addNumeric(
+      const string &label,
+      NumericValue value,
+      NumericValue minimum_value
+    )
+  {
+    NumericProperties properties = {defaultDigitsOfPrecision(), minimum_value};
+    return addNumeric(label, value, properties, Expression());
   }
 
   TreePath addVoid(const string &label)
@@ -111,8 +129,7 @@ struct ItemAdder {
 namespace {
 struct AddNumericItemFunction {
   ItemAdder &adder;
-  int digits_of_precision = defaultDigitsOfPrecision();
-  NumericValue minimum_value = noMinimumNumericValue();
+  NumericProperties properties;
 
   AddNumericItemFunction(ItemAdder &adder)
   : adder(adder)
@@ -138,10 +155,7 @@ struct AddSimpleNumericItemFunction : AddNumericItemFunction {
     const Expression &expression = noExpression()
   )
   {
-    return
-      adder.addNumeric(
-        label, value, minimum_value, digits_of_precision, expression
-      );
+    return adder.addNumeric(label, value, properties, expression);
   }
 };
 }
@@ -164,12 +178,7 @@ struct AddChannelItemFunction : AddNumericItemFunction {
     const Expression &expression = noExpression()
   )
   {
-    TreePath path =
-      adder.addNumeric(
-        label, value, minimum_value, digits_of_precision,
-        expression
-      );
-
+    TreePath path = adder.addNumeric(label, value, properties, expression);
     ItemAdder child_adder{path, adder.tree_widget};
     TreePath solve_path = child_adder.addBool("solve", solve_state);
     return TreePaths::Channel{ path, solve_path };
@@ -192,7 +201,7 @@ createXYZChildren2(
 {
   XYZPaths xyz_paths;
   xyz_paths.path = add.adder.parent_path;
-  add.digits_of_precision = digits_of_precision;
+  add.properties.digits_of_precision = digits_of_precision;
 
   xyz_paths.x = add("x:", value.x);
   xyz_paths.y = add("y:", value.y);
@@ -210,7 +219,7 @@ template <
 static XYZPaths
 createXYZChildren2(
   AddFunction &add,
-  SceneState::XYZChannels channels,
+  SceneState::XYZChannelsRef channels,
   int digits_of_precision = defaultDigitsOfPrecision()
 )
 {
@@ -218,7 +227,7 @@ createXYZChildren2(
   const SceneState::XYZ &values = channels.values;
   const SceneState::XYZExpressions &expressions = channels.expressions;
   xyz_paths.path = add.adder.parent_path;
-  add.digits_of_precision = digits_of_precision;
+  add.properties.digits_of_precision = digits_of_precision;
 
   xyz_paths.x = add("x:", values.x, expressions.x);
   xyz_paths.y = add("y:", values.y, expressions.y);
@@ -257,7 +266,7 @@ createXYZChannels(
   AddChannelItemFunction add(adder);
   TreePaths::XYZChannels xyz_paths;
   xyz_paths.path = add.adder.parent_path;
-  add.digits_of_precision = digits_of_precision;
+  add.properties.digits_of_precision = digits_of_precision;
 
   xyz_paths.x = add("x:", value.x, solve_flags.x, expressions.x);
   xyz_paths.y = add("y:", value.y, solve_flags.y, expressions.y);
@@ -323,12 +332,7 @@ createVariable(
   TreePath name_path = adder.addString("name:", variable_state.name);
 
   TreePath value_path =
-    adder.addNumeric(
-      "value:",
-      variable_state.value,
-      noMinimumNumericValue(),
-      defaultDigitsOfPrecision()
-    );
+    adder.addNumeric("value:", variable_state.value, NumericProperties{});
 
   TreePaths::Variable variable_paths = {path, name_path, value_path};
   return variable_paths;
@@ -1045,6 +1049,23 @@ addXYZ(ItemAdder &adder, const string &label, const SceneState::XYZ &xyz)
 }
 
 
+static TreePaths::XYZ
+addXYZTo(
+  ItemAdder &adder,
+  const string &label,
+  SceneState::XYZChannelsRef channels,
+  const NumericProperties &properties
+)
+{
+  TreePath path = adder.addVoid(label);
+  ItemAdder child_adder{path, adder.tree_widget};
+  AddSimpleNumericItemFunction add(child_adder);
+  add.properties = properties;
+  TreePaths::XYZ xyz_paths = createXYZChildren2(add, channels);
+  return xyz_paths;
+}
+
+
 static BoxPaths
 createBoxItem(
   const TreePath &box_path,
@@ -1058,18 +1079,21 @@ createBoxItem(
   ItemAdder adder{box_path, tree_widget};
 
   {
-    TreePath path = adder.addVoid("scale: []");
-    ItemAdder child_adder{path, adder.tree_widget};
-    AddSimpleNumericItemFunction add(child_adder);
-    add.minimum_value = 0;
-
-    TreePaths::XYZ xyz_paths =
-      createXYZChildren2(add, box_state.scaleChannels());
-
+    NumericProperties properties;
+    properties.minimum_value = 0;
+    SceneState::XYZChannelsRef channels = box_state.scaleChannels();
+    const string label = "scale: []";
+    TreePaths::XYZ xyz_paths = addXYZTo(adder, label, channels, properties);
     box_paths.scale = TreePaths::Scale(xyz_paths);
   }
 
-  box_paths.center = addXYZ(adder, "center: []", box_state.center);
+  {
+    NumericProperties properties;
+    SceneState::XYZChannelsRef channels = box_state.centerChannels();
+    const string label = "center: []";
+    box_paths.center = addXYZTo(adder, label, channels, properties);
+  }
+
   return box_paths;
 }
 

@@ -1269,7 +1269,7 @@ BodyIndex ObservedScene::addBody(Optional<BodyIndex> maybe_parent_body_index)
   ObservedScene &observed_scene = *this;
   SceneState &scene_state = observed_scene.scene_state;
   BodyIndex body_index = scene_state.createBody(maybe_parent_body_index);
-  scene_state.body(body_index).addBox();
+  scene_state.body(body_index).createBox();
   ObservedScene::createBodyInScene(body_index, observed_scene);
   ObservedScene::createBodyInTree(body_index, observed_scene);
 
@@ -1279,7 +1279,7 @@ BodyIndex ObservedScene::addBody(Optional<BodyIndex> maybe_parent_body_index)
 
 BoxIndex ObservedScene::addBoxTo(BodyIndex body_index)
 {
-  BoxIndex box_index = scene_state.body(body_index).addBox();
+  BoxIndex box_index = scene_state.body(body_index).createBox();
   ::createBoxInScene(scene, scene_handles, body_index, box_index);
 
   ::createBoxInTree(
@@ -1292,7 +1292,7 @@ BoxIndex ObservedScene::addBoxTo(BodyIndex body_index)
 
 BoxIndex ObservedScene::addLineTo(BodyIndex body_index)
 {
-  LineIndex line_index = scene_state.body(body_index).addLine();
+  LineIndex line_index = scene_state.body(body_index).createLine();
 
   ::createLineInScene(
     scene, scene_handles, body_index, line_index, scene_state

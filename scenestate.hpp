@@ -75,7 +75,7 @@ class SceneState {
       bool z = false;
     };
 
-    struct XYZChannels {
+    struct XYZChannelsRef {
       const XYZ &values;
       const XYZExpressions &expressions;
     };
@@ -87,9 +87,9 @@ class SceneState {
       Optional<BodyIndex> maybe_body_index;
       Name name;
 
-      XYZChannels positionChannels() const
+      XYZChannelsRef positionChannels() const
       {
-        return XYZChannels{position, position_expressions};
+        return XYZChannelsRef{position, position_expressions};
       }
     };
 
@@ -114,9 +114,14 @@ class SceneState {
       XYZExpressions scale_expressions;
       XYZExpressions center_expressions;
 
-      XYZChannels scaleChannels() const
+      XYZChannelsRef scaleChannels() const
       {
-        return XYZChannels{scale, scale_expressions};
+        return XYZChannelsRef{scale, scale_expressions};
+      }
+
+      XYZChannelsRef centerChannels() const
+      {
+        return XYZChannelsRef{center, center_expressions};
       }
     };
 
@@ -135,14 +140,14 @@ class SceneState {
       TransformExpressions expressions;
       Optional<BodyIndex> maybe_parent_index;
 
-      BoxIndex addBox()
+      BoxIndex createBox()
       {
         BoxIndex box_index = boxes.size();
         boxes.emplace_back();
         return box_index;
       }
 
-      LineIndex addLine()
+      LineIndex createLine()
       {
         LineIndex line_index = lines.size();
         lines.emplace_back();

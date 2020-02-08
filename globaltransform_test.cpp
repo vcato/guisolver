@@ -10,7 +10,7 @@ static BodyIndex
   createBodyIn(SceneState &scene_state, Optional<BodyIndex> maybe_parent_index)
 {
   BodyIndex body_index = scene_state.createBody(maybe_parent_index);
-  scene_state.body(body_index).addBox();
+  scene_state.body(body_index).createBox();
   return body_index;
 }
 

@@ -39,11 +39,37 @@ struct QtTreeWidget::Impl {
     return item_widget_ptr;
   }
 
+  static bool
+  itemIsInTree(QTreeWidgetItem &item, const QTreeWidget &tree_widget)
+  {
+    auto item_ptr = &item;
+
+    for (;;) {
+      auto parent_item_ptr = item_ptr->parent();
+
+      if (!parent_item_ptr) {
+        break;
+      }
+
+      item_ptr = parent_item_ptr;
+    }
+
+    assert(item_ptr);
+    return (tree_widget.indexOfTopLevelItem(item_ptr) >= 0);
+  }
+
   static Optional<NumericValue>
   evaluateNumberInput(
     QtTreeWidget &tree_widget, const string &input, QTreeWidgetItem &item
   )
   {
+    if (!itemIsInTree(item, tree_widget)) {
+      // This can happen when we remove an item.  The item is removed from
+      // thre tree before the widgets are destroyed.  A spin box will try
+      // to validate its input before it is destroyed.
+      return {};
+    }
+
     if (tree_widget.evaluate_function) {
       return tree_widget.evaluate_function(tree_widget.itemPath(item), input);
     }
@@ -108,10 +134,8 @@ struct QtTreeWidget::Impl {
   {
     QWidget *value_widget_ptr = wrapper_widget.value_widget_ptr;
     wrapper_widget.value_widget_ptr = 0;
-
     QBoxLayout &box_layout = boxLayout(wrapper_widget);
-    box_layout.removeWidget(wrapper_widget.value_widget_ptr);
-
+    box_layout.removeWidget(value_widget_ptr);
     delete value_widget_ptr;
   }
 
@@ -501,7 +525,9 @@ void QtTreeWidget::buildPath(vector<int> &path,QTreeWidgetItem &item) const
   QTreeWidgetItem *parent_item_ptr = item.parent();
 
   if (!parent_item_ptr) {
-    addChildToPath(path, indexOfTopLevelItem(&item));
+    int index = indexOfTopLevelItem(&item);
+    assert(index >= 0);
+    addChildToPath(path, index);
     return;
   }
 

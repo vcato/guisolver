@@ -52,7 +52,7 @@ SceneState defaultSceneState()
   SceneState result;
   SceneState::XYZ scale = { 5.0, 0.1, 10.0 };
   BodyIndex body_index = result.createBody(/*maybe_parent_index*/{});
-  result.body(body_index).addBox();
+  result.body(body_index).createBox();
   setAll(result.body(body_index).solve_flags, true);
   result.body(body_index).boxes[0].scale = scale;
 

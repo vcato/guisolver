@@ -15,7 +15,7 @@ createBodyIn(
 )
 {
   BodyIndex body_index = scene_state.createBody(maybe_parent_index);
-  scene_state.body(body_index).addBox();
+  scene_state.body(body_index).createBox();
   setAll(scene_state.body(body_index).solve_flags, true);
   return body_index;
 }

@@ -19,7 +19,7 @@ static BodyIndex
 createBodyIn(SceneState &scene_state, Optional<BodyIndex> maybe_parent_index)
 {
   BodyIndex body_index = scene_state.createBody(maybe_parent_index);
-  scene_state.body(body_index).addBox();
+  scene_state.body(body_index).createBox();
   setAll(scene_state.body(body_index).solve_flags, true);
   return body_index;
 }
@@ -294,9 +294,9 @@ static void testAddingASecondBox()
   FakeTreeWidget tree_widget;
   SceneState scene_state;
   BodyIndex body_index = scene_state.createBody();
-  scene_state.body(body_index).addBox();
+  scene_state.body(body_index).createBox();
   TreePaths tree_paths = fillTree(tree_widget, scene_state);
-  BoxIndex box2_index = scene_state.body(body_index).addBox();
+  BoxIndex box2_index = scene_state.body(body_index).createBox();
 
   createBoxInTree(
     {tree_widget, tree_paths}, scene_state, body_index, box2_index
@@ -313,7 +313,7 @@ static void testInsertingABox()
   BodyIndex body_index = scene_state.createBody();
   scene_state.createMarker(body_index);
   TreePaths tree_paths = fillTree(tree_widget, scene_state);
-  BoxIndex box_index = scene_state.body(body_index).addBox();
+  BoxIndex box_index = scene_state.body(body_index).createBox();
 
   createBoxInTree(
     {tree_widget, tree_paths}, scene_state, body_index, box_index

@@ -6,7 +6,7 @@
 
 using std::string;
 using std::cerr;
-using XYZChannels = SceneState::XYZChannels;
+using XYZChannels = SceneState::XYZChannelsRef;
 
 
 static void
@@ -392,6 +392,9 @@ fillBoxStateFromTaggedValue(
   }
 
   box_state.center = xyzValueOr(box_tagged_value, "center", {0,0,0});
+
+  box_state.center_expressions =
+    makeXYZExpressionsFromTaggedValue(box_tagged_value, "center");
 }
 
 
@@ -570,7 +573,7 @@ createBodyInSceneState(
   for (auto &child : tagged_value.children) {
     if (child.tag == "Box") {
       const TaggedValue &box_tagged_value = child;
-      BoxIndex box_index = result.body(body_index).addBox();
+      BoxIndex box_index = result.body(body_index).createBox();
       SceneState::Box &box_state = result.body(body_index).boxes[box_index];
       fillBoxStateFromTaggedValue(box_state, box_tagged_value);
     }
@@ -579,7 +582,7 @@ createBodyInSceneState(
   for (auto &child : tagged_value.children) {
     if (child.tag == "Line") {
       const TaggedValue &line_tagged_value = child;
-      LineIndex line_index = result.body(body_index).addLine();
+      LineIndex line_index = result.body(body_index).createLine();
       SceneState::Line &line_state = result.body(body_index).lines[line_index];
       fillLineStateFromTaggedValue(line_state, line_tagged_value);
     }
@@ -971,7 +974,7 @@ createBoxInTaggedValue(TaggedValue &parent, const SceneState::Box &box_state)
 {
   auto &box_tagged_value = create(parent, "Box");
   create(box_tagged_value, "scale", box_state.scaleChannels());
-  create(box_tagged_value, "center", box_state.center);
+  create(box_tagged_value, "center", box_state.centerChannels());
   return box_tagged_value;
 }
 

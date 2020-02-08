@@ -201,6 +201,7 @@ static void testDuplicateBodyWhenTheBodyHasExpressions()
 {
   SceneState initial_state;
   BodyIndex body_index = initial_state.createBody();
+  BoxIndex box_index = initial_state.body(body_index).createBox();
   Expression test_expression = "1+2";
 
   initial_state.body(body_index)
@@ -212,6 +213,9 @@ static void testDuplicateBodyWhenTheBodyHasExpressions()
     .expressions
     .rotation
     .x = test_expression;
+
+  initial_state.body(body_index).boxes[box_index].center_expressions.x =
+    test_expression;
 
   Tester tester;
   ObservedScene &observed_scene = tester.observed_scene;
@@ -236,10 +240,18 @@ static void testDuplicateBodyWhenTheBodyHasExpressions()
   TreePath rx_path =
     tree_paths.body(duplicate_body_index).rotation.x.path;
 
+  TreePath centerx_path =
+    tree_paths.body(duplicate_body_index).boxes[box_index].center.x;
+
   TreeWidget::Input tx_input = tester.tree_widget.item(tx_path).input;
   TreeWidget::Input rx_input = tester.tree_widget.item(rx_path).input;
+
+  TreeWidget::Input centerx_input =
+    tester.tree_widget.item(centerx_path).input;
+
   assert(tx_input == "=" + test_expression);
   assert(rx_input == "=" + test_expression);
+  assert(centerx_input == "=" + test_expression);
 }
 
 
@@ -660,7 +672,7 @@ static void testSettingBoxScaleExpression()
 {
   SceneState initial_state;
   BodyIndex body_index = initial_state.createBody();
-  BoxIndex box_index = initial_state.body(body_index).addBox();
+  BoxIndex box_index = initial_state.body(body_index).createBox();
 
   Tester tester;
   ObservedScene &observed_scene = tester.observed_scene;
