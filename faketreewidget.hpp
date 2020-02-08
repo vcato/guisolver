@@ -16,6 +16,7 @@ struct FakeTreeItem {
   ValueString value_string;
   Optional<NumericValue> maybe_numeric_value;
   vector<FakeTreeItem> children;
+  TreeWidget::Input input;
 
   FakeTreeItem() = default;
 
@@ -80,9 +81,9 @@ struct FakeTreeWidget : TreeWidget {
     item(path).value_string = boolValueText(value);
   }
 
-  void setItemInput(const TreePath &, const Input &) override
+  void setItemInput(const TreePath &path, const Input &arg) override
   {
-    assert(false); // not implemented
+    item(path).input = arg;
   }
 
   static FakeTreeItem::ValueString boolValueText(bool);

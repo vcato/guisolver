@@ -1139,6 +1139,17 @@ forPathChannel(
 }
 
 
+bool ObservedScene::pathSupportsExpressions(const TreePath &path) const
+{
+  bool path_is_channel =
+    forPathChannel(path, tree_paths, scene_state,
+      [&](const Channel &){}
+    );
+
+  return path_is_channel;
+}
+
+
 void
 ObservedScene::handleTreeExpressionChanged(
   const TreePath &path, const std::string &expression

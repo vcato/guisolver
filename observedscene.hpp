@@ -135,6 +135,7 @@ struct ObservedScene {
   const bool *solveStatePtr(const TreePath &) const;
   bool *solveStatePtr(const TreePath &);
   void setSolveFlags(const TreeItemDescription &item, bool state);
+  bool pathSupportsExpressions(const TreePath &) const;
 
   void handleSceneStateChanged();
   void handleTreeSelectionChanged();

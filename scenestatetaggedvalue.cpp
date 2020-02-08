@@ -160,7 +160,7 @@ solveFlagFor(
 
 
 static SceneState::XYZSolveFlags
-  makeXYZSolveFlagsFromTaggeDvalue(
+  makeXYZSolveFlagsFromTaggedValue(
     const TaggedValue &tagged_value,
     const string &child_name
   )
@@ -181,16 +181,47 @@ static SceneState::XYZSolveFlags
 }
 
 
+static SceneState::XYZExpressions
+  makeXYZExpressionsFromTaggedValue(
+    const TaggedValue &tagged_value,
+    const string &child_name
+  )
+{
+  const TaggedValue *child_ptr = findChild(tagged_value, child_name);
+
+  if (!child_ptr) {
+    assert(false); // not implemented
+  }
+
+  return xyzExpressionsFromTaggedValue(*child_ptr);
+}
+
+
 static SceneState::TransformSolveFlags
   makeSolveFlagsFromTaggedValue(const TaggedValue &tagged_value)
 {
   SceneState::TransformSolveFlags result;
 
   result.translation =
-    makeXYZSolveFlagsFromTaggeDvalue(tagged_value, "translation");
+    makeXYZSolveFlagsFromTaggedValue(tagged_value, "translation");
 
   result.rotation =
-    makeXYZSolveFlagsFromTaggeDvalue(tagged_value, "rotation");
+    makeXYZSolveFlagsFromTaggedValue(tagged_value, "rotation");
+
+  return result;
+}
+
+
+static SceneState::TransformExpressions
+  makeExpressionsFromTaggedValue(const TaggedValue &tagged_value)
+{
+  SceneState::TransformExpressions result;
+
+  result.translation =
+    makeXYZExpressionsFromTaggedValue(tagged_value, "translation");
+
+  result.rotation =
+    makeXYZExpressionsFromTaggedValue(tagged_value, "rotation");
 
   return result;
 }
@@ -532,6 +563,9 @@ createBodyInSceneState(
 
   result.body(body_index).solve_flags =
     makeSolveFlagsFromTaggedValue(tagged_value);
+
+  result.body(body_index).expressions =
+    makeExpressionsFromTaggedValue(tagged_value);
 
   for (auto &child : tagged_value.children) {
     if (child.tag == "Box") {
@@ -892,11 +926,12 @@ create(TaggedValue &parent, const string &tag, const SceneState::XYZ &xyz_state)
 
 
 static TaggedValue &
-  createTransform(
+  createTransformInTaggedValue(
     TaggedValue &parent,
     const SceneState::Body::Name &name,
     const TransformState &transform_state,
-    const SceneState::TransformSolveFlags &solve_flags
+    const SceneState::TransformSolveFlags &solve_flags,
+    const SceneState::TransformExpressions &expressions
   )
 {
   auto &transform = create(parent, "Transform");
@@ -908,7 +943,10 @@ static TaggedValue &
       auto &parent = translation;
 
       createXYZChildren(
-        parent, transform_state.translation, &solve_flags.translation
+        parent,
+        transform_state.translation,
+        &solve_flags.translation,
+        &expressions.translation
       );
     }
     {
@@ -916,7 +954,10 @@ static TaggedValue &
       auto &parent = rotation;
 
       createXYZChildren(
-        parent, transform_state.rotation, &solve_flags.rotation
+        parent,
+        transform_state.rotation,
+        &solve_flags.rotation,
+        &expressions.rotation
       );
     }
   }
@@ -1044,11 +1085,12 @@ void
   const TransformState &transform_state = body_state.transform;
 
   TaggedValue &transform =
-    createTransform(
+    createTransformInTaggedValue(
       parent,
       body_state.name,
       transform_state,
-      body_state.solve_flags
+      body_state.solve_flags,
+      body_state.expressions
     );
 
   for (const SceneState::Box &box_state : body_state.boxes) {

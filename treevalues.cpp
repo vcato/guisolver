@@ -24,6 +24,12 @@ using LinePaths = TreePaths::Line;
 static int defaultDigitsOfPrecision() { return 2; }
 
 
+static Expression noExpression()
+{
+  return "";
+}
+
+
 namespace {
 struct ItemAdder {
   const TreePath &parent_path;
@@ -50,7 +56,7 @@ struct ItemAdder {
       digits_of_precision
     );
 
-    if (!expression.empty()) {
+    if (expression != noExpression()) {
       tree_widget.setItemInput(child_path, "=" + expression);
     }
 
@@ -125,17 +131,17 @@ struct AddSimpleNumericItemFunction : AddNumericItemFunction {
   {
   }
 
-  ItemPaths operator()(const string &label, NumericValue value)
-  {
-    return adder.addNumeric(label, value, minimum_value, digits_of_precision, /*expression*/"");
-  }
-
   ItemPaths
   operator()(
-    const string &label, NumericValue value, const Expression &expression
+    const string &label,
+    NumericValue value,
+    const Expression &expression = noExpression()
   )
   {
-    return adder.addNumeric(label, value, minimum_value, digits_of_precision, expression);
+    return
+      adder.addNumeric(
+        label, value, minimum_value, digits_of_precision, expression
+      );
   }
 };
 }
@@ -150,14 +156,22 @@ struct AddChannelItemFunction : AddNumericItemFunction {
   {
   }
 
-  ItemPaths operator()(const string &label, NumericValue value, bool state)
+  ItemPaths
+  operator()(
+    const string &label,
+    NumericValue value,
+    bool solve_state,
+    const Expression &expression = noExpression()
+  )
   {
     TreePath path =
-      adder.addNumeric(label, value, minimum_value, digits_of_precision);
+      adder.addNumeric(
+        label, value, minimum_value, digits_of_precision,
+        expression
+      );
 
     ItemAdder child_adder{path, adder.tree_widget};
-
-    TreePath solve_path = child_adder.addBool("solve", state);
+    TreePath solve_path = child_adder.addBool("solve", solve_state);
     return TreePaths::Channel{ path, solve_path };
   }
 };
@@ -235,6 +249,7 @@ createXYZChannels(
   const TreePath &parent_path,
   const SceneState::XYZ &value,
   const SceneState::XYZSolveFlags &solve_flags,
+  const SceneState::XYZExpressions &expressions,
   int digits_of_precision
 )
 {
@@ -244,9 +259,9 @@ createXYZChannels(
   xyz_paths.path = add.adder.parent_path;
   add.digits_of_precision = digits_of_precision;
 
-  xyz_paths.x = add("x:", value.x, solve_flags.x);
-  xyz_paths.y = add("y:", value.y, solve_flags.y);
-  xyz_paths.z = add("z:", value.z, solve_flags.z);
+  xyz_paths.x = add("x:", value.x, solve_flags.x, expressions.x);
+  xyz_paths.y = add("y:", value.y, solve_flags.y, expressions.y);
+  xyz_paths.z = add("z:", value.z, solve_flags.z, expressions.z);
 
   return xyz_paths;
 }
@@ -1101,6 +1116,7 @@ createBodyItem(
         translation_path,
         body_state.transform.translation,
         body_state.solve_flags.translation,
+        body_state.expressions.translation,
         defaultDigitsOfPrecision()
       )
     );
@@ -1112,6 +1128,7 @@ createBodyItem(
         rotation_path,
         body_state.transform.rotation,
         body_state.solve_flags.rotation,
+        body_state.expressions.rotation,
         /*digits_of_precision*/1
       )
     );

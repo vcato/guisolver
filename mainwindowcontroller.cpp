@@ -166,14 +166,19 @@ struct MainWindowController::Impl {
       return {};
     }
 
-    if (text[0] != '=') {
+    if (text[0] == '=') {
+      if (!observed_scene.pathSupportsExpressions(path)) {
+        return {};
+      }
+
+      string expr = arg.substr(1);
+      observed_scene.handleTreeExpressionChanged(path, expr);
+      return {};
+    }
+    else {
       observed_scene.handleTreeExpressionChanged(path, "");
       return parseDouble(arg);
     }
-
-    string expr = arg.substr(1);
-    observed_scene.handleTreeExpressionChanged(path, expr);
-    return {};
   }
 
   static TreeWidget::MenuItems

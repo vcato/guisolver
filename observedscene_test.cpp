@@ -108,7 +108,7 @@ static void testTransferringAMarker()
 }
 
 
-static void testDuplicatingABody()
+static void testDuplicateBody()
 {
   // Create a body that has a distance error
   //
@@ -197,7 +197,53 @@ static void testDuplicatingABody()
 }
 
 
-static void testDuplicatingABodyWithDistanceErrors()
+static void testDuplicateBodyWhenTheBodyHasExpressions()
+{
+  SceneState initial_state;
+  BodyIndex body_index = initial_state.createBody();
+  Expression test_expression = "1+2";
+
+  initial_state.body(body_index)
+    .expressions
+    .translation
+    .x = test_expression;
+
+  initial_state.body(body_index)
+    .expressions
+    .rotation
+    .x = test_expression;
+
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+  observed_scene.replaceSceneStateWith(initial_state);
+  BodyIndex duplicate_body_index = observed_scene.duplicateBody(body_index);
+
+  // check that the duplicate has the same expression
+  const Expression &duplicate_expression =
+    observed_scene
+    .scene_state
+    .body(duplicate_body_index)
+    .expressions
+    .translation
+    .x;
+
+  assert(duplicate_expression == test_expression);
+  TreePaths &tree_paths = observed_scene.tree_paths;
+
+  TreePath tx_path =
+    tree_paths.body(duplicate_body_index).translation.x.path;
+
+  TreePath rx_path =
+    tree_paths.body(duplicate_body_index).rotation.x.path;
+
+  TreeWidget::Input tx_input = tester.tree_widget.item(tx_path).input;
+  TreeWidget::Input rx_input = tester.tree_widget.item(rx_path).input;
+  assert(tx_input == "=" + test_expression);
+  assert(rx_input == "=" + test_expression);
+}
+
+
+static void testDuplicateBodyWithDistanceErrors()
 {
   Tester tester;
   ObservedScene &observed_scene = tester.observed_scene;
@@ -656,8 +702,9 @@ int main()
   testTransferringABody1();
   testTransferringABody2();
   testTransferringAMarker();
-  testDuplicatingABody();
-  testDuplicatingABodyWithDistanceErrors();
+  testDuplicateBody();
+  testDuplicateBodyWhenTheBodyHasExpressions();
+  testDuplicateBodyWithDistanceErrors();
   testUserSelectingABodyInTheTree();
   testSelectingSceneInTheTree();
   testSelectingMarkerInTheScene();
