@@ -88,5 +88,3 @@ Body {
 A nice visual representation of error is a line to the closest point.  If
 we have an X error, then a line to the point with the minimum y and z values
 would be a good representation of that error.
----
-Need to be able to remove variables.

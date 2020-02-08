@@ -281,9 +281,15 @@ void SceneState::removeMarker(MarkerIndex index_to_remove)
 }
 
 
-void SceneState::removeDistanceError(int index)
+void SceneState::removeDistanceError(DistanceErrorIndex index)
 {
   removeIndexFrom(distance_errors, index);
+}
+
+
+void SceneState::removeVariable(VariableIndex index)
+{
+  removeIndexFrom(variables, index);
 }
 
 

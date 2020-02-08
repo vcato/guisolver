@@ -41,6 +41,13 @@ extern void
   );
 
 extern void
+  removeVariableFromScene(
+    Scene &scene,
+    SceneHandles &,
+    VariableIndex
+  );
+
+extern void
   removeMarkerObjectFromScene(
     MarkerIndex index,
     Scene &scene,

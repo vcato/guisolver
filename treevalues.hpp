@@ -75,6 +75,8 @@ extern void
   removeDistanceErrorFromTree(int distance_error_index, SceneTreeRef);
 
 extern void removeMarkerFromTree(MarkerIndex, SceneTreeRef);
+extern void removeVariableFromTree(VariableIndex, SceneTreeRef);
+
 extern void removeMarkerItemFromTree(MarkerIndex marker_index, SceneTreeRef);
 
 extern void

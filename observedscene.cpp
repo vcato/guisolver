@@ -387,6 +387,9 @@ treeItemForSceneObject(
 struct ObservedScene::Impl {
   static void evaluateExpressions(ObservedScene &);
   static void evaluateChannelExpression(const Channel &, ObservedScene &);
+
+  static TreeItemDescription
+    describePath(const TreePath &path, const TreePaths &tree_paths);
 };
 
 
@@ -600,6 +603,19 @@ void ObservedScene::removeDistanceError(DistanceErrorIndex distance_error_index)
 }
 
 
+void ObservedScene::removeVariable(VariableIndex variable_index)
+{
+  removeVariableFromTree(variable_index, {tree_widget, tree_paths});
+  removeVariableFromScene(scene, scene_handles, variable_index);
+  scene_state.removeVariable(variable_index);
+
+  // Not evaluating expressions here because removing a variable will just
+  // cause any expressions that are using the variable to become invalid,
+  // which doesn't change the value of the channel in which the expression is
+  // used.
+}
+
+
 template <typename Function>
 static void
 forEachChildItemPath(
@@ -712,7 +728,6 @@ ObservedScene::properManpiulatorForSelectedObject() const
   const ObservedScene &observed_scene = *this;
   Scene &scene = observed_scene.scene;
   TreeWidget &tree_widget = observed_scene.tree_widget;
-  const TreePaths &tree_paths = observed_scene.tree_paths;
 
   Optional<GeometryHandle> selected_geometry = scene.selectedGeometry();
 
@@ -727,7 +742,7 @@ ObservedScene::properManpiulatorForSelectedObject() const
   }
 
   ObservedScene::TreeItemDescription item =
-    ObservedScene::describePath(*tree_widget.selectedItem(), tree_paths);
+    observed_scene.describePath(*tree_widget.selectedItem());
 
   if (item.has_rotation_ancestor) {
     return ManipulatorType::rotate;
@@ -1545,7 +1560,9 @@ void ObservedScene::handleSceneStateChanged()
 
 
 auto
-ObservedScene::describePath(const TreePath &path, const TreePaths &tree_paths)
+ObservedScene::Impl::describePath(
+  const TreePath &path, const TreePaths &tree_paths
+)
 -> TreeItemDescription
 {
   TreeItemDescription description;
@@ -1632,6 +1649,14 @@ ObservedScene::describePath(const TreePath &path, const TreePaths &tree_paths)
     if (path == tree_paths.distance_errors[i].path) {
       description.type = ItemType::distance_error;
       description.maybe_distance_error_index = i;
+      return description;
+    }
+  }
+
+  for (auto i : indicesOf(tree_paths.variables)) {
+    if (path == tree_paths.variables[i].path) {
+      description.type = ItemType::variable;
+      description.maybe_variable_index = i;
       return description;
     }
   }
@@ -1860,4 +1885,12 @@ void ObservedScene::setSolveFlags(const TreeItemDescription &item, bool state)
       transform_solve_flags.rotation
     );
   }
+}
+
+
+auto
+ObservedScene::describePath(const TreePath &path) const
+-> TreeItemDescription
+{
+  return Impl::describePath(path, tree_paths);
 }

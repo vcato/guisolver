@@ -30,14 +30,16 @@ struct ObservedScene {
       distance_error,
       translation,
       rotation,
+      variable,
       other
     };
 
     Type type = Type::other;
     Optional<BodyIndex> maybe_body_index;
     Optional<MarkerIndex> maybe_marker_index;
-    Optional<size_t> maybe_box_index;
-    Optional<size_t> maybe_line_index;
+    Optional<BoxIndex> maybe_box_index;
+    Optional<LineIndex> maybe_line_index;
+    Optional<VariableIndex> maybe_variable_index;
     Optional<DistanceErrorIndex> maybe_distance_error_index;
     bool has_rotation_ancestor = false;
     bool has_translation_ancesor = false;
@@ -94,9 +96,7 @@ struct ObservedScene {
   BodyIndex duplicateBodyWithDistanceErrors(BodyIndex);
   MarkerIndex duplicateMarker(MarkerIndex);
   MarkerIndex duplicateMarkerWithDistanceError(MarkerIndex);
-
-  static TreeItemDescription
-    describePath(const TreePath &path, const TreePaths &tree_paths);
+  TreeItemDescription describePath(const TreePath &path) const;
 
   static BodyIndex
     duplicateBody(BodyIndex, MarkerNameMap &, ObservedScene &);
@@ -108,6 +108,7 @@ struct ObservedScene {
   void removeBox(BodyIndex, BoxIndex);
   void removeLine(BodyIndex, LineIndex);
   void removeDistanceError(DistanceErrorIndex);
+  void removeVariable(VariableIndex);
   static void clearClipboard(ObservedScene &);
 
   void replaceSceneStateWith(const SceneState &);

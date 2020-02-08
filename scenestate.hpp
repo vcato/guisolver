@@ -205,11 +205,12 @@ class SceneState {
       return createMarker("");
     }
 
-    void removeMarker(MarkerIndex index_to_remove);
-
     bool bodyHasChildren(BodyIndex body_index) const;
 
-    void removeBody(BodyIndex index_to_remove);
+    void removeMarker(MarkerIndex);
+    void removeBody(BodyIndex);
+    void removeDistanceError(DistanceErrorIndex index);
+    void removeVariable(VariableIndex);
 
     DistanceErrorIndex
     createDistanceError(Optional<BodyIndex> maybe_body_index = {})
@@ -219,8 +220,6 @@ class SceneState {
       distance_errors[index].maybe_body_index = maybe_body_index;
       return index;
     }
-
-    void removeDistanceError(int index);
 
     VariableIndex createVariable();
 

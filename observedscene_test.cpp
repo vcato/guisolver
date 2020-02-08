@@ -385,15 +385,75 @@ static void testReplacingSceneState()
 }
 
 
-static void testAddingAVariable()
+static void
+userChangesTreeItemExpression(
+  const TreePath &channel_path,
+  const Expression &expr,
+  Tester &tester
+)
+{
+  ObservedScene &observed_scene = tester.observed_scene;
+  observed_scene.handleTreeExpressionChanged(channel_path, expr);
+}
+
+
+static void
+userChangesVariableValue(
+  VariableIndex variable_index,
+  NumericValue new_value,
+  Tester &tester
+)
+{
+  ObservedScene &observed_scene = tester.observed_scene;
+  TreePaths &tree_paths = observed_scene.tree_paths;
+
+  TreePath variable_value_path =
+    tree_paths.variables[variable_index].valuePath();
+
+  tester.tree_widget.item(variable_value_path).maybe_numeric_value = new_value;
+  observed_scene.handleTreeNumericValueChanged(variable_value_path, new_value);
+}
+
+
+static void testAddingAndRemovingAVariable()
 {
   Tester tester;
   ObservedScene &observed_scene = tester.observed_scene;
-  observed_scene.addVariable();
+  VariableIndex variable_index = observed_scene.addVariable();
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  FakeTreeWidget &tree_widget = tester.tree_widget;
   assert(observed_scene.scene_state.variables.size() == 1);
   TreePath expected_path = {0,0};
-  assert(observed_scene.tree_paths.variables[0].path == expected_path);
-  assert(observed_scene.scene_state.variables[0].name == "var1");
+  const TreePath &variable_path = tree_paths.variables[variable_index].path;
+  assert(variable_path == expected_path);
+  assert(observed_scene.scene_state.variables[variable_index].name == "var1");
+
+  assert(
+    observed_scene.describePath(variable_path).type
+    == ObservedScene::TreeItemDescription::Type::variable
+  );
+
+  MarkerIndex marker_index = observed_scene.addMarker();
+  userChangesVariableValue(variable_index, 1, tester);
+
+  {
+    TreePath marker_position_x_path =
+      tree_paths.marker(marker_index).position.x;
+
+    userChangesTreeItemExpression(marker_position_x_path, "var1", tester);
+    assert(tree_widget.item(marker_position_x_path).maybe_numeric_value == 1);
+  }
+
+  observed_scene.removeVariable(variable_index);
+
+  // Removing the variable invalidates the expression which doesn't change
+  // the channel value.
+  {
+    TreePath marker_position_x_path =
+      tree_paths.marker(marker_index).position.x;
+
+    assert(tree_widget.item(marker_position_x_path).maybe_numeric_value == 1);
+  }
 }
 
 
@@ -461,10 +521,9 @@ testUsingAVariableInAnExpression(
   const TreePath channel_path =
     bodyChannelPath(body_attribute, body_index, tree_paths);
 
-  tester.tree_widget.item(variable_value_path).maybe_numeric_value = 4;
-  observed_scene.handleTreeNumericValueChanged(variable_value_path, 4);
+  userChangesVariableValue(variable_index, 4, tester);
   Expression expr = (with_good_expression) ? var_name : "blah";
-  observed_scene.handleTreeExpressionChanged(channel_path, expr);
+  userChangesTreeItemExpression(channel_path, expr, tester);
 
   if (with_good_expression) {
     assert(tester.tree_widget.item(channel_path).maybe_numeric_value == 4);
@@ -683,7 +742,7 @@ static void testSettingBoxScaleExpression()
   TreePath box_scale_x_path =
     tree_paths.body(body_index).boxes[box_index].scale.x;
 
-  observed_scene.handleTreeExpressionChanged(box_scale_x_path, "5");
+  userChangesTreeItemExpression(box_scale_x_path, "5", tester);
   NumericValue value = scene_state.body(body_index).boxes[box_index].scale.x;
   assert(value == 5);
 }
@@ -723,7 +782,7 @@ int main()
   testCutAndPaste();
   testAddingADistanceErrorToABody();
   testReplacingSceneState();
-  testAddingAVariable();
+  testAddingAndRemovingAVariable();
   testChangingMarkerName();
   testDuplicatingAMarkerWithDistanceError();
   testChangingSolveFlag();

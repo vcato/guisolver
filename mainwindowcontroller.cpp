@@ -614,7 +614,7 @@ TreeWidget::MenuItems
   ObservedScene &observed_scene = observedScene(controller);
   TreeWidget::MenuItems menu_items;
   const TreePaths &tree_paths = observed_scene.tree_paths;
-  TreeItemDescription item = ObservedScene::describePath(path, tree_paths);
+  TreeItemDescription item = observed_scene.describePath(path);
   using ItemType = TreeItemDescription::Type;
   const ItemType item_type = item.type;
 
@@ -798,6 +798,17 @@ TreeWidget::MenuItems
 
     appendTo(menu_items,{
       {"Remove", remove_distance_error_function}
+    });
+  }
+
+  if (item_type == ItemType::variable) {
+    auto remove_variable_function =
+      [&observed_scene, &item]{
+        observed_scene.removeVariable(*item.maybe_variable_index);
+      };
+
+    appendTo(menu_items, {
+      {"Remove", remove_variable_function}
     });
   }
 

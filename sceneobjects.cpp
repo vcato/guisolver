@@ -353,6 +353,17 @@ void
 }
 
 
+extern void
+  removeVariableFromScene(
+    Scene &,
+    SceneHandles &,
+    VariableIndex
+  )
+{
+  // Nothing to do here since variables have no scene representation
+}
+
+
 void
 createMarkerObjectInScene(
   MarkerIndex marker_index,

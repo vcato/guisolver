@@ -907,6 +907,22 @@ removeMarkerItemFromTree(
 }
 
 
+// It would be better to pass the path here so it's clear that this function
+// can't remove the path from the tree_paths.
+static void
+removeVariableItemFromTree(
+  const TreePaths::Variable &variable_paths,
+  SceneTreeRef scene_tree
+)
+{
+  TreeWidget &tree_widget = scene_tree.tree_widget;
+  TreePaths &tree_paths = scene_tree.tree_paths;
+  TreePath variable_path = variable_paths.path;
+  tree_widget.removeItem(variable_path);
+  handlePathRemoval(tree_paths, variable_path);
+}
+
+
 void
 removeMarkerFromTree(
   MarkerIndex marker_index,
@@ -914,9 +930,22 @@ removeMarkerFromTree(
 )
 {
   TreePaths &tree_paths = scene_tree.tree_paths;
-  TreeWidget &tree_widget = scene_tree.tree_widget;
-  removeMarkerItemFromTree(marker_index, {tree_widget, tree_paths});
+  removeMarkerItemFromTree(marker_index, scene_tree);
   removeIndexFrom(tree_paths.markers, marker_index);
+}
+
+
+void
+removeVariableFromTree(VariableIndex variable_index, SceneTreeRef scene_tree)
+{
+  TreePaths &tree_paths = scene_tree.tree_paths;
+
+  const TreePaths::Variable &variable_paths =
+    tree_paths.variables[variable_index];
+
+  removeVariableItemFromTree(variable_paths, scene_tree);
+  assert(variable_index < VariableIndex(tree_paths.variables.size()));
+  removeIndexFrom(tree_paths.variables, variable_index);
 }
 
 
