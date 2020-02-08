@@ -324,17 +324,19 @@ createVariable(
   const SceneState::Variable &variable_state
 )
 {
-  tree_widget.createVoidItem(
-    path,LabelProperties{variableLabel(variable_state)}
+  tree_widget.createNumericItem(
+    path,
+    LabelProperties{variableLabel(variable_state)},
+    variable_state.value,
+    noMinimumNumericValue(),
+    noMaximumNumericValue(),
+    defaultDigitsOfPrecision()
   );
 
   ItemAdder adder{path, tree_widget};
   TreePath name_path = adder.addString("name:", variable_state.name);
+  TreePaths::Variable variable_paths = {path, name_path};
 
-  TreePath value_path =
-    adder.addNumeric("value:", variable_state.value, NumericProperties{});
-
-  TreePaths::Variable variable_paths = {path, name_path, value_path};
   return variable_paths;
 }
 
@@ -1876,7 +1878,7 @@ struct ScenePathVisitor : SceneElementVisitor {
     const TreePaths::Variable &variable_paths =
       tree_paths.variables[variable_index];
 
-    if (startsWith(path, variable_paths.value)) {
+    if (path == variable_paths.path) {
       return visitVariableValue(variable_index);
     }
 

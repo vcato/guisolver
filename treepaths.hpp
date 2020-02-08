@@ -215,7 +215,8 @@ struct TreePaths {
   struct Variable {
     TreePath path;
     TreePath name;
-    TreePath value;
+
+    const TreePath &valuePath() { return path; }
   };
 
   TreePath path;

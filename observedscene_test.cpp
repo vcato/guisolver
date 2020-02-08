@@ -456,7 +456,7 @@ testUsingAVariableInAnExpression(
   BodyIndex body_index = observed_scene.addBody();
 
   TreePath variable_value_path =
-    tree_paths.variables[variable_index].value;
+    tree_paths.variables[variable_index].valuePath();
 
   const TreePath channel_path =
     bodyChannelPath(body_attribute, body_index, tree_paths);
