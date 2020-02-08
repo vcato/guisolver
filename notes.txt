@@ -85,6 +85,27 @@ Body {
     }
   }
 ---
-A nice visual representation of error is a line to the closest point.  If
-we have an X error, then a line to the point with the minimum y and z values
-would be a good representation of that error.
+It might be nice to treat a handle on a marker as setting temporary
+desired values and solving rather than setting the values directly.
+* This would allow for us moving markers which are driven by expressions.
+* It would end up solving variables and moving the marker to the closest
+  position that was supported by the variables.
+
+An example of where this is useful is if we're trying to make a body be
+scalable.  We can have a variable which represents the scale, and we can
+set the scale of the box on the body to use the variable.  We can also
+have each marker on the body have its position be multiplied by the
+scale factor.  Currently, this would make it where we can't move markers
+on the body.
+
+One thing that seems missing is the ability to specify an expression for
+the position of a marker which depends on the marker position's components.
+We'd want to have an expression like: [x*scale, y*scale, z*scale].  When
+setting the marker position, we could calculate the component values.
+We would try to calculate scale.
+---
+I think bodies should have scale.
+* The scale would be a single value.
+* The scale would affect the scale of the geometry on the body.
+* The scale would change the position of markers on the body.
+* The scale would change the effective scale of the child bodies.

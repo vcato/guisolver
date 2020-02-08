@@ -161,6 +161,7 @@ struct TreePaths {
     TreePath name;
     Translation translation;
     Rotation rotation;
+    TreePath scale;
     vector<Box> boxes;
     vector<Line> lines;
 
@@ -175,6 +176,7 @@ struct TreePaths {
       f(&Body::name);
       f(&Body::translation);
       f(&Body::rotation);
+      f(&Body::scale);
       f(&Body::boxes);
       f(&Body::lines);
     }

@@ -32,14 +32,15 @@ class SceneState {
     using String = std::string;
     using Position = XYZ;
     using Expression = ::Expression;
+    using Float = float;
 
     struct XYZ {
-      float x = 0;
-      float y = 0;
-      float z = 0;
+      Float x = 0;
+      Float y = 0;
+      Float z = 0;
 
       template <typename XYZ>
-      static MatchConst_t<float, XYZ> &
+      static MatchConst_t<Float, XYZ> &
       component(XYZ &self, XYZComponent component)
       {
         switch (component) {
@@ -52,12 +53,12 @@ class SceneState {
         return self.x;
       }
 
-      float &component(XYZComponent component)
+      Float &component(XYZComponent component)
       {
         return this->component(*this, component);
       }
 
-      const float &component(XYZComponent component) const
+      const Float &component(XYZComponent component) const
       {
         return this->component(*this, component);
       }
@@ -93,9 +94,13 @@ class SceneState {
       }
     };
 
+
     struct Transform {
+      static Float defaultScale() { return 1; }
+
       XYZ translation;
       XYZ rotation;
+      Float scale = defaultScale();
     };
 
     struct TransformSolveFlags {
@@ -161,21 +166,21 @@ class SceneState {
       Optional<MarkerIndex> optional_start_marker_index;
       Optional<MarkerIndex> optional_end_marker_index;
       Optional<BodyIndex> maybe_body_index;
-      Optional<float> maybe_distance;
-      float desired_distance = 0;
-      float weight = 1;
-      float error = 0;
+      Optional<Float> maybe_distance;
+      Float desired_distance = 0;
+      Float weight = 1;
+      Float error = 0;
     };
 
     struct Variable {
       using Name = VariableName;
       Name name;
-      float value = 0;
+      Float value = 0;
     };
 
     DistanceErrors distance_errors;
     Variables variables;
-    float total_error = 0;
+    Float total_error = 0;
 
     SceneState();
 

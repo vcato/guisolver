@@ -136,8 +136,11 @@ makeTransformFromTaggedValue(const TaggedValue &tagged_value)
     assert(false);
   }
 
+  const auto default_scale = SceneState::Transform::defaultScale();
+
   result.translation = xyzStateFromTaggedValue(*translation_ptr);
   result.rotation = xyzStateFromTaggedValue(*rotation_ptr);
+  result.scale = findNumericValue(tagged_value, "scale").valueOr(default_scale);
 
   return result;
 }
@@ -962,6 +965,10 @@ static TaggedValue &
         &solve_flags.rotation,
         &expressions.rotation
       );
+    }
+
+    if (transform_state.scale != SceneState::Transform::defaultScale()) {
+      create(parent, "scale", transform_state.scale);
     }
   }
 

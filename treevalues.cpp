@@ -13,12 +13,13 @@
 #include "xyzcomponent.hpp"
 #include "channel.hpp"
 
-
 using std::cerr;
 using std::string;
 using LabelProperties = TreeWidget::LabelProperties;
 using BoxPaths = TreePaths::Box;
 using LinePaths = TreePaths::Line;
+using BodyState = SceneState::Body;
+using BodyPaths = TreePaths::Body;
 
 
 static int defaultDigitsOfPrecision() { return 2; }
@@ -751,6 +752,39 @@ nVariablesOn(
 }
 
 
+namespace {
+struct BodyItemVisitor {
+  virtual void visitName() const = 0;
+  virtual void visitTranslation() const = 0;
+  virtual void visitRotation() const = 0;
+  virtual void visitScale() const = 0;
+};
+}
+
+
+static void forEachBodyProperty(const BodyItemVisitor &visitor)
+{
+  visitor.visitName();
+  visitor.visitTranslation();
+  visitor.visitRotation();
+  visitor.visitScale();
+}
+
+
+namespace {
+struct BodyItemCounter : BodyItemVisitor {
+  int &index;
+
+  BodyItemCounter(int &index) : index(index) {}
+
+  void visitName() const override { ++index; }
+  void visitTranslation() const override { ++index; }
+  void visitRotation() const override { ++index; }
+  void visitScale() const override { ++index; }
+};
+}
+
+
 static NextPaths
 nextPaths(
   Optional<BodyIndex> maybe_body_index,
@@ -770,7 +804,7 @@ nextPaths(
   TreeItemIndex index = 0;
 
   if (maybe_body_index) {
-    index += 3; // 3 for name, translation, rotation
+    forEachBodyProperty(BodyItemCounter{index});
   }
 
   if (!maybe_body_index) {
@@ -1146,10 +1180,85 @@ createLineItem(
 }
 
 
+namespace {
+struct BodyItemCreator : BodyItemVisitor {
+  BodyPaths &body_paths;
+  ItemAdder &adder;
+  const BodyState &body_state;
+
+  BodyItemCreator(
+    BodyPaths &body_paths,
+    ItemAdder &adder,
+    const BodyState &body_state
+  )
+  : body_paths(body_paths),
+    adder(adder),
+    body_state(body_state)
+  {
+  }
+
+  void visitName() const override
+  {
+    body_paths.name = adder.addString("name:", body_state.name);
+  }
+
+  void visitTranslation() const override
+  {
+    TreeWidget &tree_widget = adder.tree_widget;
+    TreePath translation_path = adder.addVoid("translation: []");
+
+    body_paths.translation =
+      TreePaths::Translation(
+        createXYZChannels(
+          tree_widget,
+          translation_path,
+          body_state.transform.translation,
+          body_state.solve_flags.translation,
+          body_state.expressions.translation,
+          defaultDigitsOfPrecision()
+        )
+      );
+  }
+
+  void visitRotation() const override
+  {
+    TreeWidget &tree_widget = adder.tree_widget;
+    TreePath rotation_path = adder.addVoid("rotation: []");
+
+    body_paths.rotation =
+      TreePaths::Rotation(
+        createXYZChannels(
+          tree_widget,
+          rotation_path,
+          body_state.transform.rotation,
+          body_state.solve_flags.rotation,
+          body_state.expressions.rotation,
+          /*digits_of_precision*/1
+        )
+      );
+  }
+
+  void visitScale() const override
+  {
+    NumericProperties properties;
+    properties.minimum_value = 0;
+
+    body_paths.scale =
+      adder.addNumeric(
+        "scale",
+        body_state.transform.scale,
+        properties,
+        noExpression()
+      );
+  }
+};
+}
+
+
 static TreePaths::Body
 createBodyItem(
   const TreePath &body_path,
-  const SceneState::Body &body_state,
+  const BodyState &body_state,
   TreeWidget &tree_widget
 )
 {
@@ -1157,36 +1266,8 @@ createBodyItem(
   tree_widget.createVoidItem(body_path, LabelProperties{bodyLabel(body_state)});
   ItemAdder adder{body_path, tree_widget};
 
-  TreePath name_path        = adder.addString("name:",body_state.name);
-  TreePath translation_path = adder.addVoid("translation: []");
-  TreePath rotation_path    = adder.addVoid("rotation: []");
-
   body_paths.path = body_path;
-  body_paths.name = name_path;
-
-  body_paths.translation =
-    TreePaths::Translation(
-      createXYZChannels(
-        tree_widget,
-        translation_path,
-        body_state.transform.translation,
-        body_state.solve_flags.translation,
-        body_state.expressions.translation,
-        defaultDigitsOfPrecision()
-      )
-    );
-
-  body_paths.rotation =
-    TreePaths::Rotation(
-      createXYZChannels(
-        tree_widget,
-        rotation_path,
-        body_state.transform.rotation,
-        body_state.solve_flags.rotation,
-        body_state.expressions.rotation,
-        /*digits_of_precision*/1
-      )
-    );
+  forEachBodyProperty(BodyItemCreator{body_paths, adder, body_state});
 
   size_t n_boxes = body_state.boxes.size();
   body_paths.boxes.resize(n_boxes);
@@ -1802,6 +1883,11 @@ struct ScenePathVisitor : SceneElementVisitor {
     return false;
   }
 
+  virtual bool visitBodyScale(BodyIndex)
+  {
+    return false;
+  }
+
   bool visitBodyTranslation(BodyIndex body_index) override
   {
     XYZComponent component =
@@ -1812,7 +1898,7 @@ struct ScenePathVisitor : SceneElementVisitor {
 
   bool visitBodyRotation(BodyIndex body_index) override
   {
-    XYZComponent component=
+    XYZComponent component =
       matchingComponent(path, tree_paths.body(body_index).rotation);
 
     return visitBodyRotationComponent(body_index, component);
@@ -1850,6 +1936,10 @@ struct ScenePathVisitor : SceneElementVisitor {
 
     if (startsWith(path, body_paths.rotation.path)) {
       return visitBodyRotation(body_index);
+    }
+
+    if (path == body_paths.scale) {
+      return visitBodyScale(body_index);
     }
 
     BoxIndex n_boxes = body_paths.boxes.size();
@@ -2052,6 +2142,12 @@ struct SetNumericValueVisitor : ScenePathVisitor {
         component,
         scene_state.body(body_index).transform.rotation
       );
+  }
+
+  bool visitBodyScale(BodyIndex body_index) override
+  {
+    scene_state.body(body_index).transform.scale = visitor.value;
+    return true;
   }
 
   bool
