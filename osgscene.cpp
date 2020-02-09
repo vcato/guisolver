@@ -305,6 +305,8 @@ struct OSGScene::Impl {
     return *transform_ptr;
   }
 
+  static bool isTransformOfSelection(TransformHandle, OSGScene &);
+
   static TransformHandle
     makeHandleFromTransform(
       OSGScene &scene,
@@ -597,7 +599,7 @@ draggerMatrix(
     scale.y() += 0.1;
     scale.z() += 0.1;
 
-    matrix = compose(translation,rotation,scale,scale_orient);
+    matrix = compose(translation, rotation, scale, scale_orient);
   }
   else {
     matrix = osg::Matrix::scale(2,2,2)*matrix;
@@ -1890,6 +1892,28 @@ static Scene::Vector vec(const osg::Vec3f &v)
 }
 
 
+bool
+OSGScene::Impl::isTransformOfSelection(TransformHandle handle, OSGScene &scene)
+{
+  Optional<GeometryHandle> maybe_selected_geometry =
+    scene.selectedGeometry();
+
+  Optional<TransformHandle> maybe_selected_transform =
+    scene.selectedTransform();
+
+  if (maybe_selected_transform == handle) {
+    return true;
+  }
+  else if (maybe_selected_geometry) {
+    if (scene.parentTransform(*maybe_selected_geometry) == handle) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
 void OSGScene::setTranslation(TransformHandle handle, Point p)
 {
   osg::MatrixTransform &transform =
@@ -1897,7 +1921,7 @@ void OSGScene::setTranslation(TransformHandle handle, Point p)
 
   ::setTranslation(transform, p);
 
-  if (selectedTransform() == handle) {
+  if (Impl::isTransformOfSelection(handle, *this)) {
     selectionHandler().updateDraggerPosition();
   }
 }
@@ -1914,7 +1938,7 @@ void
   osg::Vec3f z = osgVec(axes.z);
   ::setCoordinateAxes(Impl::transformForHandle(*this, handle),x,y,z);
 
-  if (selectedTransform() == handle) {
+  if (Impl::isTransformOfSelection(handle, *this)) {
     selectionHandler().updateDraggerPosition();
   }
 }

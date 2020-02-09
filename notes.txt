@@ -103,9 +103,3 @@ the position of a marker which depends on the marker position's components.
 We'd want to have an expression like: [x*scale, y*scale, z*scale].  When
 setting the marker position, we could calculate the component values.
 We would try to calculate scale.
----
-I think bodies should have scale.
-* The scale would be a single value.
-* The scale would change the position of markers on the body.
-* The scale would change the effective scale of the child bodies.
----

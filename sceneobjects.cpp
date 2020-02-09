@@ -460,13 +460,20 @@ updateBodyInScene(
 {
   const SceneState::Body &body_state = scene_state.body(body_index);
   const SceneHandles::Body &body_handles = *scene_handles.bodies[body_index];
+  float parent_global_scale = 1;
 
-  const SceneState::Float body_global_scale =
-    bodyGlobalScale(body_index, scene_state);
+  if (body_state.maybe_parent_index) {
+    parent_global_scale =
+      bodyGlobalScale(*body_state.maybe_parent_index, scene_state);
+  }
+
+  float body_global_scale = parent_global_scale * body_state.transform.scale;
 
   setTransform(
     body_handles.transformHandle(),
-    makeTransformFromState(body_state.transform),
+    makeUnscaledTransformFromState(
+      body_state.transform, parent_global_scale
+    ),
     scene
   );
 
@@ -838,13 +845,28 @@ static void
 static void
   updateMarkerInScene(
     Scene &scene,
-    const SceneHandles::Marker &marker_handles,
-    const SceneState::Marker &marker_state
+    const SceneHandles &scene_handles,
+    const SceneState &scene_state,
+    MarkerIndex marker_index
   )
 {
+  float scale = 1;
+  const SceneState::Markers &marker_states = scene_state.markers();
+  const SceneState::Marker &marker_state = marker_states[marker_index];
+
+  const SceneHandles::Marker &marker_handles =
+    scene_handles.marker(marker_index);
+
+  if (scene_state.marker(marker_index).maybe_body_index) {
+    BodyIndex body_index = *scene_state.marker(marker_index).maybe_body_index;
+    scale = bodyGlobalScale(body_index, scene_state);
+  }
+
   scene.setTranslation(
     marker_handles.transformHandle(),
-    makeScenePointFromPoint(makePointFromPositionState(marker_state.position))
+    makeScenePointFromPoint(
+      makePointFromPositionState(marker_state.position)*scale
+    )
   );
 }
 
@@ -853,11 +875,11 @@ static void
 updateMarkersInScene(
   Scene &scene,
   const SceneHandles &scene_handles,
-  const SceneState::Markers &marker_states
+  const SceneState &scene_state
 )
 {
-  for (auto i : indicesOf(marker_states)) {
-    updateMarkerInScene(scene, scene_handles.marker(i), marker_states[i]);
+  for (auto i : indicesOf(scene_state.markers())) {
+    updateMarkerInScene(scene, scene_handles, scene_state, i);
   }
 }
 
@@ -883,6 +905,6 @@ void
   )
 {
   updateBodiesInScene(scene, state, scene_handles);
-  updateMarkersInScene(scene, scene_handles, state.markers());
+  updateMarkersInScene(scene, scene_handles, state);
   updateDistanceErrorsInScene(scene, scene_handles, state);
 }

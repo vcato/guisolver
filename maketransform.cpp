@@ -23,6 +23,12 @@ Transform makeTransform(const CoordinateAxes &axes,const Point &origin)
 }
 
 
+Vec3 transformTranslation(const Transform &transform)
+{
+  return vec3(transform.translation());
+}
+
+
 void
   setTransformTranslation(Transform &box_global, const Vec3 &v)
 {
@@ -30,13 +36,19 @@ void
 }
 
 
-void setTransformRotationRad(Transform &box_global, const Vec3 &v)
+void setTransformRotationRad(Transform &result, const Vec3 &v)
 {
-  box_global.matrix().topLeftCorner<3,3>() = makeRotation(v);
+  result.matrix().topLeftCorner<3,3>() = makeRotation(v);
 }
 
 
 void setTransformRotationDeg(Transform &result, const Vec3 &rotation)
 {
   setTransformRotationRad(result, rotation*(M_PI/180));
+}
+
+
+void scaleTransform(Transform &result, float scale)
+{
+  result.matrix().topLeftCorner<3,3>() *= scale;
 }

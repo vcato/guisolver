@@ -37,10 +37,29 @@ inline Point point(const SceneState::XYZ &arg)
 }
 
 
-inline Transform makeTransformFromState(const SceneState::Transform &arg)
+inline Transform
+makeScaledTransformFromState(const SceneState::Transform &arg)
 {
   Transform box_global = Transform::Identity();
   setTransformTranslation(box_global, vec3(arg.translation));
+  setTransformRotationDeg(box_global, vec3(arg.rotation));
+  scaleTransform(box_global, arg.scale);
+  return box_global;
+}
+
+
+inline Transform
+makeUnscaledTransformFromState(
+  const SceneState::Transform &arg,
+  float parent_global_scale
+)
+{
+  Transform box_global = Transform::Identity();
+
+  setTransformTranslation(
+    box_global, vec3(arg.translation) * parent_global_scale
+  );
+
   setTransformRotationDeg(box_global, vec3(arg.rotation));
   return box_global;
 }

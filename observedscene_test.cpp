@@ -768,6 +768,27 @@ static void testSettingMarkerPositionInTree()
 }
 
 
+static void testSettingChildBodyTransformValue()
+{
+  SceneState initial_state;
+  BodyIndex parent_body_index = initial_state.createBody();
+  BodyIndex child_body_index = initial_state.createBody(parent_body_index);
+
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+  observed_scene.replaceSceneStateWith(initial_state);
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  SceneState &scene_state = observed_scene.scene_state;
+
+  TreePath child_body_translation_x_path =
+    tree_paths.body(child_body_index).translation.x.path;
+
+  observed_scene.handleTreeNumericValueChanged(child_body_translation_x_path, 5);
+
+  assert(scene_state.body(child_body_index).transform.translation.x == 5);
+}
+
+
 int main()
 {
   testTransferringABody1();
@@ -793,4 +814,5 @@ int main()
   testUsingABadExpression();
   testSettingBoxScaleExpression();
   testSettingMarkerPositionInTree();
+  testSettingChildBodyTransformValue();
 }

@@ -14,7 +14,9 @@ changeBodyTransformToPreserveGlobal(
 )
 {
   SceneState::Body &body_state = scene_state.body(new_body_index);
-  Transform old_body_transform = makeTransformFromState(body_state.transform);
+
+  Transform old_body_transform =
+    makeScaledTransformFromState(body_state.transform);
 
   Transform old_parent_global_transform =
     globalTransform(maybe_old_parent_body_index, scene_state);

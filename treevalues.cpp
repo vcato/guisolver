@@ -2310,7 +2310,9 @@ forMatchingScenePath(
 
   for (auto i : indicesOf(tree_paths.bodies)) {
     if (startsWith(path, tree_paths.body(i).path)) {
-      return visitor.visitBody(i);
+      if (visitor.visitBody(i)) {
+        return true;
+      }
     }
   }
 

@@ -7,13 +7,31 @@
 inline Point
 parentPoint(const SceneState::Body &body_state, const Point &local)
 {
-  return makeTransformFromState(body_state.transform) * local;
+  return makeScaledTransformFromState(body_state.transform) * local;
 }
 
 inline Transform
-parentTransform(const SceneState::Body &body_state, const Transform &local)
+parentScaledTransform(
+  const SceneState::Body &body_state,
+  const Transform &local
+)
 {
-  return makeTransformFromState(body_state.transform) * local;
+  return makeScaledTransformFromState(body_state.transform) * local;
+}
+
+
+inline Transform
+parentUnscaledTransform(
+  const SceneState::Body &body_state,
+  Transform local
+)
+{
+  setTransformTranslation(
+    local, transformTranslation(local) * body_state.transform.scale
+  );
+
+  return
+    makeUnscaledTransformFromState(body_state.transform, /*scale*/1) * local;
 }
 
 
@@ -43,7 +61,7 @@ globalTransform(
 
   while (maybe_body_index) {
     const SceneState::Body &body_state = scene_state.body(*maybe_body_index);
-    transform = parentTransform(body_state, transform);
+    transform = parentUnscaledTransform(body_state, transform);
     maybe_body_index = scene_state.body(*maybe_body_index).maybe_parent_index;
   }
 
