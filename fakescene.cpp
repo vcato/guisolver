@@ -23,6 +23,7 @@ FakeScene::createGeometry(TransformHandle transform_handle)
   size_t geometry_index = firstUnusedIndex();
   objects[geometry_index].parent_index = transform_handle.index;
   objects[geometry_index].maybe_geometry_center = Point{0,0,0};
+  objects[geometry_index].maybe_geometry_scale = Point{1,1,1};
   GeometryHandle geometry_handle{geometry_index};
   return geometry_handle;
 }
@@ -92,4 +93,53 @@ Optional<LineHandle> FakeScene::maybeLine(GeometryHandle handle) const
   else {
     return {};
   }
+}
+
+
+void FakeScene::setTranslation(TransformHandle handle, Point translation)
+{
+  objects[handle.index].maybe_transform_translation = translation;
+}
+
+
+auto FakeScene::translation(TransformHandle handle) const -> Point
+{
+  return *elementOf(objects, handle.index).maybe_transform_translation;
+}
+
+
+CoordinateAxes FakeScene::coordinateAxes(TransformHandle) const
+{
+  return CoordinateAxes {
+    {1,0,0},
+    {0,1,0},
+    {0,0,1}
+  };
+}
+
+
+Vec3 FakeScene::geometryScale(GeometryHandle handle) const
+{
+  return *elementOf(objects, handle.index).maybe_geometry_scale;
+}
+
+
+void FakeScene::setGeometryScale(GeometryHandle handle,const Vec3 &arg)
+{
+  elementOf(objects, handle.index).maybe_geometry_scale = arg;
+}
+
+
+Vec3 FakeScene::geometryCenter(GeometryHandle handle) const
+{
+  return *elementOf(objects, handle.index).maybe_geometry_center;
+}
+
+
+void
+FakeScene::setGeometryCenter(
+  GeometryHandle handle, const Point &center
+)
+{
+  elementOf(objects, handle.index).maybe_geometry_center = center;
 }

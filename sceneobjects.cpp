@@ -24,17 +24,48 @@ static Point
 }
 
 
-static void
-  updateMarkerPosition(
-    SceneState::Marker &state_marker,
-    const SceneHandles::Marker &handles_marker,
-    const Scene &scene
-  )
+static SceneState::Float
+bodyGlobalScale(BodyIndex body_index, const SceneState &scene_state)
 {
+  SceneState::Float scale = 1;
+
+  for (;;) {
+    const BodyState &body_state = scene_state.body(body_index);
+    scale *= body_state.transform.scale;
+
+    if (!body_state.maybe_parent_index) {
+      break;
+    }
+
+    body_index = *body_state.maybe_parent_index;
+  }
+
+  return scale;
+}
+
+
+static void
+updateMarkerPosition(
+  SceneState::Marker &state_marker,
+  const SceneHandles::Marker &marker_handles,
+  const Scene &scene,
+  const SceneState &scene_state,
+  MarkerIndex marker_index
+)
+{
+  Optional<BodyIndex> maybe_body_index =
+    scene_state.marker(marker_index).maybe_body_index;
+
+  float body_global_scale = 1;
+
+  if (maybe_body_index) {
+    body_global_scale = bodyGlobalScale(*maybe_body_index, scene_state);
+  }
+
   state_marker.position =
     makePositionStateFromPoint(
-      localTranslation(handles_marker.transformHandle(),
-      scene)
+      localTranslation(marker_handles.transformHandle(), scene)
+      * (1 / body_global_scale)
     );
 }
 
@@ -48,7 +79,7 @@ updateStateMarkerPositions(
 {
   for (auto i : indicesOf(scene_handles.markers)) {
     updateMarkerPosition(
-      scene_state.marker(i), scene_handles.marker(i), scene
+      scene_state.marker(i), scene_handles.marker(i), scene, scene_state, i
     );
   }
 }
@@ -67,19 +98,30 @@ static void
 updateBodyStateFromBodyObjects(
   SceneState::Body &body_state,
   const SceneHandles::Body &body_handles,
-  const Scene &scene
+  const Scene &scene,
+  BodyIndex body_index,
+  const SceneState &scene_state
 )
 {
   body_state.transform =
-    transformState(localTransform(scene, body_handles.transformHandle()));
+    transformState(
+      localTransform(scene, body_handles.transformHandle()),
+      body_state.transform.scale
+    );
 
   assert(body_state.boxes.size() == body_handles.boxes.size());
   size_t n_boxes = body_state.boxes.size();
+  float body_global_scale = bodyGlobalScale(body_index, scene_state);
 
   for (size_t box_index=0; box_index!=n_boxes; ++box_index) {
     SceneState::Box &box_state = body_state.boxes[box_index];
     Scene::GeometryHandle box_handle = body_handles.boxes[box_index].handle;
-    box_state.scale = xyzStateFromVec3(scene.geometryScale(box_handle));
+
+    Vec3 new_box_scale =
+      scene.geometryScale(box_handle) *
+      (1 / body_global_scale);
+
+    box_state.scale = xyzStateFromVec3(new_box_scale);
     box_state.center = xyzStateFromVec3(scene.geometryCenter(box_handle));
   }
 }
@@ -97,7 +139,10 @@ updateSceneStateFromSceneObjects(
   for (auto body_index : indicesOf(state.bodies())) {
     const SceneHandles::Body &body_handles = scene_handles.body(body_index);
     SceneState::Body &body_state = state.body(body_index);
-    updateBodyStateFromBodyObjects(body_state, body_handles, scene);
+
+    updateBodyStateFromBodyObjects(
+      body_state, body_handles, scene, body_index, state
+    );
   }
 }
 
@@ -427,26 +472,6 @@ updateLineInScene(
   scene.setEndPoint(
     line_handles.handle, vec3(line_state.end)*body_global_scale
   );
-}
-
-
-static SceneState::Float
-bodyGlobalScale(BodyIndex body_index, const SceneState &scene_state)
-{
-  SceneState::Float scale = 1;
-
-  for (;;) {
-    const BodyState &body_state = scene_state.body(body_index);
-    scale *= body_state.transform.scale;
-
-    if (!body_state.maybe_parent_index) {
-      break;
-    }
-
-    body_index = *body_state.maybe_parent_index;
-  }
-
-  return scale;
 }
 
 
@@ -843,12 +868,12 @@ static void
 
 
 static void
-  updateMarkerInScene(
-    Scene &scene,
-    const SceneHandles &scene_handles,
-    const SceneState &scene_state,
-    MarkerIndex marker_index
-  )
+updateMarkerInScene(
+  Scene &scene,
+  const SceneHandles &scene_handles,
+  const SceneState &scene_state,
+  MarkerIndex marker_index
+)
 {
   float scale = 1;
   const SceneState::Markers &marker_states = scene_state.markers();

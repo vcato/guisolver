@@ -137,6 +137,7 @@ struct ObservedScene {
   bool *solveStatePtr(const TreePath &);
   void setSolveFlags(const TreeItemDescription &item, bool state);
   bool pathSupportsExpressions(const TreePath &) const;
+  void updateSceneStateFromSceneObjects();
 
   void handleSceneStateChanged();
   void handleTreeSelectionChanged();

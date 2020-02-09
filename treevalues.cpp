@@ -1243,11 +1243,13 @@ struct BodyItemCreator : BodyItemVisitor {
     NumericProperties properties;
     properties.minimum_value = 0;
 
+    AddChannelItemFunction add(adder);
+
     body_paths.scale =
-      adder.addNumeric(
-        "scale",
+      add(
+        "scale:",
         body_state.transform.scale,
-        properties,
+        body_state.solve_flags.scale,
         noExpression()
       );
   }
@@ -1548,28 +1550,6 @@ static void
 
 
 static void
-  updateTranslationValues(
-    TreeWidget &tree_widget,
-    const TreePaths::Translation &translation_paths,
-    const TranslationState &translation
-  )
-{
-  updateXYZValues(tree_widget, translation_paths, vec3(translation));
-}
-
-
-static void
-  updateRotationValues(
-    TreeWidget &tree_widget,
-    const TreePaths::Rotation &rotation_paths,
-    const RotationState &rotation
-  )
-{
-  updateXYZValues(tree_widget, rotation_paths, rotationValuesDeg(rotation));
-}
-
-
-static void
   updateMarker(
     MarkerIndex i,
     TreeWidget &tree_widget,
@@ -1605,6 +1585,43 @@ updateVariable(
 }
 
 
+namespace {
+struct BodyPropertyUpdator {
+  const TreePaths::Body &body_paths;
+  const SceneState::Body &body_state;
+  TreeWidget &tree_widget;
+
+  void visitName()
+  {
+    tree_widget.setItemLabel(body_paths.path, bodyLabel(body_state));
+  }
+
+  void visitTranslation()
+  {
+    const TransformState &transform_state = body_state.transform;
+    const TreePaths::Translation &translation_paths = body_paths.translation;
+    const TranslationState &translation = translationStateOf(transform_state);
+    updateXYZValues(tree_widget, translation_paths, vec3(translation));
+  }
+
+  void visitRotation()
+  {
+    const TransformState &transform_state = body_state.transform;
+    const TreePaths::Rotation &rotation_paths = body_paths.rotation;
+    const RotationState &rotation = rotationStateOf(transform_state);
+    updateXYZValues(tree_widget, rotation_paths, rotationValuesDeg(rotation));
+  }
+
+  void visitScale()
+  {
+    updateNumericValue(
+      tree_widget, body_paths.scale, body_state.transform.scale
+    );
+  }
+};
+}
+
+
 static void
 updateBody(
   TreeWidget &tree_widget,
@@ -1614,24 +1631,16 @@ updateBody(
 )
 {
   const SceneState::Body &body_state = state.body(body_index);
-  const TransformState &global = body_state.transform;
   const TreePaths::Body &body_paths = tree_paths.body(body_index);
 
-  tree_widget.setItemLabel(
-    tree_paths.body(body_index).path,
-    bodyLabel(body_state)
-  );
+  BodyPropertyUpdator
+    body_property_updator{body_paths, body_state, tree_widget};
 
-  {
-    const TreePaths::Translation &translation_paths = body_paths.translation;
-    const TranslationState &translation = translationStateOf(global);
-    updateTranslationValues(tree_widget, translation_paths, translation);
-  }
-  {
-    const TreePaths::Rotation &rotation_paths = body_paths.rotation;
-    const RotationState &rotation = rotationStateOf(global);
-    updateRotationValues(tree_widget, rotation_paths, rotation);
-  }
+  body_property_updator.visitName();
+  body_property_updator.visitTranslation();
+  body_property_updator.visitRotation();
+  body_property_updator.visitScale();
+
   assert(body_paths.boxes.size() == body_state.boxes.size());
   size_t n_boxes = body_state.boxes.size();
 
@@ -1938,7 +1947,7 @@ struct ScenePathVisitor : SceneElementVisitor {
       return visitBodyRotation(body_index);
     }
 
-    if (path == body_paths.scale) {
+    if (isMatchingPath(path, body_paths.scale)) {
       return visitBodyScale(body_index);
     }
 
@@ -2443,6 +2452,12 @@ struct SolvableScenePathVisitor : ScenePathVisitor {
   ) override
   {
     value_visitor.visitBodyRotationComponent(body_index, component);
+    return true;
+  }
+
+  bool visitBodyScale(BodyIndex body_index) override
+  {
+    value_visitor.visitBodyScale(body_index);
     return true;
   }
 };

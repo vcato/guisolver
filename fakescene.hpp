@@ -10,6 +10,8 @@ struct FakeScene : Scene {
   struct Object {
     TransformIndex parent_index;
     Optional<Point> maybe_geometry_center;
+    Optional<Point> maybe_geometry_scale;
+    Optional<Point> maybe_transform_translation;
     bool is_line = false;
   };
 
@@ -47,46 +49,25 @@ struct FakeScene : Scene {
   TransformHandle parentTransform(GeometryHandle) const override;
   void destroyGeometry(GeometryHandle) override;
   void destroyTransform(TransformHandle) override;
-
-  void setGeometryScale(GeometryHandle,const Vec3 &) override
-  {
-  }
+  void setGeometryScale(GeometryHandle,const Vec3 &) override;
 
   void
   setGeometryCenter(
     GeometryHandle geometry_handle,const Point &center
-  ) override
-  {
-    *objects[geometry_handle.index].maybe_geometry_center = center;
-  }
+  ) override;
 
-  virtual Vec3 geometryScale(GeometryHandle) const
-  {
-    assert(false); // not needed
-  }
+  Vec3 geometryScale(GeometryHandle) const override;
 
-  virtual Point geometryCenter(GeometryHandle) const
-  {
-    assert(false); // not needed
-  }
+  Point geometryCenter(GeometryHandle) const override;
 
   virtual void setCoordinateAxes(TransformHandle,const CoordinateAxes &)
   {
   }
 
-  virtual CoordinateAxes coordinateAxes(TransformHandle) const
-  {
-    assert(false); // not needed
-  }
+  CoordinateAxes coordinateAxes(TransformHandle) const override;
 
-  virtual void setTranslation(TransformHandle,Point)
-  {
-  }
-
-  virtual Point translation(TransformHandle) const
-  {
-    assert(false); // not needed
-  }
+  void setTranslation(TransformHandle,Point) override;
+  Point translation(TransformHandle) const override;
 
   void setGeometryColor(GeometryHandle,const Color &) override
   {
@@ -100,8 +81,8 @@ struct FakeScene : Scene {
   {
   }
 
-  static const Object &
-  elementOf(const std::map<size_t, Object> &objects, size_t index)
+  template <typename Objects>
+  static auto &elementOf(Objects &objects, size_t index)
   {
     auto iter = objects.find(index);
     assert(iter != objects.end());

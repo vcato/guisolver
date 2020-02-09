@@ -128,15 +128,9 @@ extern bool
   );
 
 struct SolvableSceneValueVisitor {
-  virtual void
-  visitBodyTranslationComponent(
-    BodyIndex body_index, XYZComponent component
-  ) const = 0;
-
-  virtual void
-  visitBodyRotationComponent(
-    BodyIndex body_index, XYZComponent component
-  ) const = 0;
+  virtual void visitBodyTranslationComponent(BodyIndex, XYZComponent) const = 0;
+  virtual void visitBodyRotationComponent(BodyIndex, XYZComponent) const = 0;
+  virtual void visitBodyScale(BodyIndex) const = 0;
 };
 
 

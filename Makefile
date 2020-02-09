@@ -13,6 +13,7 @@ all:
 
 run_unit_tests: \
   optional_test.pass \
+  solveflags_test.pass \
   taggedvalueio_test.pass \
   osgutil_test.pass \
   transform_test.pass \
@@ -76,6 +77,9 @@ QTTREEWIDGET=\
 optional_test: optional_test.o osgutil.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
+solveflags_test: solveflags_test.o
+	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
+
 taggedvalueio_test: taggedvalueio_test.o $(TAGGEDVALUEIO)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
@@ -108,6 +112,7 @@ scenestateio_test: scenestateio_test.o $(SCENESTATE) \
 
 scenesolver_test: scenesolver_test.o \
   scenesolver.o maketransform.o randomtransform.o randompoint.o \
+  assertnearfloat.o \
   $(SCENEERROR) $(OPTIMIZE)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
@@ -122,7 +127,7 @@ sceneobjects_test: sceneobjects_test.o $(SCENEOBJECTS) fakescene.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 observedscene_test: observedscene_test.o $(OBSERVEDSCENE) faketreewidget.o \
-  fakescene.o checktree.o $(SCENESTATEIO)
+  fakescene.o checktree.o $(SCENESTATEIO) assertnearfloat.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 guisolver: main.o qtmainwindow.o osgscene.o qttimer.o qttimer_moc.o \

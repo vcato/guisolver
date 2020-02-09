@@ -8,6 +8,9 @@
 #include "rotationvector.hpp"
 #include "transformstate.hpp"
 #include "indicesof.hpp"
+#include "solveflags.hpp"
+
+using std::cerr;
 
 
 static void
@@ -42,38 +45,96 @@ static void
     const F &f
   )
 {
-  f(xyz.x, solve_flags.x);
-  f(xyz.y, solve_flags.y);
-  f(xyz.z, solve_flags.z);
+  auto visit_component = [&](XYZComponent component){
+    switch (component) {
+      case XYZComponent::x:
+        f(xyz.x, solve_flags.x);
+        return;
+      case XYZComponent::y:
+        f(xyz.y, solve_flags.y);
+        return;
+      case XYZComponent::z:
+        f(xyz.z, solve_flags.z);
+        return;
+    }
+  };
+
+  forEachXYZComponent(visit_component);
+}
+
+
+template <typename F>
+static void
+visitSolvableComponent(
+  SceneState::XYZ &xyz_values,
+  const SceneState::XYZSolveFlags &xyz_solve_flags,
+  XYZComponent component,
+  const F &f2
+)
+{
+  switch (component) {
+    case XYZComponent::x:
+      f2(xyz_values.x, xyz_solve_flags.x);
+      return;
+    case XYZComponent::y:
+      f2(xyz_values.y, xyz_solve_flags.y);
+      return;
+    case XYZComponent::z:
+      f2(xyz_values.z, xyz_solve_flags.z);
+      return;
+  }
 }
 
 
 template <typename TransformState, typename F>
 static void
-  forEachTransformValue(
-    TransformState &transform_state,
-    const SceneState::TransformSolveFlags &solve_flags,
-    const F &f
+forEachTransformValue(
+  TransformState &transform_state,
+  const SceneState::TransformSolveFlags &solve_flags,
+  const F &f
 )
 {
-  {
-    float scale = M_PI/180;
+  struct Visitor {
+    TransformState &transform_state;
+    const SceneState::TransformSolveFlags &solve_flags;
+    const F &f;
 
-    forEachXYZValue(transform_state.rotation, solve_flags.rotation,
-      [&](auto &value, bool solve_flag){
-        f(value, solve_flag, scale);
-      }
-    );
-  }
-  {
-    float scale = 1;
+    void visitTranslationComponent(XYZComponent component) const
+    {
+      float scale = 1;
 
-    forEachXYZValue(transform_state.translation, solve_flags.translation,
-      [&](auto &value, bool solve_flag){
-        f(value, solve_flag, scale);
-      }
-    );
-  }
+      visitSolvableComponent(
+        transform_state.translation,
+        solve_flags.translation,
+        component,
+        [&](auto &value, bool solve_flag){
+          f(value, solve_flag, scale);
+        }
+      );
+    }
+
+    void visitRotationComponent(XYZComponent component) const
+    {
+      float scale = M_PI/180;
+
+      visitSolvableComponent(
+        transform_state.rotation,
+        solve_flags.rotation,
+        component,
+        [&](auto &value, bool solve_flag){
+          f(value, solve_flag, scale);
+        }
+      );
+    }
+
+    void visitScale() const
+    {
+      f(transform_state.scale, solve_flags.scale, /*scale*/1);
+    }
+  };
+
+  Visitor visitor{ transform_state, solve_flags, f };
+  forEachSolvableTransformElement(visitor);
 }
 
 

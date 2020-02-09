@@ -7,6 +7,7 @@
 #include "scenestateio.hpp"
 #include "vectorio.hpp"
 #include "contains.hpp"
+#include "assertnearfloat.hpp"
 
 using std::cerr;
 using VariableName = SceneState::Variable::Name;
@@ -619,7 +620,65 @@ static void testDuplicatingAMarkerWithDistanceError()
 }
 
 
-static void testChangingSolveFlag()
+namespace {
+struct BodySolveFlag {
+  virtual bool
+    &state(SceneState::TransformSolveFlags &transform_solve_flags) const = 0;
+
+  virtual const TreePath &path(const TreePaths::Body &body_paths) const = 0;
+};
+}
+
+
+namespace {
+struct BodyTranslationXSolveFlag : BodySolveFlag {
+  bool
+  &state(SceneState::TransformSolveFlags &transform_solve_flags) const override
+  {
+    return transform_solve_flags.translation.x;
+  }
+
+  const TreePath &path(const TreePaths::Body &body_paths) const override
+  {
+    return body_paths.translation.x.solve_path;
+  }
+};
+}
+
+
+namespace {
+struct BodyRotationXSolveFlag : BodySolveFlag {
+  bool &
+  state(SceneState::TransformSolveFlags &transform_solve_flags) const override
+  {
+    return transform_solve_flags.rotation.x;
+  }
+
+  const TreePath &path(const TreePaths::Body &body_paths) const override
+  {
+    return body_paths.rotation.x.solve_path;
+  }
+};
+}
+
+
+namespace {
+struct BodyScaleSolveFlag : BodySolveFlag {
+  bool &
+  state(SceneState::TransformSolveFlags &transform_solve_flags) const override
+  {
+    return transform_solve_flags.scale;
+  }
+
+  const TreePath &path(const TreePaths::Body &body_paths) const override
+  {
+    return body_paths.scale.solve_path;
+  }
+};
+}
+
+
+static void testChangingBodySolveFlag(const BodySolveFlag &solve_flag)
 {
   Tester tester;
   SceneState initial_state;
@@ -627,22 +686,39 @@ static void testChangingSolveFlag()
   ObservedScene &observed_scene = tester.observed_scene;
   TreePaths &tree_paths = observed_scene.tree_paths;
   bool old_solve = true;
-  initial_state.body(body_index).solve_flags.translation.x = old_solve;
+  solve_flag.state(initial_state.body(body_index).solve_flags) = old_solve;
   observed_scene.replaceSceneStateWith(initial_state);
 
   SceneState &scene_state = observed_scene.scene_state;
+
+  const TreePath &solve_flag_path =
+    solve_flag.path(tree_paths.body(body_index));
+
   FakeTreeItem::ValueString solve_value_string =
-    tester.tree_widget.item(
-      tree_paths.body(body_index).translation.x.solve_path
-    ).value_string;
+    tester.tree_widget.item(solve_flag_path).value_string;
 
   assert(solve_value_string == "value=1");
-
-  observed_scene.handleTreeBoolValueChanged(
-    tree_paths.body(body_index).translation.x.solve_path, !old_solve
-  );
-  bool new_solve = scene_state.body(body_index).solve_flags.translation.x;
+  observed_scene.handleTreeBoolValueChanged(solve_flag_path, !old_solve);
+  bool new_solve = solve_flag.state(scene_state.body(body_index).solve_flags);
   assert(old_solve != new_solve);
+}
+
+
+static void testChangingBodyTranslationXSolveFlag()
+{
+  testChangingBodySolveFlag(BodyTranslationXSolveFlag());
+}
+
+
+static void testChangingBodyRotationXSolveFlag()
+{
+  testChangingBodySolveFlag(BodyRotationXSolveFlag());
+}
+
+
+static void testChangingBodyScaleSolveFlag()
+{
+  testChangingBodySolveFlag(BodyScaleSolveFlag());
 }
 
 
@@ -655,11 +731,72 @@ static bool itemValueIsOn(const FakeTreeItem &item)
 }
 
 
-static void testChangingSolvedValueInTree()
+namespace {
+struct BodyElement {
+  virtual const TreePath &path(const TreePaths::Body &) const = 0;
+  virtual const BodySolveFlag &solveFlag() const = 0;
+};
+}
+
+
+namespace {
+struct BodyTranslationX : BodyElement {
+  BodyTranslationXSolveFlag solve_flag;
+
+  const TreePath &path(const TreePaths::Body &body_paths) const override
+  {
+    return body_paths.translation.x.path;
+  }
+
+  const BodySolveFlag &solveFlag() const override
+  {
+    return solve_flag;
+  }
+};
+}
+
+
+namespace {
+struct BodyRotationX : BodyElement {
+  BodyRotationXSolveFlag solve_flag;
+
+  const TreePath &path(const TreePaths::Body &body_paths) const override
+  {
+    return body_paths.rotation.x.path;
+  }
+
+  const BodySolveFlag &solveFlag() const override
+  {
+    return solve_flag;
+  }
+};
+}
+
+
+namespace {
+struct BodyScale : BodyElement {
+  BodyScaleSolveFlag solve_flag;
+
+  const TreePath &path(const TreePaths::Body &body_paths) const override
+  {
+    return body_paths.scale.path;
+  }
+
+  const BodySolveFlag &solveFlag() const override
+  {
+    return solve_flag;
+  }
+};
+}
+
+
+static void testChangingSolvableBodyValue(const BodyElement &element)
 {
+  const BodySolveFlag &solve_flag = element.solveFlag();
+
   SceneState initial_state;
   BodyIndex body_index = initial_state.createBody();
-  initial_state.body(body_index).solve_flags.translation.x = true;
+  solve_flag.state(initial_state.body(body_index).solve_flags) = true;
   Tester tester;
   ObservedScene &observed_scene = tester.observed_scene;
   observed_scene.replaceSceneStateWith(initial_state);
@@ -667,16 +804,110 @@ static void testChangingSolvedValueInTree()
   const TreePaths::Body &body_paths = tree_paths.body(body_index);
   const FakeTreeWidget &tree_widget = tester.tree_widget;
 
-  const FakeTreeItem &solve_item =
-    tree_widget.item(body_paths.translation.x.solve_path);
+  const TreePath &solve_flag_path = solve_flag.path(body_paths);
+  const FakeTreeItem &solve_item = tree_widget.item(solve_flag_path);
 
   assert(itemValueIsOn(solve_item));
 
   observed_scene.handleTreeNumericValueChanged(
-    body_paths.translation.x.path, 2
+    element.path(body_paths), 2
   );
 
   assert(!itemValueIsOn(solve_item));
+}
+
+
+static void testChangingBodyTranslationXInTree()
+{
+  testChangingSolvableBodyValue(BodyTranslationX());
+}
+
+
+static void testChangingBodyRotationXInTree()
+{
+  testChangingSolvableBodyValue(BodyRotationX());
+}
+
+
+static void testChangingBodyScaleInTree()
+{
+  testChangingSolvableBodyValue(BodyScale());
+}
+
+
+static void
+assertBoxIsUnscaled(
+  BodyIndex body_index,
+  BoxIndex box_index,
+  const SceneState &scene_state
+)
+{
+  const SceneState::XYZ &box_scale_state =
+    scene_state.body(body_index).boxes[box_index].scale;
+
+  assertNear(box_scale_state.x, 1, 0);
+  assertNear(box_scale_state.y, 1, 0);
+  assertNear(box_scale_state.z, 1, 0);
+}
+
+
+static void testMovingAMarkerInTheSceneThatAffectsScale()
+{
+  Tester tester;
+  FakeScene &scene = tester.scene;
+  ObservedScene &observed_scene = tester.observed_scene;
+  SceneState initial_state;
+  SceneHandles &scene_handles = observed_scene.scene_handles;
+  SceneState &scene_state = observed_scene.scene_state;
+
+  // Create a body
+  BodyIndex body_index = initial_state.createBody();
+  BoxIndex box_index = initial_state.body(body_index).createBox();
+
+  // Put a local marker on the body at (1,0,0)
+  MarkerIndex local_marker_index = initial_state.createMarker(body_index);
+  initial_state.marker(local_marker_index).position = {1,0,0};
+
+  // Put a global marker at (1,0,0)
+  MarkerIndex global_marker_index = initial_state.createMarker();
+  initial_state.marker(global_marker_index).position = {1,0,0};
+
+  // Make the body scale be solved.
+  initial_state.body(body_index).solve_flags.scale = true;
+
+  observed_scene.replaceSceneStateWith(initial_state);
+
+  Scene::TransformHandle global_marker_handle =
+    scene_handles.marker(global_marker_index).transformHandle();
+
+  Scene::TransformHandle local_marker_handle =
+    scene_handles.marker(local_marker_index).transformHandle();
+
+  assert(scene.translation(global_marker_handle) == Vec3(1,0,0));
+
+  // Move the global marker in the scene.
+  scene.setTranslation(global_marker_handle, {2,0,0});
+  observed_scene.updateSceneStateFromSceneObjects();
+  scene_state.body(body_index).transform.scale = 2;
+  observed_scene.handleSceneStateChanged();
+
+  // Check that the body was scaled but not the box.
+  assert(scene_state.marker(global_marker_index).position.x == 2);
+  assert(scene.translation(local_marker_handle) == Vec3(2,0,0));
+  assertNear(scene_state.body(body_index).transform.scale, 2, 0);
+  assertBoxIsUnscaled(body_index, box_index, scene_state);
+
+  // Move it again.
+  scene.setTranslation(global_marker_handle, {3,0,0});
+  observed_scene.updateSceneStateFromSceneObjects();
+  scene_state.body(body_index).transform.scale = 3;
+  observed_scene.handleSceneStateChanged();
+
+  // Check that the body was scaled but not the box.
+  assert(scene_state.marker(global_marker_index).position.x == 3);
+  assert(scene.translation(local_marker_handle) == Vec3(3,0,0));
+  assertNear(scene_state.body(body_index).transform.scale, 3, 0);
+  assertBoxIsUnscaled(body_index, box_index, scene_state);
 }
 
 
@@ -743,7 +974,10 @@ static void testSettingBoxScaleExpression()
     tree_paths.body(body_index).boxes[box_index].scale.x;
 
   userChangesTreeItemExpression(box_scale_x_path, "5", tester);
-  NumericValue value = scene_state.body(body_index).boxes[box_index].scale.x;
+
+  NumericValue value =
+    scene_state.body(body_index).boxes[box_index].scale.x;
+
   assert(value == 5);
 }
 
@@ -789,11 +1023,35 @@ static void testSettingChildBodyTransformValue()
 }
 
 
+static void testHandleSceneStateChanged()
+{
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+  SceneState &scene_state = observed_scene.scene_state;
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  FakeTreeWidget &tree_widget = tester.tree_widget;
+
+  // Add a body
+  BodyIndex body_index = observed_scene.addBody();
+
+  // Change the body scale in the state.
+  scene_state.body(body_index).transform.scale = 2.5;
+
+  // call handleSceneStateChanged()
+  observed_scene.handleSceneStateChanged();
+
+  // check that the scale value is updated in the tree.
+  const TreePath &scale_path = tree_paths.body(body_index).scale.path;
+  assert(tree_widget.item(scale_path).maybe_numeric_value == 2.5);
+}
+
+
 int main()
 {
   testTransferringABody1();
   testTransferringABody2();
   testTransferringAMarker();
+  testHandleSceneStateChanged();
   testDuplicateBody();
   testDuplicateBodyWhenTheBodyHasExpressions();
   testDuplicateBodyWithDistanceErrors();
@@ -806,8 +1064,13 @@ int main()
   testAddingAndRemovingAVariable();
   testChangingMarkerName();
   testDuplicatingAMarkerWithDistanceError();
-  testChangingSolveFlag();
-  testChangingSolvedValueInTree();
+  testChangingBodyTranslationXSolveFlag();
+  testChangingBodyRotationXSolveFlag();
+  testChangingBodyScaleSolveFlag();
+  testChangingBodyTranslationXInTree();
+  testChangingBodyRotationXInTree();
+  testChangingBodyScaleInTree();
+  testMovingAMarkerInTheSceneThatAffectsScale();
   testSetSolveFlags();
   testUsingAVariable(BodyChannelType::translation_x);
   testUsingAVariable(BodyChannelType::rotation_x);

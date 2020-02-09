@@ -10,6 +10,7 @@
 #include "scenestateio.hpp"
 #include "parsedouble.hpp"
 #include "evaluateexpression.hpp"
+#include "solveflags.hpp"
 
 using View = MainWindowView;
 using std::cerr;
@@ -18,33 +19,6 @@ using TransformHandle = Scene::TransformHandle;
 using GeometryHandle = Scene::GeometryHandle;
 using TreeItemDescription = ObservedScene::TreeItemDescription;
 using ManipulatorType = Scene::ManipulatorType;
-
-
-template <typename XYZSolveFlags, typename F>
-static void
-forEachSolveFlagInXYZ(
-  XYZSolveFlags &solve_flags,
-  const F &f,
-  const SceneState::XYZSolveFlags &visit
-)
-{
-  if (visit.x) f(solve_flags.x);
-  if (visit.y) f(solve_flags.y);
-  if (visit.z) f(solve_flags.z);
-}
-
-
-template <typename TransformSolveFlags, typename F>
-static void
-forEachSolveFlagInTransform(
-  TransformSolveFlags &solve_flags,
-  const F &f,
-  const SceneState::TransformSolveFlags &visit
-)
-{
-  forEachSolveFlagInXYZ(solve_flags.translation, f, visit.translation);
-  forEachSolveFlagInXYZ(solve_flags.rotation, f, visit.rotation);
-}
 
 
 template <typename F>
@@ -275,7 +249,7 @@ void
 
   TransformHandle transform_handle = *maybe_transform_handle;
 
-  updateSceneStateFromSceneObjects(state, scene, scene_handles);
+  observed_scene.updateSceneStateFromSceneObjects();
 
   vector<bool> old_flags;
 

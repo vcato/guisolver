@@ -70,10 +70,10 @@ static void testGlobalTransform()
   BodyIndex body2_index = scene_state.createBody(body1_index);
 
   scene_state.body(body1_index).transform =
-    transformState(randomTransform(engine));
+    transformState(randomTransform(engine), /*scale*/1);
 
   scene_state.body(body2_index).transform =
-    transformState(randomTransform(engine));
+    transformState(randomTransform(engine), /*scale*/1);
 
   MarkerIndex marker_index = scene_state.createMarker(body2_index);
 

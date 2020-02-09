@@ -14,6 +14,7 @@
 #include "randomfloat.hpp"
 #include "randompoint.hpp"
 #include "randomtransform.hpp"
+#include "assertnearfloat.hpp"
 
 using std::cerr;
 
@@ -124,7 +125,7 @@ static Example makeExample(RandomEngine &engine)
   // transform.
 
   SceneState::Body &body_state = scene_state.body(result.body_index);
-  body_state.transform = transformState(randomTransform(engine));
+  body_state.transform = transformState(randomTransform(engine), /*scale*/1);
   return result;
 }
 
@@ -212,9 +213,53 @@ static void testWithTwoBodies()
 }
 
 
+static void testSolvingScale()
+{
+  SceneState scene_state;
+
+  // Create a body
+  BodyIndex body_index = scene_state.createBody();
+
+  // Create a local marker at (1,0,0)
+  MarkerIndex local_marker_index = scene_state.createMarker(body_index);
+  scene_state.marker(local_marker_index).position = {1,0,0};
+
+  // Create a global marker at (2,0,0)
+  MarkerIndex global_marker_index = scene_state.createMarker();
+  scene_state.marker(global_marker_index).position = {2,0,0};
+
+  // Create a distance error between the markers.
+  DistanceErrorIndex distance_error_index = scene_state.createDistanceError();
+
+  scene_state
+    .distance_errors[distance_error_index]
+    .optional_start_marker_index = local_marker_index;
+
+  scene_state
+    .distance_errors[distance_error_index]
+    .optional_end_marker_index = global_marker_index;
+
+  updateErrorsInState(scene_state);
+  float old_scene_error = sceneError(scene_state);
+  assert(old_scene_error != 0);
+
+  // Set the scale solve flag on.
+  scene_state.body(body_index).solve_flags.scale = true;
+
+  // solve
+  solveScene(scene_state);
+
+  // Verify that the scale is 2
+  SceneState::Float scale_value = scene_state.body(body_index).transform.scale;
+  SceneState::Float expected_scale_value = 2;
+  assertNear(scale_value, expected_scale_value, 1e-6);
+}
+
+
 int main()
 {
   testSolvingBoxTransform();
   testSolvingBoxTransformWithoutXTranslation();
   testWithTwoBodies();
+  testSolvingScale();
 }

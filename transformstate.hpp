@@ -21,13 +21,13 @@ inline SceneState::XYZ xyzStateFromVec3(const Vec3 &v)
 }
 
 
-inline TransformState transformState(const Transform &t)
+inline TransformState transformState(const Transform &t, float scale)
 {
   SceneState::XYZ rotation_state =
     xyzStateFromVec3(rotationVectorDeg(t.rotation()));
 
   SceneState::XYZ translation_state = xyzState(t.translation());
-  return {translation_state, rotation_state};
+  return {translation_state, rotation_state, scale};
 }
 
 

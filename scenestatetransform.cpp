@@ -30,7 +30,7 @@ changeBodyTransformToPreserveGlobal(
   Transform new_body_transform =
     new_parent_global_transform.inverse()*body_global_transform;
 
-  body_state.transform = transformState(new_body_transform);
+  body_state.transform = transformState(new_body_transform, /*scale*/1);
 }
 
 

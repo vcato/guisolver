@@ -104,8 +104,10 @@ class SceneState {
     };
 
     struct TransformSolveFlags {
+      static bool defaultScale() { return false; }
       XYZSolveFlags translation;
       XYZSolveFlags rotation;
+      bool scale = defaultScale();
     };
 
     struct TransformExpressions {

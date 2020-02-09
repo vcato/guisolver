@@ -8,6 +8,7 @@
 
 using std::ostringstream;
 using std::cerr;
+using std::ostream;
 
 
 static SceneState::Marker::Name namePrefix(bool is_local)

@@ -55,7 +55,6 @@ SceneState defaultSceneState()
   result.body(body_index).createBox();
   setAll(result.body(body_index).solve_flags, true);
   result.body(body_index).boxes[0].scale = scale;
-
   result.body(body_index).transform.rotation = {0, 90, 0};
   result.body(body_index).transform.translation = {0, 1, 0};
 

@@ -7,6 +7,7 @@
 using std::string;
 using std::cerr;
 using XYZChannels = SceneState::XYZChannelsRef;
+using TransformSolveFlags = SceneState::TransformSolveFlags;
 
 
 static void
@@ -200,10 +201,10 @@ static SceneState::XYZExpressions
 }
 
 
-static SceneState::TransformSolveFlags
+static TransformSolveFlags
   makeSolveFlagsFromTaggedValue(const TaggedValue &tagged_value)
 {
-  SceneState::TransformSolveFlags result;
+  TransformSolveFlags result;
 
   result.translation =
     makeXYZSolveFlagsFromTaggedValue(tagged_value, "translation");
@@ -383,14 +384,18 @@ fillBoxStateFromTaggedValue(
         xyzExpressionsFromTaggedValue(*scale_ptr);
     }
     else {
-      box_state.scale.x =
+      SceneState::XYZ box_scale;
+
+      box_scale.x =
         numericValueOr(box_tagged_value, "scale_x", default_scale.x);
 
-      box_state.scale.y =
+      box_scale.y =
         numericValueOr(box_tagged_value, "scale_y", default_scale.y);
 
-      box_state.scale.z =
+      box_scale.z =
         numericValueOr(box_tagged_value, "scale_z", default_scale.z);
+
+      box_state.scale = box_scale;
     }
   }
 
@@ -931,12 +936,30 @@ create(TaggedValue &parent, const string &tag, const SceneState::XYZ &xyz_state)
 }
 
 
+static bool
+scaleHasDefaultState(
+  const TransformState &transform_state,
+  const TransformSolveFlags &transform_solve_flags
+)
+{
+  if (transform_state.scale != SceneState::Transform::defaultScale()) {
+    return false;
+  }
+
+  if (transform_solve_flags.scale != TransformSolveFlags::defaultScale()) {
+    return false;
+  }
+
+  return true;
+}
+
+
 static TaggedValue &
   createTransformInTaggedValue(
     TaggedValue &parent,
     const SceneState::Body::Name &name,
     const TransformState &transform_state,
-    const SceneState::TransformSolveFlags &solve_flags,
+    const TransformSolveFlags &solve_flags,
     const SceneState::TransformExpressions &expressions
   )
 {
@@ -967,7 +990,7 @@ static TaggedValue &
       );
     }
 
-    if (transform_state.scale != SceneState::Transform::defaultScale()) {
+    if (!scaleHasDefaultState(transform_state, solve_flags)) {
       create(parent, "scale", transform_state.scale);
     }
   }

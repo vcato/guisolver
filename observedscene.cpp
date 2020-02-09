@@ -84,6 +84,12 @@ basicSolveStatePtr(
       auto &xyz_solve_flags = body_solve_flags.rotation;
       solve_state_ptr = xyzSolveStateComponentPtr(xyz_solve_flags, component);
     }
+
+    virtual void visitBodyScale(BodyIndex body_index) const
+    {
+      auto &body_state = scene_state.body(body_index);
+      solve_state_ptr = &body_state.solve_flags.scale;
+    }
   };
 
   ValueVisitor value_visitor(solve_state_ptr, scene_state);
@@ -96,6 +102,26 @@ static const TreePath &
 solvePath(const TreePath &path, const TreePaths &tree_paths)
 {
   const TreePath *tree_path_ptr = nullptr;
+
+  struct BodyValueVisitor {
+    const TreePaths::Body &body_paths;
+    const TreePath *&tree_path_ptr;
+
+    void visitTranslationComponent(XYZComponent component)
+    {
+      tree_path_ptr = &body_paths.translation.component(component).solve_path;
+    }
+
+    void visitRotationComponent(XYZComponent component)
+    {
+      tree_path_ptr = &body_paths.rotation.component(component).solve_path;
+    }
+
+    void visitScale()
+    {
+      tree_path_ptr = &body_paths.scale.solve_path;
+    }
+  };
 
   struct ValueVisitor : SolvableSceneValueVisitor {
     const TreePaths &tree_paths;
@@ -116,7 +142,8 @@ solvePath(const TreePath &path, const TreePaths &tree_paths)
     ) const override
     {
       auto &body_paths = tree_paths.body(body_index);
-      tree_path_ptr = &body_paths.translation.component(component).solve_path;
+      BodyValueVisitor body_visitor{body_paths, tree_path_ptr};
+      body_visitor.visitTranslationComponent(component);
     }
 
     void
@@ -125,7 +152,15 @@ solvePath(const TreePath &path, const TreePaths &tree_paths)
     ) const override
     {
       auto &body_paths = tree_paths.body(body_index);
-      tree_path_ptr = &body_paths.rotation.component(component).solve_path;
+      BodyValueVisitor body_visitor{body_paths, tree_path_ptr};
+      body_visitor.visitRotationComponent(component);
+    }
+
+    void visitBodyScale(BodyIndex body_index) const override
+    {
+      auto &body_paths = tree_paths.body(body_index);
+      BodyValueVisitor body_visitor{body_paths, tree_path_ptr};
+      body_visitor.visitScale();
     }
   };
 
@@ -1893,4 +1928,10 @@ ObservedScene::describePath(const TreePath &path) const
 -> TreeItemDescription
 {
   return Impl::describePath(path, tree_paths);
+}
+
+
+void ObservedScene::updateSceneStateFromSceneObjects()
+{
+  ::updateSceneStateFromSceneObjects(scene_state, scene, scene_handles);
 }
