@@ -106,6 +106,6 @@ We would try to calculate scale.
 ---
 I think bodies should have scale.
 * The scale would be a single value.
-* The scale would affect the scale of the geometry on the body.
 * The scale would change the position of markers on the body.
 * The scale would change the effective scale of the child bodies.
+---

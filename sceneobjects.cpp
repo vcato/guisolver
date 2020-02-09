@@ -14,6 +14,7 @@ using std::cerr;
 using TransformHandle = Scene::TransformHandle;
 using LineHandle = Scene::LineHandle;
 using GeometryHandle = Scene::GeometryHandle;
+using BodyState = SceneState::Body;
 
 
 static Point
@@ -396,14 +397,17 @@ static void
 updateBoxInScene(
   Scene &scene,
   const SceneState::Box &box_state,
-  const SceneHandles::Box &box_handles
+  const SceneHandles::Box &box_handles,
+  SceneState::Float body_global_scale
 )
 {
-  scene.setGeometryScale(box_handles.handle, vec3(box_state.scale));
+  scene.setGeometryScale(
+    box_handles.handle, vec3(box_state.scale) * body_global_scale
+  );
 
   scene.setGeometryCenter(
     box_handles.handle,
-    makeScenePointFromPoint(makePointFromPositionState(box_state.center))
+    vec3(box_state.center)*body_global_scale
   );
 }
 
@@ -412,21 +416,54 @@ static void
 updateLineInScene(
   Scene &scene,
   const SceneState::Line &line_state,
-  const SceneHandles::Line &line_handles
+  const SceneHandles::Line &line_handles,
+  SceneState::Float body_global_scale
 )
 {
-  scene.setStartPoint(line_handles.handle, vec3(line_state.start));
-  scene.setEndPoint(line_handles.handle, vec3(line_state.end));
+  scene.setStartPoint(
+    line_handles.handle, vec3(line_state.start)*body_global_scale
+  );
+
+  scene.setEndPoint(
+    line_handles.handle, vec3(line_state.end)*body_global_scale
+  );
+}
+
+
+static SceneState::Float
+bodyGlobalScale(BodyIndex body_index, const SceneState &scene_state)
+{
+  SceneState::Float scale = 1;
+
+  for (;;) {
+    const BodyState &body_state = scene_state.body(body_index);
+    scale *= body_state.transform.scale;
+
+    if (!body_state.maybe_parent_index) {
+      break;
+    }
+
+    body_index = *body_state.maybe_parent_index;
+  }
+
+  return scale;
 }
 
 
 static void
 updateBodyInScene(
   Scene &scene,
-  const SceneState::Body &body_state,
-  const SceneHandles::Body &body_handles
+  BodyIndex body_index,
+  const SceneState &scene_state,
+  const SceneHandles &scene_handles
 )
 {
+  const SceneState::Body &body_state = scene_state.body(body_index);
+  const SceneHandles::Body &body_handles = *scene_handles.bodies[body_index];
+
+  const SceneState::Float body_global_scale =
+    bodyGlobalScale(body_index, scene_state);
+
   setTransform(
     body_handles.transformHandle(),
     makeTransformFromState(body_state.transform),
@@ -439,7 +476,7 @@ updateBodyInScene(
   for (BoxIndex box_index = 0; box_index != n_boxes; ++box_index) {
     const SceneHandles::Box &box_handles = body_handles.boxes[box_index];
     const SceneState::Box &box_state = body_state.boxes[box_index];
-    updateBoxInScene(scene, box_state, box_handles);
+    updateBoxInScene(scene, box_state, box_handles, body_global_scale);
   }
 
   LineIndex n_lines = body_state.lines.size();
@@ -447,7 +484,7 @@ updateBodyInScene(
   for (LineIndex line_index = 0; line_index != n_lines; ++line_index) {
     const SceneHandles::Line &line_handles = body_handles.lines[line_index];
     const SceneState::Line &line_state = body_state.lines[line_index];
-    updateLineInScene(scene, line_state, line_handles);
+    updateLineInScene(scene, line_state, line_handles, body_global_scale);
   }
 }
 
@@ -489,7 +526,8 @@ createLineInScene(
   updateLineInScene(
     scene,
     scene_state.body(body_index).lines[line_index],
-    scene_handles.body(body_index).lines[line_index]
+    scene_handles.body(body_index).lines[line_index],
+    bodyGlobalScale(body_index, scene_state)
   );
 }
 
@@ -534,7 +572,7 @@ createBodyObjectInScene(
     createLineInScene(scene, scene_handles, body_index, i, scene_state);
   }
 
-  updateBodyInScene(scene, body_state, *scene_handles.bodies[body_index]);
+  updateBodyInScene(scene, body_index, scene_state, scene_handles);
 }
 
 
@@ -832,10 +870,7 @@ updateBodiesInScene(
 )
 {
   for (auto body_index : indicesOf(state.bodies())) {
-    const SceneHandles::Body &body_handles =
-      scene_handles.body(body_index);
-
-    updateBodyInScene(scene, state.body(body_index), body_handles);
+    updateBodyInScene(scene, body_index, state, scene_handles);
   }
 }
 
