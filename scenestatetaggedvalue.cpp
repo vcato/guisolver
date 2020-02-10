@@ -8,6 +8,7 @@ using std::string;
 using std::cerr;
 using XYZChannels = SceneState::XYZChannelsRef;
 using TransformSolveFlags = SceneState::TransformSolveFlags;
+using TransformExpressions = SceneState::TransformExpressions;
 
 
 static void
@@ -102,7 +103,7 @@ expressionFor(
   const TaggedValue *child_ptr = findChild(xyz_tagged_value, child_name);
 
   if (!child_ptr) {
-    assert(false); // not implemented
+    return "";
   }
 
   return stringValueOr(*child_ptr, "expression", "");
@@ -216,16 +217,18 @@ static TransformSolveFlags
 }
 
 
-static SceneState::TransformExpressions
-  makeExpressionsFromTaggedValue(const TaggedValue &tagged_value)
+static TransformExpressions
+makeExpressionsFromTaggedValue(const TaggedValue &tagged_value)
 {
-  SceneState::TransformExpressions result;
+  TransformExpressions result;
 
   result.translation =
     makeXYZExpressionsFromTaggedValue(tagged_value, "translation");
 
   result.rotation =
     makeXYZExpressionsFromTaggedValue(tagged_value, "rotation");
+
+  result.scale = expressionFor(tagged_value, "scale");
 
   return result;
 }
@@ -939,7 +942,8 @@ create(TaggedValue &parent, const string &tag, const SceneState::XYZ &xyz_state)
 static bool
 scaleHasDefaultState(
   const TransformState &transform_state,
-  const TransformSolveFlags &transform_solve_flags
+  const TransformSolveFlags &transform_solve_flags,
+  const TransformExpressions &transform_expressions
 )
 {
   if (transform_state.scale != SceneState::Transform::defaultScale()) {
@@ -947,6 +951,10 @@ scaleHasDefaultState(
   }
 
   if (transform_solve_flags.scale != TransformSolveFlags::defaultScale()) {
+    return false;
+  }
+
+  if (transform_expressions.scale != TransformExpressions::defaultScale()) {
     return false;
   }
 
@@ -960,7 +968,7 @@ static TaggedValue &
     const SceneState::Body::Name &name,
     const TransformState &transform_state,
     const TransformSolveFlags &solve_flags,
-    const SceneState::TransformExpressions &expressions
+    const TransformExpressions &expressions
   )
 {
   auto &transform = create(parent, "Transform");
@@ -990,8 +998,14 @@ static TaggedValue &
       );
     }
 
-    if (!scaleHasDefaultState(transform_state, solve_flags)) {
-      create(parent, "scale", transform_state.scale);
+    if (!scaleHasDefaultState(transform_state, solve_flags, expressions)) {
+      create2(
+        parent,
+        "scale",
+        transform_state.scale,
+        &solve_flags.scale,
+        &expressions.scale
+      );
     }
   }
 

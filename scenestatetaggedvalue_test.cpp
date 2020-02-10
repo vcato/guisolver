@@ -131,6 +131,7 @@ static void testBody()
     BodyIndex body_index = createGlobalBodyIn(scene_state);
     scene_state.body(body_index).name = "testbody";
     scene_state.body(body_index).solve_flags.translation.y = false;
+    scene_state.body(body_index).expressions.scale = "var1";
     bodyBox(scene_state.body(body_index)).center.y = 2.5;
 
     TaggedValue tagged_value("root");
@@ -156,6 +157,7 @@ static void testBody()
 
     assert(scene_state.body(body_index).solve_flags.translation.y == false);
     assert(bodyBox(scene_state.body(body_index)).center.y == 2.5);
+    assert(scene_state.body(body_index).expressions.scale == "var1");
     assert(scene_state.body(body_index).name == "testbody");
   }
 }

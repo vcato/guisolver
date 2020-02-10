@@ -91,15 +91,14 @@ desired values and solving rather than setting the values directly.
 * It would end up solving variables and moving the marker to the closest
   position that was supported by the variables.
 
-An example of where this is useful is if we're trying to make a body be
-scalable.  We can have a variable which represents the scale, and we can
-set the scale of the box on the body to use the variable.  We can also
-have each marker on the body have its position be multiplied by the
-scale factor.  Currently, this would make it where we can't move markers
-on the body.
-
 One thing that seems missing is the ability to specify an expression for
 the position of a marker which depends on the marker position's components.
 We'd want to have an expression like: [x*scale, y*scale, z*scale].  When
 setting the marker position, we could calculate the component values.
 We would try to calculate scale.
+
+For this to work, it seems like we should differentiate between linear
+and non-linear solving.  If the expression that drives a marker position
+is linear, then we can invert the expression and calculate the position
+directly.  Maybe initially, we would only support linear expression, and
+add support for non-linear expressions later.

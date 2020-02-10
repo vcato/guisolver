@@ -111,8 +111,10 @@ class SceneState {
     };
 
     struct TransformExpressions {
+      static Expression defaultScale() { return ""; }
       XYZExpressions translation;
       XYZExpressions rotation;
+      Expression scale;
     };
 
     struct Box {

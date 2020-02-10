@@ -1250,7 +1250,7 @@ struct BodyItemCreator : BodyItemVisitor {
         "scale:",
         body_state.transform.scale,
         body_state.solve_flags.scale,
-        noExpression()
+        body_state.expressions.scale
       );
   }
 };
@@ -2494,7 +2494,7 @@ channelPath(
     {
     }
 
-    virtual void visit(const BodyTranslationChannel &channel) const
+    void visit(const BodyTranslationChannel &channel) const override
     {
       tree_path_ptr = &
         tree_paths.body(channel.body_index)
@@ -2502,12 +2502,19 @@ channelPath(
         .component(channel.component).path;
     }
 
-    virtual void visit(const BodyRotationChannel &channel) const
+    void visit(const BodyRotationChannel &channel) const override
     {
       tree_path_ptr = &
         tree_paths.body(channel.body_index)
         .rotation
         .component(channel.component).path;
+    }
+
+    void visit(const BodyScaleChannel &channel) const override
+    {
+      tree_path_ptr = &
+        tree_paths.body(channel.body_index)
+        .scale.path;
     }
 
     virtual void visit(const BodyBoxScaleChannel &channel) const

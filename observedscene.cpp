@@ -883,7 +883,7 @@ void ObservedScene::handleSceneSelectionChanged()
 static SceneState::Expression &
 channelExpression(const Channel &channel, SceneState &scene_state)
 {
-  SceneState::Expression *expression_ptr;
+  SceneState::Expression *expression_ptr = nullptr;
 
   struct Visitor : Channel::Visitor {
     SceneState::Expression *&expression_ptr;
@@ -917,6 +917,15 @@ channelExpression(const Channel &channel, SceneState &scene_state)
           .rotation,
           channel.component
         );
+    }
+
+    void visit(const BodyScaleChannel &channel) const override
+    {
+      expression_ptr = &
+        scene_state
+        .body(channel.body_index)
+        .expressions
+        .scale;
     }
 
     void visit(const BodyBoxScaleChannel &channel) const override
@@ -1086,6 +1095,15 @@ channelValue(
           .component(channel.component);
     }
 
+    void visit(const BodyScaleChannel &channel) const override
+    {
+      value_ptr = &
+        scene_state
+          .body(channel.body_index)
+          .transform
+          .scale;
+    }
+
     void visit(const BodyBoxScaleChannel &channel) const override
     {
       value_ptr = &
@@ -1147,6 +1165,7 @@ forEachChannel(const SceneState &scene_state, const F &f)
     f(BodyRotationChannel{body_index, XYZComponent::x});
     f(BodyRotationChannel{body_index, XYZComponent::y});
     f(BodyRotationChannel{body_index, XYZComponent::z});
+    f(BodyScaleChannel(BodyScale{body_index}));
     BoxIndex n_boxes = scene_state.bodies()[body_index].boxes.size();
 
     for (BoxIndex box_index = 0; box_index != n_boxes; ++box_index) {
