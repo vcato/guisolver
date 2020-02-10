@@ -886,7 +886,7 @@ assertBoxIsUnscaled(
 }
 
 
-static void testMovingAMarkerInTheSceneThatAffectsScale()
+static void testMovingAMarkerInTheSceneThatAffectsScale1()
 {
   Tester tester;
   FakeScene &scene = tester.scene;
@@ -943,6 +943,67 @@ static void testMovingAMarkerInTheSceneThatAffectsScale()
   assert(scene.translation(local_marker_handle) == Vec3(3,0,0));
   assertNear(scene_state.body(body_index).transform.scale, 3, 0);
   assertBoxIsUnscaled(body_index, box_index, scene_state);
+}
+
+
+static void testMovingAMarkerInTheSceneThatAffectsScale2()
+{
+  Tester tester;
+  FakeScene &scene = tester.scene;
+  ObservedScene &observed_scene = tester.observed_scene;
+  SceneState initial_state;
+  SceneHandles &scene_handles = observed_scene.scene_handles;
+  SceneState &scene_state = observed_scene.scene_state;
+
+  // Create a body
+  BodyIndex parent_index = initial_state.createBody();
+
+  // Create another body
+  BodyIndex child_index = initial_state.createBody(parent_index);
+
+  // Set body2's translation to 1,0,0
+  initial_state.body(child_index).transform.translation.x = 1;
+
+  // Put a local marker on body2 at the origin
+  MarkerIndex local_marker_index = initial_state.createMarker(child_index);
+
+  // Put a global marker at (1,0,0)
+  MarkerIndex global_marker_index = initial_state.createMarker();
+  initial_state.marker(global_marker_index).position = {1,0,0};
+
+  // Make the body scale be solved.
+  initial_state.body(parent_index).solve_flags.scale = true;
+
+  observed_scene.replaceSceneStateWith(initial_state);
+
+  Scene::TransformHandle global_marker_handle =
+    scene_handles.marker(global_marker_index).transformHandle();
+
+  Scene::TransformHandle local_marker_handle =
+    scene_handles.marker(local_marker_index).transformHandle();
+
+  assert(scene.translation(global_marker_handle) == Vec3(1,0,0));
+
+  // Move the global marker in the scene.
+  scene.setTranslation(global_marker_handle, {2,0,0});
+  observed_scene.updateSceneStateFromSceneObjects();
+  scene_state.body(parent_index).transform.scale = 2;
+  observed_scene.handleSceneStateChanged();
+
+  // Check that the body was scaled
+  assert(scene_state.marker(global_marker_index).position.x == 2);
+  assert(scene.translation(local_marker_handle) == Vec3(0,0,0));
+  assertNear(scene_state.body(parent_index).transform.scale, 2, 0);
+
+  // Check that the child body's position didn't change.
+  assert(scene_state.body(child_index).transform.translation.x == 1);
+
+  // Move it again.
+  scene.setTranslation(global_marker_handle, {3,0,0});
+  observed_scene.updateSceneStateFromSceneObjects();
+
+  // Check that the child body's position didn't change.
+  assert(scene_state.body(child_index).transform.translation.x == 1);
 }
 
 
@@ -1106,7 +1167,8 @@ int main()
   testChangingBodyTranslationXInTree();
   testChangingBodyRotationXInTree();
   testChangingBodyScaleInTree();
-  testMovingAMarkerInTheSceneThatAffectsScale();
+  testMovingAMarkerInTheSceneThatAffectsScale1();
+  testMovingAMarkerInTheSceneThatAffectsScale2();
   testSetSolveFlags();
   testUsingAVariable(BodyChannelType::translation_x);
   testUsingAVariable(BodyChannelType::rotation_x);

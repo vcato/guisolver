@@ -86,10 +86,16 @@ updateStateMarkerPositions(
 
 
 static Transform
-localTransform(const Scene &scene, Scene::TransformHandle transform_id)
+localTransform(
+  const Scene &scene,
+  Scene::TransformHandle transform_handle,
+  float parent_global_scale
+)
 {
-  Point translation = localTranslation(transform_id, scene);
-  CoordinateAxes coordinate_axes = scene.coordinateAxes(transform_id);
+  Point translation =
+    localTranslation(transform_handle, scene) / parent_global_scale;
+
+  CoordinateAxes coordinate_axes = scene.coordinateAxes(transform_handle);
   return makeTransform(coordinate_axes, translation);
 }
 
@@ -103,11 +109,22 @@ updateBodyStateFromBodyObjects(
   const SceneState &scene_state
 )
 {
+  Optional<BodyIndex> maybe_parent_body_index =
+    scene_state.body(body_index).maybe_parent_index;
+
+  float parent_global_scale = 1;
+
+  if (maybe_parent_body_index) {
+    parent_global_scale =
+      bodyGlobalScale(*maybe_parent_body_index, scene_state);
+  }
+
+  // The translation needs to have the inverse scale applied.
+  Transform local_transform =
+    localTransform(scene, body_handles.transformHandle(), parent_global_scale);
+
   body_state.transform =
-    transformState(
-      localTransform(scene, body_handles.transformHandle()),
-      body_state.transform.scale
-    );
+    transformState(local_transform, body_state.transform.scale);
 
   assert(body_state.boxes.size() == body_handles.boxes.size());
   size_t n_boxes = body_state.boxes.size();
