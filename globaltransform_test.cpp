@@ -84,7 +84,7 @@ static void testGlobalTransform()
 
   assertNear(
     markerPredicted(scene_state, marker_index),
-    Point(globalTransform(body2_index, scene_state)*local),
+    Point(unscaledGlobalTransform(body2_index, scene_state)*local),
     0.001
   );
 }

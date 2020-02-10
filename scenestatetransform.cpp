@@ -19,10 +19,10 @@ changeBodyTransformToPreserveGlobal(
     makeScaledTransformFromState(body_state.transform);
 
   Transform old_parent_global_transform =
-    globalTransform(maybe_old_parent_body_index, scene_state);
+    unscaledGlobalTransform(maybe_old_parent_body_index, scene_state);
 
   Transform new_parent_global_transform =
-    globalTransform(maybe_new_parent_body_index, scene_state);
+    unscaledGlobalTransform(maybe_new_parent_body_index, scene_state);
 
   Transform body_global_transform =
     old_parent_global_transform*old_body_transform;
@@ -45,10 +45,10 @@ changeMarkerPositionToPreserveGlobal(
   SceneState::Marker &marker_state = scene_state.marker(marker_index);
 
   Transform new_parent_global_transform =
-    globalTransform(maybe_new_parent_body_index, scene_state);
+    scaledGlobalTransform(maybe_new_parent_body_index, scene_state);
 
   Transform old_parent_global_transform =
-    globalTransform(maybe_old_parent_body_index, scene_state);
+    scaledGlobalTransform(maybe_old_parent_body_index, scene_state);
 
   Point old_marker_position = makePointFromPositionState(marker_state.position);
 
@@ -60,5 +60,3 @@ changeMarkerPositionToPreserveGlobal(
 
   marker_state.position = makePositionStateFromPoint(new_marker_position);
 }
-
-

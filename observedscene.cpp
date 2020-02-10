@@ -485,8 +485,7 @@ ObservedScene::pasteBodyGlobal(Optional<BodyIndex> maybe_new_parent_body_index)
 
 MarkerIndex
 ObservedScene::pasteMarkerGlobal(
-  Optional<BodyIndex>
-    maybe_new_parent_body_index
+  Optional<BodyIndex> maybe_new_parent_body_index
 )
 {
   assert (clipboard.maybe_cut_marker_index);

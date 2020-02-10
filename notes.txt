@@ -103,6 +103,3 @@ the position of a marker which depends on the marker position's components.
 We'd want to have an expression like: [x*scale, y*scale, z*scale].  When
 setting the marker position, we could calculate the component values.
 We would try to calculate scale.
----
-When reloading a scene with a body that has scale, the endpoints of the
-distance error lines are not correct.

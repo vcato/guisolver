@@ -52,7 +52,7 @@ markerPredicted(const SceneState &scene_state, MarkerIndex marker_index)
 
 
 inline Transform
-globalTransform(
+unscaledGlobalTransform(
   Optional<BodyIndex> maybe_body_index,
   const SceneState &scene_state
 )
@@ -62,6 +62,24 @@ globalTransform(
   while (maybe_body_index) {
     const SceneState::Body &body_state = scene_state.body(*maybe_body_index);
     transform = parentUnscaledTransform(body_state, transform);
+    maybe_body_index = scene_state.body(*maybe_body_index).maybe_parent_index;
+  }
+
+  return transform;
+}
+
+
+inline Transform
+scaledGlobalTransform(
+  Optional<BodyIndex> maybe_body_index,
+  const SceneState &scene_state
+)
+{
+  Transform transform = Transform::Identity();
+
+  while (maybe_body_index) {
+    const SceneState::Body &body_state = scene_state.body(*maybe_body_index);
+    transform = parentScaledTransform(body_state, transform);
     maybe_body_index = scene_state.body(*maybe_body_index).maybe_parent_index;
   }
 

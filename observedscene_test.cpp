@@ -352,6 +352,30 @@ static void testCutAndPaste()
 }
 
 
+static void testReparentingAMarker()
+{
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+  SceneState &scene_state = observed_scene.scene_state;
+
+  SceneState initial_state;
+
+  // Have a marker at position (1,0,0) on a body with a scale factor of 2.
+  BodyIndex body_index = initial_state.createBody();
+  MarkerIndex marker_index = initial_state.createMarker(body_index);
+  initial_state.marker(marker_index).position = {1,0,0};
+  initial_state.body(body_index).transform.scale = 2;
+  observed_scene.replaceSceneStateWith(initial_state);
+
+  // Cut and paste the marker to the scene.
+  observed_scene.cutMarker(marker_index);
+  observed_scene.pasteMarkerGlobal({});
+
+  // Check that the new marker position is (2,0,0).
+  assertNear(scene_state.marker(marker_index).position.x, 2, 0);
+}
+
+
 static void testAddingADistanceErrorToABody()
 {
   Tester tester;
@@ -381,8 +405,19 @@ static void testReplacingSceneState()
   ObservedScene &observed_scene = tester.observed_scene;
   SceneState new_scene_state;
   BodyIndex body_index = new_scene_state.createBody();
+  new_scene_state.body(body_index).transform.scale = 2;
+  MarkerIndex marker_index = new_scene_state.createMarker(body_index);
+  new_scene_state.marker(marker_index).position.x = 1;
   new_scene_state.createDistanceError(body_index);
   observed_scene.replaceSceneStateWith(new_scene_state);
+
+  SceneHandles &scene_handles = observed_scene.scene_handles;
+  FakeScene &scene = tester.scene;
+
+  Scene::TransformHandle marker_handle =
+    scene_handles.marker(marker_index).transformHandle();
+
+  assert(scene.translation(marker_handle).x == 2);
 }
 
 
@@ -1059,6 +1094,7 @@ int main()
   testSelectingSceneInTheTree();
   testSelectingMarkerInTheScene();
   testCutAndPaste();
+  testReparentingAMarker();
   testAddingADistanceErrorToABody();
   testReplacingSceneState();
   testAddingAndRemovingAVariable();

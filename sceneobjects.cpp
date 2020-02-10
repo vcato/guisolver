@@ -147,23 +147,45 @@ updateSceneStateFromSceneObjects(
 }
 
 
+static Vec3
+markerTranslation(
+  MarkerIndex marker_index,
+  const SceneState &scene_state
+)
+{
+  float scale = 1;
+  const SceneState::Markers &marker_states = scene_state.markers();
+  const SceneState::Marker &marker_state = marker_states[marker_index];
+
+  if (scene_state.marker(marker_index).maybe_body_index) {
+    BodyIndex body_index = *scene_state.marker(marker_index).maybe_body_index;
+    scale = bodyGlobalScale(body_index, scene_state);
+  }
+
+  Vec3 translation = 
+    makeScenePointFromPoint(
+      makePointFromPositionState(marker_state.position)*scale
+    );
+
+  return translation;
+}
+
+
 static SceneHandles::Marker
 createMarker(
   TransformHandle parent,
   const Scene::Color &color,
-  const PositionState &position,
-  Scene &scene
+  const SceneState &scene_state,
+  Scene &scene,
+  MarkerIndex marker_index
 )
 {
   TransformHandle transform_handle = scene.createTransform(parent);
   GeometryHandle sphere_handle = scene.createSphere(transform_handle);
   scene.setGeometryScale(sphere_handle, {0.1, 0.1, 0.1});
   scene.setGeometryColor(sphere_handle, color);
-
-  scene.setTranslation(
-    transform_handle,
-    makeScenePointFromPoint(makePointFromPositionState(position))
-  );
+  Vec3 translation = markerTranslation(marker_index, scene_state);
+  scene.setTranslation(transform_handle, translation);
 
   SceneHandles::Marker marker_handles =
     SceneHandles::Marker{transform_handle, sphere_handle};
@@ -173,36 +195,14 @@ createMarker(
 
 
 static SceneHandles::Marker
-createSceneLocal(
-  Scene &scene,
-  TransformHandle const parent,
-  const PositionState &position
-)
-{
-  Scene::Color color = {0, 0, 1};
-  return createMarker(parent, color, position, scene);
-}
-
-
-static SceneHandles::Marker
-createSceneGlobal(
-  Scene &scene,
-  const PositionState &position
-)
-{
-  Scene::Color color = {0, 1, 0};
-  return createMarker(scene.top(), color, position, scene);
-}
-
-
-static SceneHandles::Marker
   createSceneMarker(
     Scene &scene,
     const SceneState::Marker &state_marker,
-    const SceneHandles &scene_handles
+    const SceneState &scene_state,
+    const SceneHandles &scene_handles,
+    MarkerIndex marker_index
   )
 {
-  const PositionState &position = state_marker.position;
   Optional<BodyIndex> maybe_body_index = state_marker.maybe_body_index;
 
   if (maybe_body_index) {
@@ -211,10 +211,13 @@ static SceneHandles::Marker
     const SceneHandles::Body &body_handles =
       scene_handles.body(parent_body_index);
 
-    return createSceneLocal(scene, body_handles.transformHandle(), position);
+    TransformHandle parent_handle = body_handles.transformHandle();
+    Scene::Color color = {0, 0, 1};
+    return createMarker(parent_handle, color, scene_state, scene, marker_index);
   }
   else {
-    return createSceneGlobal(scene, position);
+    Scene::Color color = {0, 1, 0};
+    return createMarker(scene.top(), color, scene_state, scene, marker_index);
   }
 }
 
@@ -223,7 +226,6 @@ static SceneHandles::DistanceError createDistanceError(Scene &scene)
 {
   TransformHandle transform_handle = scene.createTransform(scene.top());
   LineHandle line_handle = scene.createLine(transform_handle);
-
   scene.setGeometryColor(line_handle, {1,0,0});
   return {transform_handle, line_handle};
 }
@@ -421,7 +423,7 @@ createMarkerObjectInScene(
   const SceneState::Marker &state_marker = state.marker(marker_index);
 
   scene_handles.markers[marker_index] =
-    createSceneMarker(scene,state_marker,scene_handles);
+    createSceneMarker(scene, state_marker, state, scene_handles, marker_index);
 }
 
 
@@ -875,24 +877,12 @@ updateMarkerInScene(
   MarkerIndex marker_index
 )
 {
-  float scale = 1;
-  const SceneState::Markers &marker_states = scene_state.markers();
-  const SceneState::Marker &marker_state = marker_states[marker_index];
+  Vec3 translation = markerTranslation(marker_index, scene_state);
 
   const SceneHandles::Marker &marker_handles =
     scene_handles.marker(marker_index);
 
-  if (scene_state.marker(marker_index).maybe_body_index) {
-    BodyIndex body_index = *scene_state.marker(marker_index).maybe_body_index;
-    scale = bodyGlobalScale(body_index, scene_state);
-  }
-
-  scene.setTranslation(
-    marker_handles.transformHandle(),
-    makeScenePointFromPoint(
-      makePointFromPositionState(marker_state.position)*scale
-    )
-  );
+  scene.setTranslation(marker_handles.transformHandle(), translation);
 }
 
 
