@@ -8,7 +8,6 @@
 
 struct Scene {
   using Point = Vec3;
-  using Vector = Vec3;
 
   enum class ManipulatorType {
     translate,

@@ -3,18 +3,17 @@
 #include <iostream>
 #include "coordinateaxes.hpp"
 #include "vec3.hpp"
-#include "maketransform.hpp"
 #include "sceneerror.hpp"
-#include "eigenconv.hpp"
-#include "rotationvector.hpp"
-#include "transformstate.hpp"
-#include "positionstate.hpp"
 #include "indicesof.hpp"
 #include "randomengine.hpp"
 #include "randomfloat.hpp"
-#include "randompoint.hpp"
-#include "randomtransform.hpp"
 #include "assertnearfloat.hpp"
+#include "transform3.hpp"
+#include "randomtransform3.hpp"
+#include "randompoint3.hpp"
+#include "transform3util.hpp"
+#include "positionstatepoint3.hpp"
+#include "randomvec3.hpp"
 
 using std::cerr;
 
@@ -41,27 +40,15 @@ static BodyIndex createGlobalBodyIn(SceneState &scene_state)
 }
 
 
-static Transform inv(const Transform &t)
-{
-  return t.inverse();
-}
-
-
-static Point localizePoint(const Point &global,const Transform &transform)
-{
-  return inv(transform)*global;
-}
-
-
 static MarkerIndex
   addMarkerTo(
     SceneState &result,
-    const Point &local,
+    const Point3 &local3,
     Optional<BodyIndex> maybe_body_index = {}
   )
 {
   MarkerIndex marker_index = result.createUnnamedMarker();
-  result.marker(marker_index).position = makePositionStateFromPoint(local);
+  result.marker(marker_index).position = makePositionStateFromPoint3(local3);
   result.marker(marker_index).maybe_body_index = maybe_body_index;
   return marker_index;
 }
@@ -85,12 +72,12 @@ struct Example {
   {
   }
 
-  void addDistanceError(const Point &local, const Point &global)
+  void addDistanceError(const Point3 &local3, const Point3 &global3)
   {
     MarkerIndex local_marker_index =
-      addMarkerTo(scene_state, local, body_index);
+      addMarkerTo(scene_state, local3, body_index);
 
-    MarkerIndex global_marker_index = addMarkerTo(scene_state, global);
+    MarkerIndex global_marker_index = addMarkerTo(scene_state, global3);
 
     SceneState::DistanceError &new_distance_error =
       createDistanceError(scene_state);
@@ -102,21 +89,35 @@ struct Example {
 }
 
 
+static TransformState randomUnscaledTransformState(RandomEngine &engine)
+{
+  Vec3 t = randomVec3(engine);
+  Vec3 r = randomVec3(engine);
+  float scale = 1;
+
+  return
+    TransformState {
+      {t.x, t.y, t.z},
+      {r.x, r.y, r.z},
+      scale
+    };
+}
+
+
 static Example makeExample(RandomEngine &engine)
 {
   Example result;
   SceneState &scene_state = result.scene_state;
 
-  // We should be able to create a random box transform and three
-  // random global points, then find the equvalent local points
-  // and setup the scene from that.
-  Transform true_box_global = randomTransform(engine);
-  Point global1 = randomPoint(engine);
-  Point global2 = randomPoint(engine);
-  Point global3 = randomPoint(engine);
-  Point local1 = localizePoint(global1,true_box_global);
-  Point local2 = localizePoint(global2,true_box_global);
-  Point local3 = localizePoint(global3,true_box_global);
+  // Create a random transform and three random global points, then find the
+  // equvalent local points and setup the scene from that.
+  Transform3 true_box_global = randomTransform3(engine);
+  Point3 global1 = randomPoint3(engine);
+  Point3 global2 = randomPoint3(engine);
+  Point3 global3 = randomPoint3(engine);
+  Point3 local1 = localizePoint3(global1, true_box_global);
+  Point3 local2 = localizePoint3(global2, true_box_global);
+  Point3 local3 = localizePoint3(global3, true_box_global);
   result.addDistanceError(local1,global1);
   result.addDistanceError(local2,global2);
   result.addDistanceError(local3,global3);
@@ -125,7 +126,7 @@ static Example makeExample(RandomEngine &engine)
   // transform.
 
   SceneState::Body &body_state = scene_state.body(result.body_index);
-  body_state.transform = transformState(randomTransform(engine), /*scale*/1);
+  body_state.transform = randomUnscaledTransformState(engine);
   return result;
 }
 
@@ -142,7 +143,8 @@ static void testSolvingBoxTransform()
   SceneState scene_state = makeExample(engine).scene_state;
   solveScene(scene_state);
   updateErrorsInState(scene_state);
-  assert(sceneError(scene_state) < 0.002);
+  float error = sceneError(scene_state);
+  assert(error < 0.003);
 }
 
 

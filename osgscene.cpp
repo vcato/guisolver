@@ -1880,15 +1880,15 @@ void OSGScene::selectTransform(TransformHandle handle)
 }
 
 
-static osg::Vec3f osgVec(const OSGScene::Vector &v)
+static osg::Vec3f osgVec(const OSGScene::Point &v)
 {
   return {v.x,v.y,v.z};
 }
 
 
-static Scene::Vector vec(const osg::Vec3f &v)
+static Vec3 vec(const osg::Vec3f &v)
 {
-  return {v.x(),v.y(),v.z()};
+  return { v.x(), v.y(), v.z() };
 }
 
 
@@ -1949,8 +1949,8 @@ CoordinateAxes OSGScene::coordinateAxes(TransformHandle t) const
   OSGCoordinateAxes osg_ca =
     ::coordinateAxes(Impl::transformForHandle(*this,t));
 
-  Scene::Vector x = vec(osg_ca.x);
-  Scene::Vector y = vec(osg_ca.y);
-  Scene::Vector z = vec(osg_ca.z);
+  Vec3 x = vec(osg_ca.x);
+  Vec3 y = vec(osg_ca.y);
+  Vec3 z = vec(osg_ca.z);
   return {x,y,z};
 }

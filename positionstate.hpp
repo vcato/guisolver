@@ -12,7 +12,7 @@ inline Point makePointFromPositionState(const PositionState &arg)
 }
 
 
-inline PositionState makePositionStateFromPoint(const Eigen::Vector3f &arg)
+inline PositionState makePositionStateFromPoint(const Point &arg)
 {
   return {arg.x(), arg.y(), arg.z()};
 }

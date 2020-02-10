@@ -1,12 +1,17 @@
 #include "randompoint.hpp"
 
 #include "randomfloat.hpp"
+#include "randomvec3.hpp"
+#include "vec3.hpp"
+
+
+static Point makePointFromVec3(const Vec3 &v)
+{
+  return {v.x, v.y, v.z};
+}
 
 
 Point randomPoint(RandomEngine &engine)
 {
-  float x = randomFloat(-1,1,engine);
-  float y = randomFloat(-1,1,engine);
-  float z = randomFloat(-1,1,engine);
-  return {x,y,z};
+  return makePointFromVec3(randomVec3(engine));
 }

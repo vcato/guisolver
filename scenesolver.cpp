@@ -2,7 +2,6 @@
 
 #include "sceneerror.hpp"
 #include "vec3.hpp"
-#include "maketransform.hpp"
 #include "optimize.hpp"
 #include "eigenconv.hpp"
 #include "rotationvector.hpp"

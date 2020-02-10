@@ -42,6 +42,7 @@ run_guisolver: guisolver
 	./$*
 	touch $@
 
+RANDOMPOINT=randompoint.o randomvec3.o
 SCENESTATE=scenestate.o nextunusedname.o
 DEFAULTSCENESTATE=defaultscenestate.o $(SCENESTATE) maketransform.o
 TAGGEDVALUEIO=taggedvalueio.o printindent.o streamparser.o stringutil.o
@@ -62,6 +63,7 @@ MAINWINDOWCONTROLLER=mainwindowcontroller.o \
   $(EVALUATEEXPRESSION) $(OBSERVEDSCENE)
 
 QTSPINBOX=qtspinbox.o qtspinbox_moc.o parsedouble.o
+RANDOMTRANSFORM=randomtransform.o randomcoordinateaxes.o
 
 QTTREEWIDGET=\
   qttreewidget.o qttreewidget_moc.o \
@@ -99,7 +101,7 @@ evaluateexpression_test: evaluateexpression_test.o $(EVALUATEEXPRESSION)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 globaltransform_test: globaltransform_test.o $(SCENESTATE) maketransform.o \
-  assertnearfloat.o randomtransform.o randompoint.o
+  assertnearfloat.o $(RANDOMTRANSFORM) $(RANDOMPOINT)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 scenestatetaggedvalue_test: scenestatetaggedvalue_test.o \
@@ -111,8 +113,8 @@ scenestateio_test: scenestateio_test.o $(SCENESTATE) \
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 scenesolver_test: scenesolver_test.o \
-  scenesolver.o maketransform.o randomtransform.o randompoint.o \
-  assertnearfloat.o \
+  scenesolver.o maketransform.o $(RANDOMTRANSFORM) $(RANDOMPOINT) \
+  assertnearfloat.o randomtransform3.o randompoint3.o transform3util.o \
   $(SCENEERROR) $(OPTIMIZE)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 

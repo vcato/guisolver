@@ -1,9 +1,9 @@
 #include "globaltransform.hpp"
 
 #include "randomengine.hpp"
-#include "randomtransform.hpp"
-#include "randompoint.hpp"
 #include "assertnearfloat.hpp"
+#include "randomvec3.hpp"
+#include "randomfloat.hpp"
 
 
 static BodyIndex
@@ -59,6 +59,27 @@ assertNear(const Point &actual, const Point &expected, float tolerance)
 }
 
 
+static PositionState makePositionStateFromVec3(const Vec3 &arg)
+{
+  return {arg.x, arg.y, arg.z};
+}
+
+
+static TransformState randomUnscaledTransformState(RandomEngine &engine)
+{
+  Vec3 t = randomVec3(engine);
+  Vec3 r = randomVec3(engine);
+  float scale = 1;
+
+  return
+    TransformState {
+      {t.x, t.y, t.z},
+      {r.x, r.y, r.z},
+      scale
+    };
+}
+
+
 static void testGlobalTransform()
 {
   RandomEngine engine(/*seed*/1);
@@ -70,15 +91,15 @@ static void testGlobalTransform()
   BodyIndex body2_index = scene_state.createBody(body1_index);
 
   scene_state.body(body1_index).transform =
-    transformState(randomTransform(engine), /*scale*/1);
+    randomUnscaledTransformState(engine);
 
   scene_state.body(body2_index).transform =
-    transformState(randomTransform(engine), /*scale*/1);
+    randomUnscaledTransformState(engine);
 
   MarkerIndex marker_index = scene_state.createMarker(body2_index);
 
   scene_state.marker(marker_index).position =
-    makePositionStateFromPoint(randomPoint(engine));
+    makePositionStateFromVec3(randomVec3(engine));
 
   Point local = point(scene_state.marker(marker_index).position);
 
