@@ -8,6 +8,9 @@
 #include "vectorio.hpp"
 #include "contains.hpp"
 #include "assertnearfloat.hpp"
+#include "numericvaluelimits.hpp"
+#include "channel.hpp"
+#include "treevalues.hpp"
 
 using std::cerr;
 using VariableName = SceneState::Variable::Name;
@@ -198,6 +201,26 @@ static void testDuplicateBody()
 }
 
 
+static bool
+checkChannelTreeExpression(
+  const Channel &tx, const Expression &test_expression, Tester &tester
+)
+{
+  const TreePaths &tree_paths = tester.observed_scene.tree_paths;
+  FakeTreeWidget &tree_widget = tester.tree_widget;
+  const TreePath *path_ptr = channelExpressionPathPtr(tx, tree_paths);
+  assert(path_ptr);
+
+  FakeTreeItem::ValueString value_string =
+    tree_widget.item(*path_ptr).value_string;
+
+  FakeTreeItem::ValueString expected_value_string =
+    FakeTreeWidget::stringValueText(test_expression);
+
+  return value_string == expected_value_string;
+}
+
+
 static void testDuplicateBodyWhenTheBodyHasExpressions()
 {
   SceneState initial_state;
@@ -242,17 +265,20 @@ static void testDuplicateBodyWhenTheBodyHasExpressions()
     tree_paths.body(duplicate_body_index).rotation.x.path;
 
   TreePath centerx_path =
-    tree_paths.body(duplicate_body_index).boxes[box_index].center.x;
+    tree_paths.body(duplicate_body_index).boxes[box_index].center.x.path;
 
-  TreeWidget::Input tx_input = tester.tree_widget.item(tx_path).input;
-  TreeWidget::Input rx_input = tester.tree_widget.item(rx_path).input;
+  BodyTranslationChannel
+    tx{{duplicate_body_index, XYZComponent::x}};
 
-  TreeWidget::Input centerx_input =
-    tester.tree_widget.item(centerx_path).input;
+  BodyRotationChannel
+    rx{{duplicate_body_index, XYZComponent::x}};
 
-  assert(tx_input == "=" + test_expression);
-  assert(rx_input == "=" + test_expression);
-  assert(centerx_input == "=" + test_expression);
+  BodyBoxCenterChannel
+    box_centerx{{duplicate_body_index, box_index, XYZComponent::x}};
+
+  assert(checkChannelTreeExpression(tx, test_expression, tester));
+  assert(checkChannelTreeExpression(rx, test_expression, tester));
+  assert(checkChannelTreeExpression(box_centerx, test_expression, tester));
 }
 
 
@@ -451,6 +477,13 @@ userChangesVariableValue(
 }
 
 
+static const TreePath &
+markerPositionXPath(MarkerIndex marker_index, const TreePaths &tree_paths)
+{
+  return markerPositionComponentPath(marker_index, XYZComponent::x, tree_paths);
+}
+
+
 static void testAddingAndRemovingAVariable()
 {
   Tester tester;
@@ -474,7 +507,7 @@ static void testAddingAndRemovingAVariable()
 
   {
     TreePath marker_position_x_path =
-      tree_paths.marker(marker_index).position.x;
+      markerPositionXPath(marker_index, tree_paths);
 
     userChangesTreeItemExpression(marker_position_x_path, "var1", tester);
     assert(tree_widget.item(marker_position_x_path).maybe_numeric_value == 1);
@@ -486,7 +519,7 @@ static void testAddingAndRemovingAVariable()
   // the channel value.
   {
     TreePath marker_position_x_path =
-      tree_paths.marker(marker_index).position.x;
+      markerPositionXPath(marker_index, tree_paths);
 
     assert(tree_widget.item(marker_position_x_path).maybe_numeric_value == 1);
   }
@@ -665,6 +698,13 @@ struct BodySolveFlag {
 }
 
 
+static const TreePath &
+channelPathsSolvePath(const TreePaths::Channel &paths)
+{
+  return *paths.maybe_solve_path;
+}
+
+
 namespace {
 struct BodyTranslationXSolveFlag : BodySolveFlag {
   bool
@@ -675,7 +715,7 @@ struct BodyTranslationXSolveFlag : BodySolveFlag {
 
   const TreePath &path(const TreePaths::Body &body_paths) const override
   {
-    return body_paths.translation.x.solve_path;
+    return channelPathsSolvePath(body_paths.translation.x);
   }
 };
 }
@@ -691,7 +731,7 @@ struct BodyRotationXSolveFlag : BodySolveFlag {
 
   const TreePath &path(const TreePaths::Body &body_paths) const override
   {
-    return body_paths.rotation.x.solve_path;
+    return channelPathsSolvePath(body_paths.rotation.x);
   }
 };
 }
@@ -707,7 +747,7 @@ struct BodyScaleSolveFlag : BodySolveFlag {
 
   const TreePath &path(const TreePaths::Body &body_paths) const override
   {
-    return body_paths.scale.solve_path;
+    return channelPathsSolvePath(body_paths.scale);
   }
 };
 }
@@ -809,7 +849,7 @@ struct BodyRotationX : BodyElement {
 
 
 namespace {
-struct BodyScale : BodyElement {
+struct BodyScaleElement : BodyElement {
   BodyScaleSolveFlag solve_flag;
 
   const TreePath &path(const TreePaths::Body &body_paths) const override
@@ -866,7 +906,7 @@ static void testChangingBodyRotationXInTree()
 
 static void testChangingBodyScaleInTree()
 {
-  testChangingSolvableBodyValue(BodyScale());
+  testChangingSolvableBodyValue(BodyScaleElement());
 }
 
 
@@ -1013,9 +1053,9 @@ expectAllSolveFlagsAreOn(
   const FakeTreeWidget &tree_widget
 )
 {
-  const TreePath &x_solve_path = xyz_paths.x.solve_path;
-  const TreePath &y_solve_path = xyz_paths.y.solve_path;
-  const TreePath &z_solve_path = xyz_paths.z.solve_path;
+  const TreePath &x_solve_path = channelPathsSolvePath(xyz_paths.x);
+  const TreePath &y_solve_path = channelPathsSolvePath(xyz_paths.y);
+  const TreePath &z_solve_path = channelPathsSolvePath(xyz_paths.z);
   const FakeTreeItem &x_solve_item = tree_widget.item(x_solve_path);
   const FakeTreeItem &y_solve_item = tree_widget.item(y_solve_path);
   const FakeTreeItem &z_solve_item = tree_widget.item(z_solve_path);
@@ -1054,30 +1094,6 @@ static void testSetSolveFlags()
 }
 
 
-static void testSettingBoxScaleExpression()
-{
-  SceneState initial_state;
-  BodyIndex body_index = initial_state.createBody();
-  BoxIndex box_index = initial_state.body(body_index).createBox();
-
-  Tester tester;
-  ObservedScene &observed_scene = tester.observed_scene;
-  observed_scene.replaceSceneStateWith(initial_state);
-  const SceneState &scene_state = observed_scene.scene_state;
-  const TreePaths &tree_paths = observed_scene.tree_paths;
-
-  TreePath box_scale_x_path =
-    tree_paths.body(body_index).boxes[box_index].scale.x;
-
-  userChangesTreeItemExpression(box_scale_x_path, "5", tester);
-
-  NumericValue value =
-    scene_state.body(body_index).boxes[box_index].scale.x;
-
-  assert(value == 5);
-}
-
-
 static void testSettingMarkerPositionInTree()
 {
   SceneState initial_state;
@@ -1091,7 +1107,7 @@ static void testSettingMarkerPositionInTree()
   SceneState &scene_state = observed_scene.scene_state;
 
   const TreePath &marker_position_x_path =
-    tree_paths.marker(marker_index).position.x;
+    markerPositionXPath(marker_index, tree_paths);
 
   observed_scene.handleTreeNumericValueChanged(marker_position_x_path, 5);
   assert(scene_state.marker(marker_index).position.x == 5);
@@ -1142,6 +1158,88 @@ static void testHandleSceneStateChanged()
 }
 
 
+static void
+userChangesTreeChannelExpression(
+  const Channel &channel, const Expression &new_expression, Tester &tester
+)
+{
+  ObservedScene &observed_scene = tester.observed_scene;
+  TreePaths &tree_paths = observed_scene.tree_paths;
+
+  // Check that the x translation has a child item which is the expression.
+  const TreePath *expression_path_ptr =
+    channelExpressionPathPtr(channel, tree_paths);
+
+  assert(expression_path_ptr);
+  const TreePath &expression_path = *expression_path_ptr;
+
+  // Change the expression.
+  const TreePath &path = expression_path;
+  const StringValue &new_value = new_expression;
+  FakeTreeWidget &tree_widget = tester.tree_widget;
+
+  tree_widget.item(path).value_string =
+    FakeTreeWidget::stringValueText(new_value);
+
+  tester.observed_scene.handleTreeStringValueChanged(path, new_value);
+}
+
+
+static void
+testSettingChannelExpression(const Channel &channel, Tester &tester)
+{
+  Expression new_expression = "5";
+  ObservedScene &observed_scene = tester.observed_scene;
+  SceneState &scene_state = observed_scene.scene_state;
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  const TreePath &value_path = channelPath(channel, tree_paths);
+
+  userChangesTreeChannelExpression(channel, new_expression, tester);
+
+  // Check that the expression was changed in the state.
+  const Expression &channel_expression =
+    channelExpression(channel, scene_state);
+
+  assert(channel_expression == new_expression);
+
+  FakeTreeWidget &tree_widget = tester.tree_widget;
+
+  // Check that the evaluated expression value is shown for the item.
+  assert(tree_widget.item(value_path).maybe_numeric_value == 5);
+}
+
+
+static void testSettingBodyTranslationExpression()
+{
+  Tester tester;
+
+  // Have an initial state with a body
+  SceneState initial_state;
+  BodyIndex body_index = initial_state.createBody();
+  tester.observed_scene.replaceSceneStateWith(initial_state);
+
+  const Channel &channel = BodyTranslationChannel(body_index, XYZComponent::x);
+  testSettingChannelExpression(channel, tester);
+}
+
+
+static void testSettingBoxScaleExpression()
+{
+  Tester tester;
+
+  // Have an initial state with a body
+  SceneState initial_state;
+  BodyIndex body_index = initial_state.createBody();
+  BoxIndex box_index = initial_state.body(body_index).createBox();
+  tester.observed_scene.replaceSceneStateWith(initial_state);
+
+  const Channel &channel =
+    BodyBoxScaleChannel(body_index, box_index, XYZComponent::x);
+
+  testSettingChannelExpression(channel, tester);
+}
+
+
 int main()
 {
   testTransferringABody1();
@@ -1173,7 +1271,8 @@ int main()
   testUsingAVariable(BodyChannelType::translation_x);
   testUsingAVariable(BodyChannelType::rotation_x);
   testUsingABadExpression();
-  testSettingBoxScaleExpression();
   testSettingMarkerPositionInTree();
   testSettingChildBodyTransformValue();
+  testSettingBodyTranslationExpression();
+  testSettingBoxScaleExpression();
 }

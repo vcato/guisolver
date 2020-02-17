@@ -87,6 +87,14 @@ struct FakeTreeWidget : TreeWidget {
   }
 
   static FakeTreeItem::ValueString boolValueText(bool);
+  static FakeTreeItem::ValueString stringValueText(const StringValue &);
+
+  static std::string
+    numericValueText(
+      NumericValue value,
+      NumericValue minimum_value,
+      NumericValue maximum_value
+    );
 
 private:
   Item &
@@ -214,20 +222,11 @@ private:
 
   static std::string voidValueText() { return ""; }
 
-  static std::string
-    numericValueText(
-      NumericValue value,
-      NumericValue minimum_value,
-      NumericValue maximum_value
-    );
-
   static LabelText
     enumerationValueText(
       int value,
       const EnumerationOptions &options
     );
-
-  static LabelText stringValueText(const StringValue &);
 
   template <typename Item>
   static Item &

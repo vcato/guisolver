@@ -17,9 +17,11 @@ using std::cerr;
 using std::string;
 using LabelProperties = TreeWidget::LabelProperties;
 using BoxPaths = TreePaths::Box;
+using MarkerPaths = TreePaths::Marker;
 using LinePaths = TreePaths::Line;
 using BodyState = SceneState::Body;
 using BodyPaths = TreePaths::Body;
+using ChannelPaths = TreePaths::Channel;
 
 
 static int defaultDigitsOfPrecision() { return 2; }
@@ -46,11 +48,10 @@ struct ItemAdder {
   int n_children = 0;
 
   TreePath
-    addNumeric(
+    addNumeric2(
       const string &label,
       NumericValue value,
-      const NumericProperties &properties,
-      const Expression &expression = Expression()
+      const NumericProperties &properties
     )
   {
     TreePath child_path = childPath(parent_path, n_children);
@@ -64,10 +65,6 @@ struct ItemAdder {
       properties.digits_of_precision
     );
 
-    if (expression != noExpression()) {
-      tree_widget.setItemInput(child_path, "=" + expression);
-    }
-
     ++n_children;
     return child_path;
   }
@@ -80,7 +77,7 @@ struct ItemAdder {
     )
   {
     NumericProperties properties = {defaultDigitsOfPrecision(), minimum_value};
-    return addNumeric(label, value, properties, Expression());
+    return addNumeric2(label, value, properties);
   }
 
   TreePath addVoid(const string &label)
@@ -152,37 +149,75 @@ struct AddSimpleNumericItemFunction : AddNumericItemFunction {
   ItemPaths
   operator()(
     const string &label,
-    NumericValue value,
-    const Expression &expression = noExpression()
+    NumericValue value
   )
   {
-    return adder.addNumeric(label, value, properties, expression);
+    return adder.addNumeric2(label, value, properties);
   }
 };
 }
 
 
+static ChannelPaths
+addChannelItemChildren(
+  const TreePath &path,
+  TreeWidget &tree_widget,
+  Optional<bool> maybe_solve_state,
+  const Expression &expression
+)
+{
+  ChannelPaths channel_paths;
+  channel_paths.path = path;
+  ItemAdder child_adder{path, tree_widget};
+
+  if (maybe_solve_state) {
+    channel_paths.maybe_solve_path =
+      child_adder.addBool("solve", *maybe_solve_state);
+  }
+
+  channel_paths.expression_path =
+    child_adder.addString("expression", expression);
+
+  return channel_paths;
+}
+
+
 namespace {
 struct AddChannelItemFunction : AddNumericItemFunction {
-  using ItemPaths = TreePaths::Channel;
+  using ItemPaths = ChannelPaths;
 
   AddChannelItemFunction(ItemAdder &adder)
   : AddNumericItemFunction(adder)
   {
   }
 
-  ItemPaths
+  ChannelPaths
   operator()(
     const string &label,
     NumericValue value,
-    bool solve_state,
+    Optional<bool> maybe_solve_state,
     const Expression &expression = noExpression()
   )
   {
-    TreePath path = adder.addNumeric(label, value, properties, expression);
-    ItemAdder child_adder{path, adder.tree_widget};
-    TreePath solve_path = child_adder.addBool("solve", solve_state);
-    return TreePaths::Channel{ path, solve_path };
+    TreePath path = adder.addNumeric2(label, value, properties);
+
+    return
+      addChannelItemChildren(
+        path, adder.tree_widget, maybe_solve_state, expression
+      );
+  }
+
+  ChannelPaths
+  operator()(
+    const string &label,
+    NumericValue value,
+    const Expression &expression = noExpression()
+  )
+  {
+    return
+      operator()(
+        label, value, /*maybe_solve_state*/Optional<bool>(), expression
+      );
   }
 };
 }
@@ -220,6 +255,30 @@ template <
 static XYZPaths
 createXYZChildren2(
   AddFunction &add,
+  SceneState::XYZChannelsRef channels
+)
+{
+  XYZPaths xyz_paths;
+  const SceneState::XYZ &values = channels.values;
+  const SceneState::XYZExpressions &expressions = channels.expressions;
+  xyz_paths.path = add.adder.parent_path;
+
+  xyz_paths.x = add("x:", values.x, expressions.x);
+  xyz_paths.y = add("y:", values.y, expressions.y);
+  xyz_paths.z = add("z:", values.z, expressions.z);
+
+  return xyz_paths;
+}
+
+
+template <
+  typename AddFunction,
+  typename ItemPaths = typename AddFunction::ItemPaths,
+  typename XYZPaths = TreePaths::BasicXYZ<ChannelPaths>
+>
+static XYZPaths
+createXYZChannels2(
+  AddFunction &add,
   SceneState::XYZChannelsRef channels,
   int digits_of_precision = defaultDigitsOfPrecision()
 )
@@ -244,12 +303,13 @@ static TreePaths::XYZ
     TreeWidget &tree_widget,
     const TreePath &parent_path,
     const Values &value,
-    int digits_of_precision = defaultDigitsOfPrecision()
+    const NumericProperties &properties
   )
 {
   ItemAdder adder{parent_path, tree_widget};
   AddSimpleNumericItemFunction add(adder);
-  return createXYZChildren2(add, value, digits_of_precision);
+  add.properties = properties;
+  return createXYZChildren2(add, value);
 }
 
 
@@ -295,25 +355,46 @@ static string variableLabel(const SceneState::Variable &variable)
 }
 
 
-static TreePaths::Marker
+static TreePaths::XYZChannels
+addXYZChannelsTo(
+  ItemAdder &adder,
+  const string &label,
+  SceneState::XYZChannelsRef channels,
+  const NumericProperties &properties
+)
+{
+  TreePath path = adder.addVoid(label);
+  ItemAdder child_adder{path, adder.tree_widget};
+  AddChannelItemFunction add(child_adder);
+  add.properties = properties;
+  return createXYZChannels2(add, channels);
+}
+
+
+static MarkerPaths
 createMarker(
   TreeWidget &tree_widget,
   const TreePath &path,
   const SceneState::Marker &marker_state
 )
 {
+  MarkerPaths marker_paths;
+  marker_paths.path = path;
   const string &name = marker_state.name;
   tree_widget.createVoidItem(path,LabelProperties{markerLabel(marker_state)});
   ItemAdder adder{path, tree_widget};
-  TreePath name_path = adder.addString("name:", name);
-  TreePath position_path = adder.addVoid("position: []");
+  marker_paths.name = adder.addString("name:", name);
+  {
+    string label = "position: []";
+    SceneState::XYZChannelsRef channels = marker_state.positionChannels();
+    NumericProperties properties;
 
-  TreePaths::Position position_paths =
-    TreePaths::Position(
-      createXYZChildren(tree_widget, position_path, marker_state.positionChannels())
-    );
+    marker_paths.position =
+      TreePaths::Position(
+        addXYZChannelsTo(adder, label, channels, properties)
+      );
+  }
 
-  TreePaths::Marker marker_paths = {path, name_path, position_paths};
   return marker_paths;
 }
 
@@ -337,7 +418,6 @@ createVariable(
   ItemAdder adder{path, tree_widget};
   TreePath name_path = adder.addString("name:", variable_state.name);
   TreePaths::Variable variable_paths = {path, name_path};
-
   return variable_paths;
 }
 
@@ -605,6 +685,16 @@ static void visitPaths(const vector<T> &v, const Visitor &visitor)
 {
   for (auto i : indicesOf(v)) {
     visitPaths(v[i], visitor);
+  }
+}
+
+
+template <typename Visitor>
+static void
+visitPaths(Optional<TreePath> &maybe_v, const Visitor &visitor)
+{
+  if (maybe_v) {
+    visitor(*maybe_v);
   }
 }
 
@@ -1110,24 +1200,8 @@ static TreePaths::XYZ
 addXYZ(ItemAdder &adder, const string &label, const SceneState::XYZ &xyz)
 {
   TreePath path = adder.addVoid(label);
-  return createXYZChildren(adder.tree_widget, path, xyz);
-}
-
-
-static TreePaths::XYZ
-addXYZTo(
-  ItemAdder &adder,
-  const string &label,
-  SceneState::XYZChannelsRef channels,
-  const NumericProperties &properties
-)
-{
-  TreePath path = adder.addVoid(label);
-  ItemAdder child_adder{path, adder.tree_widget};
-  AddSimpleNumericItemFunction add(child_adder);
-  add.properties = properties;
-  TreePaths::XYZ xyz_paths = createXYZChildren2(add, channels);
-  return xyz_paths;
+  NumericProperties properties;
+  return createXYZChildren(adder.tree_widget, path, xyz, properties);
 }
 
 
@@ -1148,7 +1222,10 @@ createBoxItem(
     properties.minimum_value = 0;
     SceneState::XYZChannelsRef channels = box_state.scaleChannels();
     const string label = "scale: []";
-    TreePaths::XYZ xyz_paths = addXYZTo(adder, label, channels, properties);
+
+    TreePaths::XYZChannels xyz_paths =
+      addXYZChannelsTo(adder, label, channels, properties);
+
     box_paths.scale = TreePaths::Scale(xyz_paths);
   }
 
@@ -1156,7 +1233,7 @@ createBoxItem(
     NumericProperties properties;
     SceneState::XYZChannelsRef channels = box_state.centerChannels();
     const string label = "center: []";
-    box_paths.center = addXYZTo(adder, label, channels, properties);
+    box_paths.center = addXYZChannelsTo(adder, label, channels, properties);
   }
 
   return box_paths;
@@ -1527,7 +1604,7 @@ updateNumericValue(
 static void
 updateNumericValue(
   TreeWidget &tree_widget,
-  const TreePaths::Channel &channel,
+  const ChannelPaths &channel,
   NumericValue value
 )
 {
@@ -1648,12 +1725,12 @@ updateBody(
     const BoxPaths &box_paths = body_paths.boxes[i];
     const SceneState::Box &box_state = body_state.boxes[i];
     {
-      const TreePaths::XYZ &scale_paths = box_paths.scale;
+      const TreePaths::XYZChannels &scale_paths = box_paths.scale;
       const SceneState::XYZ &scale = box_state.scale;
       updateXYZValues(tree_widget, scale_paths, vec3(scale));
     }
     {
-      const TreePaths::XYZ &center_paths = box_paths.center;
+      const TreePaths::XYZChannels &center_paths = box_paths.center;
       const SceneState::XYZ &center = box_state.center;
       updateXYZValues(tree_widget, center_paths, vec3(center));
     }
@@ -1783,7 +1860,7 @@ static bool isMatchingPath(const TreePath &path1, const TreePath &path2)
 
 
 static bool
-isMatchingPath(const TreePath &path, const TreePaths::Channel &channel)
+isMatchingPath(const TreePath &path, const ChannelPaths &channel)
 {
   return startsWith(path, channel.path);
 }
@@ -1972,7 +2049,7 @@ struct ScenePathVisitor : SceneElementVisitor {
 
   bool visitMarker(MarkerIndex marker_index) override
   {
-    const TreePaths::Marker &marker_paths = tree_paths.marker(marker_index);
+    const MarkerPaths &marker_paths = tree_paths.marker(marker_index);
 
     if (startsWith(path, marker_paths.position.path)) {
       return visitMarkerPosition(marker_index);
@@ -2208,7 +2285,7 @@ struct SetNumericValueVisitor : ScenePathVisitor {
 
   bool visitMarkerPosition(MarkerIndex marker_index) override
   {
-    const TreePaths::Marker &marker_paths = tree_paths.marker(marker_index);
+    const MarkerPaths &marker_paths = tree_paths.marker(marker_index);
     SceneState::Marker &marker_state = scene_state.marker(marker_index);
 
     return
@@ -2479,47 +2556,47 @@ forSolvableSceneValue(
 }
 
 
-const TreePath &
-channelPath(
+static const TreePaths::Channel &
+channelPaths(
   const Channel &channel,
   const TreePaths &tree_paths
 )
 {
   struct Visitor : Channel::Visitor {
     const TreePaths &tree_paths;
-    const TreePath *&tree_path_ptr;
+    const ChannelPaths *&channel_paths_ptr;
 
-    Visitor(const TreePaths &tree_paths, const TreePath *&tree_path_ptr)
-    : tree_paths(tree_paths), tree_path_ptr(tree_path_ptr)
+    Visitor(const TreePaths &tree_paths, const ChannelPaths *&channel_paths_ptr)
+    : tree_paths(tree_paths), channel_paths_ptr(channel_paths_ptr)
     {
     }
 
     void visit(const BodyTranslationChannel &channel) const override
     {
-      tree_path_ptr = &
+      channel_paths_ptr = &
         tree_paths.body(channel.body_index)
         .translation
-        .component(channel.component).path;
+        .component(channel.component);
     }
 
     void visit(const BodyRotationChannel &channel) const override
     {
-      tree_path_ptr = &
+      channel_paths_ptr = &
         tree_paths.body(channel.body_index)
         .rotation
-        .component(channel.component).path;
+        .component(channel.component);
     }
 
     void visit(const BodyScaleChannel &channel) const override
     {
-      tree_path_ptr = &
+      channel_paths_ptr = &
         tree_paths.body(channel.body_index)
-        .scale.path;
+        .scale;
     }
 
     virtual void visit(const BodyBoxScaleChannel &channel) const
     {
-      tree_path_ptr = &
+      channel_paths_ptr = &
         tree_paths
           .body(channel.body_index)
           .boxes[channel.box_index]
@@ -2529,7 +2606,7 @@ channelPath(
 
     virtual void visit(const BodyBoxCenterChannel &channel) const
     {
-      tree_path_ptr = &
+      channel_paths_ptr = &
         tree_paths
           .body(channel.body_index)
           .boxes[channel.box_index]
@@ -2539,16 +2616,35 @@ channelPath(
 
     virtual void visit(const MarkerPositionChannel &channel) const
     {
-      tree_path_ptr = &
-        tree_paths
-          .marker(channel.marker_index)
-          .position
-          .component(channel.component);
+      channel_paths_ptr =
+        &markerPositionComponentChannelPaths(
+          channel.marker_index, channel.component, tree_paths
+        );
     }
   };
 
-  const TreePath *tree_path_ptr = nullptr;
-  channel.accept(Visitor{tree_paths, tree_path_ptr});
-  assert(tree_path_ptr);
-  return *tree_path_ptr;
+  const ChannelPaths *channel_paths_ptr = nullptr;
+  channel.accept(Visitor{tree_paths, channel_paths_ptr});
+  assert(channel_paths_ptr);
+  return *channel_paths_ptr;
+}
+
+
+const TreePath &
+channelPath(
+  const Channel &channel,
+  const TreePaths &tree_paths
+)
+{
+  return channelPaths(channel, tree_paths).path;
+}
+
+
+const TreePath *
+channelExpressionPathPtr(
+  const Channel &channel,
+  const TreePaths &tree_paths
+)
+{
+  return &channelPaths(channel, tree_paths).expression_path;
 }

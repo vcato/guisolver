@@ -109,17 +109,19 @@ solvePath(const TreePath &path, const TreePaths &tree_paths)
 
     void visitTranslationComponent(XYZComponent component)
     {
-      tree_path_ptr = &body_paths.translation.component(component).solve_path;
+      tree_path_ptr =
+        &*body_paths.translation.component(component).maybe_solve_path;
     }
 
     void visitRotationComponent(XYZComponent component)
     {
-      tree_path_ptr = &body_paths.rotation.component(component).solve_path;
+      tree_path_ptr =
+        &*body_paths.rotation.component(component).maybe_solve_path;
     }
 
     void visitScale()
     {
-      tree_path_ptr = &body_paths.scale.solve_path;
+      tree_path_ptr = &*body_paths.scale.maybe_solve_path;
     }
   };
 
@@ -425,6 +427,13 @@ struct ObservedScene::Impl {
 
   static TreeItemDescription
     describePath(const TreePath &path, const TreePaths &tree_paths);
+
+  static void
+    setChannelExpression(
+      const Channel &,
+      const Expression &,
+      ObservedScene &
+    );
 };
 
 
@@ -880,96 +889,6 @@ void ObservedScene::handleSceneSelectionChanged()
 }
 
 
-static SceneState::Expression &
-channelExpression(const Channel &channel, SceneState &scene_state)
-{
-  SceneState::Expression *expression_ptr = nullptr;
-
-  struct Visitor : Channel::Visitor {
-    SceneState::Expression *&expression_ptr;
-    SceneState &scene_state;
-
-    Visitor(SceneState::Expression *&expression_ptr, SceneState &scene_state)
-    : expression_ptr(expression_ptr),
-      scene_state(scene_state)
-    {
-    }
-
-    void visit(const BodyTranslationChannel &channel) const override
-    {
-      SceneState::XYZExpressions &translation_expressions =
-        scene_state
-        .body(channel.body_index)
-        .expressions
-        .translation;
-
-      expression_ptr =
-        &xyzExpressionsComponent(translation_expressions, channel.component);
-    }
-
-    void visit(const BodyRotationChannel &channel) const override
-    {
-      expression_ptr =
-        &xyzExpressionsComponent(
-          scene_state
-          .body(channel.body_index)
-          .expressions
-          .rotation,
-          channel.component
-        );
-    }
-
-    void visit(const BodyScaleChannel &channel) const override
-    {
-      expression_ptr = &
-        scene_state
-        .body(channel.body_index)
-        .expressions
-        .scale;
-    }
-
-    void visit(const BodyBoxScaleChannel &channel) const override
-    {
-      expression_ptr =
-        &xyzExpressionsComponent(
-          scene_state
-          .body(channel.body_index)
-          .boxes[channel.box_index]
-          .scale_expressions,
-          channel.component
-        );
-    }
-
-    void visit(const BodyBoxCenterChannel &channel) const override
-    {
-      expression_ptr =
-        &xyzExpressionsComponent(
-          scene_state
-          .body(channel.body_index)
-          .boxes[channel.box_index]
-          .center_expressions,
-          channel.component
-        );
-    }
-
-    virtual void visit(const MarkerPositionChannel &channel) const
-    {
-      expression_ptr =
-        &xyzExpressionsComponent(
-          scene_state
-          .marker(channel.marker_index)
-          .position_expressions,
-          channel.component
-        );
-    }
-  };
-
-  channel.accept(Visitor{expression_ptr, scene_state});
-  assert(expression_ptr);
-  return *expression_ptr;
-}
-
-
 #if 0
 static string componentName(const XYZComponent &component)
 {
@@ -1219,6 +1138,33 @@ bool ObservedScene::pathSupportsExpressions(const TreePath &path) const
 
 
 void
+ObservedScene::Impl::setChannelExpression(
+  const Channel &channel,
+  const Expression &expression,
+  ObservedScene &observed_scene
+)
+{
+  SceneState &scene_state = observed_scene.scene_state;
+  const TreePaths &tree_paths = observed_scene.tree_paths;
+  const TreePath &path = channelPath(channel, tree_paths);
+  TreeWidget &tree_widget = observed_scene.tree_widget;
+  ::setChannelExpression(channel, expression, scene_state);
+  evaluateChannelExpression(channel, observed_scene);
+  bool *solve_state_ptr = observed_scene.solveStatePtr(path);
+
+  if (solve_state_ptr) {
+    bool new_solve_state = false;
+    TreePath solve_path = solvePath(path, tree_paths);
+    *solve_state_ptr = new_solve_state;
+    setTreeBoolValue(tree_widget, solve_path, new_solve_state);
+  }
+
+  observed_scene.solveScene();
+  observed_scene.handleSceneStateChanged();
+}
+
+
+void
 ObservedScene::handleTreeExpressionChanged(
   const TreePath &path, const std::string &expression
 )
@@ -1226,19 +1172,7 @@ ObservedScene::handleTreeExpressionChanged(
   bool path_was_channel =
     forPathChannel(path, tree_paths, scene_state,
       [&](const Channel &channel){
-        setChannelExpression(channel, expression, scene_state);
-        Impl::evaluateChannelExpression(channel, *this);
-        bool *solve_state_ptr = solveStatePtr(path);
-
-        if (solve_state_ptr) {
-          bool new_solve_state = false;
-          TreePath solve_path = solvePath(path, tree_paths);
-          *solve_state_ptr = new_solve_state;
-          setTreeBoolValue(tree_widget, solve_path, new_solve_state);
-        }
-
-        solveScene();
-        handleSceneStateChanged();
+        Impl::setChannelExpression(channel, expression, *this);
       }
     );
 
@@ -1857,6 +1791,20 @@ ObservedScene::handleTreeStringValueChanged(
   bool value_was_changed =
     setSceneStateStringValue(scene_state, path, value, tree_paths);
 
+  if (!value_was_changed) {
+    forEachChannel(scene_state, [&](const Channel &channel){
+      const TreePath *expression_path_ptr =
+        channelExpressionPathPtr(channel, tree_paths);
+
+      if (expression_path_ptr) {
+        if (*expression_path_ptr == path) {
+          Impl::setChannelExpression(channel, value, *this);
+          value_was_changed = true;
+        }
+      }
+    });
+  }
+
   if (value_was_changed) {
     updateTreeValues(tree_widget, tree_paths, scene_state);
     updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
@@ -1897,15 +1845,26 @@ void ObservedScene::handleTreeBoolValueChanged(const TreePath &path, bool value)
 
 
 static void
+updateSolveFlag(
+  TreeWidget &tree_widget,
+  const TreePaths::Channel &channel_paths,
+  bool solve_flag
+)
+{
+  setTreeBoolValue(tree_widget, *channel_paths.maybe_solve_path, solve_flag);
+}
+
+
+static void
 updateXYZSolveFlags(
   TreeWidget &tree_widget,
   const TreePaths::XYZChannels &xyz_paths,
   const SceneState::XYZSolveFlags &xyz_solve_flags
 )
 {
-  setTreeBoolValue(tree_widget, xyz_paths.x.solve_path, xyz_solve_flags.x);
-  setTreeBoolValue(tree_widget, xyz_paths.y.solve_path, xyz_solve_flags.y);
-  setTreeBoolValue(tree_widget, xyz_paths.z.solve_path, xyz_solve_flags.z);
+  updateSolveFlag(tree_widget, xyz_paths.x, xyz_solve_flags.x);
+  updateSolveFlag(tree_widget, xyz_paths.y, xyz_solve_flags.y);
+  updateSolveFlag(tree_widget, xyz_paths.z, xyz_solve_flags.z);
 }
 
 

@@ -64,13 +64,15 @@ struct TreePaths {
 
   struct Channel {
     TreePath path;
-    TreePath solve_path;
+    Optional<TreePath> maybe_solve_path;
+    TreePath expression_path;
 
     template <typename F>
     static void forEachMember(const F &f)
     {
       f(&Channel::path);
-      f(&Channel::solve_path);
+      f(&Channel::maybe_solve_path);
+      f(&Channel::expression_path);
     }
 
     bool operator==(const Channel &arg) const
@@ -82,9 +84,9 @@ struct TreePaths {
 
   using XYZChannels = BasicXYZ<Channel>;
 
-  struct Position : XYZ {
+  struct Position : XYZChannels {
     Position() {}
-    explicit Position(const XYZ &xyz_arg) : XYZ(xyz_arg) {}
+    explicit Position(const XYZChannels &xyz_arg) : XYZChannels(xyz_arg) {}
   };
 
   struct Marker {
@@ -118,16 +120,16 @@ struct TreePaths {
     explicit Rotation(const XYZChannels &xyz_arg) : XYZChannels(xyz_arg) {}
   };
 
-  struct Scale : XYZ
+  struct Scale : XYZChannels
   {
     Scale() {}
-    explicit Scale(const XYZ &xyz_arg) : XYZ(xyz_arg) {}
+    explicit Scale(const XYZChannels &xyz_arg) : XYZChannels(xyz_arg) {}
   };
 
   struct Box {
     TreePath path;
     Scale scale;
-    XYZ center;
+    XYZChannels center;
 
     template <typename F>
     static void forEachMember(const F &f)
@@ -261,6 +263,33 @@ struct TreePaths {
 
   bool operator==(const TreePaths &arg) const { return isEqual(*this, arg); }
 };
+
+
+inline const TreePaths::Channel &
+markerPositionComponentChannelPaths(
+  MarkerIndex marker_index, XYZComponent component, const TreePaths &tree_paths
+)
+{
+  return
+    tree_paths
+      .marker(marker_index)
+      .position
+      .component(component);
+}
+
+
+
+inline const TreePath &
+markerPositionComponentPath(
+  MarkerIndex marker_index, XYZComponent component, const TreePaths &tree_paths
+)
+{
+  return
+    markerPositionComponentChannelPaths(
+      marker_index, component, tree_paths
+    ).path;
+}
+
 
 
 #endif /* TREEPATHS_HPP_ */

@@ -129,6 +129,13 @@ static void showTree(const string &name, const FakeTreeWidget &tree)
 #endif
 
 
+static const TreePath &
+markerPositionXPath(MarkerIndex marker_index, const TreePaths &tree_paths)
+{
+  return markerPositionComponentPath(marker_index, XYZComponent::x, tree_paths);
+}
+
+
 static void testAddingMarker()
 {
   SceneState state = defaultSceneState();
@@ -140,7 +147,7 @@ static void testAddingMarker()
 
   assert(
     tree_widget.item(
-      tree_paths.marker(marker_index).position.x
+      markerPositionXPath(marker_index, tree_paths)
     ).maybe_numeric_value == 1.5
   );
 

@@ -11,8 +11,9 @@
 #include "xyzcomponent.hpp"
 #include "variablename.hpp"
 #include "matchconst.hpp"
+#include "channel.hpp"
+#include "boxindex.hpp"
 
-using BoxIndex = int;
 using LineIndex = int;
 using Expression = std::string;
 
@@ -74,6 +75,18 @@ class SceneState {
       bool x = false;
       bool y = false;
       bool z = false;
+
+      bool component(XYZComponent component) const
+      {
+        switch (component) {
+          case XYZComponent::x: return x;
+          case XYZComponent::y: return y;
+          case XYZComponent::z: return z;
+        }
+
+        assert(false);
+        return false;
+      }
     };
 
     struct XYZChannelsRef {
@@ -472,5 +485,8 @@ xyzExpressionsComponent(
   return xyz_expressions.x;
 }
 
+
+extern SceneState::Expression &
+  channelExpression(const Channel &channel, SceneState &scene_state);
 
 #endif /* SCENESTATE_HPP_ */

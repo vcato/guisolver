@@ -146,3 +146,5 @@ extern const TreePath &
     const Channel &channel,
     const TreePaths &tree_paths
   );
+
+const TreePath *channelExpressionPathPtr(const Channel &, const TreePaths &);

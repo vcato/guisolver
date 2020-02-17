@@ -1,6 +1,9 @@
 #ifndef CHANNEL_HPP_
 #define CHANNEL_HPP_
 
+#include "boxindex.hpp"
+
+
 struct BodyComponent {
   BodyIndex body_index;
   XYZComponent component;
