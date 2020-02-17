@@ -102,8 +102,3 @@ and non-linear solving.  If the expression that drives a marker position
 is linear, then we can invert the expression and calculate the position
 directly.  Maybe initially, we would only support linear expression, and
 add support for non-linear expressions later.
----
-There's a bug.
-
-If a spin box item is selected in the tree, then you leave the window and
-enter it again, it treats it like you focused the spin box.
