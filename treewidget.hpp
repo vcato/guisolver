@@ -5,6 +5,7 @@
 #include <functional>
 #include "treepath.hpp"
 #include "numericvalue.hpp"
+#include "stringvalue.hpp"
 #include "optional.hpp"
 #include "vector.hpp"
 
@@ -112,6 +113,7 @@ struct TreeWidget {
 
   virtual void setItemInput(const TreePath &, const Input &) = 0;
   virtual void setItemBoolValue(const TreePath &path, bool value) = 0;
+  virtual void setItemStringValue(const TreePath &, const StringValue &) = 0;
 
   virtual void
     setItemLabel(const TreePath &path,const std::string &new_label) = 0;

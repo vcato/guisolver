@@ -168,6 +168,7 @@ struct QtTreeWidget::Impl {
   }
 
   static QtCheckBox* itemCheckBoxPtr(QtTreeWidget &, const TreePath &path);
+  static QtLineEdit* itemLineEditPtr(QtTreeWidget &, const TreePath &path);
 };
 
 
@@ -399,7 +400,7 @@ void
     createItemWidget<QtLineEdit>(item,label_properties);
 
   line_edit.text_changed_function = [&](const string &new_text){
-    handleLineEditItemValueChanged(&item,new_text);
+    handleLineEditItemValueChanged(&item, new_text);
   };
 
   line_edit.setText(value);
@@ -699,6 +700,23 @@ QtTreeWidget::Impl::itemCheckBoxPtr(
 }
 
 
+QtLineEdit*
+QtTreeWidget::Impl::itemLineEditPtr(
+  QtTreeWidget &tree_widget, const TreePath &path
+)
+{
+  QTreeWidgetItem &item = tree_widget.itemFromPath(path);
+
+  Impl::QtItemWrapperWidget &wrapper_widget =
+    itemWrapperWidget(tree_widget, item);
+
+  auto line_edit_ptr =
+    dynamic_cast<QtLineEdit*>(wrapper_widget.value_widget_ptr);
+
+  return line_edit_ptr;
+}
+
+
 void
 QtTreeWidget::setItemNumericValue(
   const TreePath &path,
@@ -755,6 +773,17 @@ void QtTreeWidget::setItemBoolValue(const TreePath &path, bool value)
 
   assert(check_box_ptr);
   check_box_ptr->setValue(value);
+}
+
+
+void
+QtTreeWidget::setItemStringValue(
+  const TreePath &path, const StringValue &value
+)
+{
+  QtLineEdit *line_edit_ptr = Impl::itemLineEditPtr(*this, path);
+  assert(line_edit_ptr);
+  line_edit_ptr->setText(value);
 }
 
 

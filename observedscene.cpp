@@ -40,8 +40,100 @@ xyzSolveStateComponentPtr(
 
 
 template <typename SceneState>
+static MatchConst_t<bool, SceneState>*
+channelSolveStatePtr(const Channel &channel, SceneState &)
+{
+  using SolveState = MatchConst_t<bool, SceneState>;
+  SolveState *solve_state_ptr = nullptr;
+
+  struct Visitor : Channel::Visitor {
+    SolveState *&solve_state_ptr;
+
+    Visitor(SolveState *&solve_state_ptr)
+    : solve_state_ptr(solve_state_ptr)
+    {
+    }
+
+    void visit(const BodyTranslationChannel &) const override
+    {
+      assert(false); // not implemented
+      // solve_state_ptr = componentSolveStatePtr(channel);
+    }
+
+    void visit(const BodyRotationChannel &) const override
+    {
+      assert(false); // not implemented
+    }
+
+    void visit(const BodyScaleChannel &) const override
+    {
+      assert(false); // not implemented
+    }
+
+    void visit(const BodyBoxScaleChannel &) const override
+    {
+      assert(false); // not implemented
+    }
+
+    void visit(const BodyBoxCenterChannel &) const override
+    {
+      assert(false); // not implemented
+    }
+
+    void visit(const MarkerPositionChannel &) const override
+    {
+      assert(false); // not implemented
+    }
+  } visitor{solve_state_ptr};
+
+  channel.accept(visitor);
+  return solve_state_ptr;
+}
+
+
+template <typename SceneState>
+static auto *
+solveStatePtr(
+  const BodyTranslationComponent &element,
+  SceneState &scene_state
+)
+{
+  auto &body_state = scene_state.body(element.body_index);
+  auto &body_solve_flags = body_state.solve_flags;
+  auto &xyz_solve_flags = body_solve_flags.translation;
+  return xyzSolveStateComponentPtr(xyz_solve_flags, element.component);
+}
+
+
+template <typename SceneState>
+static auto *
+solveStatePtr(
+  const BodyRotationComponent &element,
+  SceneState &scene_state
+)
+{
+  auto &body_state = scene_state.body(element.body_index);
+  auto &body_solve_flags = body_state.solve_flags;
+  auto &xyz_solve_flags = body_solve_flags.rotation;
+  return xyzSolveStateComponentPtr(xyz_solve_flags, element.component);
+}
+
+
+template <typename SceneState>
+static auto *
+solveStatePtr(
+  const BodyScale &element,
+  SceneState &scene_state
+)
+{
+  auto &body_state = scene_state.body(element.body_index);
+  return &body_state.solve_flags.scale;
+}
+
+
+template <typename SceneState>
 static auto*
-basicSolveStatePtr(
+basicPathSolveStatePtr(
   SceneState &scene_state,
   const TreePath &path,
   const TreePaths &tree_paths
@@ -50,50 +142,11 @@ basicSolveStatePtr(
   using SolveStatePtr = MatchConst_t<bool,SceneState> *;
   SolveStatePtr solve_state_ptr = nullptr;
 
-  struct ValueVisitor : SolvableSceneValueVisitor {
-    SolveStatePtr &solve_state_ptr;
-    SceneState &scene_state;
-
-    ValueVisitor(
-      SolveStatePtr &solve_state_ptr,
-      SceneState &scene_state
-    )
-    : solve_state_ptr(solve_state_ptr),
-      scene_state(scene_state)
-    {
-    }
-
-    void
-    visitBodyTranslationComponent(
-      BodyIndex body_index, XYZComponent component
-    ) const override
-    {
-      auto &body_state = scene_state.body(body_index);
-      auto &body_solve_flags = body_state.solve_flags;
-      auto &xyz_solve_flags = body_solve_flags.translation;
-      solve_state_ptr = xyzSolveStateComponentPtr(xyz_solve_flags, component);
-    }
-
-    void
-    visitBodyRotationComponent(
-      BodyIndex body_index, XYZComponent component
-    ) const override
-    {
-      auto &body_state = scene_state.body(body_index);
-      auto &body_solve_flags = body_state.solve_flags;
-      auto &xyz_solve_flags = body_solve_flags.rotation;
-      solve_state_ptr = xyzSolveStateComponentPtr(xyz_solve_flags, component);
-    }
-
-    virtual void visitBodyScale(BodyIndex body_index) const
-    {
-      auto &body_state = scene_state.body(body_index);
-      solve_state_ptr = &body_state.solve_flags.scale;
-    }
+  auto f = [&](const auto &element){
+    solve_state_ptr = solveStatePtr(element, scene_state);
   };
 
-  ValueVisitor value_visitor(solve_state_ptr, scene_state);
-  forSolvableSceneValue(path, tree_paths, value_visitor);
+  forSolvableSceneElement2(path, tree_paths, f);
   return solve_state_ptr;
 }
 
@@ -125,7 +178,7 @@ solvePath(const TreePath &path, const TreePaths &tree_paths)
     }
   };
 
-  struct ValueVisitor : SolvableSceneValueVisitor {
+  struct ValueVisitor : SolvableSceneElementVisitor {
     const TreePaths &tree_paths;
     const TreePath *&tree_path_ptr;
 
@@ -138,60 +191,54 @@ solvePath(const TreePath &path, const TreePaths &tree_paths)
     {
     }
 
-    void
-    visitBodyTranslationComponent(
-      BodyIndex body_index, XYZComponent component
-    ) const override
+    void visit(const BodyTranslationComponent &element) const override
     {
-      auto &body_paths = tree_paths.body(body_index);
+      auto &body_paths = tree_paths.body(element.body_index);
       BodyValueVisitor body_visitor{body_paths, tree_path_ptr};
-      body_visitor.visitTranslationComponent(component);
+      body_visitor.visitTranslationComponent(element.component);
     }
 
-    void
-    visitBodyRotationComponent(
-      BodyIndex body_index, XYZComponent component
-    ) const override
+    void visit(const BodyRotationComponent &element) const override
     {
-      auto &body_paths = tree_paths.body(body_index);
+      auto &body_paths = tree_paths.body(element.body_index);
       BodyValueVisitor body_visitor{body_paths, tree_path_ptr};
-      body_visitor.visitRotationComponent(component);
+      body_visitor.visitRotationComponent(element.component);
     }
 
-    void visitBodyScale(BodyIndex body_index) const override
+    void visit(const BodyScale &element) const override
     {
-      auto &body_paths = tree_paths.body(body_index);
+      auto &body_paths = tree_paths.body(element.body_index);
       BodyValueVisitor body_visitor{body_paths, tree_path_ptr};
       body_visitor.visitScale();
     }
   };
 
   ValueVisitor value_visitor(tree_paths, tree_path_ptr);
-  forSolvableSceneValue(path, tree_paths, value_visitor);
+  forSolvableSceneElement(path, tree_paths, value_visitor);
   assert(tree_path_ptr);
   return *tree_path_ptr;
 }
 
 
 static bool*
-solveStatePtr(
+pathSolveStatePtr(
   SceneState &scene_state,
   const TreePath &path,
   const TreePaths &tree_paths
 )
 {
-  return basicSolveStatePtr(scene_state, path, tree_paths);
+  return basicPathSolveStatePtr(scene_state, path, tree_paths);
 }
 
 
 static const bool*
-solveStatePtr(
+pathSolveStatePtr(
   const SceneState &scene_state,
   const TreePath &path,
   const TreePaths &tree_paths
 )
 {
-  return basicSolveStatePtr(scene_state, path, tree_paths);
+  return basicPathSolveStatePtr(scene_state, path, tree_paths);
 }
 
 
@@ -1529,13 +1576,13 @@ void ObservedScene::selectLine(BodyIndex body_index, LineIndex line_index)
 
 const bool *ObservedScene::solveStatePtr(const TreePath &path) const
 {
-  return ::solveStatePtr(scene_state, path, tree_paths);
+  return ::pathSolveStatePtr(scene_state, path, tree_paths);
 }
 
 
 bool *ObservedScene::solveStatePtr(const TreePath &path)
 {
-  return ::solveStatePtr(scene_state, path, tree_paths);
+  return ::pathSolveStatePtr(scene_state, path, tree_paths);
 }
 
 
@@ -1755,7 +1802,7 @@ ObservedScene::handleTreeNumericValueChanged(
     Impl::evaluateExpressions(*this);
 
     {
-      bool *solve_state_ptr = ::solveStatePtr(state, path, tree_paths);
+      bool *solve_state_ptr = ::pathSolveStatePtr(state, path, tree_paths);
 
       // Turn off the solve state of the value that is being changed, so that
       // it doesn't give strange feedback to the user.
@@ -1820,22 +1867,44 @@ setSceneStateBoolValue(
   SceneState &scene_state,
   const TreePath &path,
   bool value,
-  const TreePaths &tree_paths
+  const TreePaths &tree_paths,
+  TreeWidget &tree_widget
 )
 {
-  if (bool *solve_state_ptr = solveStatePtr(scene_state, path, tree_paths)) {
-    *solve_state_ptr = value;
-    return true;
+  bool *solve_state_ptr = nullptr;
+  Expression *expression_ptr = nullptr;
+  const TreePath *expression_path_ptr = nullptr;
+
+  auto solvable_element_function = [&](const auto &element){
+    solve_state_ptr = solveStatePtr(element, scene_state);
+    const auto &channel = elementChannel(element);
+
+    expression_ptr =
+      &channelExpression(channel, scene_state);
+
+    expression_path_ptr = channelExpressionPathPtr(channel, tree_paths);
+
+    assert(solve_state_ptr);
+  };
+
+  forSolvableSceneElement2(path, tree_paths, solvable_element_function);
+
+  if (!solve_state_ptr) {
+    return false;
   }
 
-  return false;
+  *solve_state_ptr = value;
+  assert(expression_ptr);
+  *expression_ptr = "";
+  tree_widget.setItemStringValue(*expression_path_ptr, "");
+  return true;
 }
 
 
 void ObservedScene::handleTreeBoolValueChanged(const TreePath &path, bool value)
 {
   bool value_was_changed =
-    setSceneStateBoolValue(scene_state, path, value, tree_paths);
+    setSceneStateBoolValue(scene_state, path, value, tree_paths, tree_widget);
 
   if (value_was_changed) {
     solveScene();

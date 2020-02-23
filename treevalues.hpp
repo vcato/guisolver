@@ -127,19 +127,61 @@ extern bool
     const TreePaths &tree_paths
   );
 
-struct SolvableSceneValueVisitor {
-  virtual void visitBodyTranslationComponent(BodyIndex, XYZComponent) const = 0;
-  virtual void visitBodyRotationComponent(BodyIndex, XYZComponent) const = 0;
-  virtual void visitBodyScale(BodyIndex) const = 0;
+struct SolvableSceneElementVisitor {
+  virtual void visit(const BodyTranslationComponent &) const = 0;
+  virtual void visit(const BodyRotationComponent &) const = 0;
+  virtual void visit(const BodyScale &) const = 0;
 };
 
 
 extern void
-  forSolvableSceneValue(
+  forSolvableSceneElement(
     const TreePath &path,
     const TreePaths &tree_paths,
-    const SolvableSceneValueVisitor &value_visitor
+    const SolvableSceneElementVisitor &value_visitor
   );
+
+template <typename Function>
+struct SolvableSceneElementVisitorWrapper : SolvableSceneElementVisitor {
+  const Function &f;
+
+  SolvableSceneElementVisitorWrapper(const Function &f)
+  : f(f)
+  {
+  }
+
+  void visit(const BodyTranslationComponent &element) const override
+  {
+    f(element);
+  }
+
+  void visit(const BodyRotationComponent &element) const override
+  {
+    f(element);
+  }
+
+  void visit(const BodyScale &element) const override
+  {
+    f(element);
+  }
+};
+
+
+template <typename Visitor>
+void
+forSolvableSceneElement2(
+  const TreePath &path,
+  const TreePaths &tree_paths,
+  const Visitor &visitor
+)
+{
+  forSolvableSceneElement(
+    path,
+    tree_paths,
+    SolvableSceneElementVisitorWrapper<Visitor>(visitor)
+  );
+}
+
 
 extern const TreePath &
   channelPath(

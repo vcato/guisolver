@@ -753,7 +753,7 @@ struct BodyScaleSolveFlag : BodySolveFlag {
 }
 
 
-static void testChangingBodySolveFlag(const BodySolveFlag &solve_flag)
+static void testTurningOffBodySolveFlag(const BodySolveFlag &solve_flag)
 {
   Tester tester;
   SceneState initial_state;
@@ -779,21 +779,55 @@ static void testChangingBodySolveFlag(const BodySolveFlag &solve_flag)
 }
 
 
-static void testChangingBodyTranslationXSolveFlag()
+static void testTurningOnBodySolveFlag(const BodySolveFlag &solve_flag)
 {
-  testChangingBodySolveFlag(BodyTranslationXSolveFlag());
+  Tester tester;
+  SceneState initial_state;
+  BodyIndex body_index = initial_state.createBody();
+  ObservedScene &observed_scene = tester.observed_scene;
+  SceneState &scene_state = observed_scene.scene_state;
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  bool old_solve = false;
+  solve_flag.state(initial_state.body(body_index).solve_flags) = old_solve;
+  initial_state.body(body_index).expressions.translation.x = "5";
+
+  observed_scene.replaceSceneStateWith(initial_state);
+
+  const TreePath &solve_flag_path =
+    solve_flag.path(tree_paths.body(body_index));
+
+  FakeTreeItem::ValueString solve_value_string =
+    tester.tree_widget.item(solve_flag_path).value_string;
+
+  assert(solve_value_string == "value=0");
+  observed_scene.handleTreeBoolValueChanged(solve_flag_path, !old_solve);
+  bool new_solve = solve_flag.state(scene_state.body(body_index).solve_flags);
+  assert(old_solve != new_solve);
+  assert(scene_state.body(body_index).expressions.translation.x == "");
 }
 
 
-static void testChangingBodyRotationXSolveFlag()
+static void testTurningOffBodyTranslationXSolveFlag()
 {
-  testChangingBodySolveFlag(BodyRotationXSolveFlag());
+  testTurningOffBodySolveFlag(BodyTranslationXSolveFlag());
 }
 
 
-static void testChangingBodyScaleSolveFlag()
+static void testTurningOnBodyTranslationXSolveFlag()
 {
-  testChangingBodySolveFlag(BodyScaleSolveFlag());
+  testTurningOnBodySolveFlag(BodyTranslationXSolveFlag());
+}
+
+
+static void testTurningOffBodyRotationXSolveFlag()
+{
+  testTurningOffBodySolveFlag(BodyRotationXSolveFlag());
+}
+
+
+static void testTurningOffBodyScaleSolveFlag()
+{
+  testTurningOffBodySolveFlag(BodyScaleSolveFlag());
 }
 
 
@@ -1259,9 +1293,10 @@ int main()
   testAddingAndRemovingAVariable();
   testChangingMarkerName();
   testDuplicatingAMarkerWithDistanceError();
-  testChangingBodyTranslationXSolveFlag();
-  testChangingBodyRotationXSolveFlag();
-  testChangingBodyScaleSolveFlag();
+  testTurningOffBodyTranslationXSolveFlag();
+  testTurningOffBodyRotationXSolveFlag();
+  testTurningOffBodyScaleSolveFlag();
+  testTurningOnBodyTranslationXSolveFlag();
   testChangingBodyTranslationXInTree();
   testChangingBodyRotationXInTree();
   testChangingBodyScaleInTree();

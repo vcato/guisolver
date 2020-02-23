@@ -304,91 +304,93 @@ VariableIndex SceneState::createVariable()
 }
 
 
+static Expression &
+expression(const BodyTranslationComponent &element, SceneState &scene_state)
+{
+  SceneState::XYZExpressions &translation_expressions =
+    scene_state
+    .body(element.body_index)
+    .expressions
+    .translation;
+
+  return xyzExpressionsComponent(translation_expressions, element.component);
+}
+
+
+static Expression &
+expression(const BodyRotationComponent &element, SceneState &scene_state)
+{
+  SceneState::XYZExpressions &translation_expressions =
+    scene_state
+    .body(element.body_index)
+    .expressions
+    .rotation;
+
+  return xyzExpressionsComponent(translation_expressions, element.component);
+}
+
+
+static Expression &
+expression(const BodyScale &element, SceneState &scene_state)
+{
+  return
+    scene_state
+    .body(element.body_index)
+    .expressions
+    .scale;
+}
+
+
+static Expression &
+expression(const BodyBoxScaleComponent &element, SceneState &scene_state)
+{
+  return
+    xyzExpressionsComponent(
+      scene_state
+      .body(element.body_index)
+      .boxes[element.box_index]
+      .scale_expressions,
+      element.component
+    );
+}
+
+
+static Expression &
+expression(const BodyBoxCenterComponent &element, SceneState &scene_state)
+{
+  return
+    xyzExpressionsComponent(
+      scene_state
+      .body(element.body_index)
+      .boxes[element.box_index]
+      .center_expressions,
+      element.component
+    );
+}
+
+
+static Expression &
+expression(const MarkerPositionComponent &element, SceneState &scene_state)
+{
+  return
+    xyzExpressionsComponent(
+      scene_state
+      .marker(element.marker_index)
+      .position_expressions,
+      element.component
+    );
+}
+
+
 SceneState::Expression &
 channelExpression(const Channel &channel, SceneState &scene_state)
 {
   SceneState::Expression *expression_ptr = nullptr;
 
-  struct Visitor : Channel::Visitor {
-    SceneState::Expression *&expression_ptr;
-    SceneState &scene_state;
+  channel.visit([&](auto &channel){
+    expression_ptr = &expression(channel, scene_state);
+  });
 
-    Visitor(SceneState::Expression *&expression_ptr, SceneState &scene_state)
-    : expression_ptr(expression_ptr),
-      scene_state(scene_state)
-    {
-    }
-
-    void visit(const BodyTranslationChannel &channel) const override
-    {
-      SceneState::XYZExpressions &translation_expressions =
-        scene_state
-        .body(channel.body_index)
-        .expressions
-        .translation;
-
-      expression_ptr =
-        &xyzExpressionsComponent(translation_expressions, channel.component);
-    }
-
-    void visit(const BodyRotationChannel &channel) const override
-    {
-      expression_ptr =
-        &xyzExpressionsComponent(
-          scene_state
-          .body(channel.body_index)
-          .expressions
-          .rotation,
-          channel.component
-        );
-    }
-
-    void visit(const BodyScaleChannel &channel) const override
-    {
-      expression_ptr = &
-        scene_state
-        .body(channel.body_index)
-        .expressions
-        .scale;
-    }
-
-    void visit(const BodyBoxScaleChannel &channel) const override
-    {
-      expression_ptr =
-        &xyzExpressionsComponent(
-          scene_state
-          .body(channel.body_index)
-          .boxes[channel.box_index]
-          .scale_expressions,
-          channel.component
-        );
-    }
-
-    void visit(const BodyBoxCenterChannel &channel) const override
-    {
-      expression_ptr =
-        &xyzExpressionsComponent(
-          scene_state
-          .body(channel.body_index)
-          .boxes[channel.box_index]
-          .center_expressions,
-          channel.component
-        );
-    }
-
-    virtual void visit(const MarkerPositionChannel &channel) const
-    {
-      expression_ptr =
-        &xyzExpressionsComponent(
-          scene_state
-          .marker(channel.marker_index)
-          .position_expressions,
-          channel.component
-        );
-    }
-  };
-
-  channel.accept(Visitor{expression_ptr, scene_state});
   assert(expression_ptr);
   return *expression_ptr;
 }

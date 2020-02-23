@@ -66,6 +66,7 @@ class QtTreeWidget : public QTreeWidget, public TreeWidget {
 
     void setItemInput(const TreePath &path, const Input &input) override;
     void setItemBoolValue(const TreePath &, bool value) override;
+    void setItemStringValue(const TreePath &, const StringValue &) override;
 
     void
       setItemLabel(const TreePath &path,const std::string &new_label) override;

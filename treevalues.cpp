@@ -2498,16 +2498,14 @@ createBodyBranchItemsInTree(
 
 
 
-// Seems like we need a SolvableSceneValueVisitor
-// This would make it more obvious which things need to be solved.
 namespace {
 struct SolvableScenePathVisitor : ScenePathVisitor {
-  const SolvableSceneValueVisitor &value_visitor;
+  const SolvableSceneElementVisitor &value_visitor;
 
   SolvableScenePathVisitor(
     const TreePaths &paths,
     const TreePath &path,
-    const SolvableSceneValueVisitor &value_visitor
+    const SolvableSceneElementVisitor &value_visitor
   )
   : ScenePathVisitor(paths, path),
     value_visitor(value_visitor)
@@ -2519,7 +2517,7 @@ struct SolvableScenePathVisitor : ScenePathVisitor {
     BodyIndex body_index, XYZComponent component
   ) override
   {
-    value_visitor.visitBodyTranslationComponent(body_index, component);
+    value_visitor.visit(BodyTranslationComponent(body_index, component));
     return true;
   }
 
@@ -2528,13 +2526,13 @@ struct SolvableScenePathVisitor : ScenePathVisitor {
     BodyIndex body_index, XYZComponent component
   ) override
   {
-    value_visitor.visitBodyRotationComponent(body_index, component);
+    value_visitor.visit(BodyRotationComponent(body_index, component));
     return true;
   }
 
   bool visitBodyScale(BodyIndex body_index) override
   {
-    value_visitor.visitBodyScale(body_index);
+    value_visitor.visit(BodyScale{body_index});
     return true;
   }
 };
@@ -2542,10 +2540,10 @@ struct SolvableScenePathVisitor : ScenePathVisitor {
 
 
 void
-forSolvableSceneValue(
+forSolvableSceneElement(
   const TreePath &path,
   const TreePaths &tree_paths,
-  const SolvableSceneValueVisitor &value_visitor
+  const SolvableSceneElementVisitor &value_visitor
 )
 {
   SolvableScenePathVisitor visitor = {

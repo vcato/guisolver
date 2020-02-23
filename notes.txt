@@ -1,48 +1,4 @@
----
 Allow loading .obj geometry onto a body.
----
-Have rays.
-
-Class {
-  name: "Ray"
-  Param {
-    name: "origin"
-    type: Point
-  }
-  Param {
-    name: "direction"
-    type: Vector
-  }
-  Line {
-    start: origin
-    end: origin + direction*1000
-  }
-}
-Class {
-  name: "PointOnRay"
-  Param {
-    name: "ray"
-    type: Ray
-  }
-  Param {
-    name: "step"
-    type: Float
-  }
-  ray.origin + ray.direction*step
-}
-
-Should we have markers as children of rays?
-
-A ray could just be geometry.  It could be an infinite line along the X
-axis starting at (0,0,0).  We could change the ray origin and direction
-using a body.
-
-Maybe we have a list of rays on a body.
-
-A body can be thought of as three rays with a common origin.
-
-We could have body markers and ray markers, where a ray marker just has
-a step value.
 ---
 How would we generalize this to have multiple solving passes?
 * It seems like we are effectively setting up multiple solve tags.
@@ -97,8 +53,136 @@ We'd want to have an expression like: [x*scale, y*scale, z*scale].  When
 setting the marker position, we could calculate the component values.
 We would try to calculate scale.
 
-For this to work, it seems like we should differentiate between linear
+For this to work, it seems like we should make a distinction between linear
 and non-linear solving.  If the expression that drives a marker position
 is linear, then we can invert the expression and calculate the position
-directly.  Maybe initially, we would only support linear expression, and
+directly.  Maybe initially, we would only support linear expressions, and
 add support for non-linear expressions later.
+---
+I'd like to be able to support 3D curves.  It would be possible to draw
+a curve by using line segments.
+
+LineStrip {
+  Vertex {
+    x: 0
+    y: 0
+    z: 0
+  }
+  Vertex {
+    x: 1
+    y: 1
+    z: 1
+  }
+}
+
+
+LineStrip {
+  ForEach {
+    variable: "i"
+    values: {
+      0
+      1
+    }
+    Vertex {
+      x : i
+      y : i
+      z : i
+    }
+  }
+}
+
+
+LineStrip {
+  ForEach {
+    variable: "i"
+    values {
+      0
+      1
+    }
+    Vertex {
+      x : 0 {
+        expression: "xCurve(i)"
+      }
+      y : 0 {
+        expression: "yCurve(i)"
+      }
+      z : 0 {
+        expression: "zCurve(i)"
+      }
+    }
+  }
+}
+
+
+BSpline {
+  name: "bspline"
+  Piece {
+    knot: 0
+    control_point: {
+      x: 0
+      y: 0
+      z: 0
+    }
+  }
+  Piece {
+    knot: 1
+    control_point {
+      x: 1
+      y: 1
+      z: 1
+    }
+  }
+}
+
+Function {
+  name: "BSpline"
+  Child {
+    name: "Piece"
+    Param {
+      name: "knot"
+      type: Real
+    }
+    Param {
+      name: "control_point"
+      type: Point
+    }
+  }
+  Define {
+    name: "pieces"
+    value: Children(type=Piece)
+  }
+  LineStrip {
+    ForEach {
+      variable: "i"
+      values: Range {
+        start: 0
+        count: n_segments
+      }
+      Define {
+        name: "fraction"
+        value: "i/n_segments"
+      }
+      Define {
+        name: "x"
+        value: "lerp(first_knot, last_knot, fraction)"
+      }
+    }
+  }
+}
+---
+When we have live values, it makes sense to have something that shows the
+current value, but inside a function, there's no such thing as the live
+value.
+* Perhaps if we think of partial evaluation it could work.  The live value
+  of a value inside a function is the partial evaluation.  So we can have
+
+Function {
+  name: "f"
+  Param {
+    name: "x"
+    type: Real
+  }
+  Result: x*2 + 15 {
+    expression: "x*2 + (5*3)"
+  }
+}

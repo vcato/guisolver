@@ -91,6 +91,52 @@ struct Channel {
   };
 
   virtual void accept(const Visitor &) const = 0;
+
+  template <typename Function>
+  struct FunctionVisitor : Visitor {
+    const Function &function;
+
+    FunctionVisitor(const Function &function)
+    : function(function)
+    {
+    }
+
+    void visit(const BodyTranslationChannel &arg) const override
+    {
+      function(arg);
+    }
+
+    void visit(const BodyRotationChannel &arg) const override
+    {
+      function(arg);
+    }
+
+    void visit(const BodyScaleChannel &arg) const override
+    {
+      function(arg);
+    }
+
+    void visit(const BodyBoxScaleChannel &arg) const override
+    {
+      function(arg);
+    }
+
+    void visit(const BodyBoxCenterChannel &arg) const override
+    {
+      function(arg);
+    }
+
+    void visit(const MarkerPositionChannel &arg) const override
+    {
+      function(arg);
+    }
+  };
+
+  template <typename Function>
+  void visit(const Function &f) const
+  {
+    accept(FunctionVisitor<Function>(f));
+  }
 };
 
 
@@ -108,6 +154,13 @@ struct BasicChannel : Channel, ValueDescriptor {
     visitor.visit(*this);
   }
 };
+
+
+template <typename Element>
+inline BasicChannel<Element> elementChannel(const Element &element)
+{
+  return {element};
+}
 
 
 #endif /* CHANNEL_HPP_ */

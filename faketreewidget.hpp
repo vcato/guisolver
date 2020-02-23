@@ -81,6 +81,12 @@ struct FakeTreeWidget : TreeWidget {
     item(path).value_string = boolValueText(value);
   }
 
+  void
+  setItemStringValue(const TreePath &path, const StringValue &value) override
+  {
+    item(path).value_string = stringValueText(value);
+  }
+
   void setItemInput(const TreePath &path, const Input &arg) override
   {
     item(path).input = arg;

@@ -18,6 +18,21 @@ using LineIndex = int;
 using Expression = std::string;
 
 
+template <typename XYZ>
+auto &
+component(XYZ &self, XYZComponent component)
+{
+  switch (component) {
+    case XYZComponent::x: return self.x;
+    case XYZComponent::y: return self.y;
+    case XYZComponent::z: return self.z;
+  }
+
+  assert(false);
+  return self.x;
+}
+
+
 class SceneState {
   public:
     struct Marker;
@@ -40,28 +55,14 @@ class SceneState {
       Float y = 0;
       Float z = 0;
 
-      template <typename XYZ>
-      static MatchConst_t<Float, XYZ> &
-      component(XYZ &self, XYZComponent component)
-      {
-        switch (component) {
-          case XYZComponent::x: return self.x;
-          case XYZComponent::y: return self.y;
-          case XYZComponent::z: return self.z;
-        }
-
-        assert(false);
-        return self.x;
-      }
-
       Float &component(XYZComponent component)
       {
-        return this->component(*this, component);
+        return ::component(*this, component);
       }
 
       const Float &component(XYZComponent component) const
       {
-        return this->component(*this, component);
+        return ::component(*this, component);
       }
     };
 
