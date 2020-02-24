@@ -14,6 +14,7 @@
 #include <osg/io_utils>
 #include "osgutil.hpp"
 #include "osgpickhandler.hpp"
+#include "osgcameramanipulator.hpp"
 #include "contains.hpp"
 #include "matchconst.hpp"
 #include "eigenconv.hpp"
@@ -156,18 +157,61 @@ struct LineDrawable : osg::Geometry {
 
   void setup()
   {
-    LineDrawable &line_geometry = *this;
+    LineDrawable &self = *this;
     osg::ref_ptr<osg::Vec3Array> points = new osg::Vec3Array;
     points->push_back(start_point);
     points->push_back(end_point);
     osg::ref_ptr<osg::Vec4Array> color_array = new osg::Vec4Array;
     color_array->push_back(osg::Vec4(color, 1.0));
 
-    removeAllPrimativeSets(line_geometry);
-    line_geometry.setVertexArray(points.get());
-    line_geometry.setColorArray(color_array.get());
-    line_geometry.setColorBinding(osg::Geometry::BIND_PER_PRIMITIVE_SET);
-    line_geometry.addPrimitiveSet(new osg::DrawArrays(GL_LINES,0,2));
+    removeAllPrimativeSets(self);
+    self.setVertexArray(points.get());
+    self.setColorArray(color_array.get());
+    self.setColorBinding(osg::Geometry::BIND_PER_PRIMITIVE_SET);
+    self.addPrimitiveSet(new osg::DrawArrays(GL_LINES,/*first*/0,/*count*/2));
+  }
+};
+}
+
+
+static bool isValidTriangleIndex(int i, int n_vertices)
+{
+  return (i >= 0 && i < n_vertices);
+}
+
+
+namespace {
+struct MeshDrawable : osg::Geometry {
+  void setup(const Mesh &mesh)
+  {
+    MeshDrawable &self = *this;
+    int n_vertices = mesh.vertices.size();
+
+    assert(n_vertices < std::numeric_limits<unsigned short>::max());
+    {
+      osg::ref_ptr<osg::Vec3Array> points_ptr = new osg::Vec3Array;
+
+      for (auto &vertex : mesh.vertices) {
+        points_ptr->push_back({vertex.x, vertex.y, vertex.z});
+      }
+
+      self.setVertexArray(points_ptr.get());
+    }
+
+    vector<unsigned short> indices;
+
+    for (auto &triangle : mesh.triangles) {
+      assert(isValidTriangleIndex(triangle.v1, n_vertices));
+      assert(isValidTriangleIndex(triangle.v2, n_vertices));
+      assert(isValidTriangleIndex(triangle.v3, n_vertices));
+      indices.push_back(triangle.v1);
+      indices.push_back(triangle.v2);
+      indices.push_back(triangle.v3);
+    }
+
+    self.addPrimitiveSet(
+      new osg::DrawElementsUShort(GL_TRIANGLES, indices.begin(), indices.end())
+    );
   }
 };
 }
@@ -230,10 +274,38 @@ const OSGScene::SelectionHandler &OSGScene::selectionHandler() const
 
 static osg::MatrixTransform &addTransformToGroup(osg::Group &parent)
 {
-  MatrixTransformPtr transform_ptr = createMatrixTransform();
+  MatrixTransformPtr transform_ptr = new osg::MatrixTransform;
   osg::MatrixTransform &matrix_transform = *transform_ptr;
   parent.addChild(transform_ptr);
   return matrix_transform;
+}
+
+
+static const osg::MatrixTransform &
+parentTransform(const osg::MatrixTransform &t)
+{
+  const osg::Node *parent_ptr = t.getParent(0);
+  assert(parent_ptr);
+  const osg::Transform *transform2_ptr = parent_ptr->asTransform();
+
+  if (!transform2_ptr) {
+    cerr << "Parent of " << t.getName() << " is not a transform\n";
+    cerr << "  it is a " << parent_ptr->className() << "\n";
+  }
+
+  assert(transform2_ptr);
+  const osg::MatrixTransform *matrix2_transform_ptr =
+    transform2_ptr->asMatrixTransform();
+  assert(matrix2_transform_ptr);
+  return *matrix2_transform_ptr;
+}
+
+
+static osg::MatrixTransform &parentTransform(osg::MatrixTransform &t)
+{
+  const osg::MatrixTransform &const_t = t;
+  const osg::MatrixTransform &const_result = parentTransform(const_t);
+  return const_cast<osg::MatrixTransform&>(const_result);
 }
 
 
@@ -402,6 +474,101 @@ static void setupCamera(osg::Camera *camera,GraphicsWindowPtr gw)
     // based on the size of the window.  Is the camera set up again if
     // the window size changes, or is the width and height not really
     // necessary.
+}
+
+
+namespace {
+struct HomePosition {
+  const osg::Vec3d eye;
+  const osg::Vec3d center;
+  const osg::Vec3d up;
+};
+}
+
+
+namespace {
+struct ViewParams {
+  const HomePosition home_position;
+  const bool disable_rotate;
+  const bool vertical_axis_fixed;
+};
+}
+
+
+static HomePosition homePosition(ViewType view_type)
+{
+  osg::Quat orient = worldRotation();
+
+  switch (view_type) {
+    case ViewType::front:
+    {
+      osg::Vec3d eye = orient*osg::Vec3d(0,0,10);
+      osg::Vec3d center = orient*osg::Vec3d(0,0,0);
+      osg::Vec3d up = orient*osg::Vec3d(0,1,0);
+      return HomePosition{eye,center,up};
+    }
+    case ViewType::top:
+    {
+      osg::Vec3d eye = orient*osg::Vec3d(0,10,0);
+      osg::Vec3d center = orient*osg::Vec3d(0,0,0);
+      osg::Vec3d up = orient*osg::Vec3d(0,0,-1);
+      return HomePosition{eye,center,up};
+    }
+    case ViewType::side:
+    {
+      osg::Vec3d eye = orient*osg::Vec3d(10,0,0);
+      osg::Vec3d center = orient*osg::Vec3d(0,0,0);
+      osg::Vec3d up = orient*osg::Vec3d(0,1,0);
+      return HomePosition{eye,center,up};
+    }
+    case ViewType::free:
+    {
+      osg::Vec3d eye = orient*osg::Vec3d(10,10,10);
+      osg::Vec3d center = orient*osg::Vec3d(0,0,0);
+      osg::Vec3d up = orient*osg::Vec3d(0,1,0);
+      return HomePosition{eye,center,up};
+    }
+  }
+
+  assert(false);
+}
+
+
+static void
+  configureCameraManipatulator(
+    OSGCameraManipulator &manipulator,
+    const ViewParams &params
+  )
+{
+  const HomePosition &home_position = params.home_position;
+
+  manipulator.setHomePosition(
+    home_position.eye,
+    home_position.center,
+    home_position.up
+  );
+
+  manipulator.setAllowThrow(false);
+  manipulator.disable_rotate = params.disable_rotate;
+  manipulator.setVerticalAxisFixed(params.vertical_axis_fixed);
+}
+
+
+static ViewParams viewParams(ViewType view_type)
+{
+  bool disable_rotate = view_type!=ViewType::free;
+  bool vertical_axis_fixed = view_type==ViewType::free;
+  HomePosition home_position = homePosition(view_type);
+  ViewParams params = {home_position,disable_rotate,vertical_axis_fixed};
+  return params;
+}
+
+
+static CameraManipulatorPtr createCameraManipulator(ViewType view_type)
+{
+  osg::ref_ptr<OSGCameraManipulator> manipulator_ptr(new OSGCameraManipulator);
+  configureCameraManipatulator(*manipulator_ptr,viewParams(view_type));
+  return manipulator_ptr;
 }
 
 
@@ -1241,6 +1408,14 @@ static osg::ref_ptr<osg::ShapeDrawable> createBoxDrawable()
 }
 
 
+static osg::ref_ptr<MeshDrawable> createMeshDrawable(const Mesh &mesh)
+{
+  osg::ref_ptr<MeshDrawable> mesh_drawable_ptr(new MeshDrawable);
+  mesh_drawable_ptr->setup(mesh);
+  return mesh_drawable_ptr;
+}
+
+
 static void
   removeTransformFromGroup(
     osg::Group &parent,
@@ -1270,6 +1445,24 @@ struct BoxShapeParams : ShapeParams {
   osg::ref_ptr<osg::Drawable> createDrawable() const override
   {
     return createBoxDrawable();
+  }
+};
+}
+
+
+namespace {
+struct MeshShapeParams : ShapeParams {
+  const Mesh &mesh;
+
+  MeshShapeParams(const Mesh &mesh)
+  : ShapeParams("Mesh Geode"),
+    mesh(mesh)
+  {
+  }
+
+  virtual osg::ref_ptr<osg::Drawable> createDrawable() const
+  {
+    return createMeshDrawable(mesh);
   }
 };
 }
@@ -1357,7 +1550,7 @@ static void addFloorTo(osg::MatrixTransform &matrix_transform)
 
 
 OSGScene::OSGScene()
-: _top_node_ptr(createMatrixTransform()),
+: _top_node_ptr(new osg::MatrixTransform),
   _top_transform(Impl::makeHandleFromTransform(*this, *_top_node_ptr)),
   _top_geometry(
     Impl::makeHandleFromGeometryTransform(
@@ -1517,6 +1710,13 @@ LineHandle OSGScene::createLine(TransformHandle transform_handle)
 GeometryHandle OSGScene::createSphere(TransformHandle transform_handle)
 {
   return Impl::createGeometry(SphereShapeParams(), transform_handle, *this);
+}
+
+
+GeometryHandle
+OSGScene::createMesh(TransformHandle parent_handle, const Mesh &mesh)
+{
+  return Impl::createGeometry(MeshShapeParams(mesh), parent_handle, *this);
 }
 
 

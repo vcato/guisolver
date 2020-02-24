@@ -15,6 +15,21 @@
 using GraphicsWindowPtr = osg::ref_ptr<osgQt::GraphicsWindowQt>;
 
 
+struct Mesh {
+  struct Triangle {
+    int v1, v2, v3;
+
+    Triangle(int v1, int v2, int v3)
+    : v1(v1), v2(v2), v3(v3)
+    {
+    }
+  };
+
+  vector<Vec3> vertices;
+  vector<Triangle> triangles;
+};
+
+
 class OSGScene : public Scene {
   public:
     OSGScene();
@@ -25,6 +40,7 @@ class OSGScene : public Scene {
     GeometryHandle createBox(TransformHandle parent) override;
     LineHandle createLine(TransformHandle parent) override;
     GeometryHandle createSphere(TransformHandle parent) override;
+    GeometryHandle createMesh(TransformHandle parent, const Mesh &);
     TransformHandle parentTransform(GeometryHandle) const override;
     void destroyGeometry(GeometryHandle) override;
     void destroyTransform(TransformHandle) override;

@@ -22,3 +22,4 @@ expressionparser_test
 evaluateexpression_test
 solveflags_test
 qttreewidget_manualtest
+osgscene_manualtest

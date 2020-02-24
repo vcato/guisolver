@@ -30,7 +30,8 @@ run_unit_tests: \
   observedscene_test.pass
 
 build_manual_tests: \
-  qttreewidget_manualtest
+  qttreewidget_manualtest \
+  osgscene_manualtest
 
 run_guisolver: guisolver
 	./guisolver
@@ -142,6 +143,10 @@ guisolver: main.o qtmainwindow.o osgscene.o qttimer.o qttimer_moc.o \
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 qttreewidget_manualtest: qttreewidget_manualtest.o $(QTTREEWIDGET)
+	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
+
+osgscene_manualtest: osgscene_manualtest.o osgscene.o osgQtGraphicsWindowQt.o \
+  osgpickhandler.o osgutil.o qttimer.o qttimer_moc.o intersector.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 clean:
