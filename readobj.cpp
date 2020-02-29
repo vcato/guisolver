@@ -28,19 +28,14 @@ ObjData readObj(std::istream &stream)
     }
     else if (line[0]=='f') {
       istringstream line_stream(line.substr(1));
+      Face face;
+      int index = 0;
 
-      auto readFace = [&]{
-        Face face;
-        int index = 0;
+      while (line_stream >> index) {
+        face.vertex_indices.push_back(index);
+      }
 
-        while (line_stream >> index) {
-          face.vertex_indices.push_back(index);
-        }
-
-        return face;
-      };
-
-      faces.push_back(readFace());
+      faces.push_back(std::move(face));
     }
     else {
       cerr << "line: [" << line << "]\n";
