@@ -201,3 +201,5 @@ Function {
     expression: "x*2 + (5*3)"
   }
 }
+---
+When using a mesh, we need to generate normals.
