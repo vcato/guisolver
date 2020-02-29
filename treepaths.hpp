@@ -160,11 +160,15 @@ struct TreePaths {
 
   struct Mesh {
     TreePath path;
+    XYZ scale;
+    XYZ center;
 
     template <typename F>
     static void forEachMember(const F &f)
     {
       f(&Mesh::path);
+      f(&Mesh::scale);
+      f(&Mesh::center);
     }
 
     bool operator==(const Mesh &arg) const { return isEqual(*this, arg); }

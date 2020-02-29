@@ -593,8 +593,13 @@ createMeshInScene(
 {
   SceneHandles::Body &body_handles = *scene_handles.bodies[parent_body_index];
   TransformHandle transform_handle = body_handles.transform_handle;
-  const Mesh &mesh = scene_state.body(parent_body_index).meshes[mesh_index];
-  Scene::GeometryHandle mesh_handle = scene.createMesh(transform_handle, mesh);
+
+  const SceneState::Mesh &mesh =
+    scene_state.body(parent_body_index).meshes[mesh_index];
+
+  Scene::GeometryHandle mesh_handle =
+    scene.createMesh(transform_handle, mesh.shape);
+
   assert(BodyIndex(body_handles.meshes.size()) == mesh_index);
   body_handles.addMesh(mesh_handle);
 }

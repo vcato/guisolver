@@ -1263,12 +1263,15 @@ static MeshPaths
 createMeshItem(
   const TreePath &mesh_path,
   TreeWidget &tree_widget,
-  const SceneState::Mesh &
+  const SceneState::Mesh &mesh_state
 )
 {
   MeshPaths mesh_paths;
   tree_widget.createVoidItem(mesh_path, LabelProperties("[Mesh]"));
   mesh_paths.path = mesh_path;
+  ItemAdder adder{mesh_path, tree_widget};
+  mesh_paths.scale = addXYZ(adder, "scale: []", mesh_state.scale);
+  mesh_paths.center = addXYZ(adder, "center: []", mesh_state.center);
   return mesh_paths;
 }
 
@@ -1962,6 +1965,7 @@ struct SceneElementVisitor {
   virtual bool visitBodyRotation(BodyIndex) { return false; }
   virtual bool visitBodyBox(BodyIndex, BoxIndex) { return false; }
   virtual bool visitBodyLine(BodyIndex, LineIndex) { return false; }
+  virtual bool visitBodyMesh(BodyIndex, MeshIndex) { return false; }
   virtual bool visitMarkerName(MarkerIndex) { return false; }
 };
 }
@@ -2079,6 +2083,14 @@ struct ScenePathVisitor : SceneElementVisitor {
     for (LineIndex line_index = 0; line_index != n_lines; ++line_index) {
       if (startsWith(path, body_paths.lines[line_index].path)) {
         return visitBodyLine(body_index, line_index);
+      }
+    }
+
+    MeshIndex n_meshes = body_paths.meshes.size();
+
+    for (MeshIndex mesh_index = 0; mesh_index != n_meshes; ++mesh_index) {
+      if (startsWith(path, body_paths.meshes[mesh_index].path)) {
+        return visitBodyMesh(body_index, mesh_index);
       }
     }
 
@@ -2315,6 +2327,30 @@ struct SetNumericValueVisitor : ScenePathVisitor {
       return
         forMatchingComponent(
           line_state.end, path, line_paths.end, visitor
+        );
+    }
+
+    return false;
+  }
+
+  bool visitBodyMesh(BodyIndex body_index, MeshIndex mesh_index) override
+  {
+    SceneState::Body &body_state = scene_state.body(body_index);
+    const TreePaths::Body &body_paths = tree_paths.body(body_index);
+    const MeshPaths &mesh_paths = body_paths.meshes[mesh_index];
+    SceneState::Mesh &mesh_state = body_state.meshes[mesh_index];
+
+    if (startsWith(path, mesh_paths.scale.path)) {
+      return
+        forMatchingComponent(
+          mesh_state.scale, path, mesh_paths.scale, visitor
+        );
+    }
+
+    if (startsWith(path, mesh_paths.center.path)) {
+      return
+        forMatchingComponent(
+          mesh_state.center, path, mesh_paths.center, visitor
         );
     }
 

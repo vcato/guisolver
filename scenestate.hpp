@@ -51,7 +51,6 @@ class SceneState {
     using Position = XYZ;
     using Expression = ::Expression;
     using Float = float;
-    using Mesh = ::Mesh;
 
     struct XYZ {
       Float x = 0;
@@ -156,6 +155,12 @@ class SceneState {
       Position end = {1,0,0};
     };
 
+    struct Mesh {
+      ::Mesh shape;
+      XYZ scale = {1,1,1};
+      Position center = {0,0,0};
+    };
+
     struct Body {
       using Name = String;
       Name name;
@@ -181,10 +186,10 @@ class SceneState {
         return line_index;
       }
 
-      MeshIndex createMesh(const Mesh &mesh)
+      MeshIndex createMesh(const ::Mesh &mesh)
       {
         MeshIndex mesh_index = meshes.size();
-        meshes.push_back(mesh);
+        meshes.push_back(Mesh{mesh});
         return mesh_index;
       }
 

@@ -204,3 +204,4 @@ Function {
 ---
 Need to have geometry scale and geometry center parameters for meshes.
 Need to be able to save and load meshes.
+Need to to have the scale/center parameters actually affect the scene.
