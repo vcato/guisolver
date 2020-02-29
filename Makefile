@@ -150,7 +150,7 @@ qttreewidget_manualtest: qttreewidget_manualtest.o $(QTTREEWIDGET)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 osgscene_manualtest: osgscene_manualtest.o osgscene.o osgQtGraphicsWindowQt.o \
-  osgpickhandler.o osgutil.o qttimer.o qttimer_moc.o intersector.o
+  osgpickhandler.o osgutil.o qttimer.o qttimer_moc.o intersector.o readobj.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 clean:
