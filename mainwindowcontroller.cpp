@@ -1,5 +1,6 @@
 #include "mainwindowcontroller.hpp"
 
+#include <fstream>
 #include "vectorio.hpp"
 #include "sceneerror.hpp"
 #include "scenesolver.hpp"
@@ -11,6 +12,10 @@
 #include "parsedouble.hpp"
 #include "evaluateexpression.hpp"
 #include "solveflags.hpp"
+#include "readobj.hpp"
+#include "objmesh.hpp"
+
+#define ADD_OBJS 0
 
 using View = MainWindowView;
 using std::cerr;
@@ -125,6 +130,11 @@ struct MainWindowController::Impl {
     return data(controller).observed_scene;
   }
 
+  static View &view(MainWindowController &controller)
+  {
+    return data(controller).view;
+  }
+
   static void handleSceneChanging(MainWindowController &);
   static void handleSceneChanged(MainWindowController &);
 
@@ -166,6 +176,9 @@ struct MainWindowController::Impl {
       MainWindowController &controller,
       Optional<BodyIndex>
     );
+
+  static void
+    addObjPressed(MainWindowController &controller, BodyIndex body_index);
 
   static void addVariablePressed(MainWindowController &controller);
 
@@ -321,6 +334,34 @@ void
     );
 
   observed_scene.selectDistanceError(index);
+}
+
+
+void
+MainWindowController::Impl::addObjPressed(
+  MainWindowController &controller, BodyIndex body_index
+)
+{
+  ObservedScene &observed_scene = observedScene(controller);
+
+  Optional<std::string> maybe_path =
+    Impl::view(controller).askForOpenPath();
+
+  if (!maybe_path) {
+    return;
+  }
+
+  auto &path = *maybe_path;
+  std::ifstream stream(path);
+
+  if (!stream) {
+    cerr << "Unable to open " << path << "\n";
+    return;
+  }
+
+  ObjData obj_data = readObj(stream);
+  Mesh mesh = meshFromObj(obj_data);
+  observed_scene.addMeshTo(body_index, mesh);
 }
 
 
@@ -685,11 +726,21 @@ TreeWidget::MenuItems
         Impl::addDistanceErrorPressed(controller, body_index);
       };
 
+#if ADD_OBJS
+    auto add_obj_function =
+      [&controller,body_index]{
+        Impl::addObjPressed(controller, body_index);
+      };
+#endif
+
     appendTo(menu_items,{
       {"Add Marker", add_marker_function},
       {"Add Body", add_body_function},
       {"Add Box", add_box_function},
       {"Add Line", add_line_function},
+#if ADD_OBJS
+      {"Add Obj", add_obj_function},
+#endif
       {"Add Distance Error", add_distance_error_function},
       {"Cut", cut_body_function },
       {"Remove", remove_body_function },
@@ -879,7 +930,7 @@ void MainWindowController::newPressed()
 
 void MainWindowController::savePressed()
 {
-  Optional<string> maybe_path = Impl::data(*this).view.askForSavePath();
+  Optional<string> maybe_path = Impl::view(*this).askForSavePath();
 
   if (!maybe_path) {
     // Cancelled
@@ -892,7 +943,7 @@ void MainWindowController::savePressed()
 
 void MainWindowController::openPressed()
 {
-  Optional<string> maybe_path = Impl::data(*this).view.askForOpenPath();
+  Optional<string> maybe_path = Impl::view(*this).askForOpenPath();
 
   if (!maybe_path) {
     // Cancelled

@@ -64,6 +64,7 @@ struct ObservedScene {
   BodyIndex addBody(Optional<BodyIndex> maybe_parent_index = {});
   BoxIndex addBoxTo(BodyIndex);
   LineIndex addLineTo(BodyIndex);
+  MeshIndex addMeshTo(BodyIndex, const Mesh &);
   MarkerIndex addMarker(Optional<BodyIndex> = {});
 
   DistanceErrorIndex

@@ -1354,6 +1354,21 @@ BoxIndex ObservedScene::addLineTo(BodyIndex body_index)
   return line_index;
 }
 
+MeshIndex ObservedScene::addMeshTo(BodyIndex body_index, const Mesh &mesh)
+{
+  MeshIndex mesh_index = scene_state.body(body_index).createMesh(mesh);
+
+  ::createMeshInScene(
+    scene, scene_handles, body_index, mesh_index, scene_state
+  );
+
+  ::createMeshInTree(
+    sceneTree(*this), scene_state, body_index, mesh_index
+  );
+
+  return mesh_index;
+}
+
 
 MarkerIndex ObservedScene::addMarker(Optional<BodyIndex> maybe_body_index)
 {

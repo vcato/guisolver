@@ -15,35 +15,6 @@
 using GraphicsWindowPtr = osg::ref_ptr<osgQt::GraphicsWindowQt>;
 
 
-struct Mesh {
-  using PositionIndex = int;
-  using NormalIndex = int;
-
-  struct Vertex {
-    PositionIndex position_index;
-    NormalIndex normal_index;
-
-    Vertex(PositionIndex position_index, NormalIndex normal_index)
-    : position_index(position_index), normal_index(normal_index)
-    {
-    }
-  };
-
-  struct Triangle {
-    Vertex v1, v2, v3;
-
-    Triangle(Vertex v1, Vertex v2, Vertex v3)
-    : v1(v1), v2(v2), v3(v3)
-    {
-    }
-  };
-
-  vector<Vec3> positions;
-  vector<Vec3> normals;
-  vector<Triangle> triangles;
-};
-
-
 class OSGScene : public Scene {
   public:
     OSGScene();
@@ -54,7 +25,7 @@ class OSGScene : public Scene {
     GeometryHandle createBox(TransformHandle parent) override;
     LineHandle createLine(TransformHandle parent) override;
     GeometryHandle createSphere(TransformHandle parent) override;
-    GeometryHandle createMesh(TransformHandle parent, const Mesh &);
+    GeometryHandle createMesh(TransformHandle parent, const Mesh &) override;
     TransformHandle parentTransform(GeometryHandle) const override;
     void destroyGeometry(GeometryHandle) override;
     void destroyTransform(TransformHandle) override;

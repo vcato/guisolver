@@ -99,6 +99,15 @@ extern void
   );
 
 extern void
+  createMeshInScene(
+    Scene &,
+    SceneHandles &,
+    BodyIndex parent_body_index,
+    MeshIndex,
+    const SceneState &
+  );
+
+extern void
   createBodyObjectsInScene(
     BodyIndex body_index,
     Scene &,

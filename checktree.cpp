@@ -6,6 +6,7 @@ using std::cerr;
 using std::string;
 using BoxPaths = TreePaths::Box;
 using LinePaths = TreePaths::Line;
+using MeshPaths = TreePaths::Mesh;
 
 
 template <typename T>
@@ -35,6 +36,7 @@ static void checkEqual(const FakeTreeItem &a,const FakeTreeItem &b);
 static void checkEqual(const TreePaths &a,const TreePaths &b);
 static void checkEqual(const TreePaths::Body &a,const TreePaths::Body &b);
 static void checkEqual(const TreePaths::Marker &a,const TreePaths::Marker &b);
+static void checkEqual(const TreePaths::Mesh &a,const TreePaths::Mesh &b);
 
 template <typename T>
 static void checkEqual(const vector<T> &a, const vector<T> &b);
@@ -124,6 +126,12 @@ static void checkEqual(const BoxPaths &a, const BoxPaths &b)
 
 
 static void checkEqual(const LinePaths &a, const LinePaths &b)
+{
+  checkMembersEqual(a,b);
+}
+
+
+static void checkEqual(const MeshPaths &a, const MeshPaths &b)
 {
   checkMembersEqual(a,b);
 }

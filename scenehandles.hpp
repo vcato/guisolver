@@ -26,10 +26,15 @@ struct SceneHandles {
     LineHandle handle;
   };
 
+  struct Mesh {
+    GeometryHandle handle;
+  };
+
   struct Body {
     TransformHandle transform_handle;
     vector<Box> boxes;
     vector<Line> lines;
+    vector<Mesh> meshes;
 
     Body(TransformHandle transform_handle)
     : transform_handle(transform_handle)
@@ -44,6 +49,11 @@ struct SceneHandles {
     void addLine(LineHandle line_handle)
     {
       lines.push_back(Line{line_handle});
+    }
+
+    void addMesh(GeometryHandle mesh_handle)
+    {
+      meshes.push_back(Mesh{mesh_handle});
     }
 
     TransformHandle transformHandle() const { return transform_handle; }

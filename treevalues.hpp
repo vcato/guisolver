@@ -72,6 +72,14 @@ extern void
   );
 
 extern void
+  createMeshInTree(
+    SceneTreeRef,
+    const SceneState &,
+    BodyIndex parent_body_index,
+    MeshIndex
+  );
+
+extern void
   removeDistanceErrorFromTree(int distance_error_index, SceneTreeRef);
 
 extern void removeMarkerFromTree(MarkerIndex, SceneTreeRef);

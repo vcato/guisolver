@@ -582,6 +582,25 @@ createLineInScene(
 }
 
 
+void
+createMeshInScene(
+  Scene &scene,
+  SceneHandles &scene_handles,
+  BodyIndex parent_body_index,
+  MeshIndex mesh_index,
+  const SceneState &scene_state
+)
+{
+  SceneHandles::Body &body_handles = *scene_handles.bodies[parent_body_index];
+  TransformHandle transform_handle = body_handles.transform_handle;
+  const Mesh &mesh = scene_state.body(parent_body_index).meshes[mesh_index];
+  Scene::GeometryHandle mesh_handle = scene.createMesh(transform_handle, mesh);
+  assert(BodyIndex(body_handles.meshes.size()) == mesh_index);
+  body_handles.addMesh(mesh_handle);
+}
+
+
+
 static void
 createBodyObjectInScene(
   BodyIndex body_index,

@@ -85,6 +85,12 @@ GeometryHandle FakeScene::createSphere(TransformHandle parent)
 }
 
 
+GeometryHandle FakeScene::createMesh(TransformHandle /*parent*/, const Mesh &)
+{
+  assert(false); // not implemented
+}
+
+
 Optional<LineHandle> FakeScene::maybeLine(GeometryHandle handle) const
 {
   if (elementOf(objects, handle.index).is_line) {

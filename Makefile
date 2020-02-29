@@ -62,7 +62,7 @@ OBSERVEDSCENE=observedscene.o \
 EVALUATEEXPRESSION=evaluateexpression.o expressionparser.o parsedouble.o
 
 MAINWINDOWCONTROLLER=mainwindowcontroller.o \
-  $(EVALUATEEXPRESSION) $(OBSERVEDSCENE)
+  $(EVALUATEEXPRESSION) $(OBSERVEDSCENE) objmesh.o
 
 QTSPINBOX=qtspinbox.o qtspinbox_moc.o parsedouble.o
 RANDOMTRANSFORM=randomtransform.o randomcoordinateaxes.o
@@ -143,14 +143,15 @@ guisolver: main.o qtmainwindow.o osgscene.o qttimer.o qttimer_moc.o \
   $(QTSPINBOX) treevalues.o \
   $(QTTREEWIDGET) \
   $(MAINWINDOWCONTROLLER) \
-  $(SCENEOBJECTS) intersector.o $(SCENESTATEIO)
+  $(SCENEOBJECTS) intersector.o $(SCENESTATEIO) readobj.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 qttreewidget_manualtest: qttreewidget_manualtest.o $(QTTREEWIDGET)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 osgscene_manualtest: osgscene_manualtest.o osgscene.o osgQtGraphicsWindowQt.o \
-  osgpickhandler.o osgutil.o qttimer.o qttimer_moc.o intersector.o readobj.o
+  osgpickhandler.o osgutil.o qttimer.o qttimer_moc.o intersector.o readobj.o \
+  objmesh.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 clean:

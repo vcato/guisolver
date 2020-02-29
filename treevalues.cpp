@@ -19,6 +19,7 @@ using LabelProperties = TreeWidget::LabelProperties;
 using BoxPaths = TreePaths::Box;
 using MarkerPaths = TreePaths::Marker;
 using LinePaths = TreePaths::Line;
+using MeshPaths = TreePaths::Mesh;
 using BodyState = SceneState::Body;
 using BodyPaths = TreePaths::Body;
 using ChannelPaths = TreePaths::Channel;
@@ -781,6 +782,7 @@ namespace {
 struct NextPaths {
   TreePath box_path;
   TreePath line_path;
+  TreePath mesh_path;
   TreePath body_path;
   TreePath marker_path;
   TreePath distance_error_path;
@@ -903,25 +905,25 @@ nextPaths(
 
   result.variable_path = childPath(body_path, index);
 
+  int n_boxes = 0;
+  int n_lines = 0;
+  int n_meshes = 0;
+
   if (maybe_body_index) {
-    int n_boxes = tree_paths.body(*maybe_body_index).boxes.size();
-    index += n_boxes;
+    n_boxes = tree_paths.body(*maybe_body_index).boxes.size();
+    n_lines = tree_paths.body(*maybe_body_index).lines.size();
+    n_meshes = tree_paths.body(*maybe_body_index).meshes.size();
   }
   else {
-    // Can't add boxes to the scene
+    // Can't add these to the scene
   }
 
+  index += n_boxes;
   result.box_path = childPath(body_path, index);
-
-  if (maybe_body_index) {
-    int n_lines = tree_paths.body(*maybe_body_index).lines.size();
-    index += n_lines;
-  }
-  else {
-    // Can't add lines to the scene
-  }
-
+  index += n_lines;
   result.line_path = childPath(body_path, index);
+  index += n_meshes;
+  result.mesh_path = childPath(body_path, index);
   index += n_markers;
   result.marker_path = childPath(body_path, index);
   index += n_bodies;
@@ -1257,6 +1259,20 @@ createLineItem(
 }
 
 
+static MeshPaths
+createMeshItem(
+  const TreePath &mesh_path,
+  TreeWidget &tree_widget,
+  const SceneState::Mesh &
+)
+{
+  MeshPaths mesh_paths;
+  tree_widget.createVoidItem(mesh_path, LabelProperties("[Mesh]"));
+  mesh_paths.path = mesh_path;
+  return mesh_paths;
+}
+
+
 namespace {
 struct BodyItemCreator : BodyItemVisitor {
   BodyPaths &body_paths;
@@ -1444,6 +1460,28 @@ createLineInTree(
 
   body_paths.lines[line_index] =
     createLineItem(line_path, tree_widget, body_state.lines[line_index]);
+}
+
+
+void
+createMeshInTree(
+  SceneTreeRef scene_tree,
+  const SceneState &scene_state,
+  BodyIndex body_index,
+  MeshIndex mesh_index
+)
+{
+  const SceneState::Body &body_state = scene_state.body(body_index);
+  TreeWidget &tree_widget = scene_tree.tree_widget;
+  TreePaths &tree_paths = scene_tree.tree_paths;
+  TreePaths::Body &body_paths = tree_paths.body(body_index);
+  TreePath mesh_path = nextPaths(body_index, tree_paths, scene_state).mesh_path;
+  handlePathInsertion(tree_paths, mesh_path);
+  assert(mesh_index == MeshIndex(body_paths.meshes.size()));
+  body_paths.meshes.emplace_back();
+
+  body_paths.meshes[mesh_index] =
+    createMeshItem(mesh_path, tree_widget, body_state.meshes[mesh_index]);
 }
 
 

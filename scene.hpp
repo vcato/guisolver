@@ -4,6 +4,8 @@
 #include <functional>
 #include "coordinateaxes.hpp"
 #include "optional.hpp"
+#include "vector.hpp"
+#include "mesh.hpp"
 
 
 struct Scene {
@@ -67,6 +69,7 @@ struct Scene {
   virtual GeometryHandle createBox(TransformHandle parent) = 0;
   virtual LineHandle createLine(TransformHandle parent) = 0;
   virtual GeometryHandle createSphere(TransformHandle parent) = 0;
+  virtual GeometryHandle createMesh(TransformHandle parent, const Mesh &) = 0 ;
   virtual TransformHandle parentTransform(GeometryHandle) const = 0;
   virtual void destroyGeometry(GeometryHandle) = 0;
   virtual void destroyTransform(TransformHandle) = 0;

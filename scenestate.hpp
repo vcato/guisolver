@@ -13,9 +13,11 @@
 #include "matchconst.hpp"
 #include "channel.hpp"
 #include "boxindex.hpp"
+#include "mesh.hpp"
 
 using LineIndex = int;
 using Expression = std::string;
+using MeshIndex = int;
 
 
 template <typename XYZ>
@@ -49,6 +51,7 @@ class SceneState {
     using Position = XYZ;
     using Expression = ::Expression;
     using Float = float;
+    using Mesh = ::Mesh;
 
     struct XYZ {
       Float x = 0;
@@ -159,6 +162,7 @@ class SceneState {
       Transform transform;
       vector<Box> boxes;
       vector<Line> lines;
+      vector<Mesh> meshes;
       TransformSolveFlags solve_flags;
       TransformExpressions expressions;
       Optional<BodyIndex> maybe_parent_index;
@@ -175,6 +179,13 @@ class SceneState {
         LineIndex line_index = lines.size();
         lines.emplace_back();
         return line_index;
+      }
+
+      MeshIndex createMesh(const Mesh &mesh)
+      {
+        MeshIndex mesh_index = meshes.size();
+        meshes.push_back(mesh);
+        return mesh_index;
       }
 
       Body(const Name &name) : name(name) {}
