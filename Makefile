@@ -13,6 +13,7 @@ all:
 
 run_unit_tests: \
   optional_test.pass \
+  readobj_test.pass \
   solveflags_test.pass \
   taggedvalueio_test.pass \
   osgutil_test.pass \
@@ -78,6 +79,9 @@ QTTREEWIDGET=\
   $(QTSPINBOX)
 
 optional_test: optional_test.o osgutil.o
+	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
+
+readobj_test: readobj_test.o readobj.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 solveflags_test: solveflags_test.o

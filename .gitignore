@@ -21,5 +21,6 @@ observedscene_test
 expressionparser_test
 evaluateexpression_test
 solveflags_test
+readobj_test
 qttreewidget_manualtest
 osgscene_manualtest

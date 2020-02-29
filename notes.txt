@@ -114,7 +114,7 @@ LineStrip {
 }
 
 
-BSpline {
+BSpline3D {
   name: "bspline"
   Piece {
     knot: 0
@@ -133,6 +133,21 @@ BSpline {
     }
   }
 }
+
+BSplineMarker {
+  name: "marker3"
+  bspline: "bspline"
+  parameter: 0
+}
+
+Marker {
+  name: "marker3"
+  position: {
+    expression: "bspline(t)"
+    t: 5
+  }
+}
+
 
 Function {
   name: "BSpline"
