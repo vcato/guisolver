@@ -33,8 +33,6 @@ static float optimizeVar(const FunctionInterface &f, float &var, float error)
   float step = min_step;
 
   for (;;) {
-    // cerr << "var=" << var << ", error=" << error << ", step=" << step << "\n";
-
     float old_var = var;
     float forward_value = var+step;
     float reverse_value = var-step;

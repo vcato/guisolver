@@ -16,16 +16,30 @@ using GraphicsWindowPtr = osg::ref_ptr<osgQt::GraphicsWindowQt>;
 
 
 struct Mesh {
-  struct Triangle {
-    int v1, v2, v3;
+  using PositionIndex = int;
+  using NormalIndex = int;
 
-    Triangle(int v1, int v2, int v3)
+  struct Vertex {
+    PositionIndex position_index;
+    NormalIndex normal_index;
+
+    Vertex(PositionIndex position_index, NormalIndex normal_index)
+    : position_index(position_index), normal_index(normal_index)
+    {
+    }
+  };
+
+  struct Triangle {
+    Vertex v1, v2, v3;
+
+    Triangle(Vertex v1, Vertex v2, Vertex v3)
     : v1(v1), v2(v2), v3(v3)
     {
     }
   };
 
-  vector<Vec3> vertices;
+  vector<Vec3> positions;
+  vector<Vec3> normals;
   vector<Triangle> triangles;
 };
 

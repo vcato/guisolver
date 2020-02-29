@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <map>
 #include <osg/AutoTransform>
 #include <osg/Geometry>
 #include <osg/ShapeDrawable>
@@ -12,12 +13,14 @@
 #include <osgViewer/View>
 #include <osgViewer/ViewerEventHandlers>
 #include <osg/io_utils>
+#include <osgUtil/SmoothingVisitor>
 #include "osgutil.hpp"
 #include "osgpickhandler.hpp"
 #include "osgcameramanipulator.hpp"
 #include "contains.hpp"
 #include "matchconst.hpp"
 #include "eigenconv.hpp"
+#include "indicesof.hpp"
 
 namespace {
 struct ScaleDragger;
@@ -174,9 +177,57 @@ struct LineDrawable : osg::Geometry {
 }
 
 
-static bool isValidTriangleIndex(int i, int n_vertices)
-{
-  return (i >= 0 && i < n_vertices);
+namespace {
+struct LessMeshVertex {
+  bool operator()(const Mesh::Vertex &a, const Mesh::Vertex &b) const
+  {
+    if (a.position_index != b.position_index) {
+      return a.position_index < b.position_index;
+    }
+
+    return a.normal_index < b.normal_index;
+  }
+};
+}
+
+
+namespace {
+struct MeshDataBuilder {
+  std::map<Mesh::Vertex, unsigned short, LessMeshVertex> vertex_to_index_map;
+  using Index = unsigned short;
+  const Mesh &mesh;
+  osg::Vec3Array &positions;
+  osg::Vec3Array &normals;
+
+  MeshDataBuilder(
+    const Mesh &mesh,
+    osg::Vec3Array &positions,
+    osg::Vec3Array &normals
+  )
+  : mesh(mesh), positions(positions), normals(normals)
+  {
+  }
+
+  Index index(const Mesh::Vertex &vertex)
+  {
+    auto iter = vertex_to_index_map.find(vertex);
+
+    if (iter == vertex_to_index_map.end()) {
+      assert(positions.size() <= std::numeric_limits<Index>::max());
+      assert(positions.size() == normals.size());
+      Index index = positions.size();
+      auto &position = mesh.positions[vertex.position_index];
+      auto &normal = mesh.normals[vertex.normal_index];
+      positions.push_back({position.x, position.y, position.z});
+      normals.push_back({normal.x, normal.y, normal.z});
+      vertex_to_index_map.insert({vertex, index});
+      return index;
+    }
+    else {
+      return iter->second;
+    }
+  }
+};
 }
 
 
@@ -185,29 +236,20 @@ struct MeshDrawable : osg::Geometry {
   void setup(const Mesh &mesh)
   {
     MeshDrawable &self = *this;
-    int n_vertices = mesh.vertices.size();
 
-    assert(n_vertices < std::numeric_limits<unsigned short>::max());
-    {
-      osg::ref_ptr<osg::Vec3Array> points_ptr = new osg::Vec3Array;
-
-      for (auto &vertex : mesh.vertices) {
-        points_ptr->push_back({vertex.x, vertex.y, vertex.z});
-      }
-
-      self.setVertexArray(points_ptr.get());
-    }
-
+    osg::ref_ptr<osg::Vec3Array> points_ptr = new osg::Vec3Array;
+    osg::ref_ptr<osg::Vec3Array> normals_ptr = new osg::Vec3Array;
+    MeshDataBuilder builder(mesh, *points_ptr, *normals_ptr);
     vector<unsigned short> indices;
 
     for (auto &triangle : mesh.triangles) {
-      assert(isValidTriangleIndex(triangle.v1, n_vertices));
-      assert(isValidTriangleIndex(triangle.v2, n_vertices));
-      assert(isValidTriangleIndex(triangle.v3, n_vertices));
-      indices.push_back(triangle.v1);
-      indices.push_back(triangle.v2);
-      indices.push_back(triangle.v3);
+      indices.push_back(builder.index(triangle.v1));
+      indices.push_back(builder.index(triangle.v2));
+      indices.push_back(builder.index(triangle.v3));
     }
+
+    self.setVertexArray(points_ptr.get());
+    self.setNormalArray(normals_ptr.get(), osg::Array::BIND_PER_VERTEX);
 
     self.addPrimitiveSet(
       new osg::DrawElementsUShort(GL_TRIANGLES, indices.begin(), indices.end())

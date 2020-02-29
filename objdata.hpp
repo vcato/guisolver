@@ -17,8 +17,10 @@ struct ObjData {
     vector<VertexIndex> vertex_indices;
   };
 
-  vector<Vertex> vertices;
-  vector<Face> faces;
+  using Vertices = vector<Vertex>;
+  Vertices vertices;
+  using Faces = vector<Face>;
+  Faces faces;
 };
 
 
