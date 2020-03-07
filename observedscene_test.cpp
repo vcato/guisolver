@@ -1274,6 +1274,32 @@ static void testSettingBoxScaleExpression()
 }
 
 
+static void testAddingMesh()
+{
+  Tester tester;
+
+  // Have an initial state with a body
+  BodyIndex body_index = tester.observed_scene.addBody();
+  Mesh mesh;
+  mesh.positions.resize(3, Vec3{0,0,0});
+  Mesh::Vertex v1 = {/*position_index*/0,/*normal_index*/0};
+  Mesh::Vertex v2 = {/*position_index*/1,/*normal_index*/1};
+  Mesh::Vertex v3 = {/*position_index*/2,/*normal_index*/2};
+  mesh.triangles.resize(1, Mesh::Triangle{v1,v2,v3});
+  MeshIndex mesh_index = tester.observed_scene.addMeshTo(body_index, mesh);
+
+  SceneHandles::Mesh &mesh_handles =
+    tester.observed_scene.scene_handles.body(body_index).meshes[mesh_index];
+
+  Scene::Point geometry_center =
+    tester.scene.geometryCenter(mesh_handles.handle);
+
+  assert(geometry_center.x == 0);
+  assert(geometry_center.y == 0);
+  assert(geometry_center.z == 0);
+}
+
+
 int main()
 {
   testTransferringABody1();
@@ -1310,4 +1336,5 @@ int main()
   testSettingChildBodyTransformValue();
   testSettingBodyTranslationExpression();
   testSettingBoxScaleExpression();
+  testAddingMesh();
 }

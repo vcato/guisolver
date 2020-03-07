@@ -394,3 +394,12 @@ channelExpression(const Channel &channel, SceneState &scene_state)
   assert(expression_ptr);
   return *expression_ptr;
 }
+
+
+MeshIndex SceneState::Body::createMesh(const MeshShape &mesh_shape)
+{
+  MeshIndex mesh_index = meshes.size();
+  meshes.emplace_back();
+  meshes.back().shape = mesh_shape;
+  return mesh_index;
+}

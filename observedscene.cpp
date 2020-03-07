@@ -12,6 +12,7 @@
 #include "xyzcomponent.hpp"
 #include "evaluateexpression.hpp"
 #include "channel.hpp"
+#include "meshstate.hpp"
 
 using std::string;
 using std::ostringstream;
@@ -1354,9 +1355,11 @@ BoxIndex ObservedScene::addLineTo(BodyIndex body_index)
   return line_index;
 }
 
+
 MeshIndex ObservedScene::addMeshTo(BodyIndex body_index, const Mesh &mesh)
 {
-  MeshIndex mesh_index = scene_state.body(body_index).createMesh(mesh);
+  MeshIndex mesh_index =
+    scene_state.body(body_index).createMesh(meshShapeStateFromMesh(mesh));
 
   ::createMeshInScene(
     scene, scene_handles, body_index, mesh_index, scene_state

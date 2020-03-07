@@ -15,8 +15,6 @@
 #include "readobj.hpp"
 #include "objmesh.hpp"
 
-#define ADD_OBJS 0
-
 using View = MainWindowView;
 using std::cerr;
 using std::string;
@@ -178,7 +176,7 @@ struct MainWindowController::Impl {
     );
 
   static void
-    addObjPressed(MainWindowController &controller, BodyIndex body_index);
+    importObjPressed(MainWindowController &controller, BodyIndex body_index);
 
   static void addVariablePressed(MainWindowController &controller);
 
@@ -338,7 +336,7 @@ void
 
 
 void
-MainWindowController::Impl::addObjPressed(
+MainWindowController::Impl::importObjPressed(
   MainWindowController &controller, BodyIndex body_index
 )
 {
@@ -726,21 +724,17 @@ TreeWidget::MenuItems
         Impl::addDistanceErrorPressed(controller, body_index);
       };
 
-#if ADD_OBJS
-    auto add_obj_function =
+    auto import_obj_function =
       [&controller,body_index]{
-        Impl::addObjPressed(controller, body_index);
+        Impl::importObjPressed(controller, body_index);
       };
-#endif
 
     appendTo(menu_items,{
       {"Add Marker", add_marker_function},
       {"Add Body", add_body_function},
       {"Add Box", add_box_function},
       {"Add Line", add_line_function},
-#if ADD_OBJS
-      {"Add Obj", add_obj_function},
-#endif
+      {"Import Obj...", import_obj_function},
       {"Add Distance Error", add_distance_error_function},
       {"Cut", cut_body_function },
       {"Remove", remove_body_function },

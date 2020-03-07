@@ -1,11 +1,15 @@
 #include "scenestatetaggedvalue.hpp"
 
+#include <sstream>
 #include "indicesof.hpp"
 #include "contains.hpp"
 #include "nextunusedname.hpp"
+#include "taggedvalueio.hpp"
 
 using std::string;
 using std::cerr;
+using std::istringstream;
+using std::ostringstream;
 using XYZChannels = SceneState::XYZChannelsRef;
 using TransformSolveFlags = SceneState::TransformSolveFlags;
 using TransformExpressions = SceneState::TransformExpressions;
@@ -245,6 +249,23 @@ static SceneState::XYZ
 }
 
 
+static int intValueOr(const TaggedValue &tv, int /*default_value*/)
+{
+  if (!tv.value.isNumeric()) {
+    assert(false); // not implemented
+  }
+  else {
+    NumericValue nv = tv.value.asNumeric();
+
+    if (int(nv) != nv) {
+      assert(false); // not implemented
+    }
+
+    return int(nv);
+  }
+}
+
+
 static bool
 markerNameExists(
   const SceneState::Marker::Name &name,
@@ -354,7 +375,7 @@ createMarkersFromTaggedValues(
 
 
 static SceneState::XYZ
-xyzValueOr(
+xyzChildValueOr(
   const TaggedValue &tagged_value,
   const string &tag,
   const SceneState::XYZ &default_value
@@ -367,6 +388,23 @@ xyzValueOr(
   }
 
   return {default_value.x, default_value.y, default_value.z};
+}
+
+
+static int
+intChildValueOr(
+  const TaggedValue &tagged_value,
+  const string &tag,
+  int default_value
+)
+{
+  const TaggedValue *child_ptr = findChild(tagged_value, tag);
+
+  if (child_ptr) {
+    return intValueOr(*child_ptr, default_value);
+  }
+
+  return default_value;
 }
 
 
@@ -402,7 +440,7 @@ fillBoxStateFromTaggedValue(
     }
   }
 
-  box_state.center = xyzValueOr(box_tagged_value, "center", {0,0,0});
+  box_state.center = xyzChildValueOr(box_tagged_value, "center", {0,0,0});
 
   box_state.center_expressions =
     makeXYZExpressionsFromTaggedValue(box_tagged_value, "center");
@@ -415,8 +453,90 @@ fillLineStateFromTaggedValue(
   const TaggedValue &line_tagged_value
 )
 {
-  line_state.start = xyzValueOr(line_tagged_value, "start", {0,0,0});
-  line_state.end = xyzValueOr(line_tagged_value, "end", {1,0,0});
+  line_state.start = xyzChildValueOr(line_tagged_value, "start", {0,0,0});
+  line_state.end = xyzChildValueOr(line_tagged_value, "end", {1,0,0});
+}
+
+
+static bool
+isValidPositionIndex(int v, int n_positions)
+{
+  if (v < 0) {
+    assert(false); // not implemented
+  }
+
+  if (v >= n_positions) {
+    assert(false); // not implemented
+  }
+
+  return true;
+}
+
+
+static bool
+isValidTriangle(int v1, int v2, int v3, int n_positions)
+{
+  return
+    isValidPositionIndex(v1, n_positions) &&
+    isValidPositionIndex(v2, n_positions) &&
+    isValidPositionIndex(v3, n_positions) &&
+    v1 != v2 &&
+    v2 != v3 &&
+    v3 != v1;
+}
+
+
+static void
+fillMeshStateFromTaggedValue(
+  SceneState::Mesh &mesh_state,
+  const TaggedValue &mesh_tagged_value
+)
+{
+  //printTaggedValueOn(cerr, mesh_tagged_value);
+  mesh_state.scale = xyzChildValueOr(mesh_tagged_value, "scale", {1,1,1});
+  mesh_state.center = xyzChildValueOr(mesh_tagged_value, "center", {0,0,0});
+
+  const TaggedValue *positions_ptr = findChild(mesh_tagged_value, "positions");
+  auto &positions_state = mesh_state.shape.positions;
+
+  if (positions_ptr) {
+    for (auto &child_tagged_value : positions_ptr->children) {
+      auto &index_string = child_tagged_value.tag;
+      istringstream stream(index_string);
+
+      int index = 0;
+      stream >> index;
+
+      if (!stream) {
+        assert(false); // not implemented
+      }
+
+      if (index < 0) {
+        assert(false); // not implemented
+      }
+
+      if (int(positions_state.size()) <= index) {
+        positions_state.resize(index + 1, SceneState::XYZ{0,0,0});
+      }
+
+      positions_state[index] = xyzValueOr(child_tagged_value, {0,0,0});
+    }
+  }
+
+  for (auto &child_tagged_value : mesh_tagged_value.children) {
+    if (child_tagged_value.tag == "Triangle") {
+      int v1 = intChildValueOr(child_tagged_value, "vertex1", 0);
+      int v2 = intChildValueOr(child_tagged_value, "vertex2", 0);
+      int v3 = intChildValueOr(child_tagged_value, "vertex3", 0);
+      int n_positions = positions_state.size();
+
+      if (!isValidTriangle(v1, v2, v3, n_positions)) {
+        assert(false); // not implemented
+      }
+
+      mesh_state.shape.triangles.emplace_back(v1, v2, v3);
+    }
+  }
 }
 
 
@@ -566,26 +686,28 @@ createBodyInSceneState(
 
   BodyIndex body_index = result.createBody(maybe_parent_index);
 
+  SceneState::Body &body_state = result.body(body_index);
+
   if (maybe_name) {
-    result.body(body_index).name = *maybe_name;
+    body_state.name = *maybe_name;
   }
 
-  setAll(result.body(body_index).solve_flags, true);
+  setAll(body_state.solve_flags, true);
 
-  result.body(body_index).transform =
+  body_state.transform =
     makeTransformFromTaggedValue(tagged_value);
 
-  result.body(body_index).solve_flags =
+  body_state.solve_flags =
     makeSolveFlagsFromTaggedValue(tagged_value);
 
-  result.body(body_index).expressions =
+  body_state.expressions =
     makeExpressionsFromTaggedValue(tagged_value);
 
   for (auto &child : tagged_value.children) {
     if (child.tag == "Box") {
       const TaggedValue &box_tagged_value = child;
-      BoxIndex box_index = result.body(body_index).createBox();
-      SceneState::Box &box_state = result.body(body_index).boxes[box_index];
+      BoxIndex box_index = body_state.createBox();
+      SceneState::Box &box_state = body_state.boxes[box_index];
       fillBoxStateFromTaggedValue(box_state, box_tagged_value);
     }
   }
@@ -593,9 +715,18 @@ createBodyInSceneState(
   for (auto &child : tagged_value.children) {
     if (child.tag == "Line") {
       const TaggedValue &line_tagged_value = child;
-      LineIndex line_index = result.body(body_index).createLine();
-      SceneState::Line &line_state = result.body(body_index).lines[line_index];
+      LineIndex line_index = body_state.createLine();
+      SceneState::Line &line_state = body_state.lines[line_index];
       fillLineStateFromTaggedValue(line_state, line_tagged_value);
+    }
+  }
+
+  for (auto &child : tagged_value.children) {
+    if (child.tag == "Mesh") {
+      const TaggedValue &mesh_tagged_value = child;
+      MeshIndex mesh_index = body_state.createMesh(SceneState::MeshShape());
+      SceneState::Mesh &mesh_state = body_state.meshes[mesh_index];
+      fillMeshStateFromTaggedValue(mesh_state, mesh_tagged_value);
     }
   }
 
@@ -1033,6 +1164,48 @@ createLineInTaggedValue(TaggedValue &parent, const SceneState::Line &line_state)
 }
 
 
+static string str(int index)
+{
+  ostringstream stream;
+  stream << index;
+  return stream.str();
+}
+
+
+static TaggedValue &
+createMeshInTaggedValue(
+  TaggedValue &parent,
+  const SceneState::Mesh &mesh_state
+)
+{
+  auto &mesh_tagged_value = create(parent, "Mesh");
+
+  create(mesh_tagged_value, "scale", mesh_state.scale);
+  create(mesh_tagged_value, "center", mesh_state.center);
+
+  auto &positions_tagged_value = create(mesh_tagged_value, "positions");
+
+  // Create positions
+  for (auto index : indicesOf(mesh_state.shape.positions)) {
+    auto &position_tagged_value = create(positions_tagged_value, str(index));
+    createXYZChildren(position_tagged_value, mesh_state.shape.positions[index]);
+  }
+
+  // Create triangles
+  for (auto index : indicesOf(mesh_state.shape.triangles)) {
+    auto &triangle_tagged_value = create(mesh_tagged_value, "Triangle");
+    NumericValue v1 = mesh_state.shape.triangles[index].v1;
+    NumericValue v2 = mesh_state.shape.triangles[index].v2;
+    NumericValue v3 = mesh_state.shape.triangles[index].v3;
+    create(triangle_tagged_value, "vertex1", v1);
+    create(triangle_tagged_value, "vertex2", v2);
+    create(triangle_tagged_value, "vertex3", v3);
+  }
+
+  return mesh_tagged_value;
+}
+
+
 static void
 createMarkerInTaggedValue(
   TaggedValue &parent, const SceneState::Marker &marker_state
@@ -1146,6 +1319,10 @@ void
 
   for (const SceneState::Line &line_state : body_state.lines) {
     createLineInTaggedValue(transform, line_state);
+  }
+
+  for (const SceneState::Mesh &mesh_state : body_state.meshes) {
+    createMeshInTaggedValue(transform, mesh_state);
   }
 
   createChildBodiesInTaggedValue(transform, scene_state, body_index);

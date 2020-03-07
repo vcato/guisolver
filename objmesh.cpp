@@ -3,53 +3,26 @@
 #include <cmath>
 #include <cassert>
 #include "indicesof.hpp"
+#include "facenormalcalculator.hpp"
 
-
-static Vec3
-crossProduct(const Vec3 &a, const Vec3 &b)
-{
-  auto x = a.y*b.z - a.z*b.y;
-  auto y = a.z*b.x - a.x*b.z;
-  auto z = a.x*b.y - a.y*b.x;
-  return {x,y,z};
-}
-
-
-static Vec3::Scalar dot(const Vec3 &a, const Vec3 &b)
-{
-  return a.x*b.x + a.y*b.y + a.z*b.z;
-}
-
-
-static Vec3::Scalar magnitude(const Vec3 &arg)
-{
-  using std::sqrt;
-  return sqrt(dot(arg, arg));
-}
-
-
-static Vec3 normalized(const Vec3 &arg)
-{
-  return arg/magnitude(arg);
-}
 
 
 static Vec3
 faceNormal(const ObjData::Face &face, const ObjData::Vertices &vertices)
 {
-  Vec3 total{0,0,0};
+  FaceNormalCalculator calculator;
   auto &vertex_indices = face.vertex_indices;
   auto n_face_vertices = vertex_indices.size();
   auto vec3 = [](const ObjData::Vertex &v){ return Vec3{v.x, v.y, v.z}; };
 
   for (auto i : indicesOf(vertex_indices)) {
-    auto v1 = vec3(vertices[vertex_indices[i] - 1]);
-    auto v2 = vec3(vertices[vertex_indices[(i+1)%n_face_vertices] - 1]);
-    auto v3 = vec3(vertices[vertex_indices[(i+2)%n_face_vertices] - 1]);
-    total += crossProduct(v2-v1, v3-v2);
+    Vec3 v1 = vec3(vertices[vertex_indices[i] - 1]);
+    Vec3 v2 = vec3(vertices[vertex_indices[(i+1)%n_face_vertices] - 1]);
+    Vec3 v3 = vec3(vertices[vertex_indices[(i+2)%n_face_vertices] - 1]);
+    calculator.addTriangle(v1, v2, v3);
   }
 
-  return normalized(total);
+  return calculator.result();
 }
 
 

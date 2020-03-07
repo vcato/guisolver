@@ -8,6 +8,7 @@
 #include "positionstate.hpp"
 #include "globaltransform.hpp"
 #include "scenetransform.hpp"
+#include "meshstate.hpp"
 
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;
@@ -465,12 +466,12 @@ updateBoxInScene(
 )
 {
   scene.setGeometryScale(
-    box_handles.handle, vec3(box_state.scale) * body_global_scale
+    box_handles.handle, vec3FromXYZState(box_state.scale) * body_global_scale
   );
 
   scene.setGeometryCenter(
     box_handles.handle,
-    vec3(box_state.center)*body_global_scale
+    vec3FromXYZState(box_state.center)*body_global_scale
   );
 }
 
@@ -484,11 +485,11 @@ updateLineInScene(
 )
 {
   scene.setStartPoint(
-    line_handles.handle, vec3(line_state.start)*body_global_scale
+    line_handles.handle, vec3FromXYZState(line_state.start)*body_global_scale
   );
 
   scene.setEndPoint(
-    line_handles.handle, vec3(line_state.end)*body_global_scale
+    line_handles.handle, vec3FromXYZState(line_state.end)*body_global_scale
   );
 }
 
@@ -598,7 +599,7 @@ createMeshInScene(
     scene_state.body(parent_body_index).meshes[mesh_index];
 
   Scene::GeometryHandle mesh_handle =
-    scene.createMesh(transform_handle, mesh.shape);
+    scene.createMesh(transform_handle, meshFromMeshShapeState(mesh.shape));
 
   assert(BodyIndex(body_handles.meshes.size()) == mesh_index);
   body_handles.addMesh(mesh_handle);
@@ -644,6 +645,12 @@ createBodyObjectInScene(
 
   for (size_t i=0; i!=n_lines; ++i) {
     createLineInScene(scene, scene_handles, body_index, i, scene_state);
+  }
+
+  size_t n_meshes = body_state.meshes.size();
+
+  for (size_t i=0; i!=n_meshes; ++i) {
+    createMeshInScene(scene, scene_handles, body_index, i, scene_state);
   }
 
   updateBodyInScene(scene, body_index, scene_state, scene_handles);

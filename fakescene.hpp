@@ -58,7 +58,6 @@ struct FakeScene : Scene {
   ) override;
 
   Vec3 geometryScale(GeometryHandle) const override;
-
   Point geometryCenter(GeometryHandle) const override;
 
   virtual void setCoordinateAxes(TransformHandle,const CoordinateAxes &)

@@ -52,12 +52,16 @@ SCENESTATETAGGEDVALUE=scenestatetaggedvalue.o $(SCENESTATE) taggedvalue.o
 SCENESTATEIO=scenestateio.o $(SCENESTATETAGGEDVALUE) $(TAGGEDVALUEIO)
 
 SCENEERROR=sceneerror.o $(SCENESTATE)
-SCENEOBJECTS=sceneobjects.o maketransform.o settransform.o $(SCENESTATE)
+
+SCENEOBJECTS=sceneobjects.o maketransform.o settransform.o $(SCENESTATE) \
+  meshstate.o
+
 OPTIMIZE=optimize.o
 
 OBSERVEDSCENE=observedscene.o \
   treevalues.o scenestatetransform.o \
-  $(EVALUATEEXPRESSION) $(SCENESTATETAGGEDVALUE) $(SCENEOBJECTS)
+  $(EVALUATEEXPRESSION) $(SCENESTATETAGGEDVALUE) $(SCENEOBJECTS) \
+  meshstate.o
 
 EVALUATEEXPRESSION=evaluateexpression.o expressionparser.o parsedouble.o
 

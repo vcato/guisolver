@@ -85,9 +85,9 @@ GeometryHandle FakeScene::createSphere(TransformHandle parent)
 }
 
 
-GeometryHandle FakeScene::createMesh(TransformHandle /*parent*/, const Mesh &)
+GeometryHandle FakeScene::createMesh(TransformHandle parent, const Mesh &)
 {
-  assert(false); // not implemented
+  return createGeometry(parent);
 }
 
 

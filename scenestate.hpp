@@ -110,7 +110,6 @@ class SceneState {
       }
     };
 
-
     struct Transform {
       static Float defaultScale() { return 1; }
 
@@ -155,8 +154,22 @@ class SceneState {
       Position end = {1,0,0};
     };
 
+    struct MeshShape {
+      struct Triangle {
+        int v1, v2, v3;
+        Triangle(int v1, int v2, int v3)
+        : v1(v1), v2(v2), v3(v3)
+        {
+        }
+      };
+
+      using Positions = vector<XYZ>;
+      Positions positions;
+      vector<Triangle> triangles;
+    };
+
     struct Mesh {
-      ::Mesh shape;
+      MeshShape shape;
       XYZ scale = {1,1,1};
       Position center = {0,0,0};
     };
@@ -172,6 +185,8 @@ class SceneState {
       TransformExpressions expressions;
       Optional<BodyIndex> maybe_parent_index;
 
+      Body(const Name &name) : name(name) {}
+
       BoxIndex createBox()
       {
         BoxIndex box_index = boxes.size();
@@ -186,14 +201,7 @@ class SceneState {
         return line_index;
       }
 
-      MeshIndex createMesh(const ::Mesh &mesh)
-      {
-        MeshIndex mesh_index = meshes.size();
-        meshes.push_back(Mesh{mesh});
-        return mesh_index;
-      }
-
-      Body(const Name &name) : name(name) {}
+      MeshIndex createMesh(const MeshShape &);
     };
 
     struct DistanceError {

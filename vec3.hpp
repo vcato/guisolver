@@ -2,6 +2,7 @@
 #define VEC3_HPP_
 
 #include <iostream>
+#include <cmath>
 
 
 struct Vec3 {
@@ -55,6 +56,35 @@ inline Vec3 operator-(Vec3 a,Vec3 b)
   auto y = a.y - b.y;
   auto z = a.z - b.z;
   return {x,y,z};
+}
+
+
+inline Vec3
+crossProduct(const Vec3 &a, const Vec3 &b)
+{
+  auto x = a.y*b.z - a.z*b.y;
+  auto y = a.z*b.x - a.x*b.z;
+  auto z = a.x*b.y - a.y*b.x;
+  return {x,y,z};
+}
+
+
+inline Vec3::Scalar dot(const Vec3 &a, const Vec3 &b)
+{
+  return a.x*b.x + a.y*b.y + a.z*b.z;
+}
+
+
+inline Vec3::Scalar magnitude(const Vec3 &arg)
+{
+  using std::sqrt;
+  return sqrt(dot(arg, arg));
+}
+
+
+inline Vec3 normalized(const Vec3 &arg)
+{
+  return arg/magnitude(arg);
 }
 
 

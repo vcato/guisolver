@@ -41,8 +41,8 @@ inline Transform
 makeScaledTransformFromState(const SceneState::Transform &arg)
 {
   Transform box_global = Transform::Identity();
-  setTransformTranslation(box_global, vec3(arg.translation));
-  setTransformRotationDeg(box_global, vec3(arg.rotation));
+  setTransformTranslation(box_global, vec3FromXYZState(arg.translation));
+  setTransformRotationDeg(box_global, vec3FromXYZState(arg.rotation));
   scaleTransform(box_global, arg.scale);
   return box_global;
 }
@@ -57,23 +57,23 @@ makeUnscaledTransformFromState(
   Transform box_global = Transform::Identity();
 
   setTransformTranslation(
-    box_global, vec3(arg.translation) * parent_global_scale
+    box_global, vec3FromXYZState(arg.translation) * parent_global_scale
   );
 
-  setTransformRotationDeg(box_global, vec3(arg.rotation));
+  setTransformRotationDeg(box_global, vec3FromXYZState(arg.rotation));
   return box_global;
 }
 
 
 inline Vec3 translationValues(const TransformState &t)
 {
-  return vec3(t.translation);
+  return vec3FromXYZState(t.translation);
 }
 
 
 inline Vec3 rotationValuesDeg(const TransformState &transform_state)
 {
-  return vec3(transform_state.rotation);
+  return vec3FromXYZState(transform_state.rotation);
 }
 
 

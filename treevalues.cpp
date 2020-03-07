@@ -1391,6 +1391,18 @@ createBodyItem(
     ++adder.n_children;
   }
 
+  size_t n_meshes = body_state.meshes.size();
+  body_paths.meshes.resize(n_meshes);
+
+  for (size_t i=0; i!=n_meshes; ++i) {
+    TreePath mesh_path = childPath(adder.parent_path, adder.n_children);
+
+    body_paths.meshes[i] =
+      createMeshItem(mesh_path, tree_widget, body_state.meshes[i]);
+
+    ++adder.n_children;
+  }
+
   return body_paths;
 }
 
@@ -1683,7 +1695,7 @@ static void
   updateXYZValues(
     tree_widget,
     tree_paths.marker(i).position,
-    vec3(markers[i].position)
+    vec3FromXYZState(markers[i].position)
   );
 }
 
@@ -1719,7 +1731,10 @@ struct BodyPropertyUpdator {
     const TransformState &transform_state = body_state.transform;
     const TreePaths::Translation &translation_paths = body_paths.translation;
     const TranslationState &translation = translationStateOf(transform_state);
-    updateXYZValues(tree_widget, translation_paths, vec3(translation));
+
+    updateXYZValues(
+      tree_widget, translation_paths, vec3FromXYZState(translation)
+    );
   }
 
   void visitRotation()
@@ -1768,12 +1783,12 @@ updateBody(
     {
       const TreePaths::XYZChannels &scale_paths = box_paths.scale;
       const SceneState::XYZ &scale = box_state.scale;
-      updateXYZValues(tree_widget, scale_paths, vec3(scale));
+      updateXYZValues(tree_widget, scale_paths, vec3FromXYZState(scale));
     }
     {
       const TreePaths::XYZChannels &center_paths = box_paths.center;
       const SceneState::XYZ &center = box_state.center;
-      updateXYZValues(tree_widget, center_paths, vec3(center));
+      updateXYZValues(tree_widget, center_paths, vec3FromXYZState(center));
     }
   }
 }

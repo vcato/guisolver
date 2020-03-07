@@ -202,6 +202,7 @@ Function {
   }
 }
 ---
-Need to have geometry scale and geometry center parameters for meshes.
-Need to be able to save and load meshes.
-Need to to have the scale/center parameters actually affect the scene.
+Need to to have the scale/center parameters for meshes actually affect the
+scene.
+---
+Reduce duplication in methods like xyzChildValueOr/intChildValueOr
