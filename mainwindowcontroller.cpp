@@ -359,7 +359,8 @@ MainWindowController::Impl::importObjPressed(
 
   ObjData obj_data = readObj(stream);
   Mesh mesh = meshFromObj(obj_data);
-  observed_scene.addMeshTo(body_index, mesh);
+  MeshIndex mesh_index = observed_scene.addMeshTo(body_index, mesh);
+  observed_scene.selectMesh(body_index, mesh_index);
 }
 
 
@@ -766,7 +767,7 @@ TreeWidget::MenuItems
 
   if (item_type == ItemType::line) {
     BodyIndex body_index = *item.maybe_body_index;
-    size_t line_index = *item.maybe_line_index;
+    LineIndex line_index = *item.maybe_line_index;
 
     auto remove_line_function =
       [&observed_scene, body_index, line_index]{
@@ -775,6 +776,19 @@ TreeWidget::MenuItems
 
     appendTo(menu_items,{
       {"Remove", remove_line_function}
+    });
+  }
+
+  if (item_type == ItemType::mesh) {
+    BodyIndex body_index = *item.maybe_body_index;
+    MeshIndex mesh_index = *item.maybe_mesh_index;
+
+    auto remove_mesh_function = [&observed_scene, body_index, mesh_index]{
+      observed_scene.removeMesh(body_index, mesh_index);
+    };
+
+    appendTo(menu_items,{
+      {"Remove", remove_mesh_function}
     });
   }
 

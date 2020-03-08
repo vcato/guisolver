@@ -716,6 +716,22 @@ void ObservedScene::removeLine(BodyIndex body_index, LineIndex line_index)
 }
 
 
+void ObservedScene::removeMesh(BodyIndex body_index, MeshIndex mesh_index)
+{
+  clearClipboard(*this);
+
+  removeMeshFromTree(
+    sceneTree(*this), scene_state, body_index, mesh_index
+  );
+
+  removeMeshFromScene(
+    scene, scene_handles, scene_state, body_index, mesh_index
+  );
+
+  removeIndexFrom(scene_state.body(body_index).meshes, mesh_index);
+}
+
+
 void ObservedScene::removeDistanceError(DistanceErrorIndex distance_error_index)
 {
   removeDistanceErrorFromTree(
@@ -1634,6 +1650,13 @@ void ObservedScene::selectBox(BodyIndex body_index, BoxIndex box_index)
 void ObservedScene::selectLine(BodyIndex body_index, LineIndex line_index)
 {
   tree_widget.selectItem(tree_paths.body(body_index).lines[line_index].path);
+  handleTreeSelectionChanged();
+}
+
+
+void ObservedScene::selectMesh(BodyIndex body_index, MeshIndex mesh_index)
+{
+  tree_widget.selectItem(tree_paths.body(body_index).meshes[mesh_index].path);
   handleTreeSelectionChanged();
 }
 

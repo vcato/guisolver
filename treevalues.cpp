@@ -1631,6 +1631,24 @@ removeLineFromTree(
 }
 
 
+void
+removeMeshFromTree(
+  SceneTreeRef scene_tree,
+  const SceneState &,
+  BodyIndex body_index,
+  MeshIndex mesh_index
+)
+{
+  // This is copied from removeLineFromTree()
+  TreeWidget &tree_widget = scene_tree.tree_widget;
+  TreePaths &tree_paths = scene_tree.tree_paths;
+  TreePath mesh_path = tree_paths.body(body_index).meshes[mesh_index].path;
+  tree_widget.removeItem(mesh_path);
+  removeIndexFrom(tree_paths.bodies[body_index]->meshes, mesh_index);
+  handlePathRemoval(tree_paths, mesh_path);
+}
+
+
 TreePaths fillTree(TreeWidget &tree_widget, const SceneState &scene_state)
 {
   TreePaths tree_paths;

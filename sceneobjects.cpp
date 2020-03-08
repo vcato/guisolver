@@ -933,6 +933,21 @@ removeLineFromScene(
 }
 
 
+void
+removeMeshFromScene(
+  Scene &scene,
+  SceneHandles &scene_handles,
+  const SceneState &,
+  BodyIndex body_index,
+  MeshIndex mesh_index
+)
+{
+  SceneHandles::Body &body_handles = *scene_handles.bodies[body_index];
+  destroyMeshObjects(body_handles.meshes[mesh_index], scene);
+  removeIndexFrom(body_handles.meshes, mesh_index);
+}
+
+
 SceneHandles createSceneObjects(const SceneState &state, Scene &scene)
 {
   SceneHandles scene_handles;

@@ -97,6 +97,9 @@ extern void
   removeLineFromTree(SceneTreeRef, const SceneState &, BodyIndex, LineIndex);
 
 extern void
+  removeMeshFromTree(SceneTreeRef, const SceneState &, BodyIndex, MeshIndex);
+
+extern void
   createBodyBranchItemsInTree(
     BodyIndex body_index,
     SceneTreeRef,

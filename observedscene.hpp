@@ -95,6 +95,7 @@ struct ObservedScene {
   void selectVariable(VariableIndex);
   void selectBox(BodyIndex, BoxIndex);
   void selectLine(BodyIndex, LineIndex);
+  void selectMesh(BodyIndex, MeshIndex);
   BodyIndex duplicateBody(BodyIndex body_index);
   BodyIndex duplicateBodyWithDistanceErrors(BodyIndex);
   MarkerIndex duplicateMarker(MarkerIndex);
@@ -110,6 +111,7 @@ struct ObservedScene {
   void removeMarker(MarkerIndex);
   void removeBox(BodyIndex, BoxIndex);
   void removeLine(BodyIndex, LineIndex);
+  void removeMesh(BodyIndex, MeshIndex);
   void removeDistanceError(DistanceErrorIndex);
   void removeVariable(VariableIndex);
   static void clearClipboard(ObservedScene &);

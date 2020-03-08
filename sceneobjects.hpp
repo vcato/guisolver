@@ -142,6 +142,15 @@ extern void
   );
 
 extern void
+  removeMeshFromScene(
+    Scene &,
+    SceneHandles &,
+    const SceneState &,
+    BodyIndex,
+    MeshIndex
+  );
+
+extern void
   createBodyBranchObjectsInScene(
     BodyIndex body_index,
     Scene &scene,
