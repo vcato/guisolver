@@ -100,6 +100,54 @@ localTransform(
 }
 
 
+namespace {
+struct GeometryStateUpdaterParams {
+  SceneState::Body &body_state;
+  const SceneHandles::Body &body_handles;
+  const Scene &scene;
+  const float body_global_scale;
+};
+}
+
+
+namespace {
+struct GeometryStateUpdater : GeometryVisitor, GeometryStateUpdaterParams {
+  using Params = GeometryStateUpdaterParams;
+  GeometryStateUpdater(Params params) : Params(params) {}
+
+  void visitBox(BoxIndex box_index) override
+  {
+    SceneState::Box &box_state = body_state.boxes[box_index];
+    Scene::GeometryHandle box_handle = body_handles.boxes[box_index].handle;
+
+    Vec3 new_box_scale =
+      scene.geometryScale(box_handle) *
+      (1 / body_global_scale);
+
+    box_state.scale = xyzStateFromVec3(new_box_scale);
+    box_state.center = xyzStateFromVec3(scene.geometryCenter(box_handle));
+  }
+
+  void visitLine(LineIndex) override
+  {
+  }
+
+  void visitMesh(MeshIndex mesh_index) override
+  {
+    SceneState::Mesh &mesh_state = body_state.meshes[mesh_index];
+    Scene::GeometryHandle mesh_handle = body_handles.meshes[mesh_index].handle;
+
+    Vec3 new_mesh_scale =
+      scene.geometryScale(mesh_handle) *
+      (1 / body_global_scale);
+
+    mesh_state.scale = xyzStateFromVec3(new_mesh_scale);
+    mesh_state.center = xyzStateFromVec3(scene.geometryCenter(mesh_handle));
+  }
+};
+}
+
+
 static void
 updateBodyStateFromBodyObjects(
   SceneState::Body &body_state,
@@ -129,29 +177,15 @@ updateBodyStateFromBodyObjects(
   assert(body_state.boxes.size() == body_handles.boxes.size());
   float body_global_scale = bodyGlobalScale(body_index, scene_state);
 
-  for (auto box_index : indicesOf(body_state.boxes)) {
-    SceneState::Box &box_state = body_state.boxes[box_index];
-    Scene::GeometryHandle box_handle = body_handles.boxes[box_index].handle;
+  GeometryStateUpdater
+    update_geometry_state({
+      body_state,
+      body_handles,
+      scene,
+      body_global_scale
+    });
 
-    Vec3 new_box_scale =
-      scene.geometryScale(box_handle) *
-      (1 / body_global_scale);
-
-    box_state.scale = xyzStateFromVec3(new_box_scale);
-    box_state.center = xyzStateFromVec3(scene.geometryCenter(box_handle));
-  }
-
-  for (auto mesh_index : indicesOf(body_state.meshes)) {
-    SceneState::Mesh &mesh_state = body_state.meshes[mesh_index];
-    Scene::GeometryHandle mesh_handle = body_handles.meshes[mesh_index].handle;
-
-    Vec3 new_mesh_scale =
-      scene.geometryScale(mesh_handle) *
-      (1 / body_global_scale);
-
-    mesh_state.scale = xyzStateFromVec3(new_mesh_scale);
-    mesh_state.center = xyzStateFromVec3(scene.geometryCenter(mesh_handle));
-  }
+  forEachBodyGeometry(body_state, update_geometry_state);
 }
 
 
@@ -354,25 +388,48 @@ destroyMeshObjects(const SceneHandles::Mesh &mesh_handles, Scene &scene)
 }
 
 
-static void
-destroyBodyObjects(
-  BodyIndex body_index, Scene &scene, const SceneHandles &scene_handles
-)
-{
-  const SceneHandles::Body &body_handles = scene_handles.body(body_index);
+namespace {
+struct GeometryDestroyerParams {
+  const SceneHandles::Body &body_handles;
+  Scene &scene;
+};
+}
 
-  for (auto box_index : indicesOf(body_handles.boxes)) {
+
+namespace {
+struct GeometryDestroyer : GeometryVisitor, GeometryDestroyerParams {
+  using Params = GeometryDestroyerParams;
+
+  GeometryDestroyer(Params params) : Params(params) {}
+
+  void visitBox(BoxIndex box_index) override
+  {
     destroyBoxObjects(body_handles.boxes[box_index], scene);
   }
 
-  for (auto mesh_index : indicesOf(body_handles.meshes)) {
+  void visitMesh(MeshIndex mesh_index) override
+  {
     destroyMeshObjects(body_handles.meshes[mesh_index], scene);
   }
 
-  for (auto line_index : indicesOf(body_handles.lines)) {
+  void visitLine(LineIndex line_index) override
+  {
     destroyLineObjects(body_handles.lines[line_index], scene);
   }
+};
+}
 
+
+static void
+destroyBodyObjects(
+  BodyIndex body_index, Scene &scene,
+  const SceneHandles &scene_handles,
+  const SceneState &scene_state
+)
+{
+  const SceneHandles::Body &body_handles = scene_handles.body(body_index);
+  GeometryDestroyer geometry_destroyer({body_handles, scene});
+  forEachBodyGeometry(scene_state.body(body_index), geometry_destroyer);
   scene.destroyTransform(body_handles.transformHandle());
 }
 
@@ -526,6 +583,46 @@ updateMeshInScene(
 }
 
 
+namespace {
+struct GeometrySceneUpdaterParams {
+  const SceneHandles::Body &body_handles;
+  const SceneState::Body &body_state;
+  Scene &scene;
+  const float body_global_scale;
+};
+}
+
+
+namespace {
+struct GeometrySceneUpdater : GeometryVisitor, GeometrySceneUpdaterParams {
+  using Params = GeometrySceneUpdaterParams;
+
+  GeometrySceneUpdater(Params params) : Params(params) {}
+
+  void visitBox(BoxIndex box_index) override
+  {
+    const SceneHandles::Box &box_handles = body_handles.boxes[box_index];
+    const SceneState::Box &box_state = body_state.boxes[box_index];
+    updateBoxInScene(scene, box_state, box_handles, body_global_scale);
+  }
+
+  void visitLine(LineIndex line_index) override
+  {
+    const SceneHandles::Line &line_handles = body_handles.lines[line_index];
+    const SceneState::Line &line_state = body_state.lines[line_index];
+    updateLineInScene(scene, line_state, line_handles, body_global_scale);
+  }
+
+  void visitMesh(MeshIndex mesh_index) override
+  {
+    const SceneHandles::Mesh &mesh_handles = body_handles.meshes[mesh_index];
+    const SceneState::Mesh &mesh_state = body_state.meshes[mesh_index];
+    updateMeshInScene(scene, mesh_state, mesh_handles, body_global_scale);
+  }
+};
+}
+
+
 static void
 updateBodyInScene(
   Scene &scene,
@@ -555,23 +652,14 @@ updateBodyInScene(
 
   assert(body_handles.boxes.size() == body_state.boxes.size());
 
-  for (auto box_index : indicesOf(body_state.boxes)) {
-    const SceneHandles::Box &box_handles = body_handles.boxes[box_index];
-    const SceneState::Box &box_state = body_state.boxes[box_index];
-    updateBoxInScene(scene, box_state, box_handles, body_global_scale);
-  }
+  GeometrySceneUpdater geometry_scene_updater({
+    body_handles,
+    body_state,
+    scene,
+    body_global_scale
+  });
 
-  for (auto line_index : indicesOf(body_state.lines)) {
-    const SceneHandles::Line &line_handles = body_handles.lines[line_index];
-    const SceneState::Line &line_state = body_state.lines[line_index];
-    updateLineInScene(scene, line_state, line_handles, body_global_scale);
-  }
-
-  for (auto mesh_index : indicesOf(body_state.meshes)) {
-    const SceneHandles::Mesh &mesh_handles = body_handles.meshes[mesh_index];
-    const SceneState::Mesh &mesh_state = body_state.meshes[mesh_index];
-    updateMeshInScene(scene, mesh_state, mesh_handles, body_global_scale);
-  }
+  forEachBodyGeometry(body_state, geometry_scene_updater);
 }
 
 
@@ -728,14 +816,15 @@ createBodyInScene(
 }
 
 
-void
+static void
 removeBodyObjectFromScene(
   BodyIndex body_index,
   Scene &scene,
-  SceneHandles &scene_handles
+  SceneHandles &scene_handles,
+  const SceneState &scene_state
 )
 {
-  destroyBodyObjects(body_index, scene, scene_handles);
+  destroyBodyObjects(body_index, scene, scene_handles, scene_state);
   scene_handles.bodies[body_index].reset();
 }
 
@@ -783,17 +872,18 @@ removeBodyBranchObjectsFromScene(
   struct Visitor {
     Scene &scene;
     SceneHandles &scene_handles;
+    const SceneState &scene_state;
 
     void visitBody(BodyIndex body_index) const
     {
-      removeBodyObjectFromScene(body_index, scene, scene_handles);
+      removeBodyObjectFromScene(body_index, scene, scene_handles, scene_state);
     }
 
     void visitMarker(MarkerIndex marker_index) const
     {
       removeMarkerObjectFromScene(marker_index, scene, scene_handles);
     }
-  } visitor = {scene, scene_handles};
+  } visitor = {scene, scene_handles, scene_state};
 
   forEachBranchIndexInPostOrder(body_index, scene_state, visitor);
 }
@@ -803,16 +893,12 @@ void
 removeBodyFromScene(
   Scene &scene,
   SceneHandles &scene_handles,
-  const SceneState &
-#ifndef NDEBUG
-    state
-#endif
-    ,
+  const SceneState &scene_state,
   BodyIndex body_index
 )
 {
-  assert(!state.bodyHasChildren(body_index));
-  removeBodyObjectFromScene(body_index, scene, scene_handles);
+  assert(!scene_state.bodyHasChildren(body_index));
+  removeBodyObjectFromScene(body_index, scene, scene_handles, scene_state);
   removeIndexFrom(scene_handles.bodies, body_index);
 }
 
@@ -915,7 +1001,7 @@ destroyBodyAndChildren(
 )
 {
   destroyChildrenOf(body_index, scene, scene_state, scene_handles);
-  destroyBodyObjects(body_index, scene, scene_handles);
+  destroyBodyObjects(body_index, scene, scene_handles, scene_state);
 }
 
 

@@ -514,4 +514,15 @@ xyzExpressionsComponent(
 extern SceneState::Expression &
   channelExpression(const Channel &channel, SceneState &scene_state);
 
+
+struct GeometryVisitor {
+  virtual void visitBox(BoxIndex) = 0;
+  virtual void visitLine(LineIndex) = 0;
+  virtual void visitMesh(MeshIndex) = 0;
+};
+
+
+extern void forEachBodyGeometry(const SceneState::Body &, GeometryVisitor &);
+
+
 #endif /* SCENESTATE_HPP_ */

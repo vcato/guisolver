@@ -403,3 +403,22 @@ MeshIndex SceneState::Body::createMesh(const MeshShape &mesh_shape)
   meshes.back().shape = mesh_shape;
   return mesh_index;
 }
+
+
+void
+forEachBodyGeometry(
+  const SceneState::Body &body_state, GeometryVisitor &visitor
+)
+{
+  for (auto i : indicesOf(body_state.boxes)) {
+    visitor.visitBox(i);
+  }
+
+  for (auto i : indicesOf(body_state.lines)) {
+    visitor.visitLine(i);
+  }
+
+  for (auto i : indicesOf(body_state.meshes)) {
+    visitor.visitMesh(i);
+  }
+}

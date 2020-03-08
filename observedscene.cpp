@@ -323,12 +323,65 @@ struct SceneObject {
 }
 
 
+namespace {
+template <typename F>
+struct GeometryForParams {
+  const SceneHandles::Body &body_handles;
+  const TreePaths::Body &body_paths;
+  const F &f;
+};
+}
+
+
+namespace {
+template <typename F>
+struct GeometryFor : GeometryVisitor, GeometryForParams<F> {
+  using Params = GeometryForParams<F>;
+  GeometryFor(Params params) : Params(params) {}
+
+  void visitBox(BoxIndex box_index)
+  {
+    this->f(
+      {
+        this->body_handles.transformHandle(),
+        this->body_handles.boxes[box_index].handle,
+      },
+      this->body_paths.boxes[box_index].path
+    );
+  }
+
+  void visitLine(LineIndex line_index)
+  {
+    this->f(
+      {
+        this->body_handles.transformHandle(),
+        this->body_handles.lines[line_index].handle,
+      },
+      this->body_paths.lines[line_index].path
+    );
+  }
+
+  void visitMesh(MeshIndex mesh_index)
+  {
+    this->f(
+      {
+        this->body_handles.transformHandle(),
+        this->body_handles.meshes[mesh_index].handle,
+      },
+      this->body_paths.meshes[mesh_index].path
+    );
+  }
+};
+}
+
+
 template <typename F>
 static void
 forEachSceneObjectPath(
   const F &f,
   const SceneHandles &scene_handles,
-  const TreePaths &tree_paths
+  const TreePaths &tree_paths,
+  const SceneState &scene_state
 )
 {
   Optional<TransformHandle> maybe_object;
@@ -359,35 +412,8 @@ forEachSceneObjectPath(
       body_paths.path
     );
 
-    for (auto box_index : indicesOf(body_handles.boxes)) {
-      f(
-        {
-          body_handles.transformHandle(),
-          body_handles.boxes[box_index].handle,
-        },
-        body_paths.boxes[box_index].path
-      );
-    }
-
-    for (auto line_index : indicesOf(body_handles.lines)) {
-      f(
-        {
-          body_handles.transformHandle(),
-          body_handles.lines[line_index].handle,
-        },
-        body_paths.lines[line_index].path
-      );
-    }
-
-    for (auto mesh_index : indicesOf(body_handles.meshes)) {
-      f(
-        {
-          body_handles.transformHandle(),
-          body_handles.meshes[mesh_index].handle,
-        },
-        body_paths.meshes[mesh_index].path
-      );
-    }
+    GeometryFor<F> geometry_for({body_handles, body_paths, f});
+    forEachBodyGeometry(scene_state.body(body_index), geometry_for);
   }
 
   for (auto i : indicesOf(tree_paths.distance_errors)) {
@@ -409,7 +435,8 @@ static SceneObject
 sceneObjectForTreeItem(
   const TreePath &item_path,
   const TreePaths &tree_paths,
-  const SceneHandles &scene_handles
+  const SceneHandles &scene_handles,
+  const SceneState &scene_state
 )
 {
   TreePath matching_path;
@@ -434,7 +461,8 @@ sceneObjectForTreeItem(
       }
     },
     scene_handles,
-    tree_paths
+    tree_paths,
+    scene_state
   );
 
   return scene_object;
@@ -445,7 +473,8 @@ static Optional<TreePath>
 treeItemForSceneObject(
   const SceneObject &scene_object,
   const TreePaths &tree_paths,
-  const SceneHandles &scene_handles
+  const SceneHandles &scene_handles,
+  const SceneState &scene_state
 )
 {
   Optional<TreePath> maybe_found_path;
@@ -469,7 +498,8 @@ treeItemForSceneObject(
       }
     },
     scene_handles,
-    tree_paths
+    tree_paths,
+    scene_state
   );
 
   return maybe_found_path;
@@ -481,7 +511,11 @@ struct ObservedScene::Impl {
   static void evaluateChannelExpression(const Channel &, ObservedScene &);
 
   static TreeItemDescription
-    describePath(const TreePath &path, const TreePaths &tree_paths);
+    describePath(
+      const TreePath &path,
+      const TreePaths &tree_paths,
+      const SceneState &scene_state
+    );
 
   static void
     setChannelExpression(
@@ -890,8 +924,9 @@ void ObservedScene::handleTreeSelectionChanged()
   SceneObject scene_object =
     sceneObjectForTreeItem(
       *maybe_selected_item_path,
-      observed_scene.tree_paths,
-      observed_scene.scene_handles
+      tree_paths,
+      scene_handles,
+      scene_state
     );
 
   if (scene_object.maybe_geometry_handle) {
@@ -932,8 +967,9 @@ void ObservedScene::handleSceneSelectionChanged()
   Optional<TreePath> maybe_tree_path =
     treeItemForSceneObject(
       scene_object,
-      observed_scene.tree_paths,
-      observed_scene.scene_handles
+      tree_paths,
+      scene_handles,
+      scene_state
     );
 
   if (maybe_tree_path) {
@@ -1621,9 +1657,83 @@ void ObservedScene::handleSceneStateChanged()
 }
 
 
+namespace {
+struct DescribeGeometryParams {
+  using TreeItemDescription = ObservedScene::TreeItemDescription;
+
+  bool &found_description;
+  const TreePaths::Body &body_paths;
+  const TreePath &path;
+  TreeItemDescription &description;
+  const BodyIndex body_index;
+};
+}
+
+
+namespace {
+struct DescribeGeometry : GeometryVisitor, DescribeGeometryParams {
+  using Params = DescribeGeometryParams;
+  using TreeItemDescription = ObservedScene::TreeItemDescription;
+  using ItemType = TreeItemDescription::Type;
+
+  DescribeGeometry(DescribeGeometryParams params) : Params(params) {}
+
+  void visitBox(BoxIndex box_index)
+  {
+    if (!found_description) {
+      const TreePaths::Box &box_paths = body_paths.boxes[box_index];
+
+      if (startsWith(path, box_paths.path)) {
+        if (path == box_paths.path) {
+          description.type = ItemType::box;
+        }
+
+        description.maybe_box_index = box_index;
+        found_description = true;
+      }
+    }
+  }
+
+  void visitLine(LineIndex line_index)
+  {
+    if (!found_description) {
+      const TreePaths::Line &line_paths = body_paths.lines[line_index];
+
+      if (startsWith(path, line_paths.path)) {
+        if (path == line_paths.path) {
+          description.type = ItemType::line;
+        }
+
+        description.maybe_line_index = line_index;
+        found_description = true;
+      }
+    }
+  }
+
+  void visitMesh(MeshIndex mesh_index)
+  {
+    if (!found_description) {
+      const TreePaths::Mesh &mesh_paths = body_paths.meshes[mesh_index];
+
+      if (startsWith(path, mesh_paths.path)) {
+        if (path == mesh_paths.path) {
+          description.type = ItemType::mesh;
+        }
+
+        description.maybe_mesh_index = mesh_index;
+        found_description = true;
+      }
+    }
+  }
+};
+}
+
+
 auto
 ObservedScene::Impl::describePath(
-  const TreePath &path, const TreePaths &tree_paths
+  const TreePath &path,
+  const TreePaths &tree_paths,
+  const SceneState &scene_state
 )
 -> TreeItemDescription
 {
@@ -1635,7 +1745,7 @@ ObservedScene::Impl::describePath(
     return description;
   }
 
-  for (auto body_index : indicesOf(tree_paths.bodies)) {
+  for (BodyIndex body_index : indicesOf(tree_paths.bodies)) {
     const TreePaths::Body &body_paths = tree_paths.body(body_index);
 
     if (startsWith(path, body_paths.translation.path)) {
@@ -1660,44 +1770,22 @@ ObservedScene::Impl::describePath(
       return description;
     }
 
-    for (auto box_index : indicesOf(body_paths.boxes)) {
-      const TreePaths::Box &box_paths = body_paths.boxes[box_index];
+    {
+      bool found_description = false;
 
-      if (startsWith(path, box_paths.path)) {
-        if (path == box_paths.path) {
-          description.type = ItemType::box;
-        }
+      DescribeGeometry
+        describe_geometry({
+          found_description,
+            body_paths,
+            path,
+            description,
+            body_index
+        });
 
+      forEachBodyGeometry(scene_state.body(body_index), describe_geometry);
+
+      if (found_description) {
         description.maybe_body_index = body_index;
-        description.maybe_box_index = box_index;
-        return description;
-      }
-    }
-
-    for (auto mesh_index : indicesOf(body_paths.meshes)) {
-      const TreePaths::Mesh &mesh_paths = body_paths.meshes[mesh_index];
-
-      if (startsWith(path, mesh_paths.path)) {
-        if (path == mesh_paths.path) {
-          description.type = ItemType::mesh;
-        }
-
-        description.maybe_body_index = body_index;
-        description.maybe_mesh_index = mesh_index;
-        return description;
-      }
-    }
-
-    for (auto line_index : indicesOf(body_paths.lines)) {
-      const TreePaths::Line &line_paths = body_paths.lines[line_index];
-
-      if (startsWith(path, line_paths.path)) {
-        if (path == line_paths.path) {
-          description.type = ItemType::line;
-        }
-
-        description.maybe_body_index = body_index;
-        description.maybe_line_index = line_index;
         return description;
       }
     }
@@ -2011,7 +2099,7 @@ auto
 ObservedScene::describePath(const TreePath &path) const
 -> TreeItemDescription
 {
-  return Impl::describePath(path, tree_paths);
+  return Impl::describePath(path, tree_paths, scene_state);
 }
 
 

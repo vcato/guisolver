@@ -12,6 +12,7 @@
 #include "vec3state.hpp"
 #include "xyzcomponent.hpp"
 #include "channel.hpp"
+#include "emplaceinto.hpp"
 
 using std::cerr;
 using std::string;
@@ -1353,6 +1354,64 @@ struct BodyItemCreator : BodyItemVisitor {
 }
 
 
+namespace {
+struct GeometryCreatorParams {
+  ItemAdder &adder;
+  TreePaths::Body &body_paths;
+  TreeWidget &tree_widget;
+  const BodyState &body_state;
+};
+}
+
+
+namespace {
+struct GeometryCreator : GeometryVisitor, GeometryCreatorParams {
+  using Params = GeometryCreatorParams;
+
+  GeometryCreator(Params params) : Params(params) {}
+
+  void visitBox(BoxIndex i) override
+  {
+    TreePath box_path = childPath(adder.parent_path, adder.n_children);
+
+    emplaceInto(
+      body_paths.boxes,
+      i,
+      createBoxItem(box_path, tree_widget, body_state.boxes[i])
+    );
+
+    ++adder.n_children;
+  }
+
+  void visitLine(LineIndex i) override
+  {
+    TreePath line_path = childPath(adder.parent_path, adder.n_children);
+
+    emplaceInto(
+      body_paths.lines,
+      i,
+      createLineItem(line_path, tree_widget, body_state.lines[i])
+    );
+
+    ++adder.n_children;
+  }
+
+  void visitMesh(MeshIndex i) override
+  {
+    TreePath mesh_path = childPath(adder.parent_path, adder.n_children);
+
+    emplaceInto(
+      body_paths.meshes,
+      i,
+      createMeshItem(mesh_path, tree_widget, body_state.meshes[i])
+    );
+
+    ++adder.n_children;
+  }
+};
+}
+
+
 static TreePaths::Body
 createBodyItem(
   const TreePath &body_path,
@@ -1367,41 +1426,14 @@ createBodyItem(
   body_paths.path = body_path;
   forEachBodyProperty(BodyItemCreator{body_paths, adder, body_state});
 
-  size_t n_boxes = body_state.boxes.size();
-  body_paths.boxes.resize(n_boxes);
+  GeometryCreator geometry_creator({
+    adder,
+    body_paths,
+    tree_widget,
+    body_state
+  });
 
-  for (size_t i=0; i!=n_boxes; ++i) {
-    TreePath box_path = childPath(adder.parent_path, adder.n_children);
-
-    body_paths.boxes[i] =
-      createBoxItem(box_path, tree_widget, body_state.boxes[i]);
-
-    ++adder.n_children;
-  }
-
-  size_t n_lines = body_state.lines.size();
-  body_paths.lines.resize(n_lines);
-
-  for (size_t i=0; i!=n_lines; ++i) {
-    TreePath line_path = childPath(adder.parent_path, adder.n_children);
-
-    body_paths.lines[i] =
-      createLineItem(line_path, tree_widget, body_state.lines[i]);
-
-    ++adder.n_children;
-  }
-
-  size_t n_meshes = body_state.meshes.size();
-  body_paths.meshes.resize(n_meshes);
-
-  for (size_t i=0; i!=n_meshes; ++i) {
-    TreePath mesh_path = childPath(adder.parent_path, adder.n_children);
-
-    body_paths.meshes[i] =
-      createMeshItem(mesh_path, tree_widget, body_state.meshes[i]);
-
-    ++adder.n_children;
-  }
+  forEachBodyGeometry(body_state, geometry_creator);
 
   return body_paths;
 }
@@ -1755,6 +1787,60 @@ struct BodyPropertyUpdator {
 }
 
 
+namespace {
+struct TreeGeometryUpdaterParams {
+  const TreePaths::Body &body_paths;
+  const SceneState::Body &body_state;
+  TreeWidget &tree_widget;
+};
+}
+
+
+namespace {
+struct TreeGeometryUpdater : GeometryVisitor, TreeGeometryUpdaterParams {
+  using Params = TreeGeometryUpdaterParams;
+
+  TreeGeometryUpdater(Params params) : Params(params) {}
+
+  void visitBox(BoxIndex i) override
+  {
+    const BoxPaths &box_paths = body_paths.boxes[i];
+    const SceneState::Box &box_state = body_state.boxes[i];
+    {
+      const TreePaths::XYZChannels &scale_paths = box_paths.scale;
+      const SceneState::XYZ &scale = box_state.scale;
+      updateXYZValues(tree_widget, scale_paths, vec3FromXYZState(scale));
+    }
+    {
+      const TreePaths::XYZChannels &center_paths = box_paths.center;
+      const SceneState::XYZ &center = box_state.center;
+      updateXYZValues(tree_widget, center_paths, vec3FromXYZState(center));
+    }
+  }
+
+  void visitLine(LineIndex) override
+  {
+  }
+
+  void visitMesh(MeshIndex i) override
+  {
+    const MeshPaths &mesh_paths = body_paths.meshes[i];
+    const SceneState::Mesh &mesh_state = body_state.meshes[i];
+    {
+      const TreePaths::XYZ &scale_paths = mesh_paths.scale;
+      const SceneState::XYZ &scale = mesh_state.scale;
+      updateXYZValues(tree_widget, scale_paths, vec3FromXYZState(scale));
+    }
+    {
+      const TreePaths::XYZ &center_paths = mesh_paths.center;
+      const SceneState::XYZ &center = mesh_state.center;
+      updateXYZValues(tree_widget, center_paths, vec3FromXYZState(center));
+    }
+  }
+};
+}
+
+
 static void
 updateBody(
   TreeWidget &tree_widget,
@@ -1776,35 +1862,13 @@ updateBody(
 
   assert(body_paths.boxes.size() == body_state.boxes.size());
 
-  for (auto i : indicesOf(body_state.boxes)) {
-    const BoxPaths &box_paths = body_paths.boxes[i];
-    const SceneState::Box &box_state = body_state.boxes[i];
-    {
-      const TreePaths::XYZChannels &scale_paths = box_paths.scale;
-      const SceneState::XYZ &scale = box_state.scale;
-      updateXYZValues(tree_widget, scale_paths, vec3FromXYZState(scale));
-    }
-    {
-      const TreePaths::XYZChannels &center_paths = box_paths.center;
-      const SceneState::XYZ &center = box_state.center;
-      updateXYZValues(tree_widget, center_paths, vec3FromXYZState(center));
-    }
-  }
+  TreeGeometryUpdater tree_geometry_updater({
+    body_paths,
+    body_state,
+    tree_widget
+  });
 
-  for (auto i : indicesOf(body_state.meshes)) {
-    const MeshPaths &mesh_paths = body_paths.meshes[i];
-    const SceneState::Mesh &mesh_state = body_state.meshes[i];
-    {
-      const TreePaths::XYZ &scale_paths = mesh_paths.scale;
-      const SceneState::XYZ &scale = mesh_state.scale;
-      updateXYZValues(tree_widget, scale_paths, vec3FromXYZState(scale));
-    }
-    {
-      const TreePaths::XYZ &center_paths = mesh_paths.center;
-      const SceneState::XYZ &center = mesh_state.center;
-      updateXYZValues(tree_widget, center_paths, vec3FromXYZState(center));
-    }
-  }
+  forEachBodyGeometry(body_state, tree_geometry_updater);
 }
 
 
