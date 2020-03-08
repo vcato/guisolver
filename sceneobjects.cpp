@@ -495,6 +495,24 @@ updateLineInScene(
 
 
 static void
+updateMeshInScene(
+  Scene &scene,
+  const SceneState::Mesh &mesh_state,
+  const SceneHandles::Mesh &mesh_handles,
+  SceneState::Float body_global_scale
+)
+{
+  scene.setGeometryScale(
+    mesh_handles.handle, vec3FromXYZState(mesh_state.scale) * body_global_scale
+  );
+
+  scene.setGeometryCenter(
+    mesh_handles.handle, vec3FromXYZState(mesh_state.center) * body_global_scale
+  );
+}
+
+
+static void
 updateBodyInScene(
   Scene &scene,
   BodyIndex body_index,
@@ -522,20 +540,23 @@ updateBodyInScene(
   );
 
   assert(body_handles.boxes.size() == body_state.boxes.size());
-  BoxIndex n_boxes = body_state.boxes.size();
 
-  for (BoxIndex box_index = 0; box_index != n_boxes; ++box_index) {
+  for (auto box_index : indicesOf(body_state.boxes)) {
     const SceneHandles::Box &box_handles = body_handles.boxes[box_index];
     const SceneState::Box &box_state = body_state.boxes[box_index];
     updateBoxInScene(scene, box_state, box_handles, body_global_scale);
   }
 
-  LineIndex n_lines = body_state.lines.size();
-
-  for (LineIndex line_index = 0; line_index != n_lines; ++line_index) {
+  for (auto line_index : indicesOf(body_state.lines)) {
     const SceneHandles::Line &line_handles = body_handles.lines[line_index];
     const SceneState::Line &line_state = body_state.lines[line_index];
     updateLineInScene(scene, line_state, line_handles, body_global_scale);
+  }
+
+  for (auto mesh_index : indicesOf(body_state.meshes)) {
+    const SceneHandles::Mesh &mesh_handles = body_handles.meshes[mesh_index];
+    const SceneState::Mesh &mesh_state = body_state.meshes[mesh_index];
+    updateMeshInScene(scene, mesh_state, mesh_handles, body_global_scale);
   }
 }
 
