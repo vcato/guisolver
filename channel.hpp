@@ -5,57 +5,129 @@
 #include "sceneelements.hpp"
 
 
+template <typename Parent>
+struct ElementXYZComponent {
+  Parent parent;
+  XYZComponent component;
+};
+
+
 struct BodyXYZComponent {
-  BodyIndex body_index;
+  Body body;
   XYZComponent component;
 
-  BodyXYZComponent(BodyIndex body_index, XYZComponent component)
-  : body_index(body_index),
+  BodyXYZComponent(Body body, XYZComponent component)
+  : body(body),
     component(component)
   {
   }
 };
 
 
-struct BodyTranslationComponent : BodyXYZComponent {
-  using BodyXYZComponent::BodyXYZComponent;
+struct BodyTranslation {
+  Body body;
 };
 
 
-struct BodyRotationComponent : BodyXYZComponent {
-  using BodyXYZComponent::BodyXYZComponent;
+struct BodyRotation {
+  Body body;
 };
 
 
 struct BodyScale {
-  BodyIndex body_index;
+  Body body;
 };
 
 
-struct BodyBoxScaleComponent : BodyXYZComponent {
-  BoxIndex box_index;
-
-  BodyBoxScaleComponent(
-    BodyIndex body_index, BoxIndex box_index, XYZComponent component
-  )
-  : BodyXYZComponent(body_index, component),
-    box_index(box_index)
-  {
-  }
+struct BodyBoxScale {
+  BodyBox body_box;
 };
 
 
-struct BodyBoxCenterComponent : BodyXYZComponent {
-  BoxIndex box_index;
+using BodyTranslationComponent = ElementXYZComponent<BodyTranslation>;
+using BodyRotationComponent = ElementXYZComponent<BodyRotation>;
+using BodyBoxScaleComponent = ElementXYZComponent<BodyBoxScale>;
 
-  BodyBoxCenterComponent(
-    BodyIndex body_index, BoxIndex box_index, XYZComponent component
-  )
-  : BodyXYZComponent(body_index, component),
-    box_index(box_index)
-  {
-  }
+
+inline Body bodyOf(BodyTranslation arg)
+{
+  return arg.body;
+}
+
+
+inline Body bodyOf(BodyRotation arg)
+{
+  return arg.body;
+}
+
+
+inline Body bodyOf(BodyScale arg)
+{
+  return arg.body;
+}
+
+
+inline Body bodyOf(BodyBox arg)
+{
+  return arg.body;
+}
+
+
+template <typename Parent>
+inline Body bodyOf(ElementXYZComponent<Parent> arg)
+{
+  return bodyOf(arg.parent);
+}
+
+
+inline Body bodyOf(BodyBoxScale arg)
+{
+  return bodyOf(arg.body_box);
+}
+
+
+inline BodyBox bodyBoxOf(BodyBoxScale arg)
+{
+  return arg.body_box;
+}
+
+
+inline BodyTranslationComponent
+bodyTranslationComponent(BodyIndex body_index, XYZComponent component)
+{
+  return
+    BodyTranslationComponent{
+      BodyTranslation{Body(body_index)},
+      component
+    };
+}
+
+
+struct BodyBoxCenter {
+  BodyBox body_box;
 };
+
+
+using BodyBoxCenterComponent = ElementXYZComponent<BodyBoxCenter>;
+
+
+inline BodyBox bodyBoxOf(BodyBoxCenter arg)
+{
+  return arg.body_box;
+}
+
+
+inline Body bodyOf(BodyBoxCenter arg)
+{
+  return bodyOf(arg.body_box);
+}
+
+
+template <typename Parent>
+inline BodyBox bodyBoxOf(ElementXYZComponent<Parent> arg)
+{
+  return bodyBoxOf(arg.parent);
+}
 
 
 struct MarkerPositionComponent {

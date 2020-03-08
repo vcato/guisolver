@@ -99,7 +99,7 @@ solveStatePtr(
   SceneState &scene_state
 )
 {
-  auto &body_state = scene_state.body(element.body_index);
+  auto &body_state = scene_state.body(bodyOf(element).index);
   auto &body_solve_flags = body_state.solve_flags;
   auto &xyz_solve_flags = body_solve_flags.translation;
   return xyzSolveStateComponentPtr(xyz_solve_flags, element.component);
@@ -113,7 +113,7 @@ solveStatePtr(
   SceneState &scene_state
 )
 {
-  auto &body_state = scene_state.body(element.body_index);
+  auto &body_state = scene_state.body(bodyOf(element).index);
   auto &body_solve_flags = body_state.solve_flags;
   auto &xyz_solve_flags = body_solve_flags.rotation;
   return xyzSolveStateComponentPtr(xyz_solve_flags, element.component);
@@ -127,7 +127,7 @@ solveStatePtr(
   SceneState &scene_state
 )
 {
-  auto &body_state = scene_state.body(element.body_index);
+  auto &body_state = scene_state.body(element.body.index);
   return &body_state.solve_flags.scale;
 }
 
@@ -194,21 +194,21 @@ solvePath(const TreePath &path, const TreePaths &tree_paths)
 
     void visit(const BodyTranslationComponent &element) const override
     {
-      auto &body_paths = tree_paths.body(element.body_index);
+      auto &body_paths = tree_paths.body(bodyOf(element).index);
       BodyValueVisitor body_visitor{body_paths, tree_path_ptr};
       body_visitor.visitTranslationComponent(element.component);
     }
 
     void visit(const BodyRotationComponent &element) const override
     {
-      auto &body_paths = tree_paths.body(element.body_index);
+      auto &body_paths = tree_paths.body(bodyOf(element).index);
       BodyValueVisitor body_visitor{body_paths, tree_path_ptr};
       body_visitor.visitRotationComponent(element.component);
     }
 
     void visit(const BodyScale &element) const override
     {
-      auto &body_paths = tree_paths.body(element.body_index);
+      auto &body_paths = tree_paths.body(element.body.index);
       BodyValueVisitor body_visitor{body_paths, tree_path_ptr};
       body_visitor.visitScale();
     }
@@ -1108,7 +1108,7 @@ channelValue(
     {
       value_ptr = &
         scene_state
-          .body(channel.body_index)
+          .body(bodyOf(channel).index)
           .transform
           .translation
           .component(channel.component);
@@ -1118,7 +1118,7 @@ channelValue(
     {
       value_ptr = &
         scene_state
-          .body(channel.body_index)
+          .body(bodyOf(channel).index)
           .transform
           .rotation
           .component(channel.component);
@@ -1128,7 +1128,7 @@ channelValue(
     {
       value_ptr = &
         scene_state
-          .body(channel.body_index)
+          .body(channel.body.index)
           .transform
           .scale;
     }
@@ -1137,8 +1137,8 @@ channelValue(
     {
       value_ptr = &
         scene_state
-          .body(channel.body_index)
-          .boxes[channel.box_index]
+          .body(bodyOf(channel).index)
+          .boxes[bodyBoxOf(channel).index]
           .scale
           .component(channel.component);
     }
@@ -1147,8 +1147,8 @@ channelValue(
     {
       value_ptr = &
         scene_state
-          .body(channel.body_index)
-          .boxes[channel.box_index]
+          .body(bodyOf(channel).index)
+          .boxes[bodyBoxOf(channel).index]
           .center
           .component(channel.component);
     }
@@ -1188,22 +1188,23 @@ static void
 forEachChannel(const SceneState &scene_state, const F &f)
 {
   for (BodyIndex body_index : indicesOf(scene_state.bodies())) {
-    f(BodyTranslationChannel{body_index, XYZComponent::x});
-    f(BodyTranslationChannel{body_index, XYZComponent::y});
-    f(BodyTranslationChannel{body_index, XYZComponent::z});
-    f(BodyRotationChannel{body_index, XYZComponent::x});
-    f(BodyRotationChannel{body_index, XYZComponent::y});
-    f(BodyRotationChannel{body_index, XYZComponent::z});
+    f(BodyTranslationChannel{{body_index, XYZComponent::x}});
+    f(BodyTranslationChannel{{body_index, XYZComponent::y}});
+    f(BodyTranslationChannel{{body_index, XYZComponent::z}});
+    f(BodyRotationChannel{{body_index, XYZComponent::x}});
+    f(BodyRotationChannel{{body_index, XYZComponent::y}});
+    f(BodyRotationChannel{{body_index, XYZComponent::z}});
     f(BodyScaleChannel(BodyScale{body_index}));
     BoxIndex n_boxes = scene_state.bodies()[body_index].boxes.size();
 
     for (BoxIndex box_index = 0; box_index != n_boxes; ++box_index) {
-      f(BodyBoxScaleChannel{body_index, box_index, XYZComponent::x});
-      f(BodyBoxScaleChannel{body_index, box_index, XYZComponent::y});
-      f(BodyBoxScaleChannel{body_index, box_index, XYZComponent::z});
-      f(BodyBoxCenterChannel{body_index, box_index, XYZComponent::x});
-      f(BodyBoxCenterChannel{body_index, box_index, XYZComponent::y});
-      f(BodyBoxCenterChannel{body_index, box_index, XYZComponent::z});
+      BodyBox body_box{body_index, box_index};
+      f(BodyBoxScaleChannel{{body_box, XYZComponent::x}});
+      f(BodyBoxScaleChannel{{body_box, XYZComponent::y}});
+      f(BodyBoxScaleChannel{{body_box, XYZComponent::z}});
+      f(BodyBoxCenterChannel{{body_box, XYZComponent::x}});
+      f(BodyBoxCenterChannel{{body_box, XYZComponent::y}});
+      f(BodyBoxCenterChannel{{body_box, XYZComponent::z}});
     }
   }
 
@@ -2019,10 +2020,14 @@ ObservedScene::handleTreeNumericValueChanged(
       }
     }
 
+    // If we've change a position in a mesh, we don't want to be updating
+    // the positions of all the meshes in the scene.  We need to be more
+    // specific.  This implies having some way of referncing what we changed
+    // so that we can be more selective.
     observed_scene.handleSceneStateChanged();
   }
   else {
-    cerr << "Handling spin_box_item_value_changed_function\n";
+    cerr << "handleTreeNumericValueChanged: unknown path\n";
     cerr << "  path: " << path << "\n";
     cerr << "  value: " << value << "\n";
   }

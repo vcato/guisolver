@@ -2012,22 +2012,22 @@ setTreeBoolValue(
 
 
 namespace {
-struct NumericComponentVisitor {
-  virtual bool visitComponent(NumericValue &value_to_set) = 0;
+struct NumericValueVisitor {
+  virtual bool visit(NumericValue &value_to_set) = 0;
 };
 }
 
 
 namespace {
-struct SetNumericComponentVisitor : NumericComponentVisitor {
+struct SetNumericValueVisitor : NumericValueVisitor {
   const NumericValue value;
 
-  SetNumericComponentVisitor(NumericValue value)
+  SetNumericValueVisitor(NumericValue value)
   : value(value)
   {
   }
 
-  bool visitComponent(NumericValue &value_to_set) override
+  bool visit(NumericValue &value_to_set) override
   {
     value_to_set = value;
     return true;
@@ -2066,15 +2066,15 @@ matchingComponent(
 
 static bool
 visitComponentOf(
-  NumericComponentVisitor &visitor,
+  NumericValueVisitor &visitor,
   XYZComponent component,
   SceneState::XYZ &v
 )
 {
   switch (component) {
-    case XYZComponent::x: return visitor.visitComponent(v.x);
-    case XYZComponent::y: return visitor.visitComponent(v.y);
-    case XYZComponent::z: return visitor.visitComponent(v.z);
+    case XYZComponent::x: return visitor.visit(v.x);
+    case XYZComponent::y: return visitor.visit(v.y);
+    case XYZComponent::z: return visitor.visit(v.z);
   }
 
   assert(false); // not implemented
@@ -2088,7 +2088,7 @@ forMatchingComponent(
   SceneState::XYZ &xyz_state,
   const TreePath &path,
   const TreePaths::BasicXYZ<Component> &xyz_path,
-  NumericComponentVisitor &visitor
+  NumericValueVisitor &visitor
 )
 {
   XYZComponent component = matchingComponent(path, xyz_path);
@@ -2107,7 +2107,7 @@ struct SceneElementVisitor {
   virtual bool visitBodyRotation(BodyIndex) { return false; }
   virtual bool visitBodyBox(BodyIndex, BoxIndex) { return false; }
   virtual bool visitBodyLine(BodyIndex, LineIndex) { return false; }
-  virtual bool visitBodyMesh(BodyIndex, MeshIndex) { return false; }
+  virtual bool visitBodyMesh(BodyMesh) { return false; }
   virtual bool visitMarkerName(MarkerIndex) { return false; }
 };
 }
@@ -2232,7 +2232,7 @@ struct ScenePathVisitor : SceneElementVisitor {
 
     for (MeshIndex mesh_index = 0; mesh_index != n_meshes; ++mesh_index) {
       if (startsWith(path, body_paths.meshes[mesh_index].path)) {
-        return visitBodyMesh(body_index, mesh_index);
+        return visitBodyMesh(BodyMesh{body_index, mesh_index});
       }
     }
 
@@ -2378,11 +2378,11 @@ struct SetStringValueVisitor : ScenePathVisitor {
 
 
 namespace {
-struct SetNumericValueVisitor : ScenePathVisitor {
+struct SceneNumericElementVisitor : ScenePathVisitor {
   SceneState &scene_state;
-  SetNumericComponentVisitor visitor;
+  SetNumericValueVisitor visitor;
 
-  SetNumericValueVisitor(
+  SceneNumericElementVisitor(
     SceneState &scene_state,
     const TreePaths &tree_paths,
     const TreePath &path,
@@ -2475,8 +2475,31 @@ struct SetNumericValueVisitor : ScenePathVisitor {
     return false;
   }
 
-  bool visitBodyMesh(BodyIndex body_index, MeshIndex mesh_index) override
+  bool visitBodyMeshPositions(BodyMesh body_mesh)
   {
+    BodyIndex body_index = body_mesh.body.index;
+    MeshIndex mesh_index = body_mesh.index;
+    const TreePaths::Body &body_paths = tree_paths.body(body_index);
+    const MeshPaths &mesh_paths = body_paths.meshes[mesh_index];
+    SceneState::Body &body_state = scene_state.body(body_index);
+
+    for (auto i : indicesOf(mesh_paths.positions.elements)) {
+      const TreePaths::XYZ &position_paths = mesh_paths.positions.elements[i];
+      auto &position_state = body_state.meshes[mesh_index].shape.positions[i];
+
+      if (startsWith(path, position_paths.path)) {
+        return
+          forMatchingComponent(position_state, path, position_paths, visitor);
+      }
+    }
+
+    return false;
+  }
+
+  bool visitBodyMesh(BodyMesh body_mesh) override
+  {
+    BodyIndex body_index = body_mesh.body.index;
+    MeshIndex mesh_index = body_mesh.index;
     SceneState::Body &body_state = scene_state.body(body_index);
     const TreePaths::Body &body_paths = tree_paths.body(body_index);
     const MeshPaths &mesh_paths = body_paths.meshes[mesh_index];
@@ -2494,6 +2517,10 @@ struct SetNumericValueVisitor : ScenePathVisitor {
         forMatchingComponent(
           mesh_state.center, path, mesh_paths.center, visitor
         );
+    }
+
+    if (startsWith(path, mesh_paths.positions.path)) {
+      return visitBodyMeshPositions(body_mesh);
     }
 
     return false;
@@ -2544,6 +2571,58 @@ struct SetNumericValueVisitor : ScenePathVisitor {
 }
 
 
+static BodyRotationComponent
+bodyRotationComponent(BodyIndex body_index, XYZComponent component)
+{
+  return
+    BodyRotationComponent{
+      BodyRotation{Body(body_index)},
+      component
+    };
+}
+
+
+static BodyBoxScaleComponent
+bodyBoxScaleComponent(
+  BodyIndex body_index, BoxIndex box_index, XYZComponent component
+)
+{
+  return
+    ElementXYZComponent<BodyBoxScale>{
+      BodyBoxScale{BodyBox(Body(body_index), box_index)},
+      component
+    };
+}
+
+
+static BodyTranslationChannel
+bodyTranslationChannel(BodyIndex body_index, XYZComponent component)
+{
+  return
+    BodyTranslationChannel(bodyTranslationComponent(body_index, component));
+}
+
+
+static BodyRotationChannel
+bodyRotationChannel(BodyIndex body_index, XYZComponent component)
+{
+  return
+    BodyRotationChannel(bodyRotationComponent(body_index, component));
+}
+
+
+static BodyBoxScaleChannel
+bodyBoxScaleChannel(
+  BodyIndex body_index, BoxIndex box_index, XYZComponent component
+)
+{
+  return
+    BodyBoxScaleChannel(
+      bodyBoxScaleComponent(body_index, box_index, component)
+    );
+}
+
+
 namespace {
 struct PathChannelVisitor : ScenePathVisitor {
   const std::function<void(const Channel &)> &channel_function;
@@ -2570,7 +2649,7 @@ struct PathChannelVisitor : ScenePathVisitor {
     XYZComponent component
   ) override
   {
-    visitChannel(BodyBoxScaleChannel(body_index, box_index, component));
+    visitChannel(bodyBoxScaleChannel(body_index, box_index, component));
     return true;
   }
 
@@ -2580,7 +2659,7 @@ struct PathChannelVisitor : ScenePathVisitor {
     XYZComponent component
   ) override
   {
-    visitChannel(BodyTranslationChannel(body_index, component));
+    visitChannel(bodyTranslationChannel(body_index, component));
     return true;
   }
 
@@ -2590,7 +2669,7 @@ struct PathChannelVisitor : ScenePathVisitor {
     XYZComponent component
   ) override
   {
-    visitChannel(BodyRotationChannel(body_index, component));
+    visitChannel(bodyRotationChannel(body_index, component));
     return true;
   }
 };
@@ -2644,7 +2723,7 @@ setSceneStateNumericValue(
   const TreePaths &tree_paths
 )
 {
-  SetNumericValueVisitor visitor = {scene_state, tree_paths, path, value};
+  SceneNumericElementVisitor visitor = {scene_state, tree_paths, path, value};
   return forMatchingScenePath(path, visitor, tree_paths);
 }
 
@@ -2733,7 +2812,7 @@ struct SolvableScenePathVisitor : ScenePathVisitor {
     BodyIndex body_index, XYZComponent component
   ) override
   {
-    value_visitor.visit(BodyTranslationComponent(body_index, component));
+    value_visitor.visit(bodyTranslationComponent(body_index, component));
     return true;
   }
 
@@ -2742,7 +2821,7 @@ struct SolvableScenePathVisitor : ScenePathVisitor {
     BodyIndex body_index, XYZComponent component
   ) override
   {
-    value_visitor.visit(BodyRotationComponent(body_index, component));
+    value_visitor.visit(bodyRotationComponent(body_index, component));
     return true;
   }
 
@@ -2788,7 +2867,7 @@ channelPaths(
     void visit(const BodyTranslationChannel &channel) const override
     {
       channel_paths_ptr = &
-        tree_paths.body(channel.body_index)
+        tree_paths.body(bodyOf(channel).index)
         .translation
         .component(channel.component);
     }
@@ -2796,7 +2875,7 @@ channelPaths(
     void visit(const BodyRotationChannel &channel) const override
     {
       channel_paths_ptr = &
-        tree_paths.body(channel.body_index)
+        tree_paths.body(bodyOf(channel).index)
         .rotation
         .component(channel.component);
     }
@@ -2804,7 +2883,7 @@ channelPaths(
     void visit(const BodyScaleChannel &channel) const override
     {
       channel_paths_ptr = &
-        tree_paths.body(channel.body_index)
+        tree_paths.body(bodyOf(channel).index)
         .scale;
     }
 
@@ -2812,8 +2891,8 @@ channelPaths(
     {
       channel_paths_ptr = &
         tree_paths
-          .body(channel.body_index)
-          .boxes[channel.box_index]
+          .body(bodyOf(channel).index)
+          .boxes[bodyBoxOf(channel).index]
           .scale
           .component(channel.component);
     }
@@ -2822,8 +2901,8 @@ channelPaths(
     {
       channel_paths_ptr = &
         tree_paths
-          .body(channel.body_index)
-          .boxes[channel.box_index]
+          .body(bodyOf(channel).index)
+          .boxes[bodyBoxOf(channel).index]
           .center
           .component(channel.component);
     }

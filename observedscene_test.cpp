@@ -221,6 +221,19 @@ checkChannelTreeExpression(
 }
 
 
+static BodyBoxCenterComponent
+bodyBoxCenterComponent(
+  BodyIndex body_index, BoxIndex box_index, XYZComponent component
+)
+{
+  return
+    ElementXYZComponent<BodyBoxCenter>{
+      BodyBoxCenter{BodyBox(Body(body_index), box_index)},
+      component
+    };
+}
+
+
 static void testDuplicateBodyWhenTheBodyHasExpressions()
 {
   SceneState initial_state;
@@ -274,7 +287,9 @@ static void testDuplicateBodyWhenTheBodyHasExpressions()
     rx{{duplicate_body_index, XYZComponent::x}};
 
   BodyBoxCenterChannel
-    box_centerx{{duplicate_body_index, box_index, XYZComponent::x}};
+    box_centerx{
+      bodyBoxCenterComponent(duplicate_body_index, box_index, XYZComponent::x)
+    };
 
   assert(checkChannelTreeExpression(tx, test_expression, tester));
   assert(checkChannelTreeExpression(rx, test_expression, tester));
@@ -1252,7 +1267,11 @@ static void testSettingBodyTranslationExpression()
   BodyIndex body_index = initial_state.createBody();
   tester.observed_scene.replaceSceneStateWith(initial_state);
 
-  const Channel &channel = BodyTranslationChannel(body_index, XYZComponent::x);
+  const Channel &channel =
+    BodyTranslationChannel(
+      bodyTranslationComponent(body_index, XYZComponent::x)
+    );
+
   testSettingChannelExpression(channel, tester);
 }
 
@@ -1268,7 +1287,7 @@ static void testSettingBoxScaleExpression()
   tester.observed_scene.replaceSceneStateWith(initial_state);
 
   const Channel &channel =
-    BodyBoxScaleChannel(body_index, box_index, XYZComponent::x);
+    BodyBoxScaleChannel{{BodyBox{body_index, box_index}, XYZComponent::x}};
 
   testSettingChannelExpression(channel, tester);
 }

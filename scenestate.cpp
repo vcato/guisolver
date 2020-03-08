@@ -309,7 +309,7 @@ expression(const BodyTranslationComponent &element, SceneState &scene_state)
 {
   SceneState::XYZExpressions &translation_expressions =
     scene_state
-    .body(element.body_index)
+    .body(bodyOf(element).index)
     .expressions
     .translation;
 
@@ -322,7 +322,7 @@ expression(const BodyRotationComponent &element, SceneState &scene_state)
 {
   SceneState::XYZExpressions &translation_expressions =
     scene_state
-    .body(element.body_index)
+    .body(bodyOf(element).index)
     .expressions
     .rotation;
 
@@ -335,7 +335,7 @@ expression(const BodyScale &element, SceneState &scene_state)
 {
   return
     scene_state
-    .body(element.body_index)
+    .body(element.body.index)
     .expressions
     .scale;
 }
@@ -347,8 +347,8 @@ expression(const BodyBoxScaleComponent &element, SceneState &scene_state)
   return
     xyzExpressionsComponent(
       scene_state
-      .body(element.body_index)
-      .boxes[element.box_index]
+      .body(bodyOf(element).index)
+      .boxes[bodyBoxOf(element).index]
       .scale_expressions,
       element.component
     );
@@ -361,8 +361,8 @@ expression(const BodyBoxCenterComponent &element, SceneState &scene_state)
   return
     xyzExpressionsComponent(
       scene_state
-      .body(element.body_index)
-      .boxes[element.box_index]
+      .body(bodyOf(element).index)
+      .boxes[bodyBoxOf(element).index]
       .center_expressions,
       element.component
     );
