@@ -56,7 +56,7 @@ resolveBodyNameConflicts(BodyIndex body_index, SceneState &scene_state)
 
 
 static NumericValue
-  numericValueOr(
+  childNumericValueOr(
     const TaggedValue &tagged_value,
     const TaggedValue::Tag &child_name,
     NumericValue default_value
@@ -66,8 +66,44 @@ static NumericValue
 }
 
 
+static int intValueOr(const TaggedValue &tv, int /*default_value*/)
+{
+  const NumericValue *numeric_ptr = tv.value.maybeNumeric();
+
+  if (!numeric_ptr) {
+    assert(false); // not implemented
+  }
+  else {
+    NumericValue nv = *numeric_ptr;
+
+    if (int(nv) != nv) {
+      assert(false); // not implemented
+    }
+
+    return int(nv);
+  }
+}
+
+
+static int
+childIntValueOr(
+  const TaggedValue &tagged_value,
+  const string &tag,
+  int default_value
+)
+{
+  const TaggedValue *child_ptr = findChild(tagged_value, tag);
+
+  if (child_ptr) {
+    return intValueOr(*child_ptr, default_value);
+  }
+
+  return default_value;
+}
+
+
 static bool
-  boolValueOr(
+  childBoolValueOr(
     const TaggedValue &tagged_value,
     const TaggedValue::Tag &child_name,
     bool default_value
@@ -78,7 +114,7 @@ static bool
 
 
 static string
-  stringValueOr(
+  childStringValueOr(
     const TaggedValue &tagged_value,
     const TaggedValue::Tag &child_name,
     const string &default_value
@@ -90,9 +126,9 @@ static string
 
 static SceneState::XYZ xyzStateFromTaggedValue(const TaggedValue &tagged_value)
 {
-  NumericValue x = numericValueOr(tagged_value, "x", 0);
-  NumericValue y = numericValueOr(tagged_value, "y", 0);
-  NumericValue z = numericValueOr(tagged_value, "z", 0);
+  NumericValue x = childNumericValueOr(tagged_value, "x", 0);
+  NumericValue y = childNumericValueOr(tagged_value, "y", 0);
+  NumericValue z = childNumericValueOr(tagged_value, "z", 0);
 
   return {x,y,z};
 }
@@ -110,7 +146,7 @@ expressionFor(
     return "";
   }
 
-  return stringValueOr(*child_ptr, "expression", "");
+  return childStringValueOr(*child_ptr, "expression", "");
 }
 
 
@@ -164,7 +200,7 @@ solveFlagFor(
     assert(false); // not implemented
   }
 
-  return boolValueOr(*child_ptr, "solve", true);
+  return childBoolValueOr(*child_ptr, "solve", true);
 }
 
 
@@ -242,27 +278,10 @@ static SceneState::XYZ
   xyzValueOr(const TaggedValue &tv, const SceneState::XYZ &default_value)
 {
   SceneState::XYZ result;
-  result.x = numericValueOr(tv, "x", default_value.x);
-  result.y = numericValueOr(tv, "y", default_value.y);
-  result.z = numericValueOr(tv, "z", default_value.z);
+  result.x = childNumericValueOr(tv, "x", default_value.x);
+  result.y = childNumericValueOr(tv, "y", default_value.y);
+  result.z = childNumericValueOr(tv, "z", default_value.z);
   return result;
-}
-
-
-static int intValueOr(const TaggedValue &tv, int /*default_value*/)
-{
-  if (!tv.value.isNumeric()) {
-    assert(false); // not implemented
-  }
-  else {
-    NumericValue nv = tv.value.asNumeric();
-
-    if (int(nv) != nv) {
-      assert(false); // not implemented
-    }
-
-    return int(nv);
-  }
 }
 
 
@@ -374,8 +393,9 @@ createMarkersFromTaggedValues(
 }
 
 
+// This one
 static SceneState::XYZ
-xyzChildValueOr(
+childXYZValueOr(
   const TaggedValue &tagged_value,
   const string &tag,
   const SceneState::XYZ &default_value
@@ -385,23 +405,6 @@ xyzChildValueOr(
 
   if (child_ptr) {
     return xyzValueOr(*child_ptr, default_value);
-  }
-
-  return {default_value.x, default_value.y, default_value.z};
-}
-
-
-static int
-intChildValueOr(
-  const TaggedValue &tagged_value,
-  const string &tag,
-  int default_value
-)
-{
-  const TaggedValue *child_ptr = findChild(tagged_value, tag);
-
-  if (child_ptr) {
-    return intValueOr(*child_ptr, default_value);
   }
 
   return default_value;
@@ -428,19 +431,19 @@ fillBoxStateFromTaggedValue(
       SceneState::XYZ box_scale;
 
       box_scale.x =
-        numericValueOr(box_tagged_value, "scale_x", default_scale.x);
+        childNumericValueOr(box_tagged_value, "scale_x", default_scale.x);
 
       box_scale.y =
-        numericValueOr(box_tagged_value, "scale_y", default_scale.y);
+        childNumericValueOr(box_tagged_value, "scale_y", default_scale.y);
 
       box_scale.z =
-        numericValueOr(box_tagged_value, "scale_z", default_scale.z);
+        childNumericValueOr(box_tagged_value, "scale_z", default_scale.z);
 
       box_state.scale = box_scale;
     }
   }
 
-  box_state.center = xyzChildValueOr(box_tagged_value, "center", {0,0,0});
+  box_state.center = childXYZValueOr(box_tagged_value, "center", {0,0,0});
 
   box_state.center_expressions =
     makeXYZExpressionsFromTaggedValue(box_tagged_value, "center");
@@ -453,8 +456,8 @@ fillLineStateFromTaggedValue(
   const TaggedValue &line_tagged_value
 )
 {
-  line_state.start = xyzChildValueOr(line_tagged_value, "start", {0,0,0});
-  line_state.end = xyzChildValueOr(line_tagged_value, "end", {1,0,0});
+  line_state.start = childXYZValueOr(line_tagged_value, "start", {0,0,0});
+  line_state.end = childXYZValueOr(line_tagged_value, "end", {1,0,0});
 }
 
 
@@ -493,8 +496,8 @@ fillMeshStateFromTaggedValue(
 )
 {
   //printTaggedValueOn(cerr, mesh_tagged_value);
-  mesh_state.scale = xyzChildValueOr(mesh_tagged_value, "scale", {1,1,1});
-  mesh_state.center = xyzChildValueOr(mesh_tagged_value, "center", {0,0,0});
+  mesh_state.scale = childXYZValueOr(mesh_tagged_value, "scale", {1,1,1});
+  mesh_state.center = childXYZValueOr(mesh_tagged_value, "center", {0,0,0});
 
   const TaggedValue *positions_ptr = findChild(mesh_tagged_value, "positions");
   auto &positions_state = mesh_state.shape.positions;
@@ -525,9 +528,9 @@ fillMeshStateFromTaggedValue(
 
   for (auto &child_tagged_value : mesh_tagged_value.children) {
     if (child_tagged_value.tag == "Triangle") {
-      int v1 = intChildValueOr(child_tagged_value, "vertex1", 0);
-      int v2 = intChildValueOr(child_tagged_value, "vertex2", 0);
-      int v3 = intChildValueOr(child_tagged_value, "vertex3", 0);
+      int v1 = childIntValueOr(child_tagged_value, "vertex1", 0);
+      int v2 = childIntValueOr(child_tagged_value, "vertex2", 0);
+      int v3 = childIntValueOr(child_tagged_value, "vertex3", 0);
       int n_positions = positions_state.size();
 
       if (!isValidTriangle(v1, v2, v3, n_positions)) {

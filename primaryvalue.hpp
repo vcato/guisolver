@@ -45,26 +45,35 @@ struct PrimaryValuePolicy {
   }
 
   bool isVoid() const { return _type==void_type; }
-  bool isString() const { return _type==string_type; }
-  bool isNumeric() const { return _type==numeric_type; }
-  bool isEnumeration() const { return _type==enumeration_type; }
 
-  const std::string& asString() const
+  const std::string *maybeString() const
   {
-    assert(_type==string_type);
-    return _possible_values.string_value;
+    if (_type == string_type) {
+      return &_possible_values.string_value;
+    }
+    else {
+      return nullptr;
+    }
   }
 
-  const Enumeration &asEnumeration() const
+  const Enumeration *maybeEnumeration() const
   {
-    assert(_type==enumeration_type);
-    return _possible_values.enumeration_value;
+    if (_type == enumeration_type) {
+      return &_possible_values.enumeration_value;
+    }
+    else {
+      return nullptr;
+    }
   }
 
-  NumericValue asNumeric() const
+  const NumericValue *maybeNumeric() const
   {
-    assert(_type==numeric_type);
-    return _possible_values.numeric_value;
+    if (_type == numeric_type) {
+      return &_possible_values.numeric_value;
+    }
+    else {
+      return nullptr;
+    }
   }
 
   std::string typeName() const

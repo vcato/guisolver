@@ -204,5 +204,3 @@ Function {
 ---
 Need to to have the scale/center parameters for meshes actually affect the
 scene.
----
-Reduce duplication in methods like xyzChildValueOr/intChildValueOr

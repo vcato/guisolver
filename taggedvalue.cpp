@@ -30,11 +30,13 @@ findNumericValue(
     return {};
   }
 
-  if (!x_ptr->value.isNumeric()) {
-    return {};
+  const NumericValue *numeric_ptr = x_ptr->value.maybeNumeric();
+
+  if (numeric_ptr) {
+    return *numeric_ptr;
   }
 
-  return x_ptr->value.asNumeric();
+  return {};
 }
 
 
@@ -50,11 +52,13 @@ findBoolValue(
     return {};
   }
 
-  if (!x_ptr->value.isEnumeration()) {
+  const EnumerationValue *value_ptr = x_ptr->value.maybeEnumeration();
+
+  if (!value_ptr) {
     return {};
   }
 
-  const EnumerationValue &x = x_ptr->value.asEnumeration();
+  const EnumerationValue &x = *value_ptr;
 
   if (x.name == "false") {
     return false;
@@ -80,9 +84,12 @@ Optional<StringValue>
     return {};
   }
 
-  if (!x_ptr->value.isString()) {
+  const StringValue *string_ptr = x_ptr->value.maybeString();
+
+  if (string_ptr) {
+    return *string_ptr;
+  }
+  else {
     return {};
   }
-
-  return x_ptr->value.asString();
 }

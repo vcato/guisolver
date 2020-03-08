@@ -36,7 +36,6 @@ struct TaggedValue {
 extern const TaggedValue *
   findChild(const TaggedValue &tagged_value, const TaggedValue::Tag &tag);
 
-
 extern Optional<NumericValue>
   findNumericValue(
     const TaggedValue &tagged_value,
