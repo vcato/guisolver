@@ -232,13 +232,56 @@ struct MeshDataBuilder {
 
 
 namespace {
+struct Range {
+  float min = FLT_MAX, max = -FLT_MAX;
+};
+}
+
+
+static void expand(Range &range, float value)
+{
+  if (value < range.min) {
+    range.min = value;
+  }
+
+  if (value > range.max) {
+    range.max = value;
+  }
+}
+
+
+static osg::Vec3f calculateSize(const Mesh &mesh)
+{
+  Range x_range;
+  Range y_range;
+  Range z_range;
+
+  for (auto &position : mesh.positions) {
+    expand(x_range, position.x);
+    expand(y_range, position.y);
+    expand(z_range, position.z);
+  }
+
+  float x = std::max(-x_range.min, x_range.max);
+  float y = std::max(-y_range.min, y_range.max);
+  float z = std::max(-z_range.min, z_range.max);
+
+  return {x,y,z};
+}
+
+
+namespace {
 struct MeshDrawable : osg::Geometry {
+  osg::Vec3f color = osg::Vec3(1,1,1);
+  osg::Vec3f size = {1,1,1};
+
   void setup(const Mesh &mesh)
   {
     MeshDrawable &self = *this;
 
     osg::ref_ptr<osg::Vec3Array> points_ptr = new osg::Vec3Array;
     osg::ref_ptr<osg::Vec3Array> normals_ptr = new osg::Vec3Array;
+    osg::ref_ptr<osg::Vec3Array> colors_ptr = new osg::Vec3Array;
     MeshDataBuilder builder(mesh, *points_ptr, *normals_ptr);
     vector<unsigned short> indices;
 
@@ -248,12 +291,17 @@ struct MeshDrawable : osg::Geometry {
       indices.push_back(builder.index(triangle.v3));
     }
 
+    colors_ptr->push_back(color);
+
     self.setVertexArray(points_ptr.get());
     self.setNormalArray(normals_ptr.get(), osg::Array::BIND_PER_VERTEX);
+    self.setColorArray(colors_ptr.get(), osg::Array::BIND_OVERALL);
 
     self.addPrimitiveSet(
       new osg::DrawElementsUShort(GL_TRIANGLES, indices.begin(), indices.end())
     );
+
+    self.size = calculateSize(mesh);
   }
 };
 }
@@ -295,7 +343,14 @@ class OSGScene::SelectionHandler : public OSGSelectionHandler {
     void attachDragger(osg::MatrixTransform &, DraggerType);
     void attachTranslateDraggerToGeode(osg::Geode &);
     void attachTranslateDraggerToTransform(osg::MatrixTransform &);
-    void attachDraggerTo(osg::MatrixTransform &, DraggerType);
+
+    void
+      attachDraggerTo(
+        osg::MatrixTransform &,
+        DraggerType,
+        const osg::Vec3 &shape_size
+      );
+
     void attachRotateDraggerToGeode(osg::Geode &);
     void attachRotateDraggerToTransform(osg::MatrixTransform &);
     void attachScaleDraggerTo(osg::Geode &);
@@ -792,7 +847,8 @@ static Vec3 scale(const osg::MatrixTransform &transform)
 static osg::Matrix
 draggerMatrix(
   osg::MatrixTransform &transform_updating,
-  DraggerType dragger_type
+  DraggerType dragger_type,
+  osg::Vec3 shape_size
 )
 {
   osg::Matrix matrix = transform_updating.getMatrix();
@@ -802,7 +858,10 @@ draggerMatrix(
     osg::Quat rotation;
     osg::Vec3d scale;
     osg::Quat scale_orient;
-    matrix.decompose(translation,rotation,scale,scale_orient);
+    matrix.decompose(translation, rotation, scale, scale_orient);
+    scale.x() *= shape_size.x()*2;
+    scale.y() *= shape_size.y()*2;
+    scale.z() *= shape_size.z()*2;
 
     scale.x() += 0.1;
     scale.y() += 0.1;
@@ -822,7 +881,8 @@ static DraggerPtr
   createObjectRelativeDragger(
     osg::MatrixTransform &transform_updating,
     DraggerType dragger_type,
-    osgManipulator::DraggerCallback &dragger_callback
+    osgManipulator::DraggerCallback &dragger_callback,
+    const osg::Vec3 &shape_size
   )
 {
   DraggerPtr dragger_ptr;
@@ -836,7 +896,7 @@ static DraggerPtr
   switch (dragger_type) {
     case DraggerType::translate:
       {
-        TranslateDraggerPtr translate_dragger_ptr = new TranslateDragger();
+        TranslateDraggerPtr translate_dragger_ptr = new TranslateDragger;
         translate_dragger_ptr->setupDefaultGeometry();
         assert(translate_dragger_ptr->getNumChildren()==3);
         float thickness = 4;
@@ -848,8 +908,7 @@ static DraggerPtr
       break;
     case DraggerType::rotate:
       {
-        RotateDraggerPtr rotate_dragger_ptr = new RotateDragger();
-
+        RotateDraggerPtr rotate_dragger_ptr = new RotateDragger;
         rotate_dragger_ptr->setupDefaultGeometry();
         dragger_ptr = rotate_dragger_ptr;
       }
@@ -874,7 +933,11 @@ static DraggerPtr
 
     dragger.setHandleEvents(true);
     dragger.addTransformUpdating(&transform_updating, handle_command_mask);
-    dragger.setMatrix(draggerMatrix(transform_updating, dragger_type));
+
+    dragger.setMatrix(
+      draggerMatrix(transform_updating, dragger_type, shape_size)
+    );
+
     dragger.addDraggerCallback(&dragger_callback);
   }
 
@@ -887,7 +950,8 @@ static DraggerPtr
     osg::MatrixTransform& transform,
     bool screen_relative,
     DraggerType dragger_type,
-    osgManipulator::DraggerCallback &dragger_callback
+    osgManipulator::DraggerCallback &dragger_callback,
+    const osg::Vec3 &shape_size
   )
 {
   switch (dragger_type) {
@@ -899,7 +963,10 @@ static DraggerPtr
       else {
         return
           createObjectRelativeDragger(
-            transform, DraggerType::translate, dragger_callback
+            transform,
+            DraggerType::translate,
+            dragger_callback,
+            shape_size
           );
       }
     case DraggerType::rotate:
@@ -909,7 +976,10 @@ static DraggerPtr
       else {
         return
           createObjectRelativeDragger(
-            transform, DraggerType::rotate, dragger_callback
+            transform,
+            DraggerType::rotate,
+            dragger_callback,
+            shape_size
           );
       }
     case DraggerType::scale:
@@ -919,7 +989,10 @@ static DraggerPtr
       else {
         return
           createObjectRelativeDragger(
-            transform, DraggerType::scale, dragger_callback
+            transform,
+            DraggerType::scale,
+            dragger_callback,
+            shape_size
           );
       }
   }
@@ -934,7 +1007,8 @@ static void
     osg::MatrixTransform& body_transform,
     bool screen_relative,
     DraggerType dragger_type,
-    osgManipulator::DraggerCallback &dragger_callback
+    osgManipulator::DraggerCallback &dragger_callback,
+    const osg::Vec3 &shape_size
   )
 {
   // The hierarchy is changed like this:
@@ -955,7 +1029,11 @@ static void
 
   DraggerPtr dragger_ptr =
     createDragger(
-      body_transform, screen_relative, dragger_type, dragger_callback
+      body_transform,
+      screen_relative,
+      dragger_type,
+      dragger_callback,
+      shape_size
     );
 
   group_ptr->addChild(&body_transform);
@@ -1097,21 +1175,25 @@ static osg::Vec3f geodeColor(osg::Geode &geode)
   assert(drawable_ptr);
   osg::Drawable &drawable = *drawable_ptr;
 
-  osg::ShapeDrawable *shape_drawable_ptr =
-    dynamic_cast<osg::ShapeDrawable*>(&drawable);
+  auto *shape_drawable_ptr = dynamic_cast<osg::ShapeDrawable*>(&drawable);
 
   if (shape_drawable_ptr) {
     return vec3(shape_drawable_ptr->getColor());
   }
 
-  LineDrawable *geometry_ptr =
-    dynamic_cast<LineDrawable*>(&drawable);
+  auto *line_drawable_ptr = dynamic_cast<LineDrawable*>(&drawable);
 
-  if (geometry_ptr) {
-    return geometry_ptr->color;
+  if (line_drawable_ptr) {
+    return line_drawable_ptr->color;
   }
 
-  cerr << drawable.className() << "\n";
+  auto *mesh_drawable_ptr = dynamic_cast<MeshDrawable*>(&drawable);
+
+  if (mesh_drawable_ptr) {
+    return mesh_drawable_ptr->color;
+  }
+
+  cerr << "geodeColor: unknown drawable: " << drawable.className() << "\n";
 
   assert(false);
   return {0,0,0};
@@ -1222,7 +1304,8 @@ void OSGScene::SelectionHandler::removeExistingDraggers()
 void
 OSGScene::SelectionHandler::attachDraggerTo(
   osg::MatrixTransform &transform,
-  DraggerType dragger_type
+  DraggerType dragger_type,
+  const osg::Vec3 &shape_size
 )
 {
   osg::ref_ptr<osgManipulator::DraggerCallback> dc =
@@ -1232,8 +1315,23 @@ OSGScene::SelectionHandler::attachDraggerTo(
     transform,
     use_screen_relative_dragger,
     dragger_type,
-    *dc
+    *dc,
+    shape_size
   );
+}
+
+
+static osg::Vec3 shapeSize(const osg::Geode &geode)
+{
+  const osg::Drawable *drawable_ptr = geode.getDrawable(0);
+  assert(drawable_ptr);
+  auto *mesh_drawable_ptr = dynamic_cast<const MeshDrawable*>(drawable_ptr);
+
+  if (mesh_drawable_ptr) {
+    return mesh_drawable_ptr->size;
+  }
+
+  return {0.5, 0.5, 0.5};
 }
 
 
@@ -1248,7 +1346,9 @@ OSGScene::SelectionHandler::attachTranslateDraggerToGeode(
   osg::MatrixTransform &transform =
     bodyTransformOf(*_translate_dragger_geode_ptr);
 
-  attachDraggerTo(transform, DraggerType::translate);
+  attachDraggerTo(
+    transform, DraggerType::translate, shapeSize(new_selected_node)
+  );
 }
 
 
@@ -1259,7 +1359,7 @@ OSGScene::SelectionHandler::attachTranslateDraggerToTransform(
 {
   assert(!_translate_dragger_transform_ptr);
   _translate_dragger_transform_ptr = &transform;
-  attachDraggerTo(transform, DraggerType::translate);
+  attachDraggerTo(transform, DraggerType::translate, /*shape_size*/{1,1,1});
 }
 
 
@@ -1274,7 +1374,7 @@ OSGScene::SelectionHandler::attachRotateDraggerToGeode(
   osg::MatrixTransform &transform =
     bodyTransformOf(*_rotate_dragger_geode_ptr);
 
-  attachDraggerTo(transform, DraggerType::rotate);
+  attachDraggerTo(transform, DraggerType::rotate, /*shape_size*/{1,1,1});
 }
 
 
@@ -1285,7 +1385,7 @@ OSGScene::SelectionHandler::attachRotateDraggerToTransform(
 {
   assert(!_rotate_dragger_transform_ptr);
   _rotate_dragger_transform_ptr = &transform;
-  attachDraggerTo(transform, DraggerType::rotate);
+  attachDraggerTo(transform, DraggerType::rotate, /*shape_size*/{1,1,1});
 }
 
 
@@ -1308,7 +1408,8 @@ OSGScene::SelectionHandler::attachScaleDraggerTo(
       geometry_transform,
       use_screen_relative_dragger,
       DraggerType::scale,
-      *dc
+      *dc,
+      shapeSize(new_selected_node)
     );
 
   ::parentTransform(geometry_transform).addChild(dragger_ptr);
@@ -1330,27 +1431,24 @@ static void setColor(osg::MatrixTransform &node,const osg::Vec3f &vec)
 }
 
 
-static bool nodeIsLine(const osg::Geode &geode)
+static const LineDrawable* maybeGeodeLine(const osg::Geode &geode)
 {
   const osg::Drawable *drawable_ptr = geode.getDrawable(0);
-
-  const LineDrawable *line_drawable_ptr =
-    dynamic_cast<const LineDrawable*>(drawable_ptr);
-
-  if (!line_drawable_ptr) return false;
-  return true;
+  return dynamic_cast<const LineDrawable*>(drawable_ptr);
 }
 
 
-static bool nodeIsShape(osg::Geode &geode)
+static osg::ShapeDrawable* maybeGeodeShape(osg::Geode &geode)
 {
   osg::Drawable *drawable_ptr = geode.getDrawable(0);
+  return dynamic_cast<osg::ShapeDrawable*>(drawable_ptr);
+}
 
-  osg::ShapeDrawable *shape_drawable_ptr =
-    dynamic_cast<osg::ShapeDrawable*>(drawable_ptr);
 
-  if (!shape_drawable_ptr) return false;
-  return true;
+static MeshDrawable* maybeGeodeMesh(osg::Geode &geode)
+{
+  osg::Drawable *drawable_ptr = geode.getDrawable(0);
+  return dynamic_cast<MeshDrawable*>(drawable_ptr);
 }
 
 
@@ -1363,10 +1461,13 @@ void OSGScene::SelectionHandler::nodeClicked(osg::Node *new_selected_node_ptr)
 
     assert(geode_ptr);
 
-    if (nodeIsLine(*geode_ptr)) {
+    if (maybeGeodeLine(*geode_ptr)) {
       new_selected_geode_ptr = geode_ptr;
     }
-    else if (nodeIsShape(*geode_ptr)) {
+    else if (maybeGeodeShape(*geode_ptr)) {
+      new_selected_geode_ptr = geode_ptr;
+    }
+    else if (maybeGeodeMesh(*geode_ptr)) {
       new_selected_geode_ptr = geode_ptr;
     }
   }
@@ -1387,7 +1488,7 @@ void OSGScene::attachManipulatorToSelectedNode(DraggerType dragger_type)
 
 Optional<LineHandle> OSGScene::maybeLine(GeometryHandle handle) const
 {
-  if (nodeIsLine(Impl::geodeForHandle(*this, handle))) {
+  if (maybeGeodeLine(Impl::geodeForHandle(*this, handle))) {
     return LineHandle(handle);
   }
   else {
@@ -1402,10 +1503,11 @@ static osg::ref_ptr<osg::ShapeDrawable> createSphereDrawable()
 
   osg::ref_ptr<osg::TessellationHints> tesselation_hints_ptr =
     new osg::TessellationHints;
+
   tesselation_hints_ptr->setDetailRatio(1.0);
 
   osg::ref_ptr<osg::ShapeDrawable> drawable_ptr =
-    new osg::ShapeDrawable(sphere_ptr,tesselation_hints_ptr);
+    new osg::ShapeDrawable(sphere_ptr, tesselation_hints_ptr);
 
   return drawable_ptr;
 }
@@ -1684,9 +1786,10 @@ void
     osg::MatrixTransform &geometry_transform
   )
 {
-  if (scene.selectionHandler().selectedGeodePtr()) {
-    osg::Group &selected_geometry_transform =
-      parentOf(*scene.selectionHandler().selectedGeodePtr());
+  osg::Geode *selected_geode_ptr = scene.selectionHandler().selectedGeodePtr();
+
+  if (selected_geode_ptr) {
+    osg::Group &selected_geometry_transform = parentOf(*selected_geode_ptr);
 
     if (&geometry_transform == &selected_geometry_transform) {
       scene.selectionHandler().changeSelectedGeodeTo(nullptr);
@@ -2098,8 +2201,11 @@ void OSGScene::SelectionHandler::updateDraggerPosition()
     assert(_scale_dragger_ptr);
 
     _scale_dragger_ptr->setMatrix(
-      draggerMatrix(geometryTransformOf(*_scale_dragger_geode_ptr),
-      DraggerType::scale)
+      draggerMatrix(
+        geometryTransformOf(*_scale_dragger_geode_ptr),
+        DraggerType::scale,
+        shapeSize(*_scale_dragger_geode_ptr)
+      )
     );
   }
   else {

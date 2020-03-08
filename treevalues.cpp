@@ -1775,9 +1775,8 @@ updateBody(
   body_property_updator.visitScale();
 
   assert(body_paths.boxes.size() == body_state.boxes.size());
-  size_t n_boxes = body_state.boxes.size();
 
-  for (size_t i=0; i!=n_boxes; ++i) {
+  for (auto i : indicesOf(body_state.boxes)) {
     const BoxPaths &box_paths = body_paths.boxes[i];
     const SceneState::Box &box_state = body_state.boxes[i];
     {
@@ -1788,6 +1787,21 @@ updateBody(
     {
       const TreePaths::XYZChannels &center_paths = box_paths.center;
       const SceneState::XYZ &center = box_state.center;
+      updateXYZValues(tree_widget, center_paths, vec3FromXYZState(center));
+    }
+  }
+
+  for (auto i : indicesOf(body_state.meshes)) {
+    const MeshPaths &mesh_paths = body_paths.meshes[i];
+    const SceneState::Mesh &mesh_state = body_state.meshes[i];
+    {
+      const TreePaths::XYZ &scale_paths = mesh_paths.scale;
+      const SceneState::XYZ &scale = mesh_state.scale;
+      updateXYZValues(tree_widget, scale_paths, vec3FromXYZState(scale));
+    }
+    {
+      const TreePaths::XYZ &center_paths = mesh_paths.center;
+      const SceneState::XYZ &center = mesh_state.center;
       updateXYZValues(tree_widget, center_paths, vec3FromXYZState(center));
     }
   }

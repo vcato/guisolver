@@ -127,10 +127,9 @@ updateBodyStateFromBodyObjects(
     transformState(local_transform, body_state.transform.scale);
 
   assert(body_state.boxes.size() == body_handles.boxes.size());
-  size_t n_boxes = body_state.boxes.size();
   float body_global_scale = bodyGlobalScale(body_index, scene_state);
 
-  for (size_t box_index=0; box_index!=n_boxes; ++box_index) {
+  for (auto box_index : indicesOf(body_state.boxes)) {
     SceneState::Box &box_state = body_state.boxes[box_index];
     Scene::GeometryHandle box_handle = body_handles.boxes[box_index].handle;
 
@@ -140,6 +139,18 @@ updateBodyStateFromBodyObjects(
 
     box_state.scale = xyzStateFromVec3(new_box_scale);
     box_state.center = xyzStateFromVec3(scene.geometryCenter(box_handle));
+  }
+
+  for (auto mesh_index : indicesOf(body_state.meshes)) {
+    SceneState::Mesh &mesh_state = body_state.meshes[mesh_index];
+    Scene::GeometryHandle mesh_handle = body_handles.meshes[mesh_index].handle;
+
+    Vec3 new_mesh_scale =
+      scene.geometryScale(mesh_handle) *
+      (1 / body_global_scale);
+
+    mesh_state.scale = xyzStateFromVec3(new_mesh_scale);
+    mesh_state.center = xyzStateFromVec3(scene.geometryCenter(mesh_handle));
   }
 }
 
@@ -337,26 +348,29 @@ destroyLineObjects(const SceneHandles::Line &line_handles, Scene &scene)
 
 
 static void
+destroyMeshObjects(const SceneHandles::Mesh &mesh_handles, Scene &scene)
+{
+  scene.destroyGeometry(mesh_handles.handle);
+}
+
+
+static void
 destroyBodyObjects(
   BodyIndex body_index, Scene &scene, const SceneHandles &scene_handles
 )
 {
   const SceneHandles::Body &body_handles = scene_handles.body(body_index);
 
-  {
-    size_t n_boxes = body_handles.boxes.size();
-
-    for (size_t box_index = 0; box_index != n_boxes; ++box_index) {
-      destroyBoxObjects(body_handles.boxes[box_index], scene);
-    }
+  for (auto box_index : indicesOf(body_handles.boxes)) {
+    destroyBoxObjects(body_handles.boxes[box_index], scene);
   }
 
-  {
-    size_t n_lines = body_handles.lines.size();
+  for (auto mesh_index : indicesOf(body_handles.meshes)) {
+    destroyMeshObjects(body_handles.meshes[mesh_index], scene);
+  }
 
-    for (size_t line_index = 0; line_index != n_lines; ++line_index) {
-      destroyLineObjects(body_handles.lines[line_index], scene);
-    }
+  for (auto line_index : indicesOf(body_handles.lines)) {
+    destroyLineObjects(body_handles.lines[line_index], scene);
   }
 
   scene.destroyTransform(body_handles.transformHandle());

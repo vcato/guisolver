@@ -201,6 +201,3 @@ Function {
     expression: "x*2 + (5*3)"
   }
 }
----
-Need to to have the scale/center parameters for meshes actually affect the
-scene.

@@ -350,7 +350,6 @@ forEachSceneObjectPath(
     const TreePaths::Body &body_paths = tree_paths.body(body_index);
 
     assert(body_handles.boxes.size() == body_paths.boxes.size());
-    size_t n_boxes = body_handles.boxes.size();
 
     f(
       {
@@ -360,7 +359,7 @@ forEachSceneObjectPath(
       body_paths.path
     );
 
-    for (size_t box_index = 0; box_index != n_boxes; ++box_index) {
+    for (auto box_index : indicesOf(body_handles.boxes)) {
       f(
         {
           body_handles.transformHandle(),
@@ -370,15 +369,23 @@ forEachSceneObjectPath(
       );
     }
 
-    size_t n_lines = body_handles.lines.size();
-
-    for (size_t line_index = 0; line_index != n_lines; ++line_index) {
+    for (auto line_index : indicesOf(body_handles.lines)) {
       f(
         {
           body_handles.transformHandle(),
           body_handles.lines[line_index].handle,
         },
         body_paths.lines[line_index].path
+      );
+    }
+
+    for (auto mesh_index : indicesOf(body_handles.meshes)) {
+      f(
+        {
+          body_handles.transformHandle(),
+          body_handles.meshes[mesh_index].handle,
+        },
+        body_paths.meshes[mesh_index].path
       );
     }
   }
@@ -841,6 +848,9 @@ ObservedScene::properManpiulatorForSelectedObject() const
   else if (item.maybe_box_index) {
     return ManipulatorType::scale;
   }
+  else if (item.maybe_mesh_index) {
+    return ManipulatorType::scale;
+  }
   else {
     return ManipulatorType::translate;
   }
@@ -893,7 +903,7 @@ void ObservedScene::handleTreeSelectionChanged()
     ObservedScene::attachProperDraggerToSelectedObject(observed_scene);
   }
   else {
-    cerr << "No scene object found\n";
+    cerr << "handleTreeSelectionChanged: No scene object found\n";
   }
 }
 
@@ -1650,9 +1660,7 @@ ObservedScene::Impl::describePath(
       return description;
     }
 
-    size_t n_boxes = body_paths.boxes.size();
-
-    for (size_t box_index = 0; box_index != n_boxes; ++box_index) {
+    for (auto box_index : indicesOf(body_paths.boxes)) {
       const TreePaths::Box &box_paths = body_paths.boxes[box_index];
 
       if (startsWith(path, box_paths.path)) {
@@ -1666,9 +1674,21 @@ ObservedScene::Impl::describePath(
       }
     }
 
-    size_t n_lines = body_paths.lines.size();
+    for (auto mesh_index : indicesOf(body_paths.meshes)) {
+      const TreePaths::Mesh &mesh_paths = body_paths.meshes[mesh_index];
 
-    for (size_t line_index = 0; line_index != n_lines; ++line_index) {
+      if (startsWith(path, mesh_paths.path)) {
+        if (path == mesh_paths.path) {
+          description.type = ItemType::mesh;
+        }
+
+        description.maybe_body_index = body_index;
+        description.maybe_mesh_index = mesh_index;
+        return description;
+      }
+    }
+
+    for (auto line_index : indicesOf(body_paths.lines)) {
       const TreePaths::Line &line_paths = body_paths.lines[line_index];
 
       if (startsWith(path, line_paths.path)) {
