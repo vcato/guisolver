@@ -274,11 +274,11 @@ namespace {
 struct MeshDrawable : osg::Geometry {
   osg::Vec3f color = osg::Vec3(1,1,1);
   osg::Vec3f size = {1,1,1};
+  Mesh mesh;
 
-  void setup(const Mesh &mesh)
+  void setup()
   {
     MeshDrawable &self = *this;
-
     osg::ref_ptr<osg::Vec3Array> points_ptr = new osg::Vec3Array;
     osg::ref_ptr<osg::Vec3Array> normals_ptr = new osg::Vec3Array;
     osg::ref_ptr<osg::Vec3Array> colors_ptr = new osg::Vec3Array;
@@ -1169,27 +1169,51 @@ static osg::Vec3f vec3(const osg::Vec4f &v)
 }
 
 
+static osg::ShapeDrawable *maybeShapeDrawable(osg::Drawable &drawable)
+{
+  return dynamic_cast<osg::ShapeDrawable*>(&drawable);
+}
+
+
+static LineDrawable *maybeLineDrawable(osg::Drawable &drawable)
+{
+  return dynamic_cast<LineDrawable*>(&drawable);
+}
+
+
+static const LineDrawable *maybeLineDrawable(const osg::Drawable &drawable)
+{
+  return dynamic_cast<const LineDrawable*>(&drawable);
+}
+
+
+static MeshDrawable *maybeMeshDrawable(osg::Drawable &drawable)
+{
+  return dynamic_cast<MeshDrawable*>(&drawable);
+}
+
+
+static const MeshDrawable *maybeMeshDrawable(const osg::Drawable &drawable)
+{
+  return dynamic_cast<const MeshDrawable*>(&drawable);
+}
+
+
 static osg::Vec3f geodeColor(osg::Geode &geode)
 {
   osg::Drawable *drawable_ptr = geode.getDrawable(0);
   assert(drawable_ptr);
   osg::Drawable &drawable = *drawable_ptr;
 
-  auto *shape_drawable_ptr = dynamic_cast<osg::ShapeDrawable*>(&drawable);
-
-  if (shape_drawable_ptr) {
+  if (auto *shape_drawable_ptr = maybeShapeDrawable(drawable)) {
     return vec3(shape_drawable_ptr->getColor());
   }
 
-  auto *line_drawable_ptr = dynamic_cast<LineDrawable*>(&drawable);
-
-  if (line_drawable_ptr) {
+  if (auto *line_drawable_ptr = maybeLineDrawable(drawable)) {
     return line_drawable_ptr->color;
   }
 
-  auto *mesh_drawable_ptr = dynamic_cast<MeshDrawable*>(&drawable);
-
-  if (mesh_drawable_ptr) {
+  if (auto *mesh_drawable_ptr = maybeMeshDrawable(drawable)) {
     return mesh_drawable_ptr->color;
   }
 
@@ -1200,26 +1224,34 @@ static osg::Vec3f geodeColor(osg::Geode &geode)
 }
 
 
+static void setDrawableColor(osg::Drawable &drawable, const osg::Vec3f &color)
+{
+  if (auto *shape_drawable_ptr = maybeShapeDrawable(drawable)) {
+    shape_drawable_ptr->setColor(vec4(color));
+    return;
+  }
+
+  if (auto *geometry_ptr = maybeLineDrawable(drawable)) {
+    geometry_ptr->color = color;
+    geometry_ptr->setup();
+    return;
+  }
+
+  if (auto *mesh_ptr = maybeMeshDrawable(drawable)) {
+    mesh_ptr->color = color;
+    mesh_ptr->setup();
+    return;
+  }
+
+  cerr << "setDrawableColor: unknown drawable type\n";
+}
+
+
 static void setGeodeColor(osg::Geode &geode,const osg::Vec3f &vec)
 {
   osg::Drawable *drawable_ptr = geode.getDrawable(0);
   assert(drawable_ptr);
-
-  osg::ShapeDrawable *shape_drawable_ptr =
-    dynamic_cast<osg::ShapeDrawable*>(drawable_ptr);
-
-  if (shape_drawable_ptr) {
-    shape_drawable_ptr->setColor(vec4(vec));
-    return;
-  }
-
-  LineDrawable *geometry_ptr =
-    dynamic_cast<LineDrawable*>(drawable_ptr);
-
-  if (geometry_ptr) {
-    geometry_ptr->color = vec;
-    geometry_ptr->setup();
-  }
+  setDrawableColor(*drawable_ptr, vec);
 }
 
 
@@ -1325,9 +1357,8 @@ static osg::Vec3 shapeSize(const osg::Geode &geode)
 {
   const osg::Drawable *drawable_ptr = geode.getDrawable(0);
   assert(drawable_ptr);
-  auto *mesh_drawable_ptr = dynamic_cast<const MeshDrawable*>(drawable_ptr);
 
-  if (mesh_drawable_ptr) {
+  if (auto *mesh_drawable_ptr = maybeMeshDrawable(*drawable_ptr)) {
     return mesh_drawable_ptr->size;
   }
 
@@ -1431,24 +1462,37 @@ static void setColor(osg::MatrixTransform &node,const osg::Vec3f &vec)
 }
 
 
-static const LineDrawable* maybeGeodeLine(const osg::Geode &geode)
+static const osg::Drawable &geodeDrawable(const osg::Geode &geode)
 {
   const osg::Drawable *drawable_ptr = geode.getDrawable(0);
-  return dynamic_cast<const LineDrawable*>(drawable_ptr);
+  assert(drawable_ptr);
+  return *drawable_ptr;
+}
+
+
+static osg::Drawable &geodeDrawable(osg::Geode &geode)
+{
+  osg::Drawable *drawable_ptr = geode.getDrawable(0);
+  assert(drawable_ptr);
+  return *drawable_ptr;
+}
+
+
+static const LineDrawable* maybeGeodeLine(const osg::Geode &geode)
+{
+  return maybeLineDrawable(geodeDrawable(geode));
 }
 
 
 static osg::ShapeDrawable* maybeGeodeShape(osg::Geode &geode)
 {
-  osg::Drawable *drawable_ptr = geode.getDrawable(0);
-  return dynamic_cast<osg::ShapeDrawable*>(drawable_ptr);
+  return maybeShapeDrawable(geodeDrawable(geode));
 }
 
 
 static MeshDrawable* maybeGeodeMesh(osg::Geode &geode)
 {
-  osg::Drawable *drawable_ptr = geode.getDrawable(0);
-  return dynamic_cast<MeshDrawable*>(drawable_ptr);
+  return maybeMeshDrawable(geodeDrawable(geode));
 }
 
 
@@ -1555,7 +1599,8 @@ static osg::ref_ptr<osg::ShapeDrawable> createBoxDrawable()
 static osg::ref_ptr<MeshDrawable> createMeshDrawable(const Mesh &mesh)
 {
   osg::ref_ptr<MeshDrawable> mesh_drawable_ptr(new MeshDrawable);
-  mesh_drawable_ptr->setup(mesh);
+  mesh_drawable_ptr->mesh = mesh;
+  mesh_drawable_ptr->setup();
   return mesh_drawable_ptr;
 }
 
@@ -1881,9 +1926,10 @@ OSGScene::Impl::lineDrawable(OSGScene &scene, LineHandle handle)
   assert(child_ptr);
   osg::Geode *geode_ptr = child_ptr->asGeode();
   assert(geode_ptr);
-  osg::Drawable *drawable_ptr = geode_ptr->getDrawable(0);
-  assert(drawable_ptr);
-  LineDrawable *line_drawable_ptr = dynamic_cast<LineDrawable *>(drawable_ptr);
+
+  LineDrawable *line_drawable_ptr =
+    maybeLineDrawable(geodeDrawable(*geode_ptr));
+
   assert(line_drawable_ptr);
   return *line_drawable_ptr;
 }
