@@ -2,13 +2,14 @@
 #define CHANNEL_HPP_
 
 #include "boxindex.hpp"
+#include "sceneelements.hpp"
 
 
-struct BodyComponent {
+struct BodyXYZComponent {
   BodyIndex body_index;
   XYZComponent component;
 
-  BodyComponent(BodyIndex body_index, XYZComponent component)
+  BodyXYZComponent(BodyIndex body_index, XYZComponent component)
   : body_index(body_index),
     component(component)
   {
@@ -16,13 +17,13 @@ struct BodyComponent {
 };
 
 
-struct BodyTranslationComponent : BodyComponent {
-  using BodyComponent::BodyComponent;
+struct BodyTranslationComponent : BodyXYZComponent {
+  using BodyXYZComponent::BodyXYZComponent;
 };
 
 
-struct BodyRotationComponent : BodyComponent {
-  using BodyComponent::BodyComponent;
+struct BodyRotationComponent : BodyXYZComponent {
+  using BodyXYZComponent::BodyXYZComponent;
 };
 
 
@@ -31,26 +32,26 @@ struct BodyScale {
 };
 
 
-struct BodyBoxScaleComponent : BodyComponent {
+struct BodyBoxScaleComponent : BodyXYZComponent {
   BoxIndex box_index;
 
   BodyBoxScaleComponent(
     BodyIndex body_index, BoxIndex box_index, XYZComponent component
   )
-  : BodyComponent(body_index, component),
+  : BodyXYZComponent(body_index, component),
     box_index(box_index)
   {
   }
 };
 
 
-struct BodyBoxCenterComponent : BodyComponent {
+struct BodyBoxCenterComponent : BodyXYZComponent {
   BoxIndex box_index;
 
   BodyBoxCenterComponent(
     BodyIndex body_index, BoxIndex box_index, XYZComponent component
   )
-  : BodyComponent(body_index, component),
+  : BodyXYZComponent(body_index, component),
     box_index(box_index)
   {
   }

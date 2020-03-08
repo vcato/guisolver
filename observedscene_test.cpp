@@ -841,7 +841,7 @@ static bool itemValueIsOn(const FakeTreeItem &item)
 
 
 namespace {
-struct BodyElement {
+struct BodyElementInterface {
   virtual const TreePath &path(const TreePaths::Body &) const = 0;
   virtual const BodySolveFlag &solveFlag() const = 0;
 };
@@ -849,7 +849,7 @@ struct BodyElement {
 
 
 namespace {
-struct BodyTranslationX : BodyElement {
+struct BodyTranslationX : BodyElementInterface {
   BodyTranslationXSolveFlag solve_flag;
 
   const TreePath &path(const TreePaths::Body &body_paths) const override
@@ -866,7 +866,7 @@ struct BodyTranslationX : BodyElement {
 
 
 namespace {
-struct BodyRotationX : BodyElement {
+struct BodyRotationX : BodyElementInterface {
   BodyRotationXSolveFlag solve_flag;
 
   const TreePath &path(const TreePaths::Body &body_paths) const override
@@ -883,7 +883,7 @@ struct BodyRotationX : BodyElement {
 
 
 namespace {
-struct BodyScaleElement : BodyElement {
+struct BodyScaleElement : BodyElementInterface {
   BodyScaleSolveFlag solve_flag;
 
   const TreePath &path(const TreePaths::Body &body_paths) const override
@@ -899,7 +899,7 @@ struct BodyScaleElement : BodyElement {
 }
 
 
-static void testChangingSolvableBodyValue(const BodyElement &element)
+static void testChangingSolvableBodyValue(const BodyElementInterface &element)
 {
   const BodySolveFlag &solve_flag = element.solveFlag();
 

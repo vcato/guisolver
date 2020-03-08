@@ -1518,11 +1518,103 @@ void ObservedScene::solveScene()
 }
 
 
+static TreePath treePath(Body body, const TreePaths &tree_paths)
+{
+  return tree_paths.body(body.index).path;
+}
+
+
+static TreePath treePath(Marker marker, const TreePaths &tree_paths)
+{
+  return tree_paths.marker(marker.index).path;
+}
+
+
+static TreePath
+treePath(DistanceError distance_error, const TreePaths &tree_paths)
+{
+  return tree_paths.distance_errors[distance_error.index].path;
+}
+
+
+static TreePath
+treePath(Variable variable, const TreePaths &tree_paths)
+{
+  return tree_paths.variables[variable.index].path;
+}
+
+
+static TreePath
+treePath(BodyBox body_box, const TreePaths &tree_paths)
+{
+  return tree_paths.body(body_box.body.index).boxes[body_box.index].path;
+}
+
+
+static TreePath
+treePath(BodyLine body_line, const TreePaths &tree_paths)
+{
+  return tree_paths.body(body_line.body.index).lines[body_line.index].path;
+}
+
+
+static TreePath
+treePath(BodyMesh body_mesh, const TreePaths &tree_paths)
+{
+  return tree_paths.body(body_mesh.body.index).meshes[body_mesh.index].path;
+}
+
+
+template <typename Element>
+static void select(Element element, ObservedScene &observed_scene)
+{
+  TreePath path = treePath(element, observed_scene.tree_paths);
+  observed_scene.tree_widget.selectItem(path);
+  observed_scene.handleTreeSelectionChanged();
+}
+
+
 void ObservedScene::selectBody(BodyIndex body_index)
 {
-  selectBodyInTree(body_index, *this);
-  handleTreeSelectionChanged();
+  select(Body{body_index}, *this);
 }
+
+
+void ObservedScene::selectMarker(MarkerIndex marker_index)
+{
+  select(Marker{marker_index}, *this);
+}
+
+
+void ObservedScene::selectDistanceError(DistanceErrorIndex index)
+{
+  select(DistanceError{index}, *this);
+}
+
+
+void ObservedScene::selectVariable(VariableIndex variable_index)
+{
+  select(Variable{variable_index}, *this);
+}
+
+
+void ObservedScene::selectBox(BodyIndex body_index, BoxIndex box_index)
+{
+  select(BodyBox{body_index, box_index}, *this);
+}
+
+
+void ObservedScene::selectLine(BodyIndex body_index, LineIndex line_index)
+{
+  select(BodyLine{body_index, line_index}, *this);
+}
+
+
+void ObservedScene::selectMesh(BodyIndex body_index, MeshIndex mesh_index)
+{
+  select(BodyMesh{body_index, mesh_index}, *this);
+}
+
 
 
 BodyIndex
@@ -1631,33 +1723,6 @@ ObservedScene::addDistanceError(
   updateSceneObjects(scene, scene_handles, scene_state);
   updateTreeValues(tree_widget, tree_paths, scene_state);
   return index;
-}
-
-
-void ObservedScene::selectDistanceError(DistanceErrorIndex index)
-{
-  tree_widget.selectItem(tree_paths.distance_errors[index].path);
-}
-
-
-void ObservedScene::selectBox(BodyIndex body_index, BoxIndex box_index)
-{
-  tree_widget.selectItem(tree_paths.body(body_index).boxes[box_index].path);
-  handleTreeSelectionChanged();
-}
-
-
-void ObservedScene::selectLine(BodyIndex body_index, LineIndex line_index)
-{
-  tree_widget.selectItem(tree_paths.body(body_index).lines[line_index].path);
-  handleTreeSelectionChanged();
-}
-
-
-void ObservedScene::selectMesh(BodyIndex body_index, MeshIndex mesh_index)
-{
-  tree_widget.selectItem(tree_paths.body(body_index).meshes[mesh_index].path);
-  handleTreeSelectionChanged();
 }
 
 
@@ -1853,20 +1918,6 @@ VariableIndex ObservedScene::addVariable()
   VariableIndex index = scene_state.createVariable();
   createVariableInTree(index, sceneTree(*this), scene_state);
   return index;
-}
-
-
-void ObservedScene::selectMarker(MarkerIndex marker_index)
-{
-  tree_widget.selectItem(tree_paths.marker(marker_index).path);
-  handleTreeSelectionChanged();
-}
-
-
-void ObservedScene::selectVariable(VariableIndex variable_index)
-{
-  tree_widget.selectItem(tree_paths.variables[variable_index].path);
-  handleTreeSelectionChanged();
 }
 
 

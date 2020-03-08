@@ -130,14 +130,6 @@ struct ObservedScene {
 
   static void attachProperDraggerToSelectedObject(ObservedScene &);
 
-  static void
-  selectBodyInTree(BodyIndex body_index, ObservedScene &observed_scene)
-  {
-    TreeWidget &tree_widget = observed_scene.tree_widget;
-    TreePaths &tree_paths = observed_scene.tree_paths;
-    tree_widget.selectItem(tree_paths.body(body_index).path);
-  }
-
   const bool *solveStatePtr(const TreePath &) const;
   bool *solveStatePtr(const TreePath &);
   void setSolveFlags(const TreeItemDescription &item, bool state);

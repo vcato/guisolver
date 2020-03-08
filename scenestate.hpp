@@ -13,11 +13,10 @@
 #include "matchconst.hpp"
 #include "channel.hpp"
 #include "boxindex.hpp"
+#include "lineindex.hpp"
 #include "mesh.hpp"
 
-using LineIndex = int;
 using Expression = std::string;
-using MeshIndex = int;
 
 
 template <typename XYZ>
