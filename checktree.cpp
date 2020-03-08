@@ -103,6 +103,13 @@ static void checkEqual(const TreePaths::Channel &a, const TreePaths::Channel &b)
 }
 
 
+static void
+checkEqual(const TreePaths::Positions &a, const TreePaths::Positions &b)
+{
+  checkMembersEqual(a,b);
+}
+
+
 template <typename T>
 static void checkMembersEqual(const T &a,const T &b)
 {

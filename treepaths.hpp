@@ -158,10 +158,28 @@ struct TreePaths {
     bool operator==(const Line &arg) const { return isEqual(*this, arg); }
   };
 
+  struct Positions {
+    TreePath path;
+    vector<XYZ> elements;
+
+    template <typename F>
+    static void forEachMember(const F &f)
+    {
+      f(&Positions::path);
+      f(&Positions::elements);
+    }
+
+    bool operator==(const Positions &arg) const
+    {
+      return isEqual(*this, arg);
+    }
+  };
+
   struct Mesh {
     TreePath path;
     XYZ scale;
     XYZ center;
+    Positions positions;
 
     template <typename F>
     static void forEachMember(const F &f)
@@ -169,6 +187,7 @@ struct TreePaths {
       f(&Mesh::path);
       f(&Mesh::scale);
       f(&Mesh::center);
+      f(&Mesh::positions);
     }
 
     bool operator==(const Mesh &arg) const { return isEqual(*this, arg); }

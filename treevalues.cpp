@@ -1260,6 +1260,36 @@ createLineItem(
 }
 
 
+static string str(int index)
+{
+  std::ostringstream stream;
+  stream << index;
+  return stream.str();
+}
+
+
+static TreePaths::Positions
+addPositions(
+  ItemAdder &adder,
+  const string &label,
+  const SceneState::MeshShape &mesh_shape
+)
+{
+  TreePaths::Positions result;
+  result.path = adder.addVoid(label);
+  ItemAdder child_adder{result.path, adder.tree_widget};
+
+  for (auto i : indicesOf(mesh_shape.positions)) {
+    string label = str(i) + ": []";
+    auto &position = mesh_shape.positions[i];
+    TreePaths::XYZ xyz_paths = addXYZ(child_adder, label, position);
+    emplaceInto(result.elements, i, xyz_paths);
+  }
+
+  return result;
+}
+
+
 static MeshPaths
 createMeshItem(
   const TreePath &mesh_path,
@@ -1273,6 +1303,7 @@ createMeshItem(
   ItemAdder adder{mesh_path, tree_widget};
   mesh_paths.scale = addXYZ(adder, "scale: []", mesh_state.scale);
   mesh_paths.center = addXYZ(adder, "center: []", mesh_state.center);
+  mesh_paths.positions = addPositions(adder, "positions: []", mesh_state.shape);
   return mesh_paths;
 }
 

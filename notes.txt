@@ -201,3 +201,8 @@ Function {
     expression: "x*2 + (5*3)"
   }
 }
+---
+I want to be able to be able to select vertices on the mesh and move them
+around.
+
+We can have positions that are part of the mesh.
