@@ -31,9 +31,19 @@ struct DistanceErrorDesiredDistance {
 };
 
 
+struct DistanceErrorWeight {
+  DistanceError distance_error;
+};
+
+
 struct Variable {
   VariableIndex index;
   Variable(VariableIndex index) : index(index) {}
+};
+
+
+struct VariableValue {
+  Variable variable;
 };
 
 

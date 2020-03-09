@@ -2011,31 +2011,6 @@ setTreeBoolValue(
 }
 
 
-namespace {
-struct NumericValueVisitor {
-  virtual bool visit(NumericValue &value_to_set) = 0;
-};
-}
-
-
-namespace {
-struct SetNumericValueVisitor : NumericValueVisitor {
-  const NumericValue value;
-
-  SetNumericValueVisitor(NumericValue value)
-  : value(value)
-  {
-  }
-
-  bool visit(NumericValue &value_to_set) override
-  {
-    value_to_set = value;
-    return true;
-  }
-};
-}
-
-
 static bool isMatchingPath(const TreePath &path1, const TreePath &path2)
 {
   return path1 == path2;
@@ -2176,70 +2151,57 @@ numericValue(DistanceErrorDesiredDistance element, SceneState &scene_state)
 }
 
 
-template <typename Component>
-static bool
-forMatchingComponent(
-  SceneState::XYZ &xyz_state,
-  const TreePath &path,
-  const TreePaths::BasicXYZ<Component> &xyz_path,
-  NumericValueVisitor &visitor
-)
+static NumericValue &
+numericValue(DistanceErrorWeight element, SceneState &scene_state)
 {
-  XYZComponent component = matchingComponent(path, xyz_path);
-  return visitor.visit(numericValue(xyz_state, component));
+  return scene_state.distance_errors[element.distance_error.index].weight;
+}
+
+
+static NumericValue &
+numericValue(VariableValue element, SceneState &scene_state)
+{
+  SceneState::Variable &variable_state =
+    scene_state.variables[element.variable.index];
+
+  return variable_state.value;
+}
+
+
+static NumericValue &
+numericValue(MarkerPositionComponent element, SceneState &scene_state)
+{
+  MarkerIndex marker_index = markerOf(element).index;
+  SceneState::Marker &marker_state = scene_state.marker(marker_index);
+  SceneState::XYZ &xyz_state = marker_state.position;
+  return numericValue(xyz_state, element.component);
+}
+
+
+static NumericValue &
+numericValue(BodyMeshPositionComponent element, SceneState &scene_state)
+{
+  BodyMesh body_mesh = bodyMeshOf(element);
+  BodyIndex body_index = body_mesh.body.index;
+  SceneState::Body &body_state = scene_state.body(body_index);
+  MeshIndex mesh_index = body_mesh.index;
+
+  auto &position_state =
+    body_state.meshes[mesh_index].shape.positions[element.parent.index];
+
+  SceneState::XYZ &xyz_state = position_state;
+  return numericValue(xyz_state, element.component);
 }
 
 
 namespace {
 struct SceneElementVisitor {
-  virtual bool visitBody(BodyIndex) = 0;
-  virtual bool visitMarker(MarkerIndex) = 0;
-  virtual bool visitDistanceError(DistanceErrorIndex) = 0;
-  virtual bool visitVariable(VariableIndex) = 0;
-  virtual bool visitBodyName(BodyIndex) { return false; }
-  virtual bool visitBodyTranslation(BodyIndex) { return false; }
-  virtual bool visitBodyRotation(BodyIndex) { return false; }
-  virtual bool visitBodyBox(BodyBox) { return false; }
-  virtual bool visitBodyLine(BodyLine) { return false; }
-  virtual bool visitBodyMesh(BodyMesh) { return false; }
-  virtual bool visitMarkerName(MarkerIndex) { return false; }
-};
-}
-
-
-namespace {
-struct ScenePathVisitor : SceneElementVisitor {
-  const TreePaths &tree_paths;
-  const TreePath &path;
-
-  ScenePathVisitor(const TreePaths &tree_paths, const TreePath &path)
-  : tree_paths(tree_paths),
-    path(path)
-  {
-  }
-
-  virtual bool visitBodyBoxScaleComponent(BodyBox, XYZComponent)
+  virtual bool visitMarkerPositionComponent(Marker, XYZComponent)
   {
     return false;
   }
 
-  virtual bool visitBodyBoxScale(BodyBox body_box)
-  {
-    const TreePaths::Body &body_paths = tree_paths.body(body_box.body.index);
-    const BoxPaths &box_paths = body_paths.boxes[body_box.index];
-    XYZComponent component = matchingComponent(path, box_paths.scale);
-    return visitBodyBoxScaleComponent(body_box, component);
-  }
-
-  virtual bool visitBodyBoxCenter(BodyBox) { return false; }
-
-  virtual bool
-  visitBodyTranslationComponent(Body, XYZComponent)
-  {
-    return false;
-  }
-
-  virtual bool visitBodyRotationComponent(Body, XYZComponent)
+  virtual bool visitMarkerName(Marker)
   {
     return false;
   }
@@ -2249,157 +2211,72 @@ struct ScenePathVisitor : SceneElementVisitor {
     return false;
   }
 
-  bool visitBodyTranslation(BodyIndex body_index) override
-  {
-    XYZComponent component =
-      matchingComponent(path, tree_paths.body(body_index).translation);
-
-    return visitBodyTranslationComponent(body_index, component);
-  }
-
-  bool visitBodyRotation(BodyIndex body_index) override
-  {
-    XYZComponent component =
-      matchingComponent(path, tree_paths.body(body_index).rotation);
-
-    return visitBodyRotationComponent(body_index, component);
-  }
-
-  bool visitBodyBox(BodyBox body_box) override
-  {
-    BodyIndex body_index = body_box.body.index;
-    BoxIndex box_index = body_box.index;
-    const TreePaths::Body &body_paths = tree_paths.body(body_index);
-    const BoxPaths &box_paths = body_paths.boxes[box_index];
-
-    if (startsWith(path, box_paths.scale.path)) {
-      return visitBodyBoxScale(BodyBox{body_index, box_index});
-    }
-    else if (startsWith(path, box_paths.center.path)) {
-      return visitBodyBoxCenter(BodyBox{body_index, box_index});
-    }
-    else {
-      assert(false); // not implemented
-    }
-
-    return false;
-  }
-
-  bool visitBody(BodyIndex body_index) override
-  {
-    const TreePaths::Body &body_paths = tree_paths.body(body_index);
-
-    if (path == body_paths.name) {
-      return visitBodyName(body_index);
-    }
-
-    if (startsWith(path, body_paths.translation.path)) {
-      return visitBodyTranslation(body_index);
-    }
-
-    if (startsWith(path, body_paths.rotation.path)) {
-      return visitBodyRotation(body_index);
-    }
-
-    if (isMatchingPath(path, body_paths.scale)) {
-      return visitBodyScale(body_index);
-    }
-
-    BoxIndex n_boxes = body_paths.boxes.size();
-
-    for (BoxIndex box_index = 0; box_index != n_boxes; ++box_index) {
-      if (startsWith(path, body_paths.boxes[box_index].path)) {
-        return visitBodyBox(BodyBox{body_index, box_index});
-      }
-    }
-
-    LineIndex n_lines = body_paths.lines.size();
-
-    for (LineIndex line_index = 0; line_index != n_lines; ++line_index) {
-      if (startsWith(path, body_paths.lines[line_index].path)) {
-        return visitBodyLine(BodyLine{body_index, line_index});
-      }
-    }
-
-    MeshIndex n_meshes = body_paths.meshes.size();
-
-    for (MeshIndex mesh_index = 0; mesh_index != n_meshes; ++mesh_index) {
-      if (startsWith(path, body_paths.meshes[mesh_index].path)) {
-        return visitBodyMesh(BodyMesh{body_index, mesh_index});
-      }
-    }
-
-    return false;
-  }
-
-  bool visitMarker(MarkerIndex marker_index) override
-  {
-    const MarkerPaths &marker_paths = tree_paths.marker(marker_index);
-
-    if (startsWith(path, marker_paths.position.path)) {
-      return visitMarkerPosition(marker_index);
-    }
-
-    if (startsWith(path, marker_paths.name)) {
-      return visitMarkerName(marker_index);
-    }
-
-    return false;
-  }
-
-  bool visitDistanceError(DistanceErrorIndex distance_error_index) override
-  {
-    const TreePaths::DistanceError &distance_error_paths =
-      tree_paths.distance_errors[distance_error_index];
-
-    if (startsWith(path, distance_error_paths.desired_distance)) {
-      return visitDistanceErrorDesiredDistance(distance_error_index);
-    }
-
-    if (startsWith(path, distance_error_paths.weight)) {
-      return visitDistanceErrorWeight(distance_error_index);
-    }
-
-    return false;
-  }
-
-  bool visitVariable(VariableIndex variable_index) override
-  {
-    const TreePaths::Variable &variable_paths =
-      tree_paths.variables[variable_index];
-
-    if (path == variable_paths.path) {
-      return visitVariableValue(variable_index);
-    }
-
-    if (startsWith(path, variable_paths.name)) {
-      return visitVariableName(variable_index);
-    }
-
-    return false;
-  }
-
-  virtual bool visitMarkerPosition(Marker)
+  virtual bool visitBodyName(Body)
   {
     return false;
   }
 
-  virtual bool visitVariableValue(VariableIndex)
+  virtual bool visitBodyTranslationComponent(Body, XYZComponent)
   {
     return false;
   }
 
-  virtual bool visitVariableName(VariableIndex)
+  virtual bool visitBodyRotationComponent(Body, XYZComponent)
   {
     return false;
   }
 
-  virtual bool visitDistanceErrorDesiredDistance(DistanceErrorIndex)
+  virtual bool visitBodyBoxScaleComponent(BodyBox, XYZComponent)
   {
     return false;
   }
 
-  virtual bool visitDistanceErrorWeight(DistanceErrorIndex)
+  virtual bool visitBodyBoxCenterComponent(BodyBox, XYZComponent)
+  {
+    return false;
+  }
+
+  virtual bool visitBodyLineStartComponent(BodyLine, XYZComponent)
+  {
+    return false;
+  }
+
+  virtual bool visitBodyLineEndComponent(BodyLine, XYZComponent)
+  {
+    return false;
+  }
+
+  virtual bool visitBodyMeshScaleComponent(BodyMesh, XYZComponent)
+  {
+    return false;
+  }
+
+  virtual bool visitBodyMeshCenterComponent(BodyMesh, XYZComponent)
+  {
+    return false;
+  }
+
+  virtual bool visitBodyMeshPositionComponent(BodyMeshPosition, XYZComponent)
+  {
+    return false;
+  }
+
+  virtual bool visitDistanceErrorDesiredDistance(DistanceError)
+  {
+    return false;
+  }
+
+  virtual bool visitDistanceErrorWeight(DistanceError)
+  {
+    return false;
+  }
+
+  virtual bool visitVariableValue(Variable)
+  {
+    return false;
+  }
+
+  virtual bool visitVariableName(Variable)
   {
     return false;
   }
@@ -2408,24 +2285,23 @@ struct ScenePathVisitor : SceneElementVisitor {
 
 
 namespace {
-struct SetStringValueVisitor : ScenePathVisitor {
+struct SetStringValueVisitor : SceneElementVisitor {
   SceneState &scene_state;
   const StringValue &value;
 
   SetStringValueVisitor(
     SceneState &scene_state,
-    const TreePaths &tree_paths,
-    const StringValue &value,
-    const TreePath &path
+    const StringValue &value
   )
-  : ScenePathVisitor(tree_paths, path),
+  : SceneElementVisitor(),
     scene_state(scene_state),
     value(value)
   {
   }
 
-  bool visitBodyName(BodyIndex body_index) override
+  bool visitBodyName(Body body) override
   {
+    BodyIndex body_index = body.index;
     SceneState::Body &body_state = scene_state.body(body_index);
 
     if (!findBodyIndex(scene_state, value)) {
@@ -2438,8 +2314,9 @@ struct SetStringValueVisitor : ScenePathVisitor {
     return true;
   }
 
-  bool visitMarkerName(MarkerIndex marker_index) override
+  bool visitMarkerName(Marker marker) override
   {
+    MarkerIndex marker_index = marker.index;
     SceneState::Marker &marker_state = scene_state.marker(marker_index);
 
     if (!findMarkerIndex(scene_state, value)) {
@@ -2452,10 +2329,10 @@ struct SetStringValueVisitor : ScenePathVisitor {
     return true;
   }
 
-  bool visitVariableName(VariableIndex variable_index) override
+  bool visitVariableName(Variable variable) override
   {
     SceneState::Variable &variable_state =
-      scene_state.variables[variable_index];
+      scene_state.variables[variable.index];
 
     if (!findVariableIndex(scene_state, value)) {
       variable_state.name = value;
@@ -2471,229 +2348,114 @@ struct SetStringValueVisitor : ScenePathVisitor {
 
 
 namespace {
-struct SetNumericElementValueScenePathVisitor : ScenePathVisitor {
-  SceneState &scene_state;
-  SetNumericValueVisitor visitor;
+template <typename Function>
+struct NumericScenePathVisitor : SceneElementVisitor {
+  const Function &f;
 
-  SetNumericElementValueScenePathVisitor(
-    SceneState &scene_state,
-    const TreePaths &tree_paths,
-    const TreePath &path,
-    NumericValue value
-  )
-  : ScenePathVisitor(tree_paths, path),
-    scene_state(scene_state),
-    visitor{value}
+  NumericScenePathVisitor(const Function &f)
+  : SceneElementVisitor(),
+    f(f)
   {
+  }
+
+  template <typename Element>
+  bool visitElement(Element element)
+  {
+    f(element);
+    return true;
   }
 
   bool visitBodyTranslationComponent(Body body, XYZComponent component) override
   {
-    BodyTranslationComponent element{body, component};
-    return visitor.visit(numericValue(element, scene_state));
+    return visitElement(BodyTranslationComponent{body, component});
   }
 
   bool visitBodyRotationComponent(Body body, XYZComponent component) override
   {
-    BodyRotationComponent element{body, component};
-    return visitor.visit(numericValue(element, scene_state));
+    return visitElement(BodyRotationComponent{body, component});
   }
 
   bool visitBodyScale(Body body) override
   {
-    BodyScale element{body};
-    return visitor.visit(numericValue(element, scene_state));
+    return visitElement(BodyScale{body});
   }
 
   bool
   visitBodyBoxScaleComponent(BodyBox body_box, XYZComponent component) override
   {
-    BodyBoxScaleComponent element{body_box, component};
-    return visitor.visit(numericValue(element, scene_state));
+    return visitElement(BodyBoxScaleComponent{body_box, component});
   }
 
-  bool visitBodyBoxCenter(BodyBox body_box) override
+  bool
+  visitBodyBoxCenterComponent(BodyBox body_box, XYZComponent component) override
   {
-    const TreePaths::Body &body_paths = tree_paths.body(body_box.body.index);
-    const BoxPaths &box_paths = body_paths.boxes[body_box.index];
-    XYZComponent component = matchingComponent(path, box_paths.center);
-    BodyBoxCenterComponent element{body_box, component};
-    return visitor.visit(numericValue(element, scene_state));
+    return visitElement(BodyBoxCenterComponent{body_box, component});
   }
 
-  bool visitBodyLineStart(BodyLine body_line)
+  bool
+  visitBodyLineStartComponent(
+    BodyLine body_line, XYZComponent component
+  ) override
   {
-    BodyIndex body_index = body_line.body.index;
-    LineIndex line_index = body_line.index;
-    const TreePaths::Body &body_paths = tree_paths.body(body_index);
-    const LinePaths &line_paths = body_paths.lines[line_index];
-    const TreePaths::BasicXYZ<TreePath> &xyz_path = line_paths.start;
-    XYZComponent component = matchingComponent(path, xyz_path);
-    BodyLineStartComponent element{{body_line}, component};
-    return visitor.visit(numericValue(element, scene_state));
+    return visitElement(BodyLineStartComponent{{body_line}, component});
   }
 
-  bool visitBodyLineEnd(BodyLine body_line)
+  bool
+  visitBodyLineEndComponent(
+    BodyLine body_line, XYZComponent component
+  ) override
   {
-    BodyIndex body_index = body_line.body.index;
-    LineIndex line_index = body_line.index;
-    const TreePaths::Body &body_paths = tree_paths.body(body_index);
-    const LinePaths &line_paths = body_paths.lines[line_index];
-    const TreePaths::BasicXYZ<TreePath> &xyz_path = line_paths.end;
-    XYZComponent component = matchingComponent(path, xyz_path);
-    BodyLineEndComponent element{{body_line}, component};
-    return visitor.visit(numericValue(element, scene_state));
+    return visitElement(BodyLineEndComponent{{body_line}, component});
   }
 
-  bool visitBodyLine(BodyLine body_line) override
+  bool
+  visitBodyMeshPositionComponent(
+    BodyMeshPosition body_mesh_position, XYZComponent component
+  ) override
   {
-    BodyIndex body_index = body_line.body.index;
-    LineIndex line_index = body_line.index;
-    const TreePaths::Body &body_paths = tree_paths.body(body_index);
-    const LinePaths &line_paths = body_paths.lines[line_index];
-
-    if (startsWith(path, line_paths.start.path)) {
-      return visitBodyLineStart(body_line);
-    }
-
-    if (startsWith(path, line_paths.end.path)) {
-      return visitBodyLineEnd(body_line);
-    }
-
-    return false;
+    return
+      visitElement(BodyMeshPositionComponent{body_mesh_position, component});
   }
 
-  bool visitBodyMeshPositionComponent(BodyMeshPositionComponent element)
+  bool
+  visitMarkerPositionComponent(Marker marker, XYZComponent component) override
   {
-    BodyMesh body_mesh = bodyMeshOf(element);
-    BodyIndex body_index = body_mesh.body.index;
-    SceneState::Body &body_state = scene_state.body(body_index);
-    MeshIndex mesh_index = body_mesh.index;
-
-    auto &position_state =
-      body_state.meshes[mesh_index].shape.positions[element.parent.index];
-
-    SceneState::XYZ &xyz_state = position_state;
-    return visitor.visit(numericValue(xyz_state, element.component));
+    return visitElement(MarkerPositionComponent{marker, component});
   }
 
-  bool visitBodyMeshPosition(BodyMeshPosition element)
+  bool
+  visitBodyMeshScaleComponent(
+    BodyMesh body_mesh, XYZComponent component
+  ) override
   {
-    BodyMesh body_mesh = bodyMeshOf(element);
-    BodyIndex body_index = body_mesh.body.index;
-    const TreePaths::Body &body_paths = tree_paths.body(body_index);
-    MeshIndex mesh_index = body_mesh.index;
-    const MeshPaths &mesh_paths = body_paths.meshes[mesh_index];
-
-    const TreePaths::XYZ &position_paths =
-      mesh_paths.positions.elements[element.index];
-
-    const TreePaths::XYZ &xyz_path = position_paths;
-    XYZComponent component = matchingComponent(path, xyz_path);
-    return visitBodyMeshPositionComponent({element, component});
-  }
-  
-  bool visitBodyMeshPositions(BodyMesh body_mesh)
-  {
-    BodyIndex body_index = body_mesh.body.index;
-    MeshIndex mesh_index = body_mesh.index;
-    const TreePaths::Body &body_paths = tree_paths.body(body_index);
-    const MeshPaths &mesh_paths = body_paths.meshes[mesh_index];
-
-    for (auto i : indicesOf(mesh_paths.positions.elements)) {
-      const TreePaths::XYZ &position_paths = mesh_paths.positions.elements[i];
-
-      if (startsWith(path, position_paths.path)) {
-        BodyMeshPosition element{BodyMeshPositions{body_mesh}, i};
-        return visitBodyMeshPosition(element);
-      }
-    }
-
-    return false;
+    return visitElement(BodyMeshScaleComponent{body_mesh, component});
   }
 
-  bool visitBodyMeshScaleComponent(BodyMeshScaleComponent element)
+  bool
+  visitBodyMeshCenterComponent(
+    BodyMesh body_mesh, XYZComponent component
+  ) override
   {
-    return visitor.visit(numericValue(element, scene_state));
-  }
-
-  bool visitBodyMeshCenterComponent(BodyMeshCenterComponent element)
-  {
-    return visitor.visit(numericValue(element, scene_state));
-  }
-
-  bool visitBodyMesh(BodyMesh body_mesh) override
-  {
-    BodyIndex body_index = body_mesh.body.index;
-    MeshIndex mesh_index = body_mesh.index;
-    const TreePaths::Body &body_paths = tree_paths.body(body_index);
-    const MeshPaths &mesh_paths = body_paths.meshes[mesh_index];
-
-    if (startsWith(path, mesh_paths.scale.path)) {
-      const TreePaths::XYZ &xyz_path = mesh_paths.scale;
-      XYZComponent component = matchingComponent(path, xyz_path);
-      BodyMeshScaleComponent element{{body_mesh},component};
-      return visitBodyMeshScaleComponent(element);
-    }
-
-    if (startsWith(path, mesh_paths.center.path)) {
-      const TreePaths::XYZ &xyz_path = mesh_paths.center;
-      XYZComponent component = matchingComponent(path, xyz_path);
-      BodyMeshCenterComponent element{{body_mesh},component};
-      return visitBodyMeshCenterComponent(element);
-    }
-
-    if (startsWith(path, mesh_paths.positions.path)) {
-      return visitBodyMeshPositions(body_mesh);
-    }
-
-    return false;
-  }
-
-  bool visitMarkerPositionComponent(MarkerPositionComponent element)
-  {
-    MarkerIndex marker_index = markerOf(element).index;
-    SceneState::Marker &marker_state = scene_state.marker(marker_index);
-    SceneState::XYZ &xyz_state = marker_state.position;
-    return visitor.visit(numericValue(xyz_state, element.component));
-  }
-
-  bool visitMarkerPosition(Marker marker) override
-  {
-    MarkerIndex marker_index = marker.index;
-    const MarkerPaths &marker_paths = tree_paths.marker(marker_index);
-    const TreePaths::Position &xyz_path = marker_paths.position;
-    XYZComponent component = matchingComponent(path, xyz_path);
-    MarkerPositionComponent element{{marker}, component};
-    return visitMarkerPositionComponent(element);
+    return visitElement(BodyMeshCenterComponent{body_mesh, component});
   }
 
   bool
   visitDistanceErrorDesiredDistance(
-    DistanceErrorIndex distance_error_index
+    DistanceError distance_error
   ) override
   {
-    DistanceErrorDesiredDistance element{distance_error_index};
-    return visitor.visit(numericValue(element, scene_state));
+    return visitElement(DistanceErrorDesiredDistance{distance_error});
   }
 
   bool
-  visitDistanceErrorWeight(DistanceErrorIndex distance_error_index) override
+  visitDistanceErrorWeight(DistanceError distance_error) override
   {
-    SceneState::DistanceError &distance_error_state =
-      scene_state.distance_errors[distance_error_index];
-
-    distance_error_state.weight = visitor.value;
-    return true;
+    return visitElement(DistanceErrorWeight{distance_error});
   }
 
-  bool visitVariableValue(VariableIndex variable_index) override
+  bool visitVariableValue(Variable variable) override
   {
-    SceneState::Variable &variable_state =
-      scene_state.variables[variable_index];
-
-    variable_state.value = visitor.value;
-    return true;
+    return visitElement(VariableValue{variable});
   }
 };
 }
@@ -2710,94 +2472,291 @@ bodyRotationComponent(BodyIndex body_index, XYZComponent component)
 }
 
 
-static BodyBoxScaleComponent
-bodyBoxScaleComponent(
-  BodyIndex body_index, BoxIndex box_index, XYZComponent component
-)
-{
-  return
-    ElementXYZComponent<BodyBoxScale>{
-      BodyBoxScale{BodyBox(Body(body_index), box_index)},
-      component
-    };
-}
-
-
-static BodyTranslationChannel
-bodyTranslationChannel(BodyIndex body_index, XYZComponent component)
-{
-  return
-    BodyTranslationChannel(bodyTranslationComponent(body_index, component));
-}
-
-
-static BodyRotationChannel
-bodyRotationChannel(BodyIndex body_index, XYZComponent component)
-{
-  return
-    BodyRotationChannel(bodyRotationComponent(body_index, component));
-}
-
-
-static BodyBoxScaleChannel
-bodyBoxScaleChannel(
-  BodyIndex body_index, BoxIndex box_index, XYZComponent component
-)
-{
-  return
-    BodyBoxScaleChannel(
-      bodyBoxScaleComponent(body_index, box_index, component)
-    );
-}
-
-
 namespace {
-struct PathChannelVisitor : ScenePathVisitor {
-  const std::function<void(const Channel &)> &channel_function;
+struct PathMatcher {
+  const TreePath &path;
+  SceneElementVisitor &visitor;
 
-  PathChannelVisitor(
-    const TreePaths &tree_paths,
-    const TreePath &path,
-    const std::function<void(const Channel &)> &channel_function
+  bool
+  visitMarkerPosition(
+    Marker marker, const TreePaths::Position &position_paths
   )
-  : ScenePathVisitor(tree_paths, path),
-    channel_function(channel_function)
   {
+    XYZComponent component = matchingComponent(path, position_paths);
+    return visitor.visitMarkerPositionComponent(marker, component);
   }
 
-  void visitChannel(const Channel &channel)
+  bool visitMarker(MarkerIndex i, const MarkerPaths &marker_paths)
   {
-    channel_function(channel);
-  }
+    if (startsWith(path, marker_paths.position.path)) {
+      return visitMarkerPosition(i, marker_paths.position);
+    }
 
-  bool
-  visitBodyBoxScaleComponent(BodyBox body_box, XYZComponent component) override
-  {
-    visitChannel(
-      bodyBoxScaleChannel(body_box.body.index, body_box.index, component)
-    );
+    if (startsWith(path, marker_paths.name)) {
+      return visitor.visitMarkerName(i);
+    }
 
-    return true;
-  }
-
-  bool
-  visitBodyTranslationComponent(
-    Body body,
-    XYZComponent component
-  ) override
-  {
-    visitChannel(bodyTranslationChannel(body.index, component));
-    return true;
+    return false;
   }
 
   bool
-  visitBodyRotationComponent(
-    Body body,
-    XYZComponent component
-  ) override
+  visitBodyLineStart(
+    BodyLine body_line, const TreePaths::XYZ &body_line_start_paths
+  )
   {
-    visitChannel(bodyRotationChannel(body.index, component));
-    return true;
+    XYZComponent component = matchingComponent(path, body_line_start_paths);
+    return visitor.visitBodyLineStartComponent(body_line, component);
+  }
+
+  bool
+  visitBodyLineEnd(
+    BodyLine body_line,
+    const TreePaths::XYZ &body_line_end_paths
+  )
+  {
+    XYZComponent component = matchingComponent(path, body_line_end_paths);
+    return visitor.visitBodyLineEndComponent(body_line, component);
+  }
+
+  bool visitBodyLine(BodyLine body_line, const LinePaths &line_paths)
+  {
+    if (startsWith(path, line_paths.start.path)) {
+      return visitBodyLineStart(body_line, line_paths.start);
+    }
+
+    if (startsWith(path, line_paths.end.path)) {
+      return visitBodyLineEnd(body_line, line_paths.end);
+    }
+
+    return false;
+  }
+
+  bool
+  visitBodyBoxScale(BodyBox body_box, const TreePaths::Scale &box_scale_paths)
+  {
+    XYZComponent component = matchingComponent(path, box_scale_paths);
+    return visitor.visitBodyBoxScaleComponent(body_box, component);
+  }
+
+  bool
+  visitBodyBoxCenter(
+    BodyBox body_box,
+    const TreePaths::XYZChannels &body_box_center_paths
+  )
+  {
+    XYZComponent component = matchingComponent(path, body_box_center_paths);
+    return visitor.visitBodyBoxCenterComponent(body_box, component);
+  }
+
+  bool visitBodyBox(BodyBox body_box, const BoxPaths &box_paths)
+  {
+    if (startsWith(path, box_paths.scale.path)) {
+      return visitBodyBoxScale(body_box, box_paths.scale);
+    }
+    else if (startsWith(path, box_paths.center.path)) {
+      return visitBodyBoxCenter(body_box, box_paths.center);
+    }
+    else {
+      assert(false); // not implemented
+    }
+
+    return false;
+  }
+
+
+  bool
+  visitBodyTranslation(
+    Body body, const TreePaths::Translation &translation_paths
+  )
+  {
+    XYZComponent component = matchingComponent(path, translation_paths);
+    return visitor.visitBodyTranslationComponent(body, component);
+  }
+
+  bool visitBodyRotation(Body body, const TreePaths::Rotation &rotation_paths)
+  {
+    XYZComponent component = matchingComponent(path, rotation_paths);
+    return visitor.visitBodyRotationComponent(body, component);
+  }
+
+  bool visitBody(BodyIndex body_index, const BodyPaths &body_paths)
+  {
+    if (path == body_paths.name) {
+      return visitor.visitBodyName(body_index);
+    }
+
+    if (startsWith(path, body_paths.translation.path)) {
+      return visitBodyTranslation(body_index, body_paths.translation);
+    }
+
+    if (startsWith(path, body_paths.rotation.path)) {
+      return visitBodyRotation(body_index, body_paths.rotation);
+    }
+
+    if (isMatchingPath(path, body_paths.scale)) {
+      return visitor.visitBodyScale(body_index);
+    }
+
+    BoxIndex n_boxes = body_paths.boxes.size();
+
+    for (BoxIndex box_index = 0; box_index != n_boxes; ++box_index) {
+      const BoxPaths &box_paths = body_paths.boxes[box_index];
+
+      if (startsWith(path, box_paths.path)) {
+        BodyBox body_box{body_index, box_index};
+        return visitBodyBox(body_box, box_paths);
+      }
+    }
+
+    LineIndex n_lines = body_paths.lines.size();
+
+    for (LineIndex line_index = 0; line_index != n_lines; ++line_index) {
+      const LinePaths &line_paths = body_paths.lines[line_index];
+
+      if (startsWith(path, line_paths.path)) {
+        BodyLine body_line{body_index, line_index};
+        return visitBodyLine(body_line, line_paths);
+      }
+    }
+
+    MeshIndex n_meshes = body_paths.meshes.size();
+
+    for (MeshIndex mesh_index = 0; mesh_index != n_meshes; ++mesh_index) {
+      const MeshPaths &mesh_paths = body_paths.meshes[mesh_index];
+
+      if (startsWith(path, mesh_paths.path)) {
+        return visitBodyMesh(BodyMesh{body_index, mesh_index}, mesh_paths);
+      }
+    }
+
+    return false;
+  }
+
+  bool
+  visitDistanceError(
+    DistanceError distance_error,
+    const TreePaths::DistanceError &distance_error_paths
+  )
+  {
+    DistanceErrorIndex distance_error_index = distance_error.index;
+
+    if (startsWith(path, distance_error_paths.desired_distance)) {
+      return visitor.visitDistanceErrorDesiredDistance(distance_error_index);
+    }
+
+    if (startsWith(path, distance_error_paths.weight)) {
+      return visitor.visitDistanceErrorWeight(distance_error_index);
+    }
+
+    return false;
+  }
+
+  bool
+  visitVariable(
+    Variable variable,
+    const TreePaths::Variable &variable_paths
+  )
+  {
+    VariableIndex variable_index = variable.index;
+
+    if (path == variable_paths.path) {
+      return visitor.visitVariableValue(variable_index);
+    }
+
+    if (startsWith(path, variable_paths.name)) {
+      return visitor.visitVariableName(variable_index);
+    }
+
+    return false;
+  }
+
+  bool
+  visitBodyMeshPosition(
+    BodyMeshPosition element, const TreePaths::XYZ &position_paths
+  )
+  {
+    const TreePaths::XYZ &xyz_path = position_paths;
+    XYZComponent component = matchingComponent(path, xyz_path);
+    return visitor.visitBodyMeshPositionComponent(element, component);
+  }
+
+  bool
+  visitBodyMeshPositions(
+    BodyMesh body_mesh, const TreePaths::Positions &mesh_positions_paths
+  )
+  {
+    for (auto i : indicesOf(mesh_positions_paths.elements)) {
+      const TreePaths::XYZ &position_paths = mesh_positions_paths.elements[i];
+
+      if (startsWith(path, position_paths.path)) {
+        BodyMeshPosition element{BodyMeshPositions{body_mesh}, i};
+        return visitBodyMeshPosition(element, position_paths);
+      }
+    }
+
+    return false;
+  }
+
+  bool visitBodyMesh(BodyMesh body_mesh, const MeshPaths &mesh_paths)
+  {
+    if (startsWith(path, mesh_paths.scale.path)) {
+      const TreePaths::XYZ &xyz_path = mesh_paths.scale;
+      XYZComponent component = matchingComponent(path, xyz_path);
+      return visitor.visitBodyMeshScaleComponent(body_mesh, component);
+    }
+
+    if (startsWith(path, mesh_paths.center.path)) {
+      const TreePaths::XYZ &xyz_path = mesh_paths.center;
+      XYZComponent component = matchingComponent(path, xyz_path);
+      return visitor.visitBodyMeshCenterComponent(body_mesh, component);
+    }
+
+    if (startsWith(path, mesh_paths.positions.path)) {
+      return visitBodyMeshPositions(body_mesh, mesh_paths.positions);
+    }
+
+    return false;
+  }
+
+  bool visitScene(const TreePaths &tree_paths)
+  {
+    for (auto i : indicesOf(tree_paths.markers)) {
+      const MarkerPaths &marker_paths = tree_paths.marker(i);
+
+      if (startsWith(path, tree_paths.marker(i).path)) {
+        return visitMarker(i, marker_paths);
+      }
+    }
+
+    for (auto i : indicesOf(tree_paths.distance_errors)) {
+      auto &distance_error_paths = tree_paths.distance_errors[i];
+
+      if (startsWith(path, distance_error_paths.path)) {
+        return visitDistanceError(i, distance_error_paths);
+      }
+    }
+
+    for (auto i : indicesOf(tree_paths.variables)) {
+      const TreePaths::Variable &variable_paths = tree_paths.variables[i];
+
+      if (startsWith(path, variable_paths.path)) {
+        return visitVariable(i, variable_paths);
+      }
+    }
+
+    for (auto i : indicesOf(tree_paths.bodies)) {
+      const BodyPaths &body_paths = tree_paths.body(i);
+
+      if (startsWith(path, body_paths.path)) {
+        bool found = visitBody(i, body_paths);
+
+        if (found) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 };
 }
@@ -2810,35 +2769,18 @@ forMatchingScenePath(
   const TreePaths &tree_paths
 )
 {
-  for (auto i : indicesOf(tree_paths.markers)) {
-    if (startsWith(path, tree_paths.marker(i).path)) {
-      return visitor.visitMarker(i);
-    }
-  }
+  return PathMatcher{path, visitor}.visitScene(tree_paths);
+}
 
-  for (auto i : indicesOf(tree_paths.bodies)) {
-    if (startsWith(path, tree_paths.body(i).path)) {
-      if (visitor.visitBody(i)) {
-        return true;
-      }
-    }
-  }
 
-  for (auto i : indicesOf(tree_paths.distance_errors)) {
-    if (startsWith(path, tree_paths.distance_errors[i].path)) {
-      return visitor.visitDistanceError(i);
-    }
-  }
-
-  for (auto i : indicesOf(tree_paths.variables)) {
-    const TreePaths::Variable &variable_paths = tree_paths.variables[i];
-
-    if (startsWith(path, variable_paths.path)) {
-      return visitor.visitVariable(i);
-    }
-  }
-
-  return false;
+template <typename Function>
+static bool
+forMatchingNumericScenePath(
+  const TreePath &path, const TreePaths &tree_paths, const Function &f
+)
+{
+  NumericScenePathVisitor<Function> visitor = { f };
+  return forMatchingScenePath(path, visitor, tree_paths);
 }
 
 
@@ -2850,11 +2792,11 @@ setSceneStateNumericValue(
   const TreePaths &tree_paths
 )
 {
-  SetNumericElementValueScenePathVisitor visitor = {
-    scene_state, tree_paths, path, value
+  auto set_value_function = [&](auto element){
+    numericValue(element, scene_state) = value;
   };
 
-  return forMatchingScenePath(path, visitor, tree_paths);
+  return forMatchingNumericScenePath(path, tree_paths, set_value_function);
 }
 
 
@@ -2866,7 +2808,7 @@ setSceneStateStringValue(
   const TreePaths &tree_paths
 )
 {
-  SetStringValueVisitor visitor{scene_state, tree_paths, value, path};
+  SetStringValueVisitor visitor{scene_state, value };
   return forMatchingScenePath(path, visitor, tree_paths);
 }
 
@@ -2924,15 +2866,13 @@ createBodyBranchItemsInTree(
 
 
 namespace {
-struct SolvableScenePathVisitor : ScenePathVisitor {
+struct SolvableScenePathVisitor : SceneElementVisitor {
   const SolvableSceneElementVisitor &value_visitor;
 
   SolvableScenePathVisitor(
-    const TreePaths &paths,
-    const TreePath &path,
     const SolvableSceneElementVisitor &value_visitor
   )
-  : ScenePathVisitor(paths, path),
+  : SceneElementVisitor(),
     value_visitor(value_visitor)
   {
   }
@@ -2968,10 +2908,7 @@ forSolvableSceneElement(
   const SolvableSceneElementVisitor &value_visitor
 )
 {
-  SolvableScenePathVisitor visitor = {
-    tree_paths, path, value_visitor
-  };
-
+  SolvableScenePathVisitor visitor = { value_visitor };
   forMatchingScenePath(path, visitor, tree_paths);
 }
 
