@@ -375,7 +375,7 @@ expression(const MarkerPositionComponent &element, SceneState &scene_state)
   return
     xyzExpressionsComponent(
       scene_state
-      .marker(element.marker_index)
+      .marker(markerOf(element).index)
       .position_expressions,
       element.component
     );

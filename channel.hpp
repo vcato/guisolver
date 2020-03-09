@@ -5,13 +5,6 @@
 #include "sceneelements.hpp"
 
 
-template <typename Parent>
-struct ElementXYZComponent {
-  Parent parent;
-  XYZComponent component;
-};
-
-
 struct BodyXYZComponent {
   Body body;
   XYZComponent component;
@@ -47,6 +40,19 @@ struct BodyBoxScale {
 using BodyTranslationComponent = ElementXYZComponent<BodyTranslation>;
 using BodyRotationComponent = ElementXYZComponent<BodyRotation>;
 using BodyBoxScaleComponent = ElementXYZComponent<BodyBoxScale>;
+
+
+inline Marker markerOf(MarkerPosition arg)
+{
+  return arg.marker;
+}
+
+
+template <typename Parent>
+inline Marker markerOf(ElementXYZComponent<Parent> arg)
+{
+  return markerOf(arg.parent);
+}
 
 
 inline Body bodyOf(BodyTranslation arg)
@@ -108,7 +114,84 @@ struct BodyBoxCenter {
 };
 
 
+
+inline Body bodyOf(BodyLine arg)
+{
+  return arg.body;
+}
+
+
+inline Body bodyOf(BodyLineStart arg)
+{
+  return bodyOf(arg.body_line);
+}
+
+
+inline Body bodyOf(BodyLineEnd arg)
+{
+  return bodyOf(arg.body_line);
+}
+
+
+inline BodyLine bodyLineOf(BodyLineStart arg)
+{
+  return arg.body_line;
+}
+
+
+inline BodyMesh bodyMeshOf(BodyMeshPositions arg)
+{
+  return arg.body_mesh;
+}
+
+
+inline BodyMesh bodyMeshOf(BodyMeshPosition arg)
+{
+  return bodyMeshOf(arg.array);
+}
+
+
+inline BodyMesh bodyMeshOf(BodyMeshScale arg)
+{
+  return arg.body_mesh;
+}
+
+
+inline BodyMesh bodyMeshOf(BodyMeshCenter arg)
+{
+  return arg.body_mesh;
+}
+
+
+inline Body bodyOf(BodyMeshScale arg)
+{
+  return bodyMeshOf(arg).body;
+}
+
+
+template <typename Parent>
+inline BodyMesh bodyMeshOf(ElementXYZComponent<Parent> arg)
+{
+  return bodyMeshOf(arg.parent);
+}
+
+
+inline BodyLine bodyLineOf(BodyLineEnd arg)
+{
+  return arg.body_line;
+}
+
+
+template <typename Parent>
+inline BodyLine bodyLineOf(ElementXYZComponent<Parent> arg)
+{
+  return bodyLineOf(arg.parent);
+}
+
+
 using BodyBoxCenterComponent = ElementXYZComponent<BodyBoxCenter>;
+using BodyLineStartComponent = ElementXYZComponent<BodyLineStart>;
+using BodyLineEndComponent = ElementXYZComponent<BodyLineEnd>;
 
 
 inline BodyBox bodyBoxOf(BodyBoxCenter arg)
@@ -130,21 +213,10 @@ inline BodyBox bodyBoxOf(ElementXYZComponent<Parent> arg)
 }
 
 
-struct MarkerPositionComponent {
-  MarkerIndex marker_index;
-  XYZComponent component;
-
-  MarkerPositionComponent(MarkerIndex marker_index, XYZComponent component)
-  : marker_index(marker_index),
-    component(component)
-  {
-  }
-};
-
-
 template <typename ValueDescriptor> struct BasicChannel;
 
 
+using MarkerPositionComponent = ElementXYZComponent<MarkerPosition>;
 using BodyTranslationChannel = BasicChannel<BodyTranslationComponent>;
 using BodyRotationChannel = BasicChannel<BodyRotationComponent>;
 using BodyScaleChannel = BasicChannel<BodyScale>;

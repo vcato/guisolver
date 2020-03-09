@@ -206,3 +206,12 @@ I want to be able to be able to select vertices on the mesh and move them
 around.
 
 We can have positions that are part of the mesh.
+---
+Working on refactoring so that we can visit the element for a path to
+make it more efficient to change a position in a mesh.
+
+* Restructuring setSceneStateNumericValue()
+* Restructuring SetNumericElementValueScenePathVisitor 
+* Trying to make it where we have a visitor for a numeric element, and
+  then we set the value of the number element, so that we can do other
+  things with that numeric element.

@@ -1157,7 +1157,7 @@ channelValue(
     {
       value_ptr = &
         scene_state
-          .marker(channel.marker_index)
+          .marker(markerOf(channel).index)
           .position
           .component(channel.component);
     }
@@ -1209,9 +1209,10 @@ forEachChannel(const SceneState &scene_state, const F &f)
   }
 
   for (MarkerIndex marker_index : indicesOf(scene_state.markers())) {
-    f(MarkerPositionChannel{marker_index, XYZComponent::x});
-    f(MarkerPositionChannel{marker_index, XYZComponent::y});
-    f(MarkerPositionChannel{marker_index, XYZComponent::z});
+    MarkerPosition marker_position{marker_index};
+    f(MarkerPositionChannel{{marker_position, XYZComponent::x}});
+    f(MarkerPositionChannel{{marker_position, XYZComponent::y}});
+    f(MarkerPositionChannel{{marker_position, XYZComponent::z}});
   }
 }
 
