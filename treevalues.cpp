@@ -2486,35 +2486,28 @@ struct PathMatcher {
     return visitor.visitMarkerPositionComponent(marker, component);
   }
 
-  bool visitMarker(MarkerIndex i, const MarkerPaths &marker_paths)
+  bool visitMarker(Marker marker, const MarkerPaths &marker_paths)
   {
     if (startsWith(path, marker_paths.position.path)) {
-      return visitMarkerPosition(i, marker_paths.position);
+      return visitMarkerPosition(marker, marker_paths.position);
     }
 
     if (startsWith(path, marker_paths.name)) {
-      return visitor.visitMarkerName(i);
+      return visitor.visitMarkerName(marker);
     }
 
     return false;
   }
 
-  bool
-  visitBodyLineStart(
-    BodyLine body_line, const TreePaths::XYZ &body_line_start_paths
-  )
+  bool visitBodyLineStart(BodyLine body_line, const TreePaths::XYZ &xyz_paths)
   {
-    XYZComponent component = matchingComponent(path, body_line_start_paths);
+    XYZComponent component = matchingComponent(path, xyz_paths);
     return visitor.visitBodyLineStartComponent(body_line, component);
   }
 
-  bool
-  visitBodyLineEnd(
-    BodyLine body_line,
-    const TreePaths::XYZ &body_line_end_paths
-  )
+  bool visitBodyLineEnd(BodyLine body_line, const TreePaths::XYZ &xyz_paths)
   {
-    XYZComponent component = matchingComponent(path, body_line_end_paths);
+    XYZComponent component = matchingComponent(path, xyz_paths);
     return visitor.visitBodyLineEndComponent(body_line, component);
   }
 
@@ -2553,13 +2546,12 @@ struct PathMatcher {
     if (startsWith(path, box_paths.scale.path)) {
       return visitBodyBoxScale(body_box, box_paths.scale);
     }
-    else if (startsWith(path, box_paths.center.path)) {
+
+    if (startsWith(path, box_paths.center.path)) {
       return visitBodyBoxCenter(body_box, box_paths.center);
     }
-    else {
-      assert(false); // not implemented
-    }
 
+    assert(false); // not implemented
     return false;
   }
 
@@ -2579,53 +2571,45 @@ struct PathMatcher {
     return visitor.visitBodyRotationComponent(body, component);
   }
 
-  bool visitBody(BodyIndex body_index, const BodyPaths &body_paths)
+  bool visitBody(Body body, const BodyPaths &body_paths)
   {
     if (path == body_paths.name) {
-      return visitor.visitBodyName(body_index);
+      return visitor.visitBodyName(body);
     }
 
     if (startsWith(path, body_paths.translation.path)) {
-      return visitBodyTranslation(body_index, body_paths.translation);
+      return visitBodyTranslation(body, body_paths.translation);
     }
 
     if (startsWith(path, body_paths.rotation.path)) {
-      return visitBodyRotation(body_index, body_paths.rotation);
+      return visitBodyRotation(body, body_paths.rotation);
     }
 
     if (isMatchingPath(path, body_paths.scale)) {
-      return visitor.visitBodyScale(body_index);
+      return visitor.visitBodyScale(body);
     }
 
-    BoxIndex n_boxes = body_paths.boxes.size();
-
-    for (BoxIndex box_index = 0; box_index != n_boxes; ++box_index) {
+    for (BoxIndex box_index : indicesOf(body_paths.boxes)) {
       const BoxPaths &box_paths = body_paths.boxes[box_index];
 
       if (startsWith(path, box_paths.path)) {
-        BodyBox body_box{body_index, box_index};
-        return visitBodyBox(body_box, box_paths);
+        return visitBodyBox({body, box_index}, box_paths);
       }
     }
 
-    LineIndex n_lines = body_paths.lines.size();
-
-    for (LineIndex line_index = 0; line_index != n_lines; ++line_index) {
+    for (LineIndex line_index : indicesOf(body_paths.lines)) {
       const LinePaths &line_paths = body_paths.lines[line_index];
 
       if (startsWith(path, line_paths.path)) {
-        BodyLine body_line{body_index, line_index};
-        return visitBodyLine(body_line, line_paths);
+        return visitBodyLine({body, line_index}, line_paths);
       }
     }
 
-    MeshIndex n_meshes = body_paths.meshes.size();
-
-    for (MeshIndex mesh_index = 0; mesh_index != n_meshes; ++mesh_index) {
+    for (MeshIndex mesh_index : indicesOf(body_paths.meshes)) {
       const MeshPaths &mesh_paths = body_paths.meshes[mesh_index];
 
       if (startsWith(path, mesh_paths.path)) {
-        return visitBodyMesh(BodyMesh{body_index, mesh_index}, mesh_paths);
+        return visitBodyMesh({body, mesh_index}, mesh_paths);
       }
     }
 
@@ -2638,14 +2622,12 @@ struct PathMatcher {
     const TreePaths::DistanceError &distance_error_paths
   )
   {
-    DistanceErrorIndex distance_error_index = distance_error.index;
-
     if (startsWith(path, distance_error_paths.desired_distance)) {
-      return visitor.visitDistanceErrorDesiredDistance(distance_error_index);
+      return visitor.visitDistanceErrorDesiredDistance(distance_error);
     }
 
     if (startsWith(path, distance_error_paths.weight)) {
-      return visitor.visitDistanceErrorWeight(distance_error_index);
+      return visitor.visitDistanceErrorWeight(distance_error);
     }
 
     return false;
@@ -2657,14 +2639,12 @@ struct PathMatcher {
     const TreePaths::Variable &variable_paths
   )
   {
-    VariableIndex variable_index = variable.index;
-
     if (path == variable_paths.path) {
-      return visitor.visitVariableValue(variable_index);
+      return visitor.visitVariableValue(variable);
     }
 
     if (startsWith(path, variable_paths.name)) {
-      return visitor.visitVariableName(variable_index);
+      return visitor.visitVariableName(variable);
     }
 
     return false;
@@ -2748,10 +2728,11 @@ struct PathMatcher {
       const BodyPaths &body_paths = tree_paths.body(i);
 
       if (startsWith(path, body_paths.path)) {
-        bool found = visitBody(i, body_paths);
-
-        if (found) {
+        if (visitBody(i, body_paths)) {
           return true;
+        }
+        else {
+          // There might be a child body that matches.
         }
       }
     }
