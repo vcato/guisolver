@@ -19,7 +19,6 @@
 #include "osgcameramanipulator.hpp"
 #include "contains.hpp"
 #include "matchconst.hpp"
-#include "eigenconv.hpp"
 #include "indicesof.hpp"
 
 namespace {

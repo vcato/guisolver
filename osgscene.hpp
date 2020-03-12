@@ -2,7 +2,6 @@
 #define OSGSCENEMANAGER_HPP_
 
 
-#include <cassert>
 #include <memory>
 #include <osg/MatrixTransform>
 #include <osgViewer/CompositeViewer>
