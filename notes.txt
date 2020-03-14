@@ -215,3 +215,6 @@ make it more efficient to change a position in a mesh.
 * Trying to make it where we have a visitor for a numeric element, and
   then we set the value of the number element, so that we can do other
   things with that numeric element.
+---
+It seems like we have some redundancy between
+ObservedScene::describePath() and PathMatcher.

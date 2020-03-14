@@ -101,21 +101,13 @@ localTransform(
 
 
 namespace {
-struct GeometryStateUpdaterParams {
+struct GeometryStateUpdater {
   SceneState::Body &body_state;
   const SceneHandles::Body &body_handles;
   const Scene &scene;
   const float body_global_scale;
-};
-}
 
-
-namespace {
-struct GeometryStateUpdater : GeometryVisitor, GeometryStateUpdaterParams {
-  using Params = GeometryStateUpdaterParams;
-  GeometryStateUpdater(Params params) : Params(params) {}
-
-  void visitBox(BoxIndex box_index) override
+  void visitBox(BoxIndex box_index)
   {
     SceneState::Box &box_state = body_state.boxes[box_index];
     Scene::GeometryHandle box_handle = body_handles.boxes[box_index].handle;
@@ -128,11 +120,11 @@ struct GeometryStateUpdater : GeometryVisitor, GeometryStateUpdaterParams {
     box_state.center = xyzStateFromVec3(scene.geometryCenter(box_handle));
   }
 
-  void visitLine(LineIndex) override
+  void visitLine(LineIndex)
   {
   }
 
-  void visitMesh(MeshIndex mesh_index) override
+  void visitMesh(MeshIndex mesh_index)
   {
     SceneState::Mesh &mesh_state = body_state.meshes[mesh_index];
     Scene::GeometryHandle mesh_handle = body_handles.meshes[mesh_index].handle;
@@ -389,30 +381,21 @@ destroyMeshObjects(const SceneHandles::Mesh &mesh_handles, Scene &scene)
 
 
 namespace {
-struct GeometryDestroyerParams {
+struct GeometryDestroyer {
   const SceneHandles::Body &body_handles;
   Scene &scene;
-};
-}
 
-
-namespace {
-struct GeometryDestroyer : GeometryVisitor, GeometryDestroyerParams {
-  using Params = GeometryDestroyerParams;
-
-  GeometryDestroyer(Params params) : Params(params) {}
-
-  void visitBox(BoxIndex box_index) override
+  void visitBox(BoxIndex box_index)
   {
     destroyBoxObjects(body_handles.boxes[box_index], scene);
   }
 
-  void visitMesh(MeshIndex mesh_index) override
+  void visitMesh(MeshIndex mesh_index)
   {
     destroyMeshObjects(body_handles.meshes[mesh_index], scene);
   }
 
-  void visitLine(LineIndex line_index) override
+  void visitLine(LineIndex line_index)
   {
     destroyLineObjects(body_handles.lines[line_index], scene);
   }
@@ -584,36 +567,27 @@ updateMeshInScene(
 
 
 namespace {
-struct GeometrySceneUpdaterParams {
+struct GeometrySceneUpdater {
   const SceneHandles::Body &body_handles;
   const SceneState::Body &body_state;
   Scene &scene;
   const float body_global_scale;
-};
-}
 
-
-namespace {
-struct GeometrySceneUpdater : GeometryVisitor, GeometrySceneUpdaterParams {
-  using Params = GeometrySceneUpdaterParams;
-
-  GeometrySceneUpdater(Params params) : Params(params) {}
-
-  void visitBox(BoxIndex box_index) override
+  void visitBox(BoxIndex box_index)
   {
     const SceneHandles::Box &box_handles = body_handles.boxes[box_index];
     const SceneState::Box &box_state = body_state.boxes[box_index];
     updateBoxInScene(scene, box_state, box_handles, body_global_scale);
   }
 
-  void visitLine(LineIndex line_index) override
+  void visitLine(LineIndex line_index)
   {
     const SceneHandles::Line &line_handles = body_handles.lines[line_index];
     const SceneState::Line &line_state = body_state.lines[line_index];
     updateLineInScene(scene, line_state, line_handles, body_global_scale);
   }
 
-  void visitMesh(MeshIndex mesh_index) override
+  void visitMesh(MeshIndex mesh_index)
   {
     const SceneHandles::Mesh &mesh_handles = body_handles.meshes[mesh_index];
     const SceneState::Mesh &mesh_state = body_state.meshes[mesh_index];

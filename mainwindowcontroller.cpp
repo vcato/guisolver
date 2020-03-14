@@ -20,7 +20,6 @@ using std::cerr;
 using std::string;
 using TransformHandle = Scene::TransformHandle;
 using GeometryHandle = Scene::GeometryHandle;
-using TreeItemDescription = ObservedScene::TreeItemDescription;
 using ManipulatorType = Scene::ManipulatorType;
 
 

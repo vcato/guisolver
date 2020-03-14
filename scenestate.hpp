@@ -514,14 +514,24 @@ extern SceneState::Expression &
   channelExpression(const Channel &channel, SceneState &scene_state);
 
 
-struct GeometryVisitor {
-  virtual void visitBox(BoxIndex) = 0;
-  virtual void visitLine(LineIndex) = 0;
-  virtual void visitMesh(MeshIndex) = 0;
-};
+template <typename GeometryVisitor>
+inline void
+forEachBodyGeometry(
+  const SceneState::Body &body_state, GeometryVisitor &visitor
+)
+{
+  for (auto i : indicesOf(body_state.boxes)) {
+    visitor.visitBox(i);
+  }
 
+  for (auto i : indicesOf(body_state.lines)) {
+    visitor.visitLine(i);
+  }
 
-extern void forEachBodyGeometry(const SceneState::Body &, GeometryVisitor &);
+  for (auto i : indicesOf(body_state.meshes)) {
+    visitor.visitMesh(i);
+  }
+}
 
 
 #endif /* SCENESTATE_HPP_ */

@@ -1386,22 +1386,13 @@ struct BodyItemCreator : BodyItemVisitor {
 
 
 namespace {
-struct GeometryCreatorParams {
+struct GeometryCreator {
   ItemAdder &adder;
   TreePaths::Body &body_paths;
   TreeWidget &tree_widget;
   const BodyState &body_state;
-};
-}
 
-
-namespace {
-struct GeometryCreator : GeometryVisitor, GeometryCreatorParams {
-  using Params = GeometryCreatorParams;
-
-  GeometryCreator(Params params) : Params(params) {}
-
-  void visitBox(BoxIndex i) override
+  void visitBox(BoxIndex i)
   {
     TreePath box_path = childPath(adder.parent_path, adder.n_children);
 
@@ -1414,7 +1405,7 @@ struct GeometryCreator : GeometryVisitor, GeometryCreatorParams {
     ++adder.n_children;
   }
 
-  void visitLine(LineIndex i) override
+  void visitLine(LineIndex i)
   {
     TreePath line_path = childPath(adder.parent_path, adder.n_children);
 
@@ -1427,7 +1418,7 @@ struct GeometryCreator : GeometryVisitor, GeometryCreatorParams {
     ++adder.n_children;
   }
 
-  void visitMesh(MeshIndex i) override
+  void visitMesh(MeshIndex i)
   {
     TreePath mesh_path = childPath(adder.parent_path, adder.n_children);
 
@@ -1837,21 +1828,12 @@ struct BodyPropertyUpdator {
 
 
 namespace {
-struct TreeGeometryUpdaterParams {
+struct TreeGeometryUpdater {
   const TreePaths::Body &body_paths;
   const SceneState::Body &body_state;
   TreeWidget &tree_widget;
-};
-}
 
-
-namespace {
-struct TreeGeometryUpdater : GeometryVisitor, TreeGeometryUpdaterParams {
-  using Params = TreeGeometryUpdaterParams;
-
-  TreeGeometryUpdater(Params params) : Params(params) {}
-
-  void visitBox(BoxIndex i) override
+  void visitBox(BoxIndex i)
   {
     const BoxPaths &box_paths = body_paths.boxes[i];
     const SceneState::Box &box_state = body_state.boxes[i];
@@ -1867,11 +1849,11 @@ struct TreeGeometryUpdater : GeometryVisitor, TreeGeometryUpdaterParams {
     }
   }
 
-  void visitLine(LineIndex) override
+  void visitLine(LineIndex)
   {
   }
 
-  void visitMesh(MeshIndex i) override
+  void visitMesh(MeshIndex i)
   {
     const MeshPaths &mesh_paths = body_paths.meshes[i];
     const SceneState::Mesh &mesh_state = body_state.meshes[i];

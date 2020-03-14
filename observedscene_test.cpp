@@ -514,7 +514,7 @@ static void testAddingAndRemovingAVariable()
 
   assert(
     observed_scene.describePath(variable_path).type
-    == ObservedScene::TreeItemDescription::Type::variable
+    == TreeItemDescription::Type::variable
   );
 
   MarkerIndex marker_index = observed_scene.addMarker();
@@ -1121,7 +1121,6 @@ static void testSetSolveFlags()
   Tester tester;
   ObservedScene &observed_scene = tester.observed_scene;
   observed_scene.replaceSceneStateWith(initial_state);
-  using TreeItemDescription = ObservedScene::TreeItemDescription;
   {
     TreeItemDescription item;
     item.type = TreeItemDescription::Type::translation;
@@ -1134,7 +1133,6 @@ static void testSetSolveFlags()
     item.maybe_body_index = body_index;
     observed_scene.setSolveFlags(item, true);
   }
-
   FakeTreeWidget &tree_widget = tester.tree_widget;
   const TreePaths &tree_paths = observed_scene.tree_paths;
   const TreePaths::Body &body_paths = tree_paths.body(body_index);
