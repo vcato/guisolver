@@ -1080,3 +1080,27 @@ void
   updateMarkersInScene(scene, scene_handles, state);
   updateDistanceErrorsInScene(scene, scene_handles, state);
 }
+
+
+void
+updateBodyMeshPositionInScene(
+  BodyIndex body_index,
+  MeshIndex mesh_index,
+  MeshPositionIndex mesh_position_index,
+  Scene &/*scene*/,
+  const SceneHandles &,
+  const SceneState &
+)
+{
+  cerr << "updateBodyMeshPositionInScene:\n";
+  cerr << "  body_index: " << body_index << "\n";
+  cerr << "  mesh_index: " << mesh_index << "\n";
+  cerr << "  mesh_position_index: " << mesh_position_index << "\n";
+
+#if 0
+  scene.setMeshPosition(
+    scene_handles.bodies[body_index].meshes[mesh_index].handle,
+    mesh_position_index
+  );
+#endif
+}

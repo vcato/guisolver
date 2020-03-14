@@ -1842,10 +1842,23 @@ ObservedScene::handleTreeNumericValueChanged(
       }
     }
 
-    // If we've change a position in a mesh, we don't want to be updating
-    // the positions of all the meshes in the scene.  We need to be more
-    // specific.  This implies having some way of referncing what we changed
-    // so that we can be more selective.
+    TreeItemDescription description = describePath(path);
+
+    if (description.maybe_mesh_position_index) {
+      // To save time, handleSceneStateChanged() doesn't update every position
+      // in all the meshes, so if we've changed a mesh position we need to
+      // explicitly update that in the scene explicitly.
+
+      updateBodyMeshPositionInScene(
+        *description.maybe_body_index,
+        *description.maybe_mesh_index,
+        *description.maybe_mesh_position_index,
+        scene,
+        scene_handles,
+        scene_state
+      );
+    }
+
     observed_scene.handleSceneStateChanged();
   }
   else {
@@ -2000,7 +2013,7 @@ auto
 ObservedScene::describePath(const TreePath &path) const
 -> TreeItemDescription
 {
-  return ::describeTreePath(path, tree_paths, scene_state);
+  return ::describeTreePath(path, tree_paths);
 }
 
 

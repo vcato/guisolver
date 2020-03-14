@@ -2986,9 +2986,8 @@ struct GeometryDescriber {
   const TreePaths::Body &body_paths;
   const TreePath &path;
   TreeItemDescription &description;
-  const BodyIndex body_index;
 
-  void visitBox(BoxIndex box_index)
+  void visitBox(BoxIndex box_index) const
   {
     if (!found_description) {
       const TreePaths::Box &box_paths = body_paths.boxes[box_index];
@@ -3004,7 +3003,14 @@ struct GeometryDescriber {
     }
   }
 
-  void visitLine(LineIndex line_index)
+  void visitBoxes() const
+  {
+    for (auto i : indicesOf(body_paths.boxes)) {
+      visitBox(i);
+    }
+  }
+
+  void visitLine(LineIndex line_index) const
   {
     if (!found_description) {
       const TreePaths::Line &line_paths = body_paths.lines[line_index];
@@ -3020,19 +3026,42 @@ struct GeometryDescriber {
     }
   }
 
-  void visitMesh(MeshIndex mesh_index)
+  void visitLines() const
+  {
+    for (auto i : indicesOf(body_paths.lines)) {
+      visitLine(i);
+    }
+  }
+
+  void visitMesh(MeshIndex mesh_index) const
   {
     if (!found_description) {
       const TreePaths::Mesh &mesh_paths = body_paths.meshes[mesh_index];
 
       if (startsWith(path, mesh_paths.path)) {
+        description.maybe_mesh_index = mesh_index;
+
         if (path == mesh_paths.path) {
           description.type = ItemType::mesh;
         }
 
-        description.maybe_mesh_index = mesh_index;
+        if (startsWith(path, mesh_paths.positions.path)) {
+          for (auto i : indicesOf(mesh_paths.positions.elements)) {
+            if (startsWith(path, mesh_paths.positions.elements[i].path)) {
+              description.maybe_mesh_position_index = i;
+            }
+          }
+        }
+
         found_description = true;
       }
+    }
+  }
+
+  void visitMeshes() const
+  {
+    for (auto i : indicesOf(body_paths.meshes)) {
+      visitMesh(i);
     }
   }
 };
@@ -3042,8 +3071,7 @@ struct GeometryDescriber {
 TreeItemDescription
 describeTreePath(
   const TreePath &path,
-  const TreePaths &tree_paths,
-  const SceneState &scene_state
+  const TreePaths &tree_paths
 )
 {
   TreeItemDescription description;
@@ -3086,11 +3114,10 @@ describeTreePath(
         found_description,
         body_paths,
         path,
-        description,
-        body_index
+        description
       };
 
-      forEachBodyGeometry(scene_state.body(body_index), geometry_describer);
+      forEachBodyGeometryType(geometry_describer);
 
       if (found_description) {
         description.maybe_body_index = body_index;

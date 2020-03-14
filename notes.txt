@@ -216,20 +216,5 @@ make it more efficient to change a position in a mesh.
   then we set the value of the number element, so that we can do other
   things with that numeric element.
 ---
-It seems like we have some redundancy between
-describePath() and PathMatcher.
-
-describePath() is used for two things
-* properManpiulatorForSelectedObject()
-  * This takes advantage of being able to check whether a path starts with
-    a body rotation.
-    * I suppose we can get a similar benefit by seeing if an element has
-      a BodyRotation ancestor.
-* contextMenuItemsForPath()
-  * This seems to take advantage of how we have a function which is building
-    items and being able to query specific properties of the item.  The
-    fact that it is a function naturally produces items in a particular
-    order.  In other words, it's more like we have a set of possible items
-    in a particular order, and the we're filtering out those items that
-    aren't relevant to the particular tree item.  This would be more
-    difficult to do effectively with a visitor.
+Need to change Scene::createMesh() so it returns a MeshHandle, which will
+let us use Scene::setMeshPosition();

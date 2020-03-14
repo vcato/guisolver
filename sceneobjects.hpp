@@ -20,6 +20,16 @@ extern void
   );
 
 extern void
+  updateBodyMeshPositionInScene(
+    BodyIndex,
+    MeshIndex,
+    MeshPositionIndex,
+    Scene &,
+    const SceneHandles &,
+    const SceneState &
+  );
+
+extern void
   updateSceneObjects(
     Scene &scene,
     const SceneHandles &scene_handles,

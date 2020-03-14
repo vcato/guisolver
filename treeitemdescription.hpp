@@ -25,6 +25,7 @@ struct TreeItemDescription {
   Optional<LineIndex> maybe_line_index;
   Optional<VariableIndex> maybe_variable_index;
   Optional<DistanceErrorIndex> maybe_distance_error_index;
+  Optional<MeshPositionIndex> maybe_mesh_position_index;
   bool has_rotation_ancestor = false;
   bool has_translation_ancesor = false;
 };

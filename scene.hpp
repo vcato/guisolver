@@ -82,6 +82,14 @@ struct Scene {
   virtual void setTranslation(TransformHandle,Point) = 0;
   virtual Point translation(TransformHandle) const = 0;
   virtual void setGeometryColor(GeometryHandle, const Color &) = 0;
+
+#if 0
+  virtual void
+    setMeshPosition(
+      MeshHandle, int position_index, const Vec3 &new_position
+    ) = 0;
+#endif
+
   virtual void setStartPoint(LineHandle,Point) = 0;
   virtual void setEndPoint(LineHandle,Point) = 0;
   virtual Optional<GeometryHandle> selectedGeometry() const = 0;
