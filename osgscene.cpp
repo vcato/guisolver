@@ -39,6 +39,7 @@ using DraggerPtr = osg::ref_ptr<osgManipulator::Dragger>;
 using TransformHandle = Scene::TransformHandle;
 using GeometryHandle = Scene::GeometryHandle;
 using LineHandle = Scene::LineHandle;
+using MeshHandle = Scene::MeshHandle;
 using RotateDraggerPtr = osg::ref_ptr<RotateDragger>;
 using TranslateDraggerPtr = osg::ref_ptr<TranslateDragger>;
 using ScaleDraggerPtr = osg::ref_ptr<ScaleDragger>;
@@ -1902,10 +1903,13 @@ GeometryHandle OSGScene::createSphere(TransformHandle transform_handle)
 }
 
 
-GeometryHandle
+MeshHandle
 OSGScene::createMesh(TransformHandle parent_handle, const Mesh &mesh)
 {
-  return Impl::createGeometry(MeshShapeParams(mesh), parent_handle, *this);
+  GeometryHandle geometry =
+    Impl::createGeometry(MeshShapeParams(mesh), parent_handle, *this);
+
+  return MeshHandle{geometry};
 }
 
 

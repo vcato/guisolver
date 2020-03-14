@@ -60,6 +60,15 @@ struct Scene {
     }
   };
 
+  struct MeshHandle : GeometryHandle {
+    using GeometryHandle::GeometryHandle;
+
+    explicit MeshHandle(const GeometryHandle &arg)
+    : GeometryHandle(arg)
+    {
+    }
+  };
+
   std::function<void()> changing_callback;
   std::function<void()> changed_callback;
   std::function<void()> selection_changed_callback;
@@ -69,7 +78,7 @@ struct Scene {
   virtual GeometryHandle createBox(TransformHandle parent) = 0;
   virtual LineHandle createLine(TransformHandle parent) = 0;
   virtual GeometryHandle createSphere(TransformHandle parent) = 0;
-  virtual GeometryHandle createMesh(TransformHandle parent, const Mesh &) = 0 ;
+  virtual MeshHandle createMesh(TransformHandle parent, const Mesh &) = 0 ;
   virtual TransformHandle parentTransform(GeometryHandle) const = 0;
   virtual void destroyGeometry(GeometryHandle) = 0;
   virtual void destroyTransform(TransformHandle) = 0;

@@ -4,6 +4,7 @@
 using TransformHandle = Scene::TransformHandle;
 using GeometryHandle = Scene::GeometryHandle;
 using LineHandle = Scene::LineHandle;
+using MeshHandle = Scene::MeshHandle;
 using std::cerr;
 
 
@@ -85,9 +86,9 @@ GeometryHandle FakeScene::createSphere(TransformHandle parent)
 }
 
 
-GeometryHandle FakeScene::createMesh(TransformHandle parent, const Mesh &)
+MeshHandle FakeScene::createMesh(TransformHandle parent, const Mesh &)
 {
-  return createGeometry(parent);
+  return MeshHandle{createGeometry(parent)};
 }
 
 

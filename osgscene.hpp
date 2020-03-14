@@ -24,7 +24,7 @@ class OSGScene : public Scene {
     GeometryHandle createBox(TransformHandle parent) override;
     LineHandle createLine(TransformHandle parent) override;
     GeometryHandle createSphere(TransformHandle parent) override;
-    GeometryHandle createMesh(TransformHandle parent, const Mesh &) override;
+    MeshHandle createMesh(TransformHandle parent, const Mesh &) override;
     TransformHandle parentTransform(GeometryHandle) const override;
     void destroyGeometry(GeometryHandle) override;
     void destroyTransform(TransformHandle) override;
