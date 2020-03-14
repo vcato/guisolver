@@ -1995,7 +1995,7 @@ void OSGScene::setGeometryColor(GeometryHandle handle,const Color &color)
 }
 
 
-void OSGScene::setStartPoint(LineHandle handle,Point p)
+void OSGScene::setLineStartPoint(LineHandle handle,Point p)
 {
   LineDrawable &line_drawable = Impl::lineDrawable(*this, handle);
   line_drawable.start_point = osgVec3f(p);
@@ -2003,7 +2003,7 @@ void OSGScene::setStartPoint(LineHandle handle,Point p)
 }
 
 
-void OSGScene::setEndPoint(LineHandle handle,Point p)
+void OSGScene::setLineEndPoint(LineHandle handle,Point p)
 {
   LineDrawable &line_drawable = Impl::lineDrawable(*this,handle);
   line_drawable.end_point = osgVec3f(p);

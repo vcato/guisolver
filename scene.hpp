@@ -99,8 +99,8 @@ struct Scene {
     ) = 0;
 #endif
 
-  virtual void setStartPoint(LineHandle,Point) = 0;
-  virtual void setEndPoint(LineHandle,Point) = 0;
+  virtual void setLineStartPoint(LineHandle, Point) = 0;
+  virtual void setLineEndPoint(LineHandle, Point) = 0;
   virtual Optional<GeometryHandle> selectedGeometry() const = 0;
   virtual Optional<TransformHandle> selectedTransform() const = 0;
   virtual void selectGeometry(GeometryHandle) = 0;

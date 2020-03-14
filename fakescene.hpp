@@ -73,11 +73,11 @@ struct FakeScene : Scene {
   {
   }
 
-  void setStartPoint(LineHandle,Point) override
+  void setLineStartPoint(LineHandle, Point) override
   {
   }
 
-  void setEndPoint(LineHandle,Point) override
+  void setLineEndPoint(LineHandle, Point) override
   {
   }
 

@@ -39,8 +39,8 @@ class OSGScene : public Scene {
     void setCoordinateAxes(TransformHandle,const CoordinateAxes &) override;
     CoordinateAxes coordinateAxes(TransformHandle) const override;
 
-    void setStartPoint(LineHandle, Point) override;
-    void setEndPoint(LineHandle,Point) override;
+    void setLineStartPoint(LineHandle, Point) override;
+    void setLineEndPoint(LineHandle,Point) override;
     Optional<GeometryHandle> selectedGeometry() const override;
     Optional<TransformHandle> selectedTransform() const override;
     void selectGeometry(GeometryHandle handle);

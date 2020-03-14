@@ -317,11 +317,11 @@ updateDistanceErrorInScene(
     end = markerPredicted(scene_state, end_marker_index);
   }
 
-  scene.setStartPoint(
+  scene.setLineStartPoint(
     distance_error_handles.line_handle, makeScenePointFromPoint(start)
   );
 
-  scene.setEndPoint(
+  scene.setLineEndPoint(
     distance_error_handles.line_handle, makeScenePointFromPoint(end)
   );
 }
@@ -538,11 +538,11 @@ updateLineInScene(
   SceneState::Float body_global_scale
 )
 {
-  scene.setStartPoint(
+  scene.setLineStartPoint(
     line_handles.handle, vec3FromXYZState(line_state.start)*body_global_scale
   );
 
-  scene.setEndPoint(
+  scene.setLineEndPoint(
     line_handles.handle, vec3FromXYZState(line_state.end)*body_global_scale
   );
 }
