@@ -3,6 +3,7 @@
 #include "scenestate.hpp"
 #include "stringvalue.hpp"
 #include "channel.hpp"
+#include "treeitemdescription.hpp"
 
 
 struct SceneTreeRef {
@@ -201,3 +202,11 @@ extern const TreePath &
   );
 
 const TreePath *channelExpressionPathPtr(const Channel &, const TreePaths &);
+
+
+extern TreeItemDescription
+  describeTreePath(
+    const TreePath &path,
+    const TreePaths &tree_paths,
+    const SceneState &scene_state
+  );

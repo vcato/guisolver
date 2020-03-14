@@ -2976,3 +2976,158 @@ channelExpressionPathPtr(
 {
   return &channelPaths(channel, tree_paths).expression_path;
 }
+
+
+namespace {
+struct GeometryDescriber {
+  using ItemType = TreeItemDescription::Type;
+
+  bool &found_description;
+  const TreePaths::Body &body_paths;
+  const TreePath &path;
+  TreeItemDescription &description;
+  const BodyIndex body_index;
+
+  void visitBox(BoxIndex box_index)
+  {
+    if (!found_description) {
+      const TreePaths::Box &box_paths = body_paths.boxes[box_index];
+
+      if (startsWith(path, box_paths.path)) {
+        if (path == box_paths.path) {
+          description.type = ItemType::box;
+        }
+
+        description.maybe_box_index = box_index;
+        found_description = true;
+      }
+    }
+  }
+
+  void visitLine(LineIndex line_index)
+  {
+    if (!found_description) {
+      const TreePaths::Line &line_paths = body_paths.lines[line_index];
+
+      if (startsWith(path, line_paths.path)) {
+        if (path == line_paths.path) {
+          description.type = ItemType::line;
+        }
+
+        description.maybe_line_index = line_index;
+        found_description = true;
+      }
+    }
+  }
+
+  void visitMesh(MeshIndex mesh_index)
+  {
+    if (!found_description) {
+      const TreePaths::Mesh &mesh_paths = body_paths.meshes[mesh_index];
+
+      if (startsWith(path, mesh_paths.path)) {
+        if (path == mesh_paths.path) {
+          description.type = ItemType::mesh;
+        }
+
+        description.maybe_mesh_index = mesh_index;
+        found_description = true;
+      }
+    }
+  }
+};
+}
+
+
+TreeItemDescription
+describeTreePath(
+  const TreePath &path,
+  const TreePaths &tree_paths,
+  const SceneState &scene_state
+)
+{
+  TreeItemDescription description;
+  using ItemType = TreeItemDescription::Type;
+
+  if (path == tree_paths.path) {
+    description.type = ItemType::scene;
+    return description;
+  }
+
+  for (BodyIndex body_index : indicesOf(tree_paths.bodies)) {
+    const TreePaths::Body &body_paths = tree_paths.body(body_index);
+
+    if (startsWith(path, body_paths.translation.path)) {
+      description.has_translation_ancesor = true;
+
+      if (path == body_paths.translation.path) {
+        description.type = ItemType::translation;
+      }
+
+      description.maybe_body_index = body_index;
+      return description;
+    }
+
+    if (startsWith(path, body_paths.rotation.path)) {
+      description.has_rotation_ancestor = true;
+      description.maybe_body_index = body_index;
+
+      if (path == body_paths.rotation.path) {
+        description.type = ItemType::rotation;
+      }
+
+      return description;
+    }
+
+    {
+      bool found_description = false;
+
+      GeometryDescriber geometry_describer = {
+        found_description,
+        body_paths,
+        path,
+        description,
+        body_index
+      };
+
+      forEachBodyGeometry(scene_state.body(body_index), geometry_describer);
+
+      if (found_description) {
+        description.maybe_body_index = body_index;
+        return description;
+      }
+    }
+
+    if (body_paths.path == path) {
+      description.type = ItemType::body;
+      description.maybe_body_index = body_index;
+      return description;
+    }
+  }
+
+  for (auto i : indicesOf(tree_paths.markers)) {
+    if (path == tree_paths.marker(i).path) {
+      description.type = ItemType::marker;
+      description.maybe_marker_index = i;
+      return description;
+    }
+  }
+
+  for (auto i : indicesOf(tree_paths.distance_errors)) {
+    if (path == tree_paths.distance_errors[i].path) {
+      description.type = ItemType::distance_error;
+      description.maybe_distance_error_index = i;
+      return description;
+    }
+  }
+
+  for (auto i : indicesOf(tree_paths.variables)) {
+    if (path == tree_paths.variables[i].path) {
+      description.type = ItemType::variable;
+      description.maybe_variable_index = i;
+      return description;
+    }
+  }
+
+  return description;
+}
