@@ -73,6 +73,11 @@ struct FakeScene : Scene {
   {
   }
 
+  void setMesh(MeshHandle, Mesh) override
+  {
+    assert(false); // not implemented
+  }
+
   void setLineStartPoint(LineHandle, Point) override
   {
   }

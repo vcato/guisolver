@@ -33,6 +33,12 @@ class Optional {
       return &_value;
     }
 
+    const T *operator->() const
+    {
+      assert(_has_value);
+      return &_value;
+    }
+
     Optional()
     : _has_value(false)
     {

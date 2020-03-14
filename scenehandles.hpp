@@ -14,6 +14,7 @@ struct SceneHandles {
   struct DistanceError;
   using TransformHandle = Scene::TransformHandle;
   using GeometryHandle = Scene::GeometryHandle;
+  using MeshHandle = Scene::MeshHandle;
   using LineHandle = Scene::LineHandle;
   using Markers = vector<Optional<Marker>>;
   using DistanceErrors = vector<DistanceError>;
@@ -27,7 +28,7 @@ struct SceneHandles {
   };
 
   struct Mesh {
-    GeometryHandle handle;
+    MeshHandle handle;
   };
 
   struct Body {
@@ -51,7 +52,7 @@ struct SceneHandles {
       lines.push_back(Line{line_handle});
     }
 
-    void addMesh(GeometryHandle mesh_handle)
+    void addMesh(MeshHandle mesh_handle)
     {
       meshes.push_back(Mesh{mesh_handle});
     }

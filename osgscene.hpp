@@ -31,21 +31,19 @@ class OSGScene : public Scene {
     void setGeometryScale(GeometryHandle handle,const Vec3 &v) override;
     void setGeometryCenter(GeometryHandle handle,const Point &v) override;
     void setGeometryColor(GeometryHandle handle,const Color &) override;
-
     Vec3 geometryScale(GeometryHandle) const override;
     Point geometryCenter(GeometryHandle) const override;
     void setTranslation(TransformHandle,Point) override;
     Point translation(TransformHandle) const override;
     void setCoordinateAxes(TransformHandle,const CoordinateAxes &) override;
     CoordinateAxes coordinateAxes(TransformHandle) const override;
-
     void setLineStartPoint(LineHandle, Point) override;
     void setLineEndPoint(LineHandle,Point) override;
+    void setMesh(MeshHandle, Mesh) override;
     Optional<GeometryHandle> selectedGeometry() const override;
     Optional<TransformHandle> selectedTransform() const override;
-    void selectGeometry(GeometryHandle handle);
-    void selectTransform(TransformHandle handle);
-
+    void selectGeometry(GeometryHandle handle) override;
+    void selectTransform(TransformHandle handle) override;
     Optional<LineHandle> maybeLine(GeometryHandle handle) const override;
     void attachManipulatorToSelectedNode(ManipulatorType) override;
     GraphicsWindowPtr createGraphicsWindow(ViewType view_type);

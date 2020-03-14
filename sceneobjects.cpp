@@ -695,7 +695,7 @@ createMeshInScene(
   const SceneState::Mesh &mesh =
     scene_state.body(parent_body_index).meshes[mesh_index];
 
-  Scene::GeometryHandle mesh_handle =
+  Scene::MeshHandle mesh_handle =
     scene.createMesh(transform_handle, meshFromMeshShapeState(mesh.shape));
 
   assert(BodyIndex(body_handles.meshes.size()) == mesh_index);
@@ -1086,21 +1086,17 @@ void
 updateBodyMeshPositionInScene(
   BodyIndex body_index,
   MeshIndex mesh_index,
-  MeshPositionIndex mesh_position_index,
-  Scene &/*scene*/,
-  const SceneHandles &,
-  const SceneState &
+  MeshPositionIndex /*mesh_position_index*/,
+  Scene &scene,
+  const SceneHandles &scene_handles,
+  const SceneState &scene_state
 )
 {
-  cerr << "updateBodyMeshPositionInScene:\n";
-  cerr << "  body_index: " << body_index << "\n";
-  cerr << "  mesh_index: " << mesh_index << "\n";
-  cerr << "  mesh_position_index: " << mesh_position_index << "\n";
+  Scene::MeshHandle mesh_handle =
+    scene_handles.bodies[body_index]->meshes[mesh_index].handle;
 
-#if 0
-  scene.setMeshPosition(
-    scene_handles.bodies[body_index].meshes[mesh_index].handle,
-    mesh_position_index
-  );
-#endif
+  const SceneState::Mesh &mesh_state =
+    scene_state.body(body_index).meshes[mesh_index];
+
+  scene.setMesh(mesh_handle, meshFromMeshShapeState(mesh_state.shape));
 }

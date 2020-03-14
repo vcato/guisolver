@@ -279,9 +279,19 @@ struct MeshDrawable : osg::Geometry {
   void setup()
   {
     MeshDrawable &self = *this;
+    removeAllPrimativeSets(self);
+    self.size = calculateSize(mesh);
+
     osg::ref_ptr<osg::Vec3Array> points_ptr = new osg::Vec3Array;
     osg::ref_ptr<osg::Vec3Array> normals_ptr = new osg::Vec3Array;
     osg::ref_ptr<osg::Vec3Array> colors_ptr = new osg::Vec3Array;
+
+    colors_ptr->push_back(color);
+
+    self.setVertexArray(points_ptr.get());
+    self.setNormalArray(normals_ptr.get(), osg::Array::BIND_PER_VERTEX);
+    self.setColorArray(colors_ptr.get(), osg::Array::BIND_OVERALL);
+
     MeshDataBuilder builder(mesh, *points_ptr, *normals_ptr);
     vector<unsigned short> indices;
 
@@ -291,17 +301,9 @@ struct MeshDrawable : osg::Geometry {
       indices.push_back(builder.index(triangle.v3));
     }
 
-    colors_ptr->push_back(color);
-
-    self.setVertexArray(points_ptr.get());
-    self.setNormalArray(normals_ptr.get(), osg::Array::BIND_PER_VERTEX);
-    self.setColorArray(colors_ptr.get(), osg::Array::BIND_OVERALL);
-
     self.addPrimitiveSet(
       new osg::DrawElementsUShort(GL_TRIANGLES, indices.begin(), indices.end())
     );
-
-    self.size = calculateSize(mesh);
   }
 };
 }
@@ -488,7 +490,8 @@ struct OSGScene::Impl {
       osg::MatrixTransform &geometry_transform
     );
 
-  static LineDrawable& lineDrawable(OSGScene &scene, LineHandle handle);
+  static LineDrawable& lineDrawable(OSGScene &, LineHandle);
+  static MeshDrawable& meshDrawable(OSGScene &, MeshHandle);
 
   static void handleDragFinish(OSGScene &scene)
   {
@@ -1938,6 +1941,25 @@ OSGScene::Impl::lineDrawable(OSGScene &scene, LineHandle handle)
 }
 
 
+MeshDrawable&
+OSGScene::Impl::meshDrawable(OSGScene &scene, MeshHandle handle)
+{
+  osg::MatrixTransform &transform =
+    Impl::geometryTransformForHandle(scene, handle);
+
+  osg::Node *child_ptr = transform.getChild(0);
+  assert(child_ptr);
+  osg::Geode *geode_ptr = child_ptr->asGeode();
+  assert(geode_ptr);
+
+  MeshDrawable *mesh_drawable_ptr =
+    maybeMeshDrawable(geodeDrawable(*geode_ptr));
+
+  assert(mesh_drawable_ptr);
+  return *mesh_drawable_ptr;
+}
+
+
 void OSGScene::setGeometryScale(GeometryHandle handle,const Vec3 &v)
 {
   float x = v.x;
@@ -2008,6 +2030,17 @@ void OSGScene::setLineEndPoint(LineHandle handle,Point p)
   LineDrawable &line_drawable = Impl::lineDrawable(*this,handle);
   line_drawable.end_point = osgVec3f(p);
   line_drawable.setup();
+}
+
+
+void
+OSGScene::setMesh(
+  MeshHandle handle, Mesh new_mesh
+)
+{
+  MeshDrawable &mesh_drawable = Impl::meshDrawable(*this, handle);
+  mesh_drawable.mesh = std::move(new_mesh);
+  mesh_drawable.setup();
 }
 
 
