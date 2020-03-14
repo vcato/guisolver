@@ -9,6 +9,61 @@ struct Body {
 };
 
 
+struct BodyXYZComponent {
+  Body body;
+  XYZComponent component;
+
+  BodyXYZComponent(Body body, XYZComponent component)
+  : body(body),
+    component(component)
+  {
+  }
+};
+
+
+template <typename Parent>
+struct ElementXYZComponent {
+  Parent parent;
+  XYZComponent component;
+};
+
+
+struct BodyTranslation {
+  Body body;
+};
+
+
+using BodyTranslationComponent = ElementXYZComponent<BodyTranslation>;
+
+
+struct BodyRotation {
+  Body body;
+};
+
+
+using BodyRotationComponent = ElementXYZComponent<BodyRotation>;
+
+
+struct BodyScale {
+  Body body;
+};
+
+
+struct BodyBox {
+  Body body;
+  BoxIndex index;
+  BodyBox(Body body, BoxIndex index) : body(body), index(index) {}
+};
+
+
+struct BodyBoxScale {
+  BodyBox body_box;
+};
+
+
+using BodyBoxScaleComponent = ElementXYZComponent<BodyBoxScale>;
+
+
 struct Marker {
   MarkerIndex index;
   Marker(MarkerIndex index) : index(index) {}
@@ -44,13 +99,6 @@ struct Variable {
 
 struct VariableValue {
   Variable variable;
-};
-
-
-struct BodyBox {
-  Body body;
-  BoxIndex index;
-  BodyBox(Body body, BoxIndex index) : body(body), index(index) {}
 };
 
 
@@ -98,13 +146,6 @@ struct ArrayElement {
   Array array;
   Index index;
 };
-
-template <typename Parent>
-struct ElementXYZComponent {
-  Parent parent;
-  XYZComponent component;
-};
-
 
 using BodyMeshPosition = ArrayElement<BodyMeshPositions, size_t>;
 using BodyMeshPositionComponent = ElementXYZComponent<BodyMeshPosition>;

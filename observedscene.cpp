@@ -1815,8 +1815,12 @@ ObservedScene::duplicateBodyWithDistanceErrors(BodyIndex body_index)
     ObservedScene::duplicateBody(body_index, marker_name_map, *this);
 
   for (auto &map_entry : marker_name_map) {
-    MarkerIndex marker1_index = *findMarkerIndex(scene_state, map_entry.first);
-    MarkerIndex marker2_index = *findMarkerIndex(scene_state, map_entry.second);
+    MarkerIndex marker1_index =
+      *findMarkerWithName(scene_state, map_entry.first);
+
+    MarkerIndex marker2_index =
+      *findMarkerWithName(scene_state, map_entry.second);
+
     addDistanceError(marker1_index, marker2_index, /*body*/{});
   }
 

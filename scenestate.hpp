@@ -472,13 +472,13 @@ extern bool
 
 
 extern Optional<MarkerIndex>
-  findMarkerIndex(const SceneState &, const SceneState::Marker::Name &);
+  findMarkerWithName(const SceneState &, const SceneState::Marker::Name &);
 
 extern Optional<MarkerIndex>
-  findBodyIndex(const SceneState &, const SceneState::Body::Name &);
+  findBodyWithName(const SceneState &, const SceneState::Body::Name &);
 
 extern Optional<VariableIndex>
-  findVariableIndex(const SceneState &, const SceneState::Variable::Name &);
+  findVariableWithName(const SceneState &, const SceneState::Variable::Name &);
 
 
 inline TranslationState translationStateOf(const TransformState &arg)
@@ -514,23 +514,51 @@ extern SceneState::Expression &
   channelExpression(const Channel &channel, SceneState &scene_state);
 
 
+
+template <typename Visitor>
+inline void
+forEachBodyGeometryType(const Visitor &visitor)
+{
+  visitor.visitBoxes();
+  visitor.visitLines();
+  visitor.visitMeshes();
+}
+
+
 template <typename GeometryVisitor>
 inline void
 forEachBodyGeometry(
   const SceneState::Body &body_state, GeometryVisitor &visitor
 )
 {
-  for (auto i : indicesOf(body_state.boxes)) {
-    visitor.visitBox(i);
-  }
+  struct TypeVisitor {
+    const SceneState::Body &body_state;
+    GeometryVisitor &visitor;
 
-  for (auto i : indicesOf(body_state.lines)) {
-    visitor.visitLine(i);
-  }
+    void visitBoxes() const
+    {
+      for (auto i : indicesOf(body_state.boxes)) {
+        visitor.visitBox(i);
+      }
+    }
 
-  for (auto i : indicesOf(body_state.meshes)) {
-    visitor.visitMesh(i);
-  }
+    void visitLines() const
+    {
+      for (auto i : indicesOf(body_state.lines)) {
+        visitor.visitLine(i);
+      }
+    }
+
+    void visitMeshes() const
+    {
+      for (auto i : indicesOf(body_state.meshes)) {
+        visitor.visitMesh(i);
+      }
+    }
+  };
+
+  TypeVisitor type_visitor{body_state, visitor};
+  forEachBodyGeometryType(type_visitor);
 }
 
 

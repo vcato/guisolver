@@ -5,43 +5,6 @@
 #include "sceneelements.hpp"
 
 
-struct BodyXYZComponent {
-  Body body;
-  XYZComponent component;
-
-  BodyXYZComponent(Body body, XYZComponent component)
-  : body(body),
-    component(component)
-  {
-  }
-};
-
-
-struct BodyTranslation {
-  Body body;
-};
-
-
-struct BodyRotation {
-  Body body;
-};
-
-
-struct BodyScale {
-  Body body;
-};
-
-
-struct BodyBoxScale {
-  BodyBox body_box;
-};
-
-
-using BodyTranslationComponent = ElementXYZComponent<BodyTranslation>;
-using BodyRotationComponent = ElementXYZComponent<BodyRotation>;
-using BodyBoxScaleComponent = ElementXYZComponent<BodyBoxScale>;
-
-
 inline Marker markerOf(MarkerPosition arg)
 {
   return arg.marker;

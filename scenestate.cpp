@@ -219,7 +219,7 @@ hasAncestor(
 
 
 Optional<MarkerIndex>
-  findMarkerIndex(
+  findMarkerWithName(
     const SceneState &scene_state,
     const SceneState::Marker::Name &name
   )
@@ -235,7 +235,7 @@ Optional<MarkerIndex>
 
 
 Optional<BodyIndex>
-  findBodyIndex(
+  findBodyWithName(
     const SceneState &scene_state,
     const SceneState::Body::Name &name
   )
@@ -251,7 +251,7 @@ Optional<BodyIndex>
 
 
 extern Optional<VariableIndex>
-findVariableIndex(
+findVariableWithName(
   const SceneState &scene_state,
   const SceneState::Variable::Name &name
 )

@@ -582,7 +582,7 @@ createDistanceErrorFromTaggedValue(
         mappedMarkerName(*maybe_start_marker_name, marker_name_map);
 
       distance_error_state.optional_start_marker_index =
-        findMarkerIndex(result, mapped_marker_name);
+        findMarkerWithName(result, mapped_marker_name);
     }
   }
 
@@ -595,7 +595,7 @@ createDistanceErrorFromTaggedValue(
         mappedMarkerName(*maybe_end_marker_name, marker_name_map);
 
       distance_error_state.optional_end_marker_index =
-        findMarkerIndex(result, mapped_marker_name);
+        findMarkerWithName(result, mapped_marker_name);
     }
   }
 

@@ -619,10 +619,10 @@ static void appendTo(vector<T> &v, const vector<T> &n)
 
 
 TreeWidget::MenuItems
-  MainWindowController::Impl::contextMenuItemsForPath(
-    MainWindowController &controller,
-    const TreePath &path
-  )
+MainWindowController::Impl::contextMenuItemsForPath(
+  MainWindowController &controller,
+  const TreePath &path
+)
 {
   ObservedScene &observed_scene = observedScene(controller);
   TreeWidget::MenuItems menu_items;
