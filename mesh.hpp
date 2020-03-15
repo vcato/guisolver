@@ -6,8 +6,11 @@
 
 
 struct Mesh {
+  struct Triangle;
   using PositionIndex = int;
   using NormalIndex = int;
+  using Positions = vector<Vec3>;
+  using Triangles = vector<Triangle>;
 
   struct Vertex {
     PositionIndex position_index;
@@ -28,9 +31,9 @@ struct Mesh {
     }
   };
 
-  vector<Vec3> positions;
+  Positions positions;
   vector<Vec3> normals;
-  vector<Triangle> triangles;
+  Triangles triangles;
 };
 
 

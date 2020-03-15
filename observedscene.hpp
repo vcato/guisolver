@@ -41,6 +41,7 @@ struct ObservedScene {
   BoxIndex addBoxTo(BodyIndex);
   LineIndex addLineTo(BodyIndex);
   MeshIndex addMeshTo(BodyIndex, const Mesh &);
+  MeshIndex addMeshTo(BodyIndex, const SceneState::MeshShape &);
   MarkerIndex addMarker(Optional<BodyIndex> = {});
 
   DistanceErrorIndex
@@ -89,6 +90,8 @@ struct ObservedScene {
   void removeDistanceError(DistanceErrorIndex);
   void removeVariable(VariableIndex);
   static void clearClipboard(ObservedScene &);
+
+  MeshIndex convertBoxToMesh(BodyIndex, BoxIndex);
 
   void replaceSceneStateWith(const SceneState &);
   void solveScene();

@@ -759,7 +759,16 @@ MainWindowController::Impl::contextMenuItemsForPath(
         observed_scene.removeBox(body_index, box_index);
       };
 
+    auto convert_to_mesh_function =
+      [&observed_scene, body_index, box_index]{
+        MeshIndex new_mesh_index =
+          observed_scene.convertBoxToMesh(body_index, box_index);
+
+        observed_scene.selectMesh(body_index, new_mesh_index);
+      };
+
     appendTo(menu_items,{
+      {"Convert to Mesh", convert_to_mesh_function},
       {"Remove", remove_box_function}
     });
   }

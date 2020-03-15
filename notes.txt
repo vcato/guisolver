@@ -201,3 +201,28 @@ Function {
     expression: "x*2 + (5*3)"
   }
 }
+---
+One thing that could be neat is being able to double-click on a mesh, and
+have that put us into a mode where we can select faces and vertices.
+---
+I'd like to be able to take a box and have a distance error between certain
+vertices and certain global positions.
+
+* Select a vertex position.
+* Add a marker to the vertex position.
+* Add a distance error between that marker and the other one.
+
+It seems like markers may just become names for things.  Maybe instead of
+markers we just have points, and then we can give those points names.  We
+could then give vertex positions names as well, or give body translations
+names.
+
+Seems like the main problem we're trying to solve is how to reference things.
+In a lot of cases, we may not care about giving something a name as long
+as we have a way to reference it.
+
+Cutting is similar to marking. Maybe we could do something like marking
+a vertex, and then we go somewhere else and have a "Set to marked" operation.
+
+* Right-click on a vertex in the tree, choose "Mark".
+* Right-click on a distance error start, then choose "Set to Mark".

@@ -154,6 +154,10 @@ class SceneState {
     };
 
     struct MeshShape {
+      struct Triangle;
+      using Positions = vector<XYZ>;
+      using Triangles = vector<Triangle>;
+
       struct Triangle {
         int v1, v2, v3;
         Triangle(int v1, int v2, int v3)
@@ -162,9 +166,8 @@ class SceneState {
         }
       };
 
-      using Positions = vector<XYZ>;
       Positions positions;
-      vector<Triangle> triangles;
+      Triangles triangles;
     };
 
     struct Mesh {

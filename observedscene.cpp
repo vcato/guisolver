@@ -13,6 +13,7 @@
 #include "evaluateexpression.hpp"
 #include "channel.hpp"
 #include "meshstate.hpp"
+#include "emplaceinto.hpp"
 
 
 using std::string;
@@ -508,6 +509,11 @@ struct ObservedScene::Impl {
       const Expression &,
       ObservedScene &
     );
+
+  static void
+    handleMeshCreatedInState(
+      BodyIndex body_index, MeshIndex mesh_index, ObservedScene &
+    );
 };
 
 
@@ -746,6 +752,61 @@ void ObservedScene::removeVariable(VariableIndex variable_index)
   // cause any expressions that are using the variable to become invalid,
   // which doesn't change the value of the channel in which the expression is
   // used.
+}
+
+
+static SceneState::MeshShape
+createMeshShapeFromBox(const SceneState::Box &/*box_state*/)
+{
+  using MeshShape = SceneState::MeshShape;
+
+  MeshShape::Positions positions = {
+    {-0.5,   -0.5,   -0.5},
+    {-0.5,   -0.5,    0.5},
+    {-0.5,    0.5,   -0.5},
+    {-0.5,    0.5,    0.5},
+    { 0.5,   -0.5,   -0.5},
+    { 0.5,   -0.5,    0.5},
+    { 0.5,    0.5,   -0.5},
+    { 0.5,    0.5,    0.5},
+  };
+
+  int faces[6][4] = {
+    {8 ,  4 ,  2 ,  6},
+    {8 ,  6 ,  5 ,  7},
+    {8 ,  7 ,  3 ,  4},
+    {4 ,  3 ,  1 ,  2},
+    {1 ,  3 ,  7 ,  5},
+    {2 ,  1 ,  5 ,  6},
+  };
+
+  MeshShape::Triangles triangles;
+
+  for (int i=0; i!=6; ++i) {
+    int v1 = faces[i][0] - 1;
+    int v2 = faces[i][1] - 1;
+    int v3 = faces[i][2] - 1;
+    int v4 = faces[i][3] - 1;
+    emplaceInto(triangles, i*2 + 0, v1, v2, v4);
+    emplaceInto(triangles, i*2 + 1, v4, v2, v3);
+  }
+
+  return MeshShape{positions, triangles};
+}
+
+
+MeshIndex
+ObservedScene::convertBoxToMesh(BodyIndex body_index, BoxIndex box_index)
+{
+  SceneState::Box box_state = scene_state.body(body_index).boxes[box_index];
+  SceneState::MeshShape mesh_shape = createMeshShapeFromBox(box_state);
+  removeBox(body_index, box_index);
+
+  MeshIndex mesh_index = addMeshTo(body_index, mesh_shape);
+  scene_state.body(body_index).meshes[mesh_index].scale = box_state.scale;
+  updateSceneObjects(scene, scene_handles, scene_state);
+  updateTreeValues(tree_widget, tree_paths, scene_state);
+  return mesh_index;
 }
 
 
@@ -1405,20 +1466,40 @@ BoxIndex ObservedScene::addLineTo(BodyIndex body_index)
 }
 
 
-MeshIndex ObservedScene::addMeshTo(BodyIndex body_index, const Mesh &mesh)
+void
+ObservedScene::Impl::handleMeshCreatedInState(
+  BodyIndex body_index, MeshIndex mesh_index, ObservedScene &observed_scene
+)
 {
-  MeshIndex mesh_index =
-    scene_state.body(body_index).createMesh(meshShapeStateFromMesh(mesh));
-
   ::createMeshInScene(
-    scene, scene_handles, body_index, mesh_index, scene_state
+    observed_scene.scene,
+    observed_scene.scene_handles, body_index, mesh_index,
+    observed_scene.scene_state
   );
 
   ::createMeshInTree(
-    sceneTree(*this), scene_state, body_index, mesh_index
+    sceneTree(observed_scene),
+    observed_scene.scene_state, body_index, mesh_index
   );
+}
 
+
+MeshIndex
+ObservedScene::addMeshTo(
+  BodyIndex body_index, const SceneState::MeshShape &mesh_shape
+)
+{
+  MeshIndex mesh_index =
+    scene_state.body(body_index).createMesh(mesh_shape);
+
+  Impl::handleMeshCreatedInState(body_index, mesh_index, *this);
   return mesh_index;
+}
+
+
+MeshIndex ObservedScene::addMeshTo(BodyIndex body_index, const Mesh &mesh)
+{
+  return addMeshTo(body_index, meshShapeStateFromMesh(mesh));
 }
 
 

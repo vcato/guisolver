@@ -699,6 +699,7 @@ createMeshInScene(
     scene.createMesh(transform_handle, meshFromMeshShapeState(mesh.shape));
 
   assert(BodyIndex(body_handles.meshes.size()) == mesh_index);
+
   body_handles.addMesh(mesh_handle);
 }
 
