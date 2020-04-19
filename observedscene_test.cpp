@@ -69,6 +69,30 @@ static void checkTree(Tester &tester)
 }
 
 
+static void userSelectsMarker(MarkerIndex marker_index, Tester &tester)
+{
+  ObservedScene &observed_scene = tester.observed_scene;
+
+  tester.scene.maybe_selected_object_index =
+    observed_scene.scene_handles.marker(marker_index).sphereHandle().index;
+
+  observed_scene.handleSceneSelectionChanged();
+}
+
+
+static void userSelectsBody(BodyIndex body_index, Tester &tester)
+{
+  ObservedScene &observed_scene = tester.observed_scene;
+  FakeTreeWidget &tree_widget = tester.tree_widget;
+
+  const TreePaths::Body &body_paths =
+    observed_scene.tree_paths.body(body_index);
+
+  tree_widget.userSelectsItem(body_paths.path);
+  observed_scene.handleTreeSelectionChanged();
+}
+
+
 static void testTransferringABody1()
 {
   Tester tester;
@@ -321,27 +345,88 @@ static void testDuplicateBodyWithDistanceErrors()
 }
 
 
+static void
+assertBodyHasTranslateManipulator(Tester &tester, BodyIndex body_index)
+{
+  ObservedScene &observed_scene = tester.observed_scene;
+  const FakeScene &scene = tester.scene;
+  const SceneHandles &scene_handles = observed_scene.scene_handles;
+  SceneHandles::Body body_handles = scene_handles.body(body_index);
+
+#if !CHANGE_MANIPULATORS
+  assert(tester.scene.maybe_dragger_type == Scene::ManipulatorType::translate);
+  assert(scene.maybe_dragger_index == body_handles.transform_handle.index);
+#else
+  assert(scene_handles.maybe_translate_manipulator);
+
+  Scene::TransformHandle manipulator_handle =
+    *scene_handles.maybe_translate_manipulator;
+
+  Scene::TransformHandle manipulator_parent =
+    scene.parentTransform(manipulator_handle);
+
+  Scene::TransformHandle body_transform_handle = body_handles.transform_handle;
+
+  Scene::TransformHandle body_parent =
+    scene.parentTransform(body_transform_handle);
+
+  assert(manipulator_parent == body_parent);
+#if CHANGE_MANIPULATORS
+  auto manipulator_position = scene.translation(manipulator_handle);
+  auto body_position = scene.translation(body_transform_handle);
+  assert(manipulator_position == body_position);
+  assert(scene_handles.maybe_manipulated_body_index == body_index);
+#endif
+#endif
+}
+
+
+#if CHANGE_MANIPULATORS
+static void
+assertMarkerHasTranslateManipulator(Tester &tester, MarkerIndex marker_index)
+{
+  ObservedScene &observed_scene = tester.observed_scene;
+  const FakeScene &scene = tester.scene;
+  const SceneHandles &scene_handles = observed_scene.scene_handles;
+  SceneHandles::Marker marker_handles = scene_handles.marker(marker_index);
+
+  Scene::TransformHandle manipulator_handle =
+    *scene_handles.maybe_translate_manipulator;
+
+  Scene::TransformHandle manipulator_parent =
+    scene.parentTransform(manipulator_handle);
+
+  Scene::TransformHandle marker_transform_handle =
+    marker_handles.transformHandle();
+
+  Scene::TransformHandle marker_parent =
+    scene.parentTransform(marker_transform_handle);
+
+  assert(manipulator_parent == marker_parent);
+  auto manipulator_position = scene.translation(manipulator_handle);
+  auto marker_position = scene.translation(marker_transform_handle);
+  assert(manipulator_position == marker_position);
+  assert(scene_handles.maybe_manipulated_marker_index == marker_index);
+}
+#endif
+
+
 static void testUserSelectingABodyInTheTree()
 {
   Tester tester;
   ObservedScene &observed_scene = tester.observed_scene;
   BodyIndex body_index = observed_scene.addBody(/*parent*/{});
   SceneState &scene_state = observed_scene.scene_state;
-
   assert(scene_state.bodies().size() == 1);
-  { // User selects the body item in the tree.
-    tester.tree_widget.maybe_selected_item =
-      observed_scene.tree_paths.body(body_index).path;
 
-    observed_scene.handleTreeSelectionChanged();
-  }
-
-  assert(tester.scene.maybe_dragger_type == Scene::ManipulatorType::translate);
-
-  assert(
-    tester.scene.maybe_dragger_index
-    == observed_scene.scene_handles.body(body_index).transform_handle.index
+  tester.tree_widget.userSelectsItem(
+    observed_scene.tree_paths.body(body_index).path
   );
+
+  observed_scene.handleTreeSelectionChanged();
+
+  // There should be a translate manipulator on the body.
+  assertBodyHasTranslateManipulator(tester, body_index);
 }
 
 
@@ -360,21 +445,52 @@ static void testSelectingSceneInTheTree()
 static void testSelectingMarkerInTheScene()
 {
   Tester tester;
-  SceneState initial_scene_state;
   ObservedScene &observed_scene = tester.observed_scene;
+
+  SceneState initial_scene_state;
 
   MarkerIndex marker_index =
     initial_scene_state.createMarker(/*parent*/Optional<BodyIndex>{});
 
   observed_scene.replaceSceneStateWith(initial_scene_state);
-
-  tester.scene.maybe_selected_object_index =
-    observed_scene.scene_handles.marker(marker_index).sphereHandle().index;
-
-  observed_scene.handleSceneSelectionChanged();
+  userSelectsMarker(marker_index, tester);
 
   assert(tester.tree_widget.maybe_selected_item ==
     observed_scene.tree_paths.marker(marker_index).path);
+}
+
+
+static void testChangingSelectedMarker()
+{
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+
+  SceneState initial_scene_state;
+  MarkerIndex marker1_index = initial_scene_state.createMarker();
+  MarkerIndex marker2_index = initial_scene_state.createMarker();
+  BodyIndex body_index = initial_scene_state.createBody();
+  observed_scene.replaceSceneStateWith(initial_scene_state);
+
+  userSelectsMarker(marker1_index, tester);
+
+#if CHANGE_MANIPULATORS
+  assertMarkerHasTranslateManipulator(tester, marker1_index);
+#endif
+
+  userSelectsMarker(marker2_index, tester);
+
+#if CHANGE_MANIPULATORS
+  // Check that a manipulator is on the second marker and not on the first.
+  assertMarkerHasTranslateManipulator(tester, marker2_index);
+#endif
+
+  userSelectsBody(body_index, tester);
+  assertBodyHasTranslateManipulator(tester, body_index);
+
+  userSelectsMarker(marker1_index, tester);
+#if CHANGE_MANIPULATORS
+  assertMarkerHasTranslateManipulator(tester, marker1_index);
+#endif
 }
 
 
@@ -1329,6 +1445,7 @@ int main()
   testUserSelectingABodyInTheTree();
   testSelectingSceneInTheTree();
   testSelectingMarkerInTheScene();
+  testChangingSelectedMarker();
   testCutAndPaste();
   testReparentingAMarker();
   testAddingADistanceErrorToABody();

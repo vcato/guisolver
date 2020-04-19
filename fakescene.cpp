@@ -14,7 +14,17 @@ FakeScene::createTransform(TransformHandle parent_handle)
   size_t transform_index = firstUnusedIndex();
   objects[transform_index].parent_index = parent_handle.index;
   TransformHandle transform_handle{transform_index};
+  assert(parentTransform(transform_handle) == parent_handle);
   return transform_handle;
+}
+
+
+TransformHandle FakeScene::parentTransform(TransformHandle parent_handle) const
+{
+  size_t transform_index = parent_handle.index;
+  auto iter = objects.find(transform_index);
+  assert(iter != objects.end());
+  return TransformHandle{iter->second.parent_index};
 }
 
 
@@ -45,6 +55,10 @@ void FakeScene::destroyGeometry(GeometryHandle handle)
 
 void FakeScene::destroyTransform(TransformHandle handle)
 {
+  if (maybe_dragger_index == handle.index) {
+    maybe_dragger_index.reset();
+  }
+
   assert(nChildren(handle.index) == 0);
   objects.erase(handle.index);
 }
@@ -150,3 +164,24 @@ FakeScene::setGeometryCenter(
 {
   elementOf(objects, handle.index).maybe_geometry_center = center;
 }
+
+
+#if !CHANGE_MANIPULATORS
+void FakeScene::attachManipulatorToSelectedNode(ManipulatorType dragger_type)
+{
+  maybe_dragger_index = maybe_selected_object_index;
+  maybe_dragger_type = dragger_type;
+}
+#endif
+
+
+#if CHANGE_MANIPULATORS
+TransformHandle
+FakeScene::createTranslateManipulator(TransformHandle parent)
+{
+  TransformHandle result = createTransform(parent);
+  assert(!maybe_dragger_index);
+  maybe_dragger_index = result.index;
+  return result;
+}
+#endif

@@ -634,6 +634,16 @@ updateBodyInScene(
   });
 
   forEachBodyGeometry(body_state, geometry_scene_updater);
+
+#if CHANGE_MANIPULATORS
+  if (scene_handles.maybe_manipulated_body_index == body_index) {
+    updateBodyTranslateManipulatorPosition(
+      scene,
+      body_handles.transform_handle,
+      *scene_handles.maybe_translate_manipulator
+    );
+  }
+#endif
 }
 
 
@@ -1024,6 +1034,32 @@ static void
   for (auto i : indicesOf(scene_state.distance_errors)) {
     updateDistanceErrorInScene(scene, scene_state, scene_handles, i);
   }
+}
+
+
+void
+updateBodyTranslateManipulatorPosition(
+  Scene &scene,
+  TransformHandle body_transform_handle,
+  TransformHandle manipulator_handle
+)
+{
+  auto body_position = scene.translation(body_transform_handle);
+  scene.setTranslation(manipulator_handle, body_position);
+}
+
+
+void
+updateMarkerTranslateManipulatorPosition(
+  Scene &scene,
+  TransformHandle marker_transform_handle,
+  TransformHandle manipulator_handle
+)
+{
+  auto marker_position = scene.translation(marker_transform_handle);
+  cerr << "updateMarkerTranslateManipulatorPosition:\n";
+  cerr << "  marker_position: " << marker_position << "\n";
+  scene.setTranslation(manipulator_handle, marker_position);
 }
 
 

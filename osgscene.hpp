@@ -26,6 +26,9 @@ class OSGScene : public Scene {
     GeometryHandle createSphere(TransformHandle parent) override;
     MeshHandle createMesh(TransformHandle parent, const Mesh &) override;
     TransformHandle parentTransform(GeometryHandle) const override;
+#if CHANGE_MANIPULATORS
+    TransformHandle parentTransform(TransformHandle) const override;
+#endif
     void destroyGeometry(GeometryHandle) override;
     void destroyTransform(TransformHandle) override;
     void setGeometryScale(GeometryHandle handle,const Vec3 &v) override;
@@ -45,7 +48,12 @@ class OSGScene : public Scene {
     void selectGeometry(GeometryHandle handle) override;
     void selectTransform(TransformHandle handle) override;
     Optional<LineHandle> maybeLine(GeometryHandle handle) const override;
+#if !CHANGE_MANIPULATORS
     void attachManipulatorToSelectedNode(ManipulatorType) override;
+#else
+    TransformHandle
+      createTranslateManipulator(TransformHandle parent) override;
+#endif
     GraphicsWindowPtr createGraphicsWindow(ViewType view_type);
 
   private:

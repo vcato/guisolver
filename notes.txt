@@ -226,3 +226,8 @@ a vertex, and then we go somewhere else and have a "Set to marked" operation.
 
 * Right-click on a vertex in the tree, choose "Mark".
 * Right-click on a distance error start, then choose "Set to Mark".
+---
+Selecting a mesh position should put a handle on it.
+---
+Change manipulators so that they are separate objects in the scene.
+#define CHANGE_MANIPULATORS

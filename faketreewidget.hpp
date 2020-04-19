@@ -92,6 +92,15 @@ struct FakeTreeWidget : TreeWidget {
     item(path).input = arg;
   }
 
+  void userSelectsItem(const TreePath &path)
+  {
+    maybe_selected_item = path;
+
+    if (selection_changed_callback) {
+      selection_changed_callback();
+    }
+  }
+
   static FakeTreeItem::ValueString boolValueText(bool);
   static FakeTreeItem::ValueString stringValueText(const StringValue &);
 

@@ -39,7 +39,6 @@ int main(int argc, char **argv)
 {
   QApplication application(argc, argv);
   QMainWindow main_window;
-
   OSGScene scene;
 
   GraphicsWindowPtr graphics_window_ptr =

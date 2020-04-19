@@ -309,9 +309,11 @@ struct MeshDrawable : osg::Geometry {
 }
 
 
+static const bool use_screen_relative_dragger = false;
+
+
 class OSGScene::SelectionHandler : public OSGSelectionHandler {
   public:
-    bool use_screen_relative_dragger = false;
     OSGScene &scene;
 
     SelectionHandler(OSGScene &);
@@ -1147,11 +1149,25 @@ TransformHandle OSGScene::parentTransform(GeometryHandle geometry_handle) const
     Impl::findTransformIndex(scene, transform);
 
   assert(maybe_transform_index);
-  size_t transform_index = *maybe_transform_index;
-
-  TransformHandle transform_handle{transform_index};
-  return transform_handle;
+  return TransformHandle{*maybe_transform_index};
 }
+
+
+#if CHANGE_MANIPULATORS
+TransformHandle OSGScene::parentTransform(TransformHandle handle) const
+{
+  const osg::MatrixTransform &transform =
+    Impl::transformForHandle(*this, handle);
+
+  const osg::MatrixTransform &parent_transform = ::parentTransform(transform);
+
+  Optional<size_t> maybe_transform_index =
+    Impl::findTransformIndex(*this, parent_transform);
+
+  assert(maybe_transform_index);
+  return TransformHandle{*maybe_transform_index};
+}
+#endif
 
 
 static osg::Vec3 selectionColor()
@@ -1527,10 +1543,39 @@ void OSGScene::SelectionHandler::nodeClicked(osg::Node *new_selected_node_ptr)
 }
 
 
+#if !CHANGE_MANIPULATORS
 void OSGScene::attachManipulatorToSelectedNode(DraggerType dragger_type)
 {
   selectionHandler().attachDragger(dragger_type);
 }
+#else
+TransformHandle
+OSGScene::createTranslateManipulator(TransformHandle parent)
+{
+  // Create a transform, and then create a dragger that moves that
+  // transform, and then return a handle to the transform.
+
+  osg::MatrixTransform &parent_transform =
+    Impl::transformForHandle(*this, parent);
+
+  osg::MatrixTransform &new_transform = addTransformToGroup(parent_transform);
+
+  osg::ref_ptr<osgManipulator::DraggerCallback> dragger_callback_ptr =
+    new Impl::DraggerCallback(*this);
+
+  DraggerPtr dragger_ptr =
+    createDragger(
+      new_transform,
+      use_screen_relative_dragger,
+      DraggerType::translate,
+      *dragger_callback_ptr,
+      /*shape_size*/{1,1,1}
+    );
+
+  parent_transform.addChild(dragger_ptr);
+  return Impl::makeHandleFromTransform(*this, new_transform);
+}
+#endif
 
 
 Optional<LineHandle> OSGScene::maybeLine(GeometryHandle handle) const
@@ -1609,11 +1654,28 @@ static osg::ref_ptr<MeshDrawable> createMeshDrawable(const Mesh &mesh)
 
 
 static void
-  removeTransformFromGroup(
-    osg::Group &parent,
-    osg::Group &matrix_transform
-  )
+verifyGroupHasChild(const osg::Group &parent, const osg::Group &child)
 {
+  int n_children = parent.getNumChildren();
+
+  for (int i=0; i!=n_children; ++i) {
+    if (parent.getChild(i) == &child) {
+      return;
+    }
+  }
+
+  cerr << "Child " << &child << " not found in node " << &parent << "\n";
+  assert(false);
+}
+
+
+static void
+removeTransformFromGroup(
+  osg::Group &parent,
+  osg::Group &matrix_transform
+)
+{
+  verifyGroupHasChild(parent, matrix_transform);
   parent.removeChild(&matrix_transform);
 }
 
@@ -1686,7 +1748,7 @@ struct LineShapeParams : ShapeParams {
 
 
 static void
-  setTranslation(osg::MatrixTransform &transform,const OSGScene::Point &v)
+setTranslation(osg::MatrixTransform &transform,const OSGScene::Point &v)
 {
   osg::Matrix m = transform.getMatrix();
   m.setTrans(v.x, v.y, v.z);
@@ -2121,6 +2183,63 @@ void OSGScene::destroyGeometry(GeometryHandle handle)
 }
 
 
+namespace {
+struct ManipulatorDragger {
+  int index;
+  osgManipulator::Dragger &dragger;
+};
+}
+
+
+#if CHANGE_MANIPULATORS
+static Optional<ManipulatorDragger>
+maybeManipulatorDragger(osg::MatrixTransform &transform)
+{
+  osg::MatrixTransform &parent_transform = ::parentTransform(transform);
+  int index = parent_transform.getChildIndex(&transform);
+  int n_children = parent_transform.getNumChildren();
+
+  int dragger_index = index + 1;
+    // If there is a dragger, it will be the next child.
+
+  if (dragger_index >= n_children) {
+    return {};
+  }
+
+  osg::Node *maybe_dragger_node_ptr = parent_transform.getChild(dragger_index);
+
+  if (!maybe_dragger_node_ptr) {
+    return {};
+  }
+
+  auto *dragger_ptr =
+    dynamic_cast<osgManipulator::Dragger*>(maybe_dragger_node_ptr);
+
+  if (!dragger_ptr) {
+    return {};
+  }
+
+  return ManipulatorDragger{dragger_index, *dragger_ptr};
+}
+#endif
+
+
+#if CHANGE_MANIPULATORS
+static osgManipulator::Dragger *
+manipulatorDraggerPtr(osg::MatrixTransform &transform)
+{
+  Optional<ManipulatorDragger> maybe_manipulator_dragger =
+    maybeManipulatorDragger(transform);
+
+  if (!maybe_manipulator_dragger) {
+    return nullptr;
+  }
+
+  return &maybe_manipulator_dragger->dragger;
+}
+#endif
+
+
 void OSGScene::destroyTransform(TransformHandle handle)
 {
   Optional<TransformHandle> maybe_selected_transform = selectedTransform();
@@ -2130,6 +2249,22 @@ void OSGScene::destroyTransform(TransformHandle handle)
       selectionHandler().clearSelection();
     }
   }
+
+#if CHANGE_MANIPULATORS
+  // If the transform is for a manipulator, we need to destroy the
+  // associated dragger.
+
+  osg::MatrixTransform &transform = Impl::transformForHandle(*this, handle);
+
+  Optional<ManipulatorDragger> maybe_manipulator_dragger =
+    maybeManipulatorDragger(transform);
+
+  if (maybe_manipulator_dragger) {
+    int dragger_index = maybe_manipulator_dragger->index;
+    osg::MatrixTransform &parent_transform = ::parentTransform(transform);
+    parent_transform.removeChild(dragger_index);
+  }
+#endif
 
   Impl::destroyIndex(handle.index, *this);
 }
@@ -2351,9 +2486,19 @@ void OSGScene::setTranslation(TransformHandle handle, Point p)
 
   ::setTranslation(transform, p);
 
+#if !CHANGE_MANIPULATORS
   if (Impl::isTransformOfSelection(handle, *this)) {
     selectionHandler().updateDraggerPosition();
   }
+#else
+  auto *dragger_ptr = manipulatorDraggerPtr(transform);
+
+  if (!dragger_ptr) {
+    return;
+  }
+
+  matchPose(*dragger_ptr, transform);
+#endif
 }
 
 
@@ -2368,9 +2513,14 @@ void
   osg::Vec3f z = osgVec(axes.z);
   ::setCoordinateAxes(Impl::transformForHandle(*this, handle),x,y,z);
 
+#if !CHANGE_MANIPULATORS
   if (Impl::isTransformOfSelection(handle, *this)) {
     selectionHandler().updateDraggerPosition();
   }
+#else
+  cerr << "OSGScene::setCoordinateAxes():\n";
+  cerr << "  Will need to check for draggers\n";
+#endif
 }
 
 

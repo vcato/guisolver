@@ -244,12 +244,42 @@ void
   )
 {
   ObservedScene &observed_scene = Impl::observedScene(controller);
+  SceneHandles &scene_handles = observed_scene.scene_handles;
+  Scene &scene = observed_scene.scene;
+  SceneState &state = observed_scene.scene_state;
+
+#if CHANGE_MANIPULATORS
+  if (scene_handles.maybe_translate_manipulator) {
+    TransformHandle translate_manipulator =
+      *scene_handles.maybe_translate_manipulator;
+
+    if (scene_handles.maybe_manipulated_body_index) {
+      BodyIndex body_index = *scene_handles.maybe_manipulated_body_index;
+
+      TransformHandle body_transform_handle =
+        scene_handles.body(body_index).transform_handle;
+
+      Scene::Point manipulator_position =
+        scene.translation(translate_manipulator);
+
+      scene.setTranslation(body_transform_handle, manipulator_position);
+    }
+    else if (scene_handles.maybe_manipulated_marker_index) {
+      MarkerIndex marker_index = *scene_handles.maybe_manipulated_marker_index;
+
+      TransformHandle marker_transform_handle =
+        scene_handles.marker(marker_index).transformHandle();
+
+      Scene::Point manipulator_position =
+        scene.translation(translate_manipulator);
+
+      scene.setTranslation(marker_transform_handle, manipulator_position);
+    }
+  }
+#endif
+
   // The mouse button is down.  The scene is being changed, but we don't
   // consider this change complete.
-
-  Scene &scene = observed_scene.scene;
-  SceneHandles &scene_handles = observed_scene.scene_handles;
-  SceneState &state = observed_scene.scene_state;
 
   Optional<TransformHandle> maybe_transform_handle =
     selectedObjectTransform(scene);
@@ -258,9 +288,7 @@ void
     // How could the scene be changing if nothing was selected?
 
   TransformHandle transform_handle = *maybe_transform_handle;
-
   observed_scene.updateSceneStateFromSceneObjects();
-
   vector<bool> old_flags;
 
   // Disable any transforms that would move the handle and remember the

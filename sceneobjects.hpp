@@ -175,3 +175,18 @@ extern void
     SceneHandles &,
     const SceneState &
   );
+
+
+extern void
+  updateBodyTranslateManipulatorPosition(
+    Scene &scene,
+    Scene::TransformHandle body_transform_handle,
+    Scene::TransformHandle manipulator_handle
+  );
+
+extern void
+  updateMarkerTranslateManipulatorPosition(
+    Scene &scene,
+    Scene::TransformHandle marker_transform_handle,
+    Scene::TransformHandle manipulator_handle
+  );

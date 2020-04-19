@@ -105,8 +105,6 @@ struct ObservedScene {
 
   Optional<Scene::ManipulatorType> properManpiulatorForSelectedObject() const;
 
-  static void attachProperDraggerToSelectedObject(ObservedScene &);
-
   const bool *solveStatePtr(const TreePath &) const;
   bool *solveStatePtr(const TreePath &);
   void setSolveFlags(const TreeItemDescription &item, bool state);

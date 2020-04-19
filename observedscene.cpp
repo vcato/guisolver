@@ -514,6 +514,16 @@ struct ObservedScene::Impl {
     handleMeshCreatedInState(
       BodyIndex body_index, MeshIndex mesh_index, ObservedScene &
     );
+
+  static void attachProperDraggerToSelectedObject(ObservedScene &);
+  static SceneObject selectedSceneObject(const Scene &);
+
+  static Optional<ManipulatorType>
+    properManpiulatorForSceneObject(
+      const SceneObject &,
+      const ObservedScene &,
+      const TreeItemDescription &item
+    );
 };
 
 
@@ -917,26 +927,23 @@ void ObservedScene::cutMarker(MarkerIndex marker_index)
 
 
 Optional<ManipulatorType>
-ObservedScene::properManpiulatorForSelectedObject() const
+ObservedScene::Impl::properManpiulatorForSceneObject(
+  const SceneObject &scene_object,
+  const ObservedScene &observed_scene,
+  const TreeItemDescription &item
+)
 {
-  const ObservedScene &observed_scene = *this;
-  Scene &scene = observed_scene.scene;
-  TreeWidget &tree_widget = observed_scene.tree_widget;
+  const Scene &scene = observed_scene.scene;
 
-  Optional<GeometryHandle> selected_geometry = scene.selectedGeometry();
-
-  if (selected_geometry) {
-    if (scene.maybeLine(*selected_geometry)) {
+  if (scene_object.maybe_geometry_handle) {
+    if (scene.maybeLine(*scene_object.maybe_geometry_handle)) {
       // There's no dragger for a line.
       return {};
     }
   }
-  else if (!scene.selectedTransform()) {
+  else if (!scene_object.maybe_transform_handle) {
     return {};
   }
-
-  TreeItemDescription item =
-    observed_scene.describePath(*tree_widget.selectedItem());
 
   if (item.has_rotation_ancestor) {
     return ManipulatorType::rotate;
@@ -953,21 +960,183 @@ ObservedScene::properManpiulatorForSelectedObject() const
 }
 
 
+Optional<ManipulatorType>
+ObservedScene::properManpiulatorForSelectedObject() const
+{
+  const ObservedScene &observed_scene = *this;
+  Scene &scene = observed_scene.scene;
+  SceneObject scene_object = Impl::selectedSceneObject(scene);
+
+  TreeItemDescription item =
+    observed_scene.describePath(*tree_widget.selectedItem());
+
+  return Impl::properManpiulatorForSceneObject(scene_object, *this, item);
+}
+
+
+SceneObject ObservedScene::Impl::selectedSceneObject(const Scene &scene)
+{
+  Optional<GeometryHandle> selected_geometry = scene.selectedGeometry();
+  Optional<TransformHandle> selected_transform;
+
+  if (!selected_geometry) {
+    selected_transform = scene.selectedTransform();
+  }
+
+  return {selected_transform, selected_geometry};
+}
+
+
+#if 0
+#if CHANGE_MANIPULATORS
+static Scene::TransformHandle
+transformFor(const SceneObject &scene_object, const Scene &scene)
+{
+  if (scene_object.maybe_transform_handle) {
+    return *scene_object.maybe_transform_handle;
+  }
+
+  assert(scene_object.maybe_geometry_handle);
+  return scene.parentTransform(*scene_object.maybe_geometry_handle);
+}
+#endif
+#endif
+
+
+#if 0
+#if CHANGE_MANIPULATORS
+static Optional<BodyIndex>
+maybeBodyIndexForTransform(
+  TransformHandle handle,
+  const SceneHandles &scene_handles
+)
+{
+  for (auto body_index : indicesOf(scene_handles.bodies)) {
+    const SceneHandles::Body &body_handles = *scene_handles.bodies[body_index];
+
+    if (body_handles.transform_handle == handle) {
+      return body_index;
+    }
+  }
+
+  return {};
+}
+#endif
+#endif
+
+
 void
-ObservedScene::attachProperDraggerToSelectedObject(
+ObservedScene::Impl::attachProperDraggerToSelectedObject(
   ObservedScene &observed_scene
 )
 {
+  Scene &scene = observed_scene.scene;
+  SceneObject selected_scene_object = Impl::selectedSceneObject(scene);
+  const TreeWidget &tree_widget = observed_scene.tree_widget;
+#if CHANGE_MANIPULATORS
+  SceneHandles &scene_handles = observed_scene.scene_handles;
+#endif
+
+  TreeItemDescription item =
+    observed_scene.describePath(*tree_widget.selectedItem());
+
   Optional<ManipulatorType> maybe_manipulator_type =
-    observed_scene.properManpiulatorForSelectedObject();
+    Impl::properManpiulatorForSceneObject(
+      selected_scene_object, observed_scene, item
+    );
 
   if (!maybe_manipulator_type) {
     return;
   }
 
-  Scene &scene = observed_scene.scene;
-
+#if !CHANGE_MANIPULATORS
   scene.attachManipulatorToSelectedNode(*maybe_manipulator_type);
+#else
+
+  if (scene_handles.maybe_manipulated_body_index) {
+    TransformHandle manipulator_transform =
+      *scene_handles.maybe_translate_manipulator;
+
+    scene_handles.maybe_translate_manipulator.reset();
+    scene_handles.maybe_manipulated_body_index.reset();
+    scene.destroyTransform(manipulator_transform);
+  }
+  else if (scene_handles.maybe_manipulated_marker_index) {
+    TransformHandle manipulator_transform =
+      *scene_handles.maybe_translate_manipulator;
+
+    scene_handles.maybe_translate_manipulator.reset();
+    scene_handles.maybe_manipulated_marker_index.reset();
+    scene.destroyTransform(manipulator_transform);
+  }
+
+  switch (*maybe_manipulator_type) {
+    case ManipulatorType::translate:
+      {
+        if (item.maybe_body_index) {
+          BodyIndex body_index = *item.maybe_body_index;
+
+          TransformHandle body_transform =
+            *selected_scene_object.maybe_transform_handle;
+
+          TransformHandle parent_transform =
+            scene.parentTransform(body_transform);
+
+          if (scene_handles.maybe_manipulated_body_index) {
+            cerr << "Body already has a manipulator\n";
+            return;
+          }
+
+          assert(!scene_handles.maybe_translate_manipulator);
+
+          TransformHandle manipulator_handle =
+            scene.createTranslateManipulator(parent_transform);
+
+          assert(!scene_handles.maybe_manipulated_body_index);
+          scene_handles.maybe_translate_manipulator = manipulator_handle;
+          scene_handles.maybe_manipulated_body_index = body_index;
+
+          updateBodyTranslateManipulatorPosition(
+            scene, body_transform, manipulator_handle
+          );
+        }
+        else if (item.maybe_marker_index) {
+          MarkerIndex marker_index = *item.maybe_marker_index;
+
+          if (scene_handles.maybe_manipulated_marker_index) {
+            assert(false);
+          }
+
+          TransformHandle marker_transform =
+            scene_handles.marker(marker_index).transformHandle();
+
+          TransformHandle parent_transform =
+            scene.parentTransform(marker_transform);
+
+          TransformHandle manipulator_handle =
+            scene.createTranslateManipulator(parent_transform);
+
+          scene_handles.maybe_translate_manipulator = manipulator_handle;
+          scene_handles.maybe_manipulated_marker_index = marker_index;
+
+          updateMarkerTranslateManipulatorPosition(
+            scene, marker_transform, manipulator_handle
+          );
+        }
+        else {
+          cerr << "attachProperDraggerToSelectedObject:\n";
+          cerr << "  Translating unknown object\n";
+        }
+      }
+      break;
+    case ManipulatorType::rotate:
+      assert(false); // not implemented
+      break;
+    case ManipulatorType::scale:
+      assert(false); // not implemented
+      break;
+  }
+#endif
 }
 
 
@@ -983,6 +1152,8 @@ void ObservedScene::handleTreeSelectionChanged()
     return;
   }
 
+  // Could the scene object actually be a mesh position?
+
   SceneObject scene_object =
     sceneObjectForTreeItem(
       *maybe_selected_item_path,
@@ -993,11 +1164,11 @@ void ObservedScene::handleTreeSelectionChanged()
 
   if (scene_object.maybe_geometry_handle) {
     scene.selectGeometry(*scene_object.maybe_geometry_handle);
-    ObservedScene::attachProperDraggerToSelectedObject(observed_scene);
+    Impl::attachProperDraggerToSelectedObject(observed_scene);
   }
   else if (scene_object.maybe_transform_handle) {
     scene.selectTransform(*scene_object.maybe_transform_handle);
-    ObservedScene::attachProperDraggerToSelectedObject(observed_scene);
+    Impl::attachProperDraggerToSelectedObject(observed_scene);
   }
   else {
     cerr << "handleTreeSelectionChanged: No scene object found\n";
@@ -1041,7 +1212,7 @@ void ObservedScene::handleSceneSelectionChanged()
     cerr << "No tree item for scene object.\n";
   }
 
-  ObservedScene::attachProperDraggerToSelectedObject(observed_scene);
+  Impl::attachProperDraggerToSelectedObject(observed_scene);
 }
 
 

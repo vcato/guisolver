@@ -7,6 +7,8 @@
 #include "vector.hpp"
 #include "mesh.hpp"
 
+#define CHANGE_MANIPULATORS 0
+
 
 struct Scene {
   using Point = Vec3;
@@ -80,6 +82,9 @@ struct Scene {
   virtual GeometryHandle createSphere(TransformHandle parent) = 0;
   virtual MeshHandle createMesh(TransformHandle parent, const Mesh &) = 0 ;
   virtual TransformHandle parentTransform(GeometryHandle) const = 0;
+#if CHANGE_MANIPULATORS
+  virtual TransformHandle parentTransform(TransformHandle) const = 0;
+#endif
   virtual void destroyGeometry(GeometryHandle) = 0;
   virtual void destroyTransform(TransformHandle) = 0;
   virtual void setGeometryScale(GeometryHandle handle,const Vec3 &v) = 0;
@@ -99,7 +104,12 @@ struct Scene {
   virtual void selectGeometry(GeometryHandle) = 0;
   virtual void selectTransform(TransformHandle) = 0;
   virtual Optional<LineHandle> maybeLine(GeometryHandle) const = 0;
+#if !CHANGE_MANIPULATORS
   virtual void attachManipulatorToSelectedNode(ManipulatorType) = 0;
+#else
+  virtual TransformHandle
+    createTranslateManipulator(TransformHandle parent) = 0;
+#endif
 };
 
 

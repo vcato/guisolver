@@ -19,7 +19,9 @@ struct FakeScene : Scene {
   Objects objects;
   Optional<size_t> maybe_selected_object_index;
   Optional<size_t> maybe_dragger_index;
+#if !CHANGE_MANIPULATORS
   Optional<ManipulatorType> maybe_dragger_type;
+#endif
 
   bool indexIsUsed(TransformIndex i) const
   {
@@ -140,11 +142,14 @@ struct FakeScene : Scene {
 
   Optional<LineHandle> maybeLine(GeometryHandle) const override;
 
-  virtual void attachManipulatorToSelectedNode(ManipulatorType dragger_type)
-  {
-    maybe_dragger_index = maybe_selected_object_index;
-    maybe_dragger_type = dragger_type;
-  }
+  TransformHandle parentTransform(TransformHandle parent_handle) const;
+
+#if !CHANGE_MANIPULATORS
+  void attachManipulatorToSelectedNode(ManipulatorType dragger_type) override;
+#else
+  TransformHandle
+  createTranslateManipulator(TransformHandle /*parent*/) override;
+#endif
 
   private:
     GeometryHandle createGeometry(TransformHandle parent);

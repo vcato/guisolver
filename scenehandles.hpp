@@ -81,6 +81,12 @@ struct SceneHandles {
     Scene::LineHandle line_handle;
   };
 
+#if CHANGE_MANIPULATORS
+  Optional<TransformHandle> maybe_translate_manipulator;
+  Optional<BodyIndex> maybe_manipulated_body_index;
+  Optional<MarkerIndex> maybe_manipulated_marker_index;
+#endif
+
   vector<Optional<Body>> bodies;
   Markers markers;
   DistanceErrors distance_errors;
