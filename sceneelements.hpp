@@ -1,12 +1,14 @@
 #ifndef SCENEELEMENTS_HPP_
 #define SCENEELEMENTS_HPP_
 
+#include <cstdlib>
 #include "bodyindex.hpp"
 #include "lineindex.hpp"
 #include "meshindex.hpp"
 #include "boxindex.hpp"
 #include "distanceerrorindex.hpp"
 #include "variableindex.hpp"
+#include "markerindex.hpp"
 #include "xyzcomponent.hpp"
 
 

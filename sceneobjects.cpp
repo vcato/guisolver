@@ -9,6 +9,7 @@
 #include "globaltransform.hpp"
 #include "scenetransform.hpp"
 #include "meshstate.hpp"
+#include "vec3state.hpp"
 
 using std::cerr;
 using TransformHandle = Scene::TransformHandle;

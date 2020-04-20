@@ -3,6 +3,7 @@
 #include "transform.hpp"
 #include "transformstate.hpp"
 #include "globaltransform.hpp"
+#include "positionstate.hpp"
 
 
 void

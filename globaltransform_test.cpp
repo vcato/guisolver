@@ -4,6 +4,7 @@
 #include "assertnearfloat.hpp"
 #include "randomvec3.hpp"
 #include "randomfloat.hpp"
+#include "transformstate.hpp"
 
 
 static BodyIndex

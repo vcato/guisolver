@@ -54,12 +54,14 @@ SCENESTATEIO=scenestateio.o $(SCENESTATETAGGEDVALUE) $(TAGGEDVALUEIO)
 SCENEERROR=sceneerror.o $(SCENESTATE)
 
 SCENEOBJECTS=sceneobjects.o maketransform.o settransform.o $(SCENESTATE) \
-  meshstate.o
+  meshstate.o transformstate.o
 
 OPTIMIZE=optimize.o
 
+SCENESTATETRANSFORM=scenestatetransform.o globaltransform.o
+
 OBSERVEDSCENE=observedscene.o \
-  treevalues.o scenestatetransform.o \
+  treevalues.o $(SCENESTATETRANSFORM) \
   $(EVALUATEEXPRESSION) $(SCENESTATETAGGEDVALUE) $(SCENEOBJECTS) \
   meshstate.o
 
@@ -109,8 +111,9 @@ expressionparser_test: expressionparser_test.o expressionparser.o
 evaluateexpression_test: evaluateexpression_test.o $(EVALUATEEXPRESSION)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
-globaltransform_test: globaltransform_test.o $(SCENESTATE) maketransform.o \
-  assertnearfloat.o $(RANDOMTRANSFORM) $(RANDOMPOINT)
+globaltransform_test: globaltransform_test.o globaltransform.o \
+  $(SCENESTATE) maketransform.o \
+  assertnearfloat.o transformstate.o $(RANDOMTRANSFORM) $(RANDOMPOINT)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 scenestatetaggedvalue_test: scenestatetaggedvalue_test.o \
@@ -124,6 +127,7 @@ scenestateio_test: scenestateio_test.o $(SCENESTATE) \
 scenesolver_test: scenesolver_test.o \
   scenesolver.o maketransform.o $(RANDOMTRANSFORM) $(RANDOMPOINT) \
   assertnearfloat.o randomtransform3.o randompoint3.o transform3util.o \
+  transformstate.o globaltransform.o \
   $(SCENEERROR) $(OPTIMIZE)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
@@ -134,7 +138,8 @@ treevalues_test: treevalues_test.o faketreewidget.o \
   $(DEFAULTSCENESTATE) treevalues.o maketransform.o checktree.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
-sceneobjects_test: sceneobjects_test.o $(SCENEOBJECTS) fakescene.o
+sceneobjects_test: sceneobjects_test.o \
+  $(SCENEOBJECTS) fakescene.o globaltransform.o
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 observedscene_test: observedscene_test.o $(OBSERVEDSCENE) faketreewidget.o \

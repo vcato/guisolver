@@ -1,3 +1,6 @@
+#include "vec3.hpp"
+
+
 struct FaceNormalCalculator {
   Vec3 total{0,0,0};
 

@@ -1,6 +1,8 @@
 #ifndef EXPECTED_HPP_
 #define EXPECTED_HPP_
 
+#include <string>
+#include <cassert>
 #include "noinittag.hpp"
 #include "basicvariant.hpp"
 

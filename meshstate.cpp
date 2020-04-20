@@ -3,6 +3,7 @@
 #include "transformstate.hpp"
 #include "facenormalcalculator.hpp"
 #include "emplaceinto.hpp"
+#include "vec3state.hpp"
 
 using std::cerr;
 

@@ -1,6 +1,15 @@
 #ifndef TREEITEMDESCRIPTION_HPP_
 #define TREEITEMDESCRIPTION_HPP_
 
+#include "optional.hpp"
+#include "bodyindex.hpp"
+#include "distanceerrorindex.hpp"
+#include "meshindex.hpp"
+#include "variableindex.hpp"
+#include "lineindex.hpp"
+#include "boxindex.hpp"
+#include "markerindex.hpp"
+
 
 struct TreeItemDescription {
   enum class Type {

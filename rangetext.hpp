@@ -1,3 +1,7 @@
+#include <string>
+#include "stringrange.hpp"
+
+
 inline std::string
 rangeText(const StringRange &range, const std::string &full_text)
 {
