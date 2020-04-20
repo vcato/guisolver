@@ -634,16 +634,6 @@ updateBodyInScene(
   });
 
   forEachBodyGeometry(body_state, geometry_scene_updater);
-
-#if CHANGE_MANIPULATORS
-  if (scene_handles.maybe_manipulated_body_index == body_index) {
-    updateBodyTranslateManipulatorPosition(
-      scene,
-      body_handles.transform_handle,
-      *scene_handles.maybe_translate_manipulator
-    );
-  }
-#endif
 }
 
 
@@ -1038,7 +1028,7 @@ static void
 
 
 void
-updateBodyTranslateManipulatorPosition(
+updateBodyTranslateManipulator(
   Scene &scene,
   TransformHandle body_transform_handle,
   TransformHandle manipulator_handle
@@ -1050,7 +1040,7 @@ updateBodyTranslateManipulatorPosition(
 
 
 void
-updateMarkerTranslateManipulatorPosition(
+updateMarkerTranslateManipulator(
   Scene &scene,
   TransformHandle marker_transform_handle,
   TransformHandle manipulator_handle
@@ -1061,6 +1051,43 @@ updateMarkerTranslateManipulatorPosition(
   cerr << "  marker_position: " << marker_position << "\n";
   scene.setTranslation(manipulator_handle, marker_position);
 }
+
+
+void
+updateBodyBoxScaleManipulator(
+  Scene &scene,
+  Scene::GeometryHandle box_geometry_handle,
+  Scene::GeometryHandle manipulator
+)
+{
+  auto center = scene.geometryCenter(box_geometry_handle);
+  scene.setGeometryCenter(manipulator, center);
+  auto size = scene.geometryScale(box_geometry_handle);
+  size.x += 0.1;
+  size.y += 0.1;
+  size.z += 0.1;
+  scene.setGeometryScale(manipulator, size);
+}
+
+
+void
+updateBodyBoxFromScaleManipulator(
+  GeometryHandle box_handle,
+  GeometryHandle manipulator,
+  Scene &scene
+)
+{
+  Scene::Point center = scene.geometryCenter(manipulator);
+  Vec3 scale = scene.geometryScale(manipulator);
+  scale.x -= 0.1;
+  scale.y -= 0.1;
+  scale.z -= 0.1;
+
+  scene.setGeometryCenter(box_handle, center);
+  scene.setGeometryScale(box_handle, scale);
+}
+
+
 
 
 static void
@@ -1106,6 +1133,66 @@ updateBodiesInScene(
 }
 
 
+#if CHANGE_MANIPULATORS
+static void
+updateManipulatorsInScene(
+  Scene &scene,
+  const SceneHandles &scene_handles
+)
+{
+  if (scene_handles.maybe_manipulated_body_box) {
+    if (scene_handles.maybe_scale_manipulator) {
+      BodyBox body_box = *scene_handles.maybe_manipulated_body_box;
+      GeometryHandle manipulator = *scene_handles.maybe_scale_manipulator;
+      BodyIndex body_index = body_box.body.index;
+      BoxIndex box_index = body_box.index;
+
+      GeometryHandle box_geometry_handle =
+        scene_handles.body(body_index).boxes[box_index].handle;
+
+      updateBodyBoxScaleManipulator(
+        scene,
+        box_geometry_handle,
+        manipulator
+      );
+    }
+  }
+  else if (scene_handles.maybe_manipulated_marker_index) {
+    MarkerIndex marker_index = *scene_handles.maybe_manipulated_marker_index;
+
+    if (scene_handles.maybe_translate_manipulator) {
+      TransformHandle manipulator = *scene_handles.maybe_translate_manipulator;
+
+      const SceneHandles::Marker &marker_handles =
+        scene_handles.marker(marker_index);
+
+      TransformHandle marker_transform_handle =
+        marker_handles.transformHandle();
+
+      updateMarkerTranslateManipulator(
+        scene,
+        marker_transform_handle,
+        manipulator
+      );
+    }
+  }
+  else if (scene_handles.maybe_manipulated_body_index) {
+    BodyIndex body_index = *scene_handles.maybe_manipulated_body_index;
+
+    if (scene_handles.maybe_translate_manipulator) {
+      TransformHandle manipulator = *scene_handles.maybe_translate_manipulator;
+
+      updateBodyTranslateManipulator(
+        scene,
+        scene_handles.body(body_index).transform_handle,
+        manipulator
+      );
+    }
+  }
+}
+#endif
+
+
 void
   updateSceneObjects(
     Scene &scene,
@@ -1116,6 +1203,9 @@ void
   updateBodiesInScene(scene, state, scene_handles);
   updateMarkersInScene(scene, scene_handles, state);
   updateDistanceErrorsInScene(scene, scene_handles, state);
+#if CHANGE_MANIPULATORS
+  updateManipulatorsInScene(scene, scene_handles);
+#endif
 }
 
 

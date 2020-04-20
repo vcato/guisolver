@@ -3133,10 +3133,15 @@ describeTreePath(
   }
 
   for (auto i : indicesOf(tree_paths.markers)) {
-    if (path == tree_paths.marker(i).path) {
-      description.type = ItemType::marker;
+    const TreePaths::Marker &marker_paths = tree_paths.marker(i);
+
+    if (startsWith(path, marker_paths.path)) {
       description.maybe_marker_index = i;
-      return description;
+
+      if (path == marker_paths.path) {
+        description.type = ItemType::marker;
+        return description;
+      }
     }
   }
 

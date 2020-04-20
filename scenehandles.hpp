@@ -6,6 +6,7 @@
 #include "markerindex.hpp"
 #include "bodyindex.hpp"
 #include "matchconst.hpp"
+#include "sceneelements.hpp"
 
 
 struct SceneHandles {
@@ -83,8 +84,10 @@ struct SceneHandles {
 
 #if CHANGE_MANIPULATORS
   Optional<TransformHandle> maybe_translate_manipulator;
+  Optional<GeometryHandle> maybe_scale_manipulator;
   Optional<BodyIndex> maybe_manipulated_body_index;
   Optional<MarkerIndex> maybe_manipulated_marker_index;
+  Optional<BodyBox> maybe_manipulated_body_box;
 #endif
 
   vector<Optional<Body>> bodies;

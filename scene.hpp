@@ -109,6 +109,9 @@ struct Scene {
 #else
   virtual TransformHandle
     createTranslateManipulator(TransformHandle parent) = 0;
+
+  virtual GeometryHandle
+    createScaleManipulator(TransformHandle parent) = 0;
 #endif
 };
 

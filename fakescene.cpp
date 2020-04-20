@@ -185,3 +185,12 @@ FakeScene::createTranslateManipulator(TransformHandle parent)
   return result;
 }
 #endif
+
+
+#if CHANGE_MANIPULATORS
+GeometryHandle
+FakeScene::createScaleManipulator(TransformHandle /*parent*/)
+{
+  assert(false); // not implemented
+}
+#endif

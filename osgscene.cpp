@@ -317,7 +317,9 @@ class OSGScene::SelectionHandler : public OSGSelectionHandler {
     OSGScene &scene;
 
     SelectionHandler(OSGScene &);
+#if !CHANGE_MANIPULATORS
     void updateDraggerPosition();
+#endif
     void changeSelectedGeodeTo(osg::Geode *);
     void changeSelectedTransformTo(osg::MatrixTransform *);
     void clearSelection();
@@ -830,7 +832,7 @@ static TranslateDraggerPtr
 
 
 static void
-  setScale(osg::MatrixTransform &transform,float x,float y,float z)
+setScale(osg::MatrixTransform &transform,float x,float y,float z)
 {
   auto m = transform.getMatrix();
   setScale(m, osg::Vec3f(x,y,z));
@@ -879,6 +881,16 @@ draggerMatrix(
   }
 
   return matrix;
+}
+
+
+static void setupDraggerEvents(osgManipulator::Dragger &dragger)
+{
+  dragger.setActivationMouseButtonMask(
+    osgGA::GUIEventAdapter::LEFT_MOUSE_BUTTON
+  );
+
+  dragger.setHandleEvents(true);
 }
 
 
@@ -931,12 +943,7 @@ static DraggerPtr
 
   {
     osgManipulator::Dragger &dragger = *dragger_ptr;
-
-    dragger.setActivationMouseButtonMask(
-      osgGA::GUIEventAdapter::LEFT_MOUSE_BUTTON
-    );
-
-    dragger.setHandleEvents(true);
+    setupDraggerEvents(dragger);
     dragger.addTransformUpdating(&transform_updating, handle_command_mask);
 
     dragger.setMatrix(
@@ -1578,6 +1585,32 @@ OSGScene::createTranslateManipulator(TransformHandle parent)
 #endif
 
 
+#if CHANGE_MANIPULATORS
+GeometryHandle
+OSGScene::createScaleManipulator(TransformHandle parent)
+{
+  ScaleDraggerPtr scale_dragger_ptr = new ScaleDragger;
+  scale_dragger_ptr->setupDefaultGeometry();
+  setupDraggerEvents(*scale_dragger_ptr);
+
+  osg::ref_ptr<osgManipulator::DraggerCallback> dragger_callback_ptr =
+    new Impl::DraggerCallback(*this);
+
+  scale_dragger_ptr->addDraggerCallback(dragger_callback_ptr);
+
+  osg::MatrixTransform &parent_transform =
+    Impl::transformForHandle(*this, parent);
+
+  parent_transform.addChild(scale_dragger_ptr);
+
+  GeometryHandle geometry_handle =
+    Impl::makeHandleFromGeometryTransform(*this, *scale_dragger_ptr);
+
+  return geometry_handle;
+}
+#endif
+
+
 Optional<LineHandle> OSGScene::maybeLine(GeometryHandle handle) const
 {
   if (maybeGeodeLine(Impl::geodeForHandle(*this, handle))) {
@@ -2033,9 +2066,11 @@ void OSGScene::setGeometryScale(GeometryHandle handle,const Vec3 &v)
 
   ::setScale(geometry_transform, x, y, z);
 
+#if !CHANGE_MANIPULATORS
   if (selectedGeometry() == handle) {
     selectionHandler().updateDraggerPosition();
   }
+#endif
 }
 
 
@@ -2046,9 +2081,11 @@ void OSGScene::setGeometryCenter(GeometryHandle handle,const Point &v)
 
   ::setTranslation(geometry_transform, v);
 
+#if !CHANGE_MANIPULATORS
   if (selectedGeometry() == handle) {
     selectionHandler().updateDraggerPosition();
   }
+#endif
 }
 
 
@@ -2193,7 +2230,7 @@ struct ManipulatorDragger {
 
 #if CHANGE_MANIPULATORS
 static Optional<ManipulatorDragger>
-maybeManipulatorDragger(osg::MatrixTransform &transform)
+maybeTranslateManipulatorDragger(osg::MatrixTransform &transform)
 {
   osg::MatrixTransform &parent_transform = ::parentTransform(transform);
   int index = parent_transform.getChildIndex(&transform);
@@ -2213,7 +2250,7 @@ maybeManipulatorDragger(osg::MatrixTransform &transform)
   }
 
   auto *dragger_ptr =
-    dynamic_cast<osgManipulator::Dragger*>(maybe_dragger_node_ptr);
+    dynamic_cast<TranslateDragger*>(maybe_dragger_node_ptr);
 
   if (!dragger_ptr) {
     return {};
@@ -2226,10 +2263,10 @@ maybeManipulatorDragger(osg::MatrixTransform &transform)
 
 #if CHANGE_MANIPULATORS
 static osgManipulator::Dragger *
-manipulatorDraggerPtr(osg::MatrixTransform &transform)
+translateManipulatorDraggerPtr(osg::MatrixTransform &transform)
 {
   Optional<ManipulatorDragger> maybe_manipulator_dragger =
-    maybeManipulatorDragger(transform);
+    maybeTranslateManipulatorDragger(transform);
 
   if (!maybe_manipulator_dragger) {
     return nullptr;
@@ -2257,7 +2294,7 @@ void OSGScene::destroyTransform(TransformHandle handle)
   osg::MatrixTransform &transform = Impl::transformForHandle(*this, handle);
 
   Optional<ManipulatorDragger> maybe_manipulator_dragger =
-    maybeManipulatorDragger(transform);
+    maybeTranslateManipulatorDragger(transform);
 
   if (maybe_manipulator_dragger) {
     int dragger_index = maybe_manipulator_dragger->index;
@@ -2331,10 +2368,10 @@ void OSGScene::SelectionHandler::attachDragger(DraggerType dragger_type)
 
 
 static void
-  matchPose(
-    osg::MatrixTransform &dragger,
-    const osg::MatrixTransform &dragged_transform_node
-  )
+matchPose(
+  osg::MatrixTransform &dragger,
+  const osg::MatrixTransform &dragged_transform_node
+)
 {
   osg::Matrix dragged_transform = dragged_transform_node.getMatrix();
   osg::Matrix dragger_transform = dragger.getMatrix();
@@ -2367,6 +2404,7 @@ static void
 }
 
 
+#if !CHANGE_MANIPULATORS
 static void updateDraggerMatrix(osg::MatrixTransform &transform)
 {
   // * parent               * parent
@@ -2391,15 +2429,19 @@ static void updateDraggerMatrix(osg::MatrixTransform &transform)
 
   matchPose(dragger, dragged_transform_node);
 }
+#endif
 
 
+#if !CHANGE_MANIPULATORS
 static void updateDraggerMatrix(osg::Geode &dragged_geode)
 {
   osg::MatrixTransform &transform = bodyTransformOf(dragged_geode);
   updateDraggerMatrix(transform);
 }
+#endif
 
 
+#if !CHANGE_MANIPULATORS
 void OSGScene::SelectionHandler::updateDraggerPosition()
 {
   if (_translate_dragger_geode_ptr) {
@@ -2429,6 +2471,7 @@ void OSGScene::SelectionHandler::updateDraggerPosition()
     cerr << "updateDraggerPosition: no dragger\n";
   }
 }
+#endif
 
 
 void OSGScene::selectGeometry(GeometryHandle handle)
@@ -2491,7 +2534,7 @@ void OSGScene::setTranslation(TransformHandle handle, Point p)
     selectionHandler().updateDraggerPosition();
   }
 #else
-  auto *dragger_ptr = manipulatorDraggerPtr(transform);
+  auto *dragger_ptr = translateManipulatorDraggerPtr(transform);
 
   if (!dragger_ptr) {
     return;

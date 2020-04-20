@@ -275,6 +275,29 @@ void
 
       scene.setTranslation(marker_transform_handle, manipulator_position);
     }
+    else {
+      cerr << "handleSceneChanging: Unknown translate manipulator\n";
+      return;
+    }
+  }
+  else if (scene_handles.maybe_scale_manipulator) {
+    GeometryHandle manipulator = *scene_handles.maybe_scale_manipulator;
+
+    if (scene_handles.maybe_manipulated_body_box) {
+      BodyBox body_box = *scene_handles.maybe_manipulated_body_box;
+
+      GeometryHandle box_handle =
+        scene_handles.body(body_box.body.index).boxes[body_box.index].handle;
+
+      updateBodyBoxFromScaleManipulator(box_handle, manipulator, scene);
+    }
+    else {
+      cerr << "handleSceneChanging: Unknown scale manipulator\n";
+    }
+  }
+  else {
+    cerr << "handleSceneChanging: Unknown manipulator\n";
+    return;
   }
 #endif
 

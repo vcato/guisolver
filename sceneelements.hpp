@@ -1,6 +1,13 @@
+#ifndef SCENEELEMENTS_HPP_
+#define SCENEELEMENTS_HPP_
+
 #include "bodyindex.hpp"
 #include "lineindex.hpp"
 #include "meshindex.hpp"
+#include "boxindex.hpp"
+#include "distanceerrorindex.hpp"
+#include "variableindex.hpp"
+#include "xyzcomponent.hpp"
 
 
 struct Body {
@@ -151,3 +158,5 @@ using BodyMeshPosition = ArrayElement<BodyMeshPositions, size_t>;
 using BodyMeshPositionComponent = ElementXYZComponent<BodyMeshPosition>;
 using BodyMeshScaleComponent = ElementXYZComponent<BodyMeshScale>;
 using BodyMeshCenterComponent = ElementXYZComponent<BodyMeshCenter>;
+
+#endif /* SCENEELEMENTS_HPP_ */

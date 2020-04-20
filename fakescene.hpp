@@ -148,7 +148,10 @@ struct FakeScene : Scene {
   void attachManipulatorToSelectedNode(ManipulatorType dragger_type) override;
 #else
   TransformHandle
-  createTranslateManipulator(TransformHandle /*parent*/) override;
+  createTranslateManipulator(TransformHandle parent) override;
+
+  GeometryHandle
+  createScaleManipulator(TransformHandle parent) override;
 #endif
 
   private:

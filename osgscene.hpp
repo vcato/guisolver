@@ -53,6 +53,9 @@ class OSGScene : public Scene {
 #else
     TransformHandle
       createTranslateManipulator(TransformHandle parent) override;
+
+    GeometryHandle
+      createScaleManipulator(TransformHandle parent) override;
 #endif
     GraphicsWindowPtr createGraphicsWindow(ViewType view_type);
 
@@ -74,7 +77,6 @@ class OSGScene : public Scene {
     };
 
     vector<HandleData> _handle_datas;
-
     const MatrixTransformPtr _top_node_ptr;
     const TransformHandle _top_transform;
     const GeometryHandle _top_geometry;
