@@ -3,6 +3,7 @@ MOC=moc
 OPTIMIZATION=-g
 #OPTIMIZATION=-O3 -DNDEBUG
 
+CXX=g++
 CXXFLAGS=-W -Wall -Wundef -Wno-deprecated-copy -pedantic -std=c++14 -fPIC -MD -MP $(OPTIMIZATION) \
   `pkg-config --cflags $(PACKAGES)`
 

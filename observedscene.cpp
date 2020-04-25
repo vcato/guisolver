@@ -1483,23 +1483,26 @@ static void
 forEachChannel(const SceneState &scene_state, const F &f)
 {
   for (BodyIndex body_index : indicesOf(scene_state.bodies())) {
-    f(BodyTranslationChannel{{body_index, XYZComponent::x}});
-    f(BodyTranslationChannel{{body_index, XYZComponent::y}});
-    f(BodyTranslationChannel{{body_index, XYZComponent::z}});
-    f(BodyRotationChannel{{body_index, XYZComponent::x}});
-    f(BodyRotationChannel{{body_index, XYZComponent::y}});
-    f(BodyRotationChannel{{body_index, XYZComponent::z}});
+    Body body{body_index};
+    BodyTranslation body_translation{body};
+    BodyRotation body_rotation{body};
+    f(BodyTranslationChannel{{body_translation, XYZComponent::x}});
+    f(BodyTranslationChannel{{body_translation, XYZComponent::y}});
+    f(BodyTranslationChannel{{body_translation, XYZComponent::z}});
+    f(BodyRotationChannel{{body_rotation, XYZComponent::x}});
+    f(BodyRotationChannel{{body_rotation, XYZComponent::y}});
+    f(BodyRotationChannel{{body_rotation, XYZComponent::z}});
     f(BodyScaleChannel(BodyScale{body_index}));
     BoxIndex n_boxes = scene_state.bodies()[body_index].boxes.size();
 
     for (BoxIndex box_index = 0; box_index != n_boxes; ++box_index) {
       BodyBox body_box{body_index, box_index};
-      f(BodyBoxScaleChannel{{body_box, XYZComponent::x}});
-      f(BodyBoxScaleChannel{{body_box, XYZComponent::y}});
-      f(BodyBoxScaleChannel{{body_box, XYZComponent::z}});
-      f(BodyBoxCenterChannel{{body_box, XYZComponent::x}});
-      f(BodyBoxCenterChannel{{body_box, XYZComponent::y}});
-      f(BodyBoxCenterChannel{{body_box, XYZComponent::z}});
+      f(BodyBoxScaleChannel{{{body_box}, XYZComponent::x}});
+      f(BodyBoxScaleChannel{{{body_box}, XYZComponent::y}});
+      f(BodyBoxScaleChannel{{{body_box}, XYZComponent::z}});
+      f(BodyBoxCenterChannel{{{body_box}, XYZComponent::x}});
+      f(BodyBoxCenterChannel{{{body_box}, XYZComponent::y}});
+      f(BodyBoxCenterChannel{{{body_box}, XYZComponent::z}});
     }
   }
 

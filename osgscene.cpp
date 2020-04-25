@@ -312,7 +312,7 @@ struct MeshDrawable : osg::Geometry {
 static const bool use_screen_relative_dragger = false;
 
 
-class OSGScene::SelectionHandler : public OSGSelectionHandler {
+class OSGScene::SelectionHandler final : public OSGSelectionHandler {
   public:
     OSGScene &scene;
 
@@ -451,10 +451,7 @@ struct OSGScene::Impl {
 
   template <typename OSGScene>
   static MatchConst_t<osg::MatrixTransform, OSGScene> &
-  geometryTransformForHandle(
-    OSGScene &scene,
-    const GeometryHandle &handle
-  )
+  geometryTransformForHandle(OSGScene &scene, const GeometryHandle &handle)
   {
     size_t index = handle.index;
     assert(scene._handle_datas[index].geometry_transform_ptr);

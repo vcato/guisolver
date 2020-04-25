@@ -4,7 +4,7 @@
 #include <QSlider>
 #include <functional>
 
-struct QtLineEdit;
+class QtLineEdit;
 
 
 struct QtSlider : QWidget

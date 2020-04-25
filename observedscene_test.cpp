@@ -305,10 +305,10 @@ static void testDuplicateBodyWhenTheBodyHasExpressions()
     tree_paths.body(duplicate_body_index).boxes[box_index].center.x.path;
 
   BodyTranslationChannel
-    tx{{duplicate_body_index, XYZComponent::x}};
+    tx{{{duplicate_body_index}, XYZComponent::x}};
 
   BodyRotationChannel
-    rx{{duplicate_body_index, XYZComponent::x}};
+    rx{{{duplicate_body_index}, XYZComponent::x}};
 
   BodyBoxCenterChannel
     box_centerx{
@@ -1401,7 +1401,11 @@ static void testSettingBoxScaleExpression()
   tester.observed_scene.replaceSceneStateWith(initial_state);
 
   const Channel &channel =
-    BodyBoxScaleChannel{{BodyBox{body_index, box_index}, XYZComponent::x}};
+    BodyBoxScaleChannel{
+      BodyBoxScaleComponent{
+        BodyBoxScale{BodyBox{{body_index}, box_index}}, XYZComponent::x
+      }
+    };
 
   testSettingChannelExpression(channel, tester);
 }

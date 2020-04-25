@@ -29,12 +29,6 @@ using ChannelPaths = TreePaths::Channel;
 static int defaultDigitsOfPrecision() { return 2; }
 
 
-static Expression noExpression()
-{
-  return "";
-}
-
-
 namespace {
 struct NumericProperties {
   int digits_of_precision = defaultDigitsOfPrecision();
@@ -198,7 +192,7 @@ struct AddChannelItemFunction : AddNumericItemFunction {
     const string &label,
     NumericValue value,
     Optional<bool> maybe_solve_state,
-    const Expression &expression = noExpression()
+    const Expression &expression
   )
   {
     TreePath path = adder.addNumeric2(label, value, properties);
@@ -213,7 +207,7 @@ struct AddChannelItemFunction : AddNumericItemFunction {
   operator()(
     const string &label,
     NumericValue value,
-    const Expression &expression = noExpression()
+    const Expression &expression
   )
   {
     return
@@ -2287,12 +2281,12 @@ struct NumericScenePathVisitor : SceneElementVisitor {
 
   void visitBodyTranslationComponent(Body body, XYZComponent component) override
   {
-    visitElement(BodyTranslationComponent{body, component});
+    visitElement(BodyTranslationComponent{{body}, component});
   }
 
   void visitBodyRotationComponent(Body body, XYZComponent component) override
   {
-    visitElement(BodyRotationComponent{body, component});
+    visitElement(BodyRotationComponent{{body}, component});
   }
 
   void visitBodyScale(Body body) override
@@ -2303,13 +2297,13 @@ struct NumericScenePathVisitor : SceneElementVisitor {
   void
   visitBodyBoxScaleComponent(BodyBox body_box, XYZComponent component) override
   {
-    visitElement(BodyBoxScaleComponent{body_box, component});
+    visitElement(BodyBoxScaleComponent{{body_box}, component});
   }
 
   void
   visitBodyBoxCenterComponent(BodyBox body_box, XYZComponent component) override
   {
-    visitElement(BodyBoxCenterComponent{body_box, component});
+    visitElement(BodyBoxCenterComponent{{body_box}, component});
   }
 
   void
@@ -2339,7 +2333,7 @@ struct NumericScenePathVisitor : SceneElementVisitor {
   void
   visitMarkerPositionComponent(Marker marker, XYZComponent component) override
   {
-    visitElement(MarkerPositionComponent{marker, component});
+    visitElement(MarkerPositionComponent{{marker}, component});
   }
 
   void
@@ -2347,7 +2341,7 @@ struct NumericScenePathVisitor : SceneElementVisitor {
     BodyMesh body_mesh, XYZComponent component
   ) override
   {
-    visitElement(BodyMeshScaleComponent{body_mesh, component});
+    visitElement(BodyMeshScaleComponent{{body_mesh}, component});
   }
 
   void
@@ -2355,7 +2349,7 @@ struct NumericScenePathVisitor : SceneElementVisitor {
     BodyMesh body_mesh, XYZComponent component
   ) override
   {
-    visitElement(BodyMeshCenterComponent{body_mesh, component});
+    visitElement(BodyMeshCenterComponent{{body_mesh}, component});
   }
 
   void
@@ -2922,7 +2916,7 @@ channelPaths(
         .scale;
     }
 
-    virtual void visit(const BodyBoxScaleChannel &channel) const
+    void visit(const BodyBoxScaleChannel &channel) const override
     {
       channel_paths_ptr = &
         tree_paths
@@ -2932,7 +2926,7 @@ channelPaths(
           .component(channel.component);
     }
 
-    virtual void visit(const BodyBoxCenterChannel &channel) const
+    void visit(const BodyBoxCenterChannel &channel) const override
     {
       channel_paths_ptr = &
         tree_paths
@@ -2942,7 +2936,7 @@ channelPaths(
           .component(channel.component);
     }
 
-    virtual void visit(const MarkerPositionChannel &channel) const
+    void visit(const MarkerPositionChannel &channel) const override
     {
       channel_paths_ptr =
         &markerPositionComponentChannelPaths(

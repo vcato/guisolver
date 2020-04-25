@@ -8,8 +8,8 @@
 #include "qtcombobox.hpp"
 #include "treewidget.hpp"
 
-struct QHBoxLayout;
-struct QLabel;
+class QHBoxLayout;
+class QLabel;
 
 
 class QtTreeWidget : public QTreeWidget, public TreeWidget {

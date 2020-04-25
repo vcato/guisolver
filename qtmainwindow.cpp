@@ -15,13 +15,14 @@ using std::string;
 
 
 namespace {
-struct ParentWidgetRef {
+struct ParentWidgetRef final {
   struct ParentInterface {
     virtual void addWidget(QWidget &) = 0;
+    virtual ~ParentInterface() = default;
   };
 
   template <typename T>
-  struct Parent : ParentInterface {
+  struct Parent final : ParentInterface {
     T &parent;
 
     Parent(T& parent) : parent(parent) {}

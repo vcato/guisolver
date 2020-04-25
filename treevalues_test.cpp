@@ -86,14 +86,17 @@ static void testRemovingDistanceError()
 }
 
 
+#if 0
 static void indent(ostream &stream, int indent_level)
 {
   for (int i=0; i!=indent_level; ++i) {
     stream << "  ";
   }
 }
+#endif
 
 
+#if 0
 static void
   showItem(const FakeTreeItem &item, ostream &stream, int &indent_level)
 {
@@ -107,6 +110,7 @@ static void
 
   --indent_level;
 }
+#endif
 
 
 #if 0

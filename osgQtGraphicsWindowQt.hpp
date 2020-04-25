@@ -103,10 +103,10 @@ protected:
     bool _canSwapBuffers;
     QSize _default_size;
 
-    virtual void resizeEvent( QResizeEvent* event );
-    virtual void moveEvent( QMoveEvent* event );
-    virtual void glDraw();
-    virtual bool event( QEvent* event );
+    void resizeEvent( QResizeEvent* event ) override;
+    void moveEvent( QMoveEvent* event ) override;
+    void glDraw() override;
+    bool event( QEvent* event ) override;
 
   private:
     GLWidget(

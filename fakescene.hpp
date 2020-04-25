@@ -39,7 +39,7 @@ struct FakeScene : Scene {
     return i;
   }
 
-  virtual TransformHandle top() const
+  TransformHandle top() const override
   {
     return top_handle;
   }
@@ -62,7 +62,7 @@ struct FakeScene : Scene {
   Vec3 geometryScale(GeometryHandle) const override;
   Point geometryCenter(GeometryHandle) const override;
 
-  virtual void setCoordinateAxes(TransformHandle,const CoordinateAxes &)
+  void setCoordinateAxes(TransformHandle,const CoordinateAxes &) override
   {
   }
 
