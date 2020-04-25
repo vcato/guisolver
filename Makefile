@@ -1,9 +1,9 @@
-PACKAGES=openscenegraph QtGui QtOpenGL eigen3
-MOC=moc-qt4
+PACKAGES=openscenegraph Qt5Gui Qt5OpenGL eigen3
+MOC=moc
 OPTIMIZATION=-g
 #OPTIMIZATION=-O3 -DNDEBUG
 
-CXXFLAGS=-W -Wall -Wundef -pedantic -std=c++14 -MD -MP $(OPTIMIZATION) \
+CXXFLAGS=-W -Wall -Wundef -Wno-deprecated-copy -pedantic -std=c++14 -fPIC -MD -MP $(OPTIMIZATION) \
   `pkg-config --cflags $(PACKAGES)`
 
 all:

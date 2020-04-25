@@ -471,7 +471,7 @@ bool GraphicsWindowQt::init( QWidget* parent, const QGLWidget* shareWidget, Qt::
     }
 
     // make sure the event queue has the correct window rectangle size and input range
-    getEventQueue()->syncWindowRectangleWithGraphcisContext();
+    getEventQueue()->syncWindowRectangleWithGraphicsContext();
 
     return true;
 }
@@ -705,7 +705,7 @@ bool GraphicsWindowQt::realizeImplementation()
 
     // make sure the event queue has the correct window rectangle size and
     // input range
-    getEventQueue()->syncWindowRectangleWithGraphcisContext();
+    getEventQueue()->syncWindowRectangleWithGraphicsContext();
 
     // make this window's context not current
     // note: this must be done as we will probably make the context current
@@ -864,16 +864,3 @@ private:
     QtWindowingSystem( const QtWindowingSystem& );
     QtWindowingSystem& operator=( const QtWindowingSystem& );
 };
-
-
-// declare C entry point for static compilation.
-extern "C" void OSGQT_EXPORT graphicswindow_Qt(void)
-{
-    osg::GraphicsContext::setWindowingSystemInterface(QtWindowingSystem::getInterface());
-}
-
-
-void osgQt::initQtWindowingSystem()
-{
-    graphicswindow_Qt();
-}

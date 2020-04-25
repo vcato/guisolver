@@ -1275,6 +1275,8 @@ static void setDrawableColor(osg::Drawable &drawable, const osg::Vec3f &color)
 
 static void setGeodeColor(osg::Geode &geode,const osg::Vec3f &vec)
 {
+  int n_children = geode.getNumChildren();
+  assert(n_children > 0);
   osg::Drawable *drawable_ptr = geode.getDrawable(0);
   assert(drawable_ptr);
   setDrawableColor(*drawable_ptr, vec);
@@ -1892,6 +1894,7 @@ static osg::Geode&
   geode.getOrCreateStateSet()->setAttributeAndModes(
     material, osg::StateAttribute::ON
   );
+
   matrix_transform.addChild(geode_ptr);
   return *geode_ptr;
 }
@@ -1918,7 +1921,9 @@ OSGScene::Impl::createShape(
   osg::MatrixTransform &geometry_transform = addTransformToGroup(transform);
   osg::Geode &geode = createGeode(geometry_transform, shape_params.colorMode());
   geode.setName(shape_params.geode_name);
-  geode.addDrawable(shape_params.createDrawable());
+  osg::ref_ptr<osg::Drawable> drawable_ptr = shape_params.createDrawable();
+  setDrawableColor(*drawable_ptr, {1,1,1});
+  geode.addDrawable(drawable_ptr);
   return geometry_transform;
 }
 

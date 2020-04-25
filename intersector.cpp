@@ -376,7 +376,7 @@ void
 {
   if (reachedLimit()) return;
 
-  osg::BoundingBox bb = drawable->getBound();
+  osg::BoundingBox bb = drawable->getBoundingBox();
 
   if (bb.valid()) {
     bb.expandBy(

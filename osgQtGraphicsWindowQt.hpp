@@ -21,6 +21,7 @@
 #include <QEvent>
 #include <QQueue>
 #include <QSet>
+#undef GL_GLEXT_VERSION /*workaround conflict between osgViewer/GraphicsWindow and QGLWidget */
 #include <QGLWidget>
 
 class QInputEvent;
@@ -34,9 +35,6 @@ namespace osgQt
 
 // forward declarations
 class GraphicsWindowQt;
-
-/// The function sets the WindowingSystem to Qt.
-void OSGQT_EXPORT initQtWindowingSystem();
 
 
 class OSGQT_EXPORT GLWidget : public QGLWidget
