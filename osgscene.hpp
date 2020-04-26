@@ -52,11 +52,9 @@ class OSGScene : public Scene {
 #if !CHANGE_MANIPULATORS
     void attachManipulatorToSelectedNode(ManipulatorType) override;
 #else
-    TransformHandle
-      createTranslateManipulator(TransformHandle parent) override;
-
-    GeometryHandle
-      createScaleManipulator(TransformHandle parent) override;
+    TransformHandle createTranslateManipulator(TransformHandle parent) override;
+    TransformHandle createRotateManipulator(TransformHandle parent) override;
+    GeometryHandle createScaleManipulator(TransformHandle parent) override;
 #endif
     GraphicsWindowPtr createGraphicsWindow(ViewType view_type);
 

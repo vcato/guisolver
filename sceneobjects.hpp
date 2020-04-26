@@ -5,6 +5,10 @@
 
 extern SceneHandles createSceneObjects(const SceneState &state, Scene &scene);
 
+#if CHANGE_MANIPULATORS
+extern void removeExistingManipulator(SceneHandles &, Scene &);
+#endif
+
 extern void
   destroySceneObjects(
     Scene &scene,
@@ -178,6 +182,13 @@ extern void
 
 extern void
   updateBodyTranslateManipulator(
+    Scene &,
+    Scene::TransformHandle body_transform_handle,
+    Scene::TransformHandle manipulator_handle
+  );
+
+extern void
+  updateBodyRotateManipulator(
     Scene &,
     Scene::TransformHandle body_transform_handle,
     Scene::TransformHandle manipulator_handle

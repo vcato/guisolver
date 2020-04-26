@@ -407,7 +407,8 @@ struct GeometryDestroyer {
 
 static void
 destroyBodyObjects(
-  BodyIndex body_index, Scene &scene,
+  BodyIndex body_index,
+  Scene &scene,
   const SceneHandles &scene_handles,
   const SceneState &scene_state
 )
@@ -997,6 +998,62 @@ destroyBodyAndChildren(
 }
 
 
+#if CHANGE_MANIPULATORS
+void removeExistingManipulator(SceneHandles &scene_handles, Scene &scene)
+{
+  if (scene_handles.maybe_translate_manipulator) {
+    TransformHandle manipulator_transform =
+      *scene_handles.maybe_translate_manipulator;
+
+    scene_handles.maybe_translate_manipulator.reset();
+
+    if (scene_handles.maybe_manipulated_body_index) {
+      scene_handles.maybe_manipulated_body_index.reset();
+    }
+    else if (scene_handles.maybe_manipulated_marker_index) {
+      scene_handles.maybe_manipulated_marker_index.reset();
+    }
+    else {
+      assert(false); // not implemented
+    }
+
+    scene.destroyTransform(manipulator_transform);
+  }
+  else if (scene_handles.maybe_rotate_manipulator) {
+    TransformHandle manipulator_transform =
+      *scene_handles.maybe_rotate_manipulator;
+
+    scene_handles.maybe_rotate_manipulator.reset();
+
+    if (scene_handles.maybe_manipulated_body_index) {
+      scene_handles.maybe_manipulated_body_index.reset();
+    }
+    else {
+      assert(false); // not implemented
+    }
+
+    scene.destroyTransform(manipulator_transform);
+  }
+  else if (scene_handles.maybe_scale_manipulator) {
+    GeometryHandle manipulator = *scene_handles.maybe_scale_manipulator;
+
+    if (scene_handles.maybe_manipulated_body_box) {
+      scene_handles.maybe_manipulated_body_box.reset();
+    }
+    else if (scene_handles.maybe_manipulated_body_mesh) {
+      scene_handles.maybe_manipulated_body_mesh.reset();
+    }
+    else {
+      assert(false); // not implemented
+    }
+
+    scene_handles.maybe_scale_manipulator.reset();
+    scene.destroyGeometry(manipulator);
+  }
+}
+#endif
+
+
 void
 destroySceneObjects(
   Scene &scene,
@@ -1042,6 +1099,20 @@ updateBodyTranslateManipulator(
 
 
 void
+updateBodyRotateManipulator(
+  Scene &scene,
+  Scene::TransformHandle body_transform_handle,
+  Scene::TransformHandle manipulator_handle
+)
+{
+  auto body_position = scene.translation(body_transform_handle);
+  auto body_orientation = scene.coordinateAxes(body_transform_handle);
+  scene.setTranslation(manipulator_handle, body_position);
+  scene.setCoordinateAxes(manipulator_handle, body_orientation);
+}
+
+
+void
 updateMarkerTranslateManipulator(
   Scene &scene,
   TransformHandle marker_transform_handle,
@@ -1049,8 +1120,6 @@ updateMarkerTranslateManipulator(
 )
 {
   auto marker_position = scene.translation(marker_transform_handle);
-  cerr << "updateMarkerTranslateManipulatorPosition:\n";
-  cerr << "  marker_position: " << marker_position << "\n";
   scene.setTranslation(manipulator_handle, marker_position);
 }
 
@@ -1283,6 +1352,18 @@ updateManipulatorsInScene(
         scene_handles.body(body_index).transform_handle,
         manipulator
       );
+    }
+    else if (scene_handles.maybe_rotate_manipulator) {
+      TransformHandle manipulator = *scene_handles.maybe_rotate_manipulator;
+
+      updateBodyRotateManipulator(
+        scene,
+        scene_handles.body(body_index).transform_handle,
+        manipulator
+      );
+    }
+    else {
+      cerr << "updateManipulatorsInScene: unknown body manipulator\n";
     }
   }
 }

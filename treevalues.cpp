@@ -3101,6 +3101,16 @@ describeTreePath(
       return description;
     }
 
+    if (startsWith(path, body_paths.scale.path)) {
+      description.maybe_body_index = body_index;
+
+      if (path == body_paths.scale.path) {
+        description.type = ItemType::scale;
+      }
+
+      return description;
+    }
+
     {
       bool found_description = false;
 

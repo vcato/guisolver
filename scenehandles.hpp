@@ -84,6 +84,7 @@ struct SceneHandles {
 
 #if CHANGE_MANIPULATORS
   Optional<TransformHandle> maybe_translate_manipulator;
+  Optional<TransformHandle> maybe_rotate_manipulator;
   Optional<GeometryHandle> maybe_scale_manipulator;
   Optional<BodyIndex> maybe_manipulated_body_index;
   Optional<MarkerIndex> maybe_manipulated_marker_index;

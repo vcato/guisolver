@@ -7,7 +7,7 @@
 #include "vector.hpp"
 #include "mesh.hpp"
 
-#define CHANGE_MANIPULATORS 0
+#define CHANGE_MANIPULATORS 1
 
 
 struct Scene {
@@ -110,6 +110,9 @@ struct Scene {
 #else
   virtual TransformHandle
     createTranslateManipulator(TransformHandle parent) = 0;
+
+  virtual TransformHandle
+    createRotateManipulator(TransformHandle parent) = 0;
 
   virtual GeometryHandle
     createScaleManipulator(TransformHandle parent) = 0;

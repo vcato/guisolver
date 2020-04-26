@@ -22,6 +22,7 @@ struct TreeItemDescription {
     distance_error,
     translation,
     rotation,
+    scale,
     variable,
     other
   };

@@ -626,6 +626,13 @@ ObservedScene::removingMarker(
 {
   SceneHandles &scene_handles = observed_scene.scene_handles;
   Scene &scene = observed_scene.scene;
+
+#if CHANGE_MANIPULATORS
+  if (scene_handles.maybe_manipulated_marker_index == marker_index) {
+    removeExistingManipulator(scene_handles, scene);
+  }
+#endif
+
   removeMarkerFromTree(marker_index, sceneTree(observed_scene));
   removeMarkerFromScene(scene, scene_handles, marker_index);
 }
@@ -639,6 +646,13 @@ ObservedScene::removingBody(
   Scene &scene = observed_scene.scene;
   SceneHandles &scene_handles = observed_scene.scene_handles;
   SceneState &scene_state = observed_scene.scene_state;
+
+#if CHANGE_MANIPULATORS
+  if (scene_handles.maybe_manipulated_body_index == body_index) {
+    removeExistingManipulator(scene_handles, scene);
+  }
+#endif
+
   removeBodyFromScene(scene, scene_handles, scene_state, body_index);
   removeBodyFromTree(sceneTree(observed_scene), scene_state, body_index);
 }
@@ -670,9 +684,11 @@ void ObservedScene::removeBody(BodyIndex body_index)
   };
 
   Visitor visitor{observed_scene};
+
   removeBodyFromSceneState(body_index, scene_state, visitor);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
   updateSceneObjects(scene, scene_handles, scene_state);
+  handleTreeSelectionChanged();
 }
 
 
@@ -683,6 +699,7 @@ void ObservedScene::removeMarker(MarkerIndex marker_index)
   scene_state.removeMarker(marker_index);
   updateSceneObjects(scene, scene_handles, scene_state);
   updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+  handleTreeSelectionChanged();
 }
 
 
@@ -699,6 +716,7 @@ void ObservedScene::removeBox(BodyIndex body_index, BoxIndex box_index)
   );
 
   removeIndexFrom(scene_state.body(body_index).boxes, box_index);
+  handleTreeSelectionChanged();
 }
 
 
@@ -715,6 +733,7 @@ void ObservedScene::removeLine(BodyIndex body_index, LineIndex line_index)
   );
 
   removeIndexFrom(scene_state.body(body_index).lines, line_index);
+  handleTreeSelectionChanged();
 }
 
 
@@ -731,6 +750,7 @@ void ObservedScene::removeMesh(BodyIndex body_index, MeshIndex mesh_index)
   );
 
   removeIndexFrom(scene_state.body(body_index).meshes, mesh_index);
+  handleTreeSelectionChanged();
 }
 
 
@@ -1028,48 +1048,6 @@ maybeBodyIndexForTransform(
 
 #if CHANGE_MANIPULATORS
 static void
-removeExistingManipulator(SceneHandles &scene_handles, Scene &scene)
-{
-  if (scene_handles.maybe_translate_manipulator) {
-    TransformHandle manipulator_transform =
-      *scene_handles.maybe_translate_manipulator;
-
-    scene_handles.maybe_translate_manipulator.reset();
-
-    if (scene_handles.maybe_manipulated_body_index) {
-      scene_handles.maybe_manipulated_body_index.reset();
-    }
-    else if (scene_handles.maybe_manipulated_marker_index) {
-      scene_handles.maybe_manipulated_marker_index.reset();
-    }
-    else {
-      assert(false); // not implemented
-    }
-
-    scene.destroyTransform(manipulator_transform);
-  }
-  else if (scene_handles.maybe_scale_manipulator) {
-    GeometryHandle manipulator = *scene_handles.maybe_scale_manipulator;
-
-    if (scene_handles.maybe_manipulated_body_box) {
-      scene_handles.maybe_manipulated_body_box.reset();
-    }
-    else if (scene_handles.maybe_manipulated_body_mesh) {
-      scene_handles.maybe_manipulated_body_mesh.reset();
-    }
-    else {
-      assert(false); // not implemented
-    }
-
-    scene_handles.maybe_scale_manipulator.reset();
-    scene.destroyGeometry(manipulator);
-  }
-}
-#endif
-
-
-#if CHANGE_MANIPULATORS
-static void
 addManipulator(
   ManipulatorType manipulator_type,
   const TreeItemDescription &item,
@@ -1080,65 +1058,94 @@ addManipulator(
 {
   switch (manipulator_type) {
     case ManipulatorType::translate:
-      {
-        if (item.maybe_body_index) {
-          BodyIndex body_index = *item.maybe_body_index;
+      if (item.maybe_body_index) {
+        BodyIndex body_index = *item.maybe_body_index;
 
-          TransformHandle body_transform =
-            *selected_scene_object.maybe_transform_handle;
+        TransformHandle body_transform =
+          *selected_scene_object.maybe_transform_handle;
 
-          TransformHandle parent_transform =
-            scene.parentTransform(body_transform);
+        TransformHandle parent_transform =
+          scene.parentTransform(body_transform);
 
-          if (scene_handles.maybe_manipulated_body_index) {
-            cerr << "Body already has a manipulator\n";
-            return;
-          }
-
-          assert(!scene_handles.maybe_translate_manipulator);
-
-          TransformHandle manipulator_handle =
-            scene.createTranslateManipulator(parent_transform);
-
-          assert(!scene_handles.maybe_manipulated_body_index);
-          scene_handles.maybe_translate_manipulator = manipulator_handle;
-          scene_handles.maybe_manipulated_body_index = body_index;
-
-          updateBodyTranslateManipulator(
-            scene, body_transform, manipulator_handle
-          );
+        if (scene_handles.maybe_manipulated_body_index) {
+          cerr << "Body already has a manipulator\n";
+          return;
         }
-        else if (item.maybe_marker_index) {
-          MarkerIndex marker_index = *item.maybe_marker_index;
 
-          if (scene_handles.maybe_manipulated_marker_index) {
-            assert(false);
-          }
+        assert(!scene_handles.maybe_translate_manipulator);
 
-          TransformHandle marker_transform_handle =
-            scene_handles.marker(marker_index).transformHandle();
+        TransformHandle manipulator_handle =
+          scene.createTranslateManipulator(parent_transform);
 
-          TransformHandle parent_transform =
-            scene.parentTransform(marker_transform_handle);
+        assert(!scene_handles.maybe_manipulated_body_index);
+        scene_handles.maybe_translate_manipulator = manipulator_handle;
+        scene_handles.maybe_manipulated_body_index = body_index;
 
-          TransformHandle manipulator_handle =
-            scene.createTranslateManipulator(parent_transform);
-
-          scene_handles.maybe_translate_manipulator = manipulator_handle;
-          scene_handles.maybe_manipulated_marker_index = marker_index;
-
-          updateMarkerTranslateManipulator(
-            scene, marker_transform_handle, manipulator_handle
-          );
-        }
-        else {
-          cerr << "attachProperDraggerToSelectedObject:\n";
-          cerr << "  Translating unknown object\n";
-        }
+        updateBodyTranslateManipulator(
+          scene, body_transform, manipulator_handle
+        );
       }
+      else if (item.maybe_marker_index) {
+        MarkerIndex marker_index = *item.maybe_marker_index;
+
+        if (scene_handles.maybe_manipulated_marker_index) {
+          assert(false);
+        }
+
+        TransformHandle marker_transform_handle =
+          scene_handles.marker(marker_index).transformHandle();
+
+        TransformHandle parent_transform =
+          scene.parentTransform(marker_transform_handle);
+
+        TransformHandle manipulator_handle =
+          scene.createTranslateManipulator(parent_transform);
+
+        scene_handles.maybe_translate_manipulator = manipulator_handle;
+        scene_handles.maybe_manipulated_marker_index = marker_index;
+
+        updateMarkerTranslateManipulator(
+          scene, marker_transform_handle, manipulator_handle
+        );
+      }
+      else {
+        cerr << "attachProperDraggerToSelectedObject:\n";
+        cerr << "  Translating unknown object\n";
+      }
+
       break;
     case ManipulatorType::rotate:
-      assert(false); // not implemented
+      if (item.maybe_body_index) {
+        BodyIndex body_index = *item.maybe_body_index;
+
+        TransformHandle body_transform =
+          *selected_scene_object.maybe_transform_handle;
+
+        TransformHandle parent_transform =
+          scene.parentTransform(body_transform);
+
+        if (scene_handles.maybe_manipulated_body_index) {
+          cerr << "Body already has a manipulator\n";
+          return;
+        }
+
+        assert(!scene_handles.maybe_rotate_manipulator);
+
+        TransformHandle manipulator_handle =
+          scene.createRotateManipulator(parent_transform);
+
+        assert(!scene_handles.maybe_manipulated_body_index);
+        scene_handles.maybe_rotate_manipulator = manipulator_handle;
+        scene_handles.maybe_manipulated_body_index = body_index;
+
+        updateBodyRotateManipulator(
+          scene, body_transform, manipulator_handle
+        );
+      }
+      else {
+        cerr << "Rotating unknown object\n";
+      }
+
       break;
     case ManipulatorType::scale:
       if (item.maybe_box_index) {
@@ -1165,7 +1172,6 @@ addManipulator(
           scene, box_geometry_handle, manipulator
         );
       }
-#if CHANGE_MANIPULATORS
       else if (item.maybe_mesh_index) {
         MeshIndex mesh_index = *item.maybe_mesh_index;
         BodyIndex body_index = *item.maybe_body_index;
@@ -1188,7 +1194,6 @@ addManipulator(
           scene, mesh_handles.handle, manipulator
         );
       }
-#endif
       else {
         assert(false); // not implemented
       }
@@ -1848,6 +1853,9 @@ bool ObservedScene::canPasteTo(Optional<BodyIndex> maybe_body_index)
 
 void ObservedScene::replaceSceneStateWith(const SceneState &new_state)
 {
+#if CHANGE_MANIPULATORS
+  removeExistingManipulator(scene_handles, scene);
+#endif
   destroySceneObjects(scene, scene_state, scene_handles);
   clearTree(tree_widget, tree_paths);
   clipboard.maybe_cut_body_index.reset();

@@ -903,7 +903,9 @@ void QtTreeWidget::setItemExpanded(const TreePath &path,bool new_expanded_state)
 
 void QtTreeWidget::selectionChangedSlot()
 {
-  if (_ignore_selelection_changed) return;
+  if (_ignore_selelection_changed) {
+    return;
+  }
 
   if (selection_changed_callback) {
     selection_changed_callback();

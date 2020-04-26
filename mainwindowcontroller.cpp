@@ -280,6 +280,25 @@ MainWindowController::Impl::handleSceneChanging(
       return;
     }
   }
+  else if (scene_handles.maybe_rotate_manipulator) {
+    TransformHandle rotate_manipulator =
+      *scene_handles.maybe_rotate_manipulator;
+
+    if (scene_handles.maybe_manipulated_body_index) {
+      BodyIndex body_index = *scene_handles.maybe_manipulated_body_index;
+
+      TransformHandle body_transform_handle =
+        scene_handles.body(body_index).transform_handle;
+
+      CoordinateAxes manipulator_position =
+        scene.coordinateAxes(rotate_manipulator);
+
+      scene.setCoordinateAxes(body_transform_handle, manipulator_position);
+    }
+    else {
+      cerr << "handleSceneChanging: Unknown rotate manipulator\n";
+    }
+  }
   else if (scene_handles.maybe_scale_manipulator) {
     GeometryHandle manipulator = *scene_handles.maybe_scale_manipulator;
 
