@@ -43,6 +43,7 @@ class OSGScene : public Scene {
     void setLineStartPoint(LineHandle, Point) override;
     void setLineEndPoint(LineHandle,Point) override;
     void setMesh(MeshHandle, Mesh) override;
+    const Mesh& mesh(MeshHandle) const override;
     Optional<GeometryHandle> selectedGeometry() const override;
     Optional<TransformHandle> selectedTransform() const override;
     void selectGeometry(GeometryHandle handle) override;

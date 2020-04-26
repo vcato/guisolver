@@ -203,3 +203,22 @@ extern void
     Scene::GeometryHandle manipulator,
     Scene &
   );
+
+#if CHANGE_MANIPULATORS
+extern void
+  updateBodyMeshScaleManipulator(
+    Scene &,
+    Scene::MeshHandle,
+    Scene::GeometryHandle manipulator
+  );
+#endif
+
+
+#if CHANGE_MANIPULATORS
+void
+  updateBodyMeshFromScaleManipulator(
+    Scene::MeshHandle mesh_handle,
+    Scene::GeometryHandle manipulator,
+    Scene &scene
+  );
+#endif

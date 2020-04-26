@@ -1030,27 +1030,38 @@ maybeBodyIndexForTransform(
 static void
 removeExistingManipulator(SceneHandles &scene_handles, Scene &scene)
 {
-  if (scene_handles.maybe_manipulated_body_index) {
+  if (scene_handles.maybe_translate_manipulator) {
     TransformHandle manipulator_transform =
       *scene_handles.maybe_translate_manipulator;
 
     scene_handles.maybe_translate_manipulator.reset();
-    scene_handles.maybe_manipulated_body_index.reset();
-    scene.destroyTransform(manipulator_transform);
-  }
-  else if (scene_handles.maybe_manipulated_marker_index) {
-    TransformHandle manipulator_transform =
-      *scene_handles.maybe_translate_manipulator;
 
-    scene_handles.maybe_translate_manipulator.reset();
-    scene_handles.maybe_manipulated_marker_index.reset();
+    if (scene_handles.maybe_manipulated_body_index) {
+      scene_handles.maybe_manipulated_body_index.reset();
+    }
+    else if (scene_handles.maybe_manipulated_marker_index) {
+      scene_handles.maybe_manipulated_marker_index.reset();
+    }
+    else {
+      assert(false); // not implemented
+    }
+
     scene.destroyTransform(manipulator_transform);
   }
-  else if (scene_handles.maybe_manipulated_body_box) {
+  else if (scene_handles.maybe_scale_manipulator) {
     GeometryHandle manipulator = *scene_handles.maybe_scale_manipulator;
 
+    if (scene_handles.maybe_manipulated_body_box) {
+      scene_handles.maybe_manipulated_body_box.reset();
+    }
+    else if (scene_handles.maybe_manipulated_body_mesh) {
+      scene_handles.maybe_manipulated_body_mesh.reset();
+    }
+    else {
+      assert(false); // not implemented
+    }
+
     scene_handles.maybe_scale_manipulator.reset();
-    scene_handles.maybe_manipulated_body_box.reset();
     scene.destroyGeometry(manipulator);
   }
 }
@@ -1156,10 +1167,24 @@ addManipulator(
       }
 #if CHANGE_MANIPULATORS
       else if (item.maybe_mesh_index) {
+        MeshIndex mesh_index = *item.maybe_mesh_index;
+        BodyIndex body_index = *item.maybe_body_index;
+
+        const SceneHandles::Mesh &mesh_handles =
+          scene_handles.body(body_index).meshes[mesh_index];
+
+        TransformHandle parent_transform =
+          scene.parentTransform(mesh_handles.handle);
+
         GeometryHandle manipulator =
           scene.createScaleManipulator(parent_transform);
 
-        updateMeshScaleManipulator(
+        scene_handles.maybe_scale_manipulator = manipulator;
+
+        scene_handles.maybe_manipulated_body_mesh =
+          BodyMesh(Body{body_index}, mesh_index);
+
+        updateBodyMeshScaleManipulator(
           scene, mesh_handles.handle, manipulator
         );
       }

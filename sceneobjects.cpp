@@ -1,6 +1,7 @@
 #include "sceneobjects.hpp"
 
 #include <iostream>
+#include <float.h>
 #include "settransform.hpp"
 #include "indicesof.hpp"
 #include "removeindexfrom.hpp"
@@ -1089,6 +1090,89 @@ updateBodyBoxFromScaleManipulator(
 }
 
 
+namespace {
+struct Range {
+  float min = FLT_MAX, max = -FLT_MAX;
+};
+}
+
+
+#if CHANGE_MANIPULATORS
+static void expand(Range &range, float value)
+{
+  if (value < range.min) {
+    range.min = value;
+  }
+
+  if (value > range.max) {
+    range.max = value;
+  }
+}
+#endif
+
+
+#if CHANGE_MANIPULATORS
+static Vec3 meshSize(const ::Mesh &mesh)
+{
+  Range x_range;
+  Range y_range;
+  Range z_range;
+
+  for (auto &position : mesh.positions) {
+    expand(x_range, position.x);
+    expand(y_range, position.y);
+    expand(z_range, position.z);
+  }
+
+  float x = std::max(-x_range.min, x_range.max);
+  float y = std::max(-y_range.min, y_range.max);
+  float z = std::max(-z_range.min, z_range.max);
+
+  return {x,y,z};
+}
+#endif
+
+
+#if CHANGE_MANIPULATORS
+void
+updateBodyMeshScaleManipulator(
+  Scene &scene,
+  Scene::MeshHandle mesh_handle,
+  Scene::GeometryHandle manipulator
+)
+{
+  auto center = scene.geometryCenter(mesh_handle);
+  scene.setGeometryCenter(manipulator, center);
+  auto size = scene.geometryScale(mesh_handle);
+  const Mesh &mesh = scene.mesh(mesh_handle);
+  Vec3 mesh_size = meshSize(mesh);
+  size.x *= mesh_size.x*2;
+  size.y *= mesh_size.y*2;
+  size.z *= mesh_size.z*2;
+  scene.setGeometryScale(manipulator, size);
+}
+#endif
+
+
+#if CHANGE_MANIPULATORS
+void
+updateBodyMeshFromScaleManipulator(
+  Scene::MeshHandle mesh_handle,
+  GeometryHandle manipulator,
+  Scene &scene
+)
+{
+  Scene::Point center = scene.geometryCenter(manipulator);
+  Vec3 scale = scene.geometryScale(manipulator);
+  const Mesh &mesh = scene.mesh(mesh_handle);
+  Vec3 mesh_size = meshSize(mesh);
+  scale.x /= mesh_size.x*2;
+  scale.y /= mesh_size.y*2;
+  scale.z /= mesh_size.z*2;
+  scene.setGeometryCenter(mesh_handle, center);
+  scene.setGeometryScale(mesh_handle, scale);
+}
+#endif
 
 
 static void
@@ -1157,6 +1241,17 @@ updateManipulatorsInScene(
         manipulator
       );
     }
+  }
+  else if (scene_handles.maybe_manipulated_body_mesh) {
+    BodyMesh body_mesh = *scene_handles.maybe_manipulated_body_mesh;
+    BodyIndex body_index = body_mesh.body.index;
+    MeshIndex mesh_index = body_mesh.index;
+    GeometryHandle manipulator = *scene_handles.maybe_scale_manipulator;
+
+    Scene::MeshHandle mesh_handle =
+      scene_handles.body(body_index).meshes[mesh_index].handle;
+
+    updateBodyMeshScaleManipulator(scene, mesh_handle, manipulator);
   }
   else if (scene_handles.maybe_manipulated_marker_index) {
     MarkerIndex marker_index = *scene_handles.maybe_manipulated_marker_index;

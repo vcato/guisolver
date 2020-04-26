@@ -231,5 +231,3 @@ Selecting a mesh position should put a handle on it.
 ---
 Change manipulators so that they are separate objects in the scene.
 #define CHANGE_MANIPULATORS
----
-Manipulator on a mesh doesn't work.

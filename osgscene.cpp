@@ -231,13 +231,16 @@ struct MeshDataBuilder {
 }
 
 
+#if !CHANGE_MANIPULATORS
 namespace {
 struct Range {
   float min = FLT_MAX, max = -FLT_MAX;
 };
 }
+#endif
 
 
+#if !CHANGE_MANIPULATORS
 static void expand(Range &range, float value)
 {
   if (value < range.min) {
@@ -248,9 +251,11 @@ static void expand(Range &range, float value)
     range.max = value;
   }
 }
+#endif
 
 
-static osg::Vec3f calculateSize(const Mesh &mesh)
+#if !CHANGE_MANIPULATORS
+static osg::Vec3f calculateSize(const ::Mesh &mesh)
 {
   Range x_range;
   Range y_range;
@@ -268,19 +273,24 @@ static osg::Vec3f calculateSize(const Mesh &mesh)
 
   return {x,y,z};
 }
+#endif
 
 
 namespace {
 struct MeshDrawable : osg::Geometry {
   osg::Vec3f color = osg::Vec3(1,1,1);
+#if !CHANGE_MANIPULATORS
   osg::Vec3f size = {1,1,1};
+#endif
   Mesh mesh;
 
   void setup()
   {
     MeshDrawable &self = *this;
     removeAllPrimativeSets(self);
+#if !CHANGE_MANIPULATORS
     self.size = calculateSize(mesh);
+#endif
 
     osg::ref_ptr<osg::Vec3Array> points_ptr = new osg::Vec3Array;
     osg::ref_ptr<osg::Vec3Array> normals_ptr = new osg::Vec3Array;
@@ -323,7 +333,9 @@ class OSGScene::SelectionHandler final : public OSGSelectionHandler {
     void changeSelectedGeodeTo(osg::Geode *);
     void changeSelectedTransformTo(osg::MatrixTransform *);
     void clearSelection();
+#if !CHANGE_MANIPULATORS
     void attachDragger(DraggerType);
+#endif
     osg::Geode *selectedGeodePtr() const { return _selected_geode_ptr; }
 
     osg::MatrixTransform *selectedTransformPtr() const
@@ -345,9 +357,13 @@ class OSGScene::SelectionHandler final : public OSGSelectionHandler {
 
     void nodeClicked(osg::Node *) override;
     void removeExistingDraggers();
+#if !CHANGE_MANIPULATORS
     void attachDragger(osg::Geode &, DraggerType);
     void attachDragger(osg::MatrixTransform &, DraggerType);
+#endif
+#if !CHANGE_MANIPULATORS
     void attachTranslateDraggerToGeode(osg::Geode &);
+#endif
     void attachTranslateDraggerToTransform(osg::MatrixTransform &);
 
     void
@@ -359,7 +375,9 @@ class OSGScene::SelectionHandler final : public OSGSelectionHandler {
 
     void attachRotateDraggerToGeode(osg::Geode &);
     void attachRotateDraggerToTransform(osg::MatrixTransform &);
+#if !CHANGE_MANIPULATORS
     void attachScaleDraggerTo(osg::Geode &);
+#endif
 };
 
 
@@ -492,7 +510,10 @@ struct OSGScene::Impl {
     );
 
   static LineDrawable& lineDrawable(OSGScene &, LineHandle);
-  static MeshDrawable& meshDrawable(OSGScene &, MeshHandle);
+
+  template <typename S>
+  static auto
+    meshDrawable(S &, MeshHandle) -> MatchConst_t<MeshDrawable, S>&;
 
   static void handleDragFinish(OSGScene &scene)
   {
@@ -1378,6 +1399,7 @@ OSGScene::SelectionHandler::attachDraggerTo(
 }
 
 
+#if !CHANGE_MANIPULATORS
 static osg::Vec3 shapeSize(const osg::Geode &geode)
 {
   const osg::Drawable *drawable_ptr = geode.getDrawable(0);
@@ -1389,8 +1411,10 @@ static osg::Vec3 shapeSize(const osg::Geode &geode)
 
   return {0.5, 0.5, 0.5};
 }
+#endif
 
 
+#if !CHANGE_MANIPULATORS
 void
 OSGScene::SelectionHandler::attachTranslateDraggerToGeode(
   osg::Geode &new_selected_node
@@ -1406,6 +1430,7 @@ OSGScene::SelectionHandler::attachTranslateDraggerToGeode(
     transform, DraggerType::translate, shapeSize(new_selected_node)
   );
 }
+#endif
 
 
 void
@@ -1445,6 +1470,7 @@ OSGScene::SelectionHandler::attachRotateDraggerToTransform(
 }
 
 
+#if !CHANGE_MANIPULATORS
 void
 OSGScene::SelectionHandler::attachScaleDraggerTo(
   osg::Geode &new_selected_node
@@ -1472,6 +1498,7 @@ OSGScene::SelectionHandler::attachScaleDraggerTo(
   assert(!_scale_dragger_ptr);
   _scale_dragger_ptr = dragger_ptr;
 }
+#endif
 
 
 static void setColor(osg::MatrixTransform &node,const osg::Vec3f &vec)
@@ -2038,20 +2065,17 @@ OSGScene::Impl::lineDrawable(OSGScene &scene, LineHandle handle)
 }
 
 
-MeshDrawable&
-OSGScene::Impl::meshDrawable(OSGScene &scene, MeshHandle handle)
+template <typename S>
+auto
+OSGScene::Impl::meshDrawable(S &scene, MeshHandle handle)
+-> MatchConst_t<MeshDrawable, S>&
 {
-  osg::MatrixTransform &transform =
-    Impl::geometryTransformForHandle(scene, handle);
-
-  osg::Node *child_ptr = transform.getChild(0);
+  auto &transform = Impl::geometryTransformForHandle(scene, handle);
+  auto *child_ptr = transform.getChild(0);
   assert(child_ptr);
-  osg::Geode *geode_ptr = child_ptr->asGeode();
+  auto *geode_ptr = child_ptr->asGeode();
   assert(geode_ptr);
-
-  MeshDrawable *mesh_drawable_ptr =
-    maybeMeshDrawable(geodeDrawable(*geode_ptr));
-
+  auto *mesh_drawable_ptr = maybeMeshDrawable(geodeDrawable(*geode_ptr));
   assert(mesh_drawable_ptr);
   return *mesh_drawable_ptr;
 }
@@ -2142,6 +2166,13 @@ OSGScene::setMesh(
   MeshDrawable &mesh_drawable = Impl::meshDrawable(*this, handle);
   mesh_drawable.mesh = std::move(new_mesh);
   mesh_drawable.setup();
+}
+
+
+const Mesh& OSGScene::mesh(MeshHandle handle) const
+{
+  const MeshDrawable &mesh_drawable = Impl::meshDrawable(*this, handle);
+  return mesh_drawable.mesh;
 }
 
 
@@ -2315,6 +2346,7 @@ auto OSGScene::top() const -> TransformHandle
 }
 
 
+#if !CHANGE_MANIPULATORS
 void
 OSGScene::SelectionHandler::attachDragger(
   osg::Geode &dragger_node,
@@ -2333,8 +2365,10 @@ OSGScene::SelectionHandler::attachDragger(
       break;
   }
 }
+#endif
 
 
+#if !CHANGE_MANIPULATORS
 void
 OSGScene::SelectionHandler::attachDragger(
   osg::MatrixTransform &dragger_node,
@@ -2353,8 +2387,10 @@ OSGScene::SelectionHandler::attachDragger(
       break;
   }
 }
+#endif
 
 
+#if !CHANGE_MANIPULATORS
 void OSGScene::SelectionHandler::attachDragger(DraggerType dragger_type)
 {
   removeExistingDraggers();
@@ -2367,6 +2403,7 @@ void OSGScene::SelectionHandler::attachDragger(DraggerType dragger_type)
     attachDragger(*_selected_transform_ptr, dragger_type);
   }
 }
+#endif
 
 
 static void

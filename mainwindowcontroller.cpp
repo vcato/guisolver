@@ -239,9 +239,9 @@ static Optional<TransformHandle> selectedObjectTransform(const Scene &scene)
 
 
 void
-  MainWindowController::Impl::handleSceneChanging(
-    MainWindowController &controller
-  )
+MainWindowController::Impl::handleSceneChanging(
+  MainWindowController &controller
+)
 {
   ObservedScene &observed_scene = Impl::observedScene(controller);
   SceneHandles &scene_handles = observed_scene.scene_handles;
@@ -290,6 +290,14 @@ void
         scene_handles.body(body_box.body.index).boxes[body_box.index].handle;
 
       updateBodyBoxFromScaleManipulator(box_handle, manipulator, scene);
+    }
+    else if (scene_handles.maybe_manipulated_body_mesh) {
+      BodyMesh body_mesh = *scene_handles.maybe_manipulated_body_mesh;
+
+      Scene::MeshHandle mesh_handle =
+        scene_handles.body(body_mesh.body.index).meshes[body_mesh.index].handle;
+
+      updateBodyMeshFromScaleManipulator(mesh_handle, manipulator, scene);
     }
     else {
       cerr << "handleSceneChanging: Unknown scale manipulator\n";
