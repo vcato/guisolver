@@ -65,6 +65,14 @@ class SceneState {
       {
         return ::component(*this, component);
       }
+
+      friend std::ostream& operator<<(std::ostream &stream, const XYZ &arg)
+      {
+        stream << "SceneState::XYZ";
+        stream << "(" << arg.x << "," << arg.y << "," << arg.z << ")";
+
+        return stream;
+      }
     };
 
     struct XYZExpressions {
