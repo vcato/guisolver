@@ -2641,7 +2641,7 @@ struct PathMatcher {
     BodyMesh body_mesh, const TreePaths::Positions &mesh_positions_paths
   )
   {
-    for (auto i : indicesOf(mesh_positions_paths.elements)) {
+    for (MeshPositionIndex i : indicesOf(mesh_positions_paths.elements)) {
       const TreePaths::XYZ &position_paths = mesh_positions_paths.elements[i];
 
       if (startsWith(path, position_paths.path)) {
@@ -3080,7 +3080,7 @@ describeTreePath(
     const TreePaths::Body &body_paths = tree_paths.body(body_index);
 
     if (startsWith(path, body_paths.translation.path)) {
-      description.has_translation_ancesor = true;
+      description.has_translation_ancestor = true;
 
       if (path == body_paths.translation.path) {
         description.type = ItemType::translation;
@@ -3102,6 +3102,7 @@ describeTreePath(
     }
 
     if (startsWith(path, body_paths.scale.path)) {
+      description.has_scale_ancestor = true;
       description.maybe_body_index = body_index;
 
       if (path == body_paths.scale.path) {

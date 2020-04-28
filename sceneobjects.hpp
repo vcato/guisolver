@@ -226,10 +226,29 @@ extern void
 
 
 #if CHANGE_MANIPULATORS
-void
+extern void
   updateBodyMeshFromScaleManipulator(
     Scene::MeshHandle mesh_handle,
     Scene::GeometryHandle manipulator,
     Scene &scene
   );
 #endif
+
+
+extern void
+  updateBodyMeshPositionManipulator(
+    Scene::TransformHandle manipulator,
+    BodyMeshPosition body_mesh_position,
+    const SceneState &scene_state,
+    Scene &scene
+  );
+
+
+extern void
+  updateBodyMeshPositionFromManipulator(
+    Scene::TransformHandle manipulator,
+    BodyMeshPosition body_mesh_position,
+    SceneState &scene_state,
+    Scene &scene,
+    const SceneHandles &scene_handles
+  );

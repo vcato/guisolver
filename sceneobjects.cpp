@@ -1013,6 +1013,9 @@ void removeExistingManipulator(SceneHandles &scene_handles, Scene &scene)
     else if (scene_handles.maybe_manipulated_marker_index) {
       scene_handles.maybe_manipulated_marker_index.reset();
     }
+    else if (scene_handles.maybe_manipulated_body_mesh_position) {
+      scene_handles.maybe_manipulated_body_mesh_position.reset();
+    }
     else {
       assert(false); // not implemented
     }
@@ -1403,4 +1406,76 @@ updateBodyMeshPositionInScene(
     scene_state.body(body_index).meshes[mesh_index];
 
   scene.setMesh(mesh_handle, meshFromMeshShapeState(mesh_state.shape));
+}
+
+
+void
+updateBodyMeshPositionManipulator(
+  TransformHandle manipulator,
+  BodyMeshPosition body_mesh_position,
+  const SceneState &scene_state,
+  Scene &scene
+)
+{
+  BodyIndex body_index = body_mesh_position.array.body_mesh.body.index;
+  MeshIndex mesh_index = body_mesh_position.array.body_mesh.index;
+  MeshPositionIndex position_index = body_mesh_position.index;
+
+  const SceneState::Mesh &mesh_state =
+    scene_state.body(body_index).meshes[mesh_index];
+
+  Vec3 scale = vec3FromXYZState(mesh_state.scale);
+  Vec3 center = vec3FromXYZState(mesh_state.center);
+
+  Vec3 position =
+    vec3FromXYZState(mesh_state.shape.positions[position_index]);
+
+  Vec3 scaled_position =
+    Vec3(
+      center.x + position.x * scale.x,
+      center.y + position.y * scale.y,
+      center.z + position.z * scale.z
+    );
+
+  scene.setTranslation(manipulator, scaled_position);
+}
+
+
+void
+updateBodyMeshPositionFromManipulator(
+  TransformHandle manipulator,
+  BodyMeshPosition body_mesh_position,
+  SceneState &scene_state,
+  Scene &scene,
+  const SceneHandles &scene_handles
+)
+{
+  BodyIndex body_index = body_mesh_position.array.body_mesh.body.index;
+  MeshIndex mesh_index = body_mesh_position.array.body_mesh.index;
+  MeshPositionIndex position_index = body_mesh_position.index;
+
+  Vec3 scaled_position = scene.translation(manipulator);
+
+  SceneState::Mesh &mesh_state =
+    scene_state.body(body_index).meshes[mesh_index];
+
+  Vec3 scale = vec3FromXYZState(mesh_state.scale);
+  Vec3 center = vec3FromXYZState(mesh_state.center);
+
+  Vec3 position = {
+    (scaled_position.x - center.x)/scale.x,
+    (scaled_position.y - center.y)/scale.y,
+    (scaled_position.z - center.z)/scale.z
+  };
+
+  mesh_state.shape.positions[position_index] = xyzStateFromVec3(position);
+
+  updateBodyMeshPositionInScene(
+    body_index,
+    mesh_index,
+    position_index,
+    scene,
+    scene_handles,
+    scene_state
+  );
 }

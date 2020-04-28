@@ -90,6 +90,7 @@ struct SceneHandles {
   Optional<MarkerIndex> maybe_manipulated_marker_index;
   Optional<BodyBox> maybe_manipulated_body_box;
   Optional<BodyMesh> maybe_manipulated_body_mesh;
+  Optional<BodyMeshPosition> maybe_manipulated_body_mesh_position;
 #endif
 
   vector<Optional<Body>> bodies;

@@ -275,6 +275,15 @@ MainWindowController::Impl::handleSceneChanging(
 
       scene.setTranslation(marker_transform_handle, manipulator_position);
     }
+    else if (scene_handles.maybe_manipulated_body_mesh_position) {
+      updateBodyMeshPositionFromManipulator(
+        translate_manipulator,
+        *scene_handles.maybe_manipulated_body_mesh_position,
+        state,
+        scene,
+        scene_handles
+      );
+    }
     else {
       cerr << "handleSceneChanging: Unknown translate manipulator\n";
       return;

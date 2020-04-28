@@ -15,6 +15,11 @@
 struct Body {
   BodyIndex index;
   Body(BodyIndex index) : index(index) {}
+
+  bool operator==(const Body &arg) const
+  {
+    return index == arg.index;
+  }
 };
 
 
@@ -132,11 +137,21 @@ struct BodyMesh {
   Body body;
   MeshIndex index;
   BodyMesh(Body body, MeshIndex index) : body(body), index(index) {}
+
+  bool operator==(const BodyMesh &arg) const
+  {
+    return body==arg.body && index==arg.index;
+  }
 };
 
 
 struct BodyMeshPositions {
   BodyMesh body_mesh;
+
+  bool operator==(const BodyMeshPositions &arg) const
+  {
+    return body_mesh == arg.body_mesh;
+  }
 };
 
 
@@ -154,9 +169,14 @@ template <typename Array, typename Index>
 struct ArrayElement {
   Array array;
   Index index;
+
+  bool operator==(const ArrayElement &arg) const
+  {
+    return array == arg.array && index == arg.index;
+  }
 };
 
-using BodyMeshPosition = ArrayElement<BodyMeshPositions, size_t>;
+using BodyMeshPosition = ArrayElement<BodyMeshPositions, MeshPositionIndex>;
 using BodyMeshPositionComponent = ElementXYZComponent<BodyMeshPosition>;
 using BodyMeshScaleComponent = ElementXYZComponent<BodyMeshScale>;
 using BodyMeshCenterComponent = ElementXYZComponent<BodyMeshCenter>;

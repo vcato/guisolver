@@ -227,26 +227,5 @@ a vertex, and then we go somewhere else and have a "Set to marked" operation.
 * Right-click on a vertex in the tree, choose "Mark".
 * Right-click on a distance error start, then choose "Set to Mark".
 ---
-Selecting a mesh position should put a handle on it.
-
-I think ObservedScene::handleTreeSelectionChanged() is a little awkward.
-We go through everything in the scene looking for something that matches
-the tree item path, and then we select it, but we still end up having
-to use observed_scene.describePath() to figure out what kind of item
-is selected in the tree to know what kind of manipulator to use.  It
-seems like we may as well just not go through the scene objects.
-
-The only thing it seems to do for us is let us know whether we should call
-scene.selectGeometry() or scene.selectTransform(), and what scene object
-to use.
-    scene.selectGeometry(*scene_object.maybe_geometry_handle);
-
-Right now, the main practical issue is that if we select a mesh vertex
-in the tree, there is no scene object that corresponds to that vertex,
-but if there is no scene object we think there is nothing selected.
-
-Actually, we have handleTreeSelectionChanged() and
-handleSceneSelectionChanged().  There's too much logic in
-handleSceneSelectionChanged().  It should really just try to find the
-appropriate tree object, select that, and then call
-handleTreeSelectionChanged().
+If you select the position of a mesh in the tree, the mesh should become
+unselected.
