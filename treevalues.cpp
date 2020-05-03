@@ -1866,6 +1866,38 @@ struct TreeGeometryUpdater {
 }
 
 
+void
+updateTreeBodyMeshPosition(
+  TreeWidget &tree_widget,
+  const TreePaths &tree_paths,
+  const SceneState &scene_state,
+  BodyMeshPosition body_mesh_position
+)
+{
+  BodyMesh body_mesh = body_mesh_position.array.body_mesh;
+  Body body = body_mesh.body;
+  BodyIndex body_index = body.index;
+  MeshIndex mesh_index = body_mesh.index;
+  MeshPositionIndex position_index = body_mesh_position.index;
+
+  const TreePaths::XYZ &mesh_position_paths =
+    tree_paths
+    .body(body_index)
+    .meshes[mesh_index]
+    .positions
+    .elements[position_index];
+
+  const SceneState::XYZ &mesh_position_state =
+    scene_state
+    .body(body_index)
+    .meshes[mesh_index]
+    .shape.positions[position_index];
+
+  Vec3 position = vec3FromXYZState(mesh_position_state);
+  updateXYZValues(tree_widget, mesh_position_paths, position);
+}
+
+
 static void
 updateBody(
   TreeWidget &tree_widget,
@@ -2521,7 +2553,7 @@ struct PathMatcher {
       const MeshPaths &mesh_paths = body_paths.meshes[mesh_index];
 
       if (startsWith(path, mesh_paths.path)) {
-        visitBodyMesh({body, mesh_index}, mesh_paths);
+        visitBodyMesh(body.mesh(mesh_index), mesh_paths);
         return true;
       }
     }
@@ -2645,7 +2677,7 @@ struct PathMatcher {
       const TreePaths::XYZ &position_paths = mesh_positions_paths.elements[i];
 
       if (startsWith(path, position_paths.path)) {
-        BodyMeshPosition element{BodyMeshPositions{body_mesh}, i};
+        BodyMeshPosition element{body_mesh.positions(), i};
         visitBodyMeshPosition(element, position_paths);
         return;
       }
@@ -3087,7 +3119,15 @@ describeTreePath(
     const TreePaths::Body &body_paths = tree_paths.body(body_index);
 
     if (startsWith(path, body_paths.translation.path)) {
-      description.has_translation_ancestor = true;
+      description.translation_ancestor_function_ptr =
+        [](const SceneElementDescription &item)
+        {
+          assert(item.maybe_body_index);
+          SceneElementDescription result;
+          result.type = SceneElementDescription::Type::translation;
+          result.maybe_body_index = *item.maybe_body_index;
+          return result;
+        };
 
       if (path == body_paths.translation.path) {
         description.type = ItemType::translation;
@@ -3098,7 +3138,16 @@ describeTreePath(
     }
 
     if (startsWith(path, body_paths.rotation.path)) {
-      description.has_rotation_ancestor = true;
+      description.rotation_ancestor_function_ptr =
+        [](const SceneElementDescription &item)
+        {
+          assert(item.maybe_body_index);
+          SceneElementDescription result;
+          result.type = SceneElementDescription::Type::rotation;
+          result.maybe_body_index = *item.maybe_body_index;
+          return result;
+        };
+
       description.maybe_body_index = body_index;
 
       if (path == body_paths.rotation.path) {
@@ -3109,7 +3158,16 @@ describeTreePath(
     }
 
     if (startsWith(path, body_paths.scale.path)) {
-      description.has_scale_ancestor = true;
+      description.scale_ancestor_function_ptr =
+        [](const SceneElementDescription &item)
+        {
+          assert(item.maybe_body_index);
+          SceneElementDescription result;
+          result.type = SceneElementDescription::Type::scale;
+          result.maybe_body_index = *item.maybe_body_index;
+          return result;
+        };
+
       description.maybe_body_index = body_index;
 
       if (path == body_paths.scale.path) {

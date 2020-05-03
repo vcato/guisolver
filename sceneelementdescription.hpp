@@ -37,9 +37,33 @@ struct SceneElementDescription {
   Optional<VariableIndex> maybe_variable_index;
   Optional<DistanceErrorIndex> maybe_distance_error_index;
   Optional<MeshPositionIndex> maybe_mesh_position_index;
-  bool has_rotation_ancestor = false;
-  bool has_translation_ancestor = false;
-  bool has_scale_ancestor = false;
+
+  SceneElementDescription
+    (*rotation_ancestor_function_ptr)(const SceneElementDescription &)
+    = nullptr;
+
+  SceneElementDescription
+    (*translation_ancestor_function_ptr)(const SceneElementDescription &)
+    = nullptr;
+
+  SceneElementDescription
+    (*scale_ancestor_function_ptr)(const SceneElementDescription &)
+    = nullptr;
+
+  bool hasRotationAncestor() const
+  {
+    return rotation_ancestor_function_ptr != nullptr;
+  }
+
+  bool hasTranslationAncestor() const
+  {
+    return translation_ancestor_function_ptr != nullptr;
+  }
+
+  bool hasScaleAncestor() const
+  {
+    return scale_ancestor_function_ptr != nullptr;
+  }
 };
 
 

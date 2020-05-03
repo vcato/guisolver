@@ -240,37 +240,21 @@ think of a marker as a visual mark.
 If you select the position of a mesh in the tree, the mesh should become
 unselected in the scene.
 ---
-If you select the "positions" child of a Mesh, it should make it where you
-can select individual vertices.
+Need to figure out how to make accessing state/handles/paths easier using
+scene elements.
 
-We could create a sphere for each vertex, so that we have somthing to click on.
-The set of spheres seems similar to a manipulator.
+We should be able to do:
+scene_state[Body(body_index).mesh(mesh_index).position(position_index)]
 
-The ManipulatorType is in Scene currently, but the Scene isn't going to know
-about a "points" manipulator.  It seems like we may need another enum for
-this higher-level kind of manipulator.
+seems like we'll have to have a template
 
-It may be that separating the manipulator type from the item isn't right.
+template <typename First, typename Rest>>
+auto SceneState::operator[](const Link<First,Rest> &element)
+{
+  return (*this)[element.first][element.rest];
+}
 
-
-We use properManipulatorForSceneObject() in
-  properManipulatorForSelectedObject()
-    MainWindowController::Impl::handleSceneChanging().
-      forEachSolveFlagAffectingHandle()
-  attachProperDraggerToSelectedObject()
-
-So the separation is somewhat necessary:
-  * For example, we may have a body selected, and we are using the translate
-    manipulator.
-  * So we're interested in the body rotation, even though what is selected
-    is a body.
-  * Likewise, we may have a body.rotation.x selected, and we are manipulating
-    the whole body.rotation.
-  * So this gets back to needing a generic way of describing things in the
-    scene.  If we had a way of describing body.rotation, then we could just
-    request that a manipulator be attached to Body.rotation, even though what
-    is selected in the tree is Body.rotation.x or Body
----
-We have two ways of describing things in the scene:
-* TreeItemDescription
-* scene elements
+SceneState::Body &operator[](::Body body)
+{
+  return this->body(body.index);
+}

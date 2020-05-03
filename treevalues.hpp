@@ -209,3 +209,11 @@ extern SceneElementDescription
     const TreePath &path,
     const TreePaths &tree_paths
   );
+
+extern void
+  updateTreeBodyMeshPosition(
+    TreeWidget &tree_widget,
+    const TreePaths &tree_paths,
+    const SceneState &scene_state,
+    BodyMeshPosition body_mesh_position
+  );

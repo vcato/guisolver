@@ -370,7 +370,7 @@ assertBodyHasTranslateManipulator(Tester &tester, BodyIndex body_index)
   auto manipulator_position = scene.translation(manipulator_handle);
   auto body_position = scene.translation(body_transform_handle);
   assert(manipulator_position == body_position);
-  assert(scene_handles.maybe_manipulated_body_index == body_index);
+  assert(scene_handles.maybe_manipulated_element.maybe_body_index == body_index);
 }
 
 
@@ -398,7 +398,7 @@ assertMarkerHasTranslateManipulator(Tester &tester, MarkerIndex marker_index)
   auto manipulator_position = scene.translation(manipulator_handle);
   auto marker_position = scene.translation(marker_transform_handle);
   assert(manipulator_position == marker_position);
-  assert(scene_handles.maybe_manipulated_marker_index == marker_index);
+  assert(scene_handles.maybe_manipulated_element.maybe_marker_index == marker_index);
 }
 
 

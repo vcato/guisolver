@@ -219,7 +219,6 @@ extern void
     Scene::GeometryHandle manipulator
   );
 
-
 extern void
   updateBodyMeshFromScaleManipulator(
     Scene::MeshHandle mesh_handle,
@@ -227,6 +226,11 @@ extern void
     Scene &scene
   );
 
+extern Vec3
+  bodyMeshPositionRelativeToBody(
+    BodyMeshPosition body_mesh_position,
+    const SceneState &scene_state
+  );
 
 extern void
   updateBodyMeshPositionManipulator(
@@ -235,7 +239,6 @@ extern void
     const SceneState &scene_state,
     Scene &scene
   );
-
 
 extern void
   updateBodyMeshPositionFromManipulator(

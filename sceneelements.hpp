@@ -12,7 +12,25 @@
 #include "xyzcomponent.hpp"
 
 
+template <typename Array, typename Index>
+struct ArrayElement {
+  Array array;
+  Index index;
+
+  ArrayElement(Array array, Index index)
+  : array(array), index(index)
+  {
+  }
+
+  bool operator==(const ArrayElement &arg) const
+  {
+    return array == arg.array && index == arg.index;
+  }
+};
+
+
 struct Body {
+  struct Mesh;
   BodyIndex index;
   Body(BodyIndex index) : index(index) {}
 
@@ -20,7 +38,72 @@ struct Body {
   {
     return index == arg.index;
   }
+
+  inline Mesh mesh(MeshIndex mesh_index);
 };
+
+
+struct Body::Mesh {
+  struct Positions;
+  Body body;
+  MeshIndex index;
+
+  bool operator==(const Mesh &arg) const
+  {
+    return body==arg.body && index==arg.index;
+  }
+
+  inline Positions positions() const;
+
+  inline ArrayElement<Positions,MeshPositionIndex> position(MeshPositionIndex i);
+
+  private:
+  friend class Body;
+  Mesh(Body body, MeshIndex index) : body(body), index(index) {}
+};
+
+
+using BodyMesh = Body::Mesh;
+
+inline Body::Mesh Body::mesh(MeshIndex mesh_index)
+{
+  return Mesh(*this, mesh_index);
+}
+
+
+using BodyMeshPositions = BodyMesh::Positions;
+using BodyMeshPosition = ArrayElement<BodyMeshPositions, MeshPositionIndex>;
+
+
+struct BodyMesh::Positions {
+  BodyMesh body_mesh;
+
+  bool operator==(const Positions &arg) const
+  {
+    return body_mesh == arg.body_mesh;
+  }
+
+  BodyMeshPosition operator[](MeshPositionIndex i)
+  {
+    return BodyMeshPosition{*this, i};
+  }
+
+  private:
+    friend class Body::Mesh;
+    Positions(BodyMesh body_mesh) : body_mesh(body_mesh) {}
+};
+
+
+BodyMeshPosition Body::Mesh::position(MeshPositionIndex i)
+{
+  return {*this, i};
+}
+
+
+inline BodyMesh::Positions BodyMesh::positions() const
+{
+  return BodyMeshPositions(*this);
+}
 
 
 struct BodyXYZComponent {
@@ -133,28 +216,6 @@ struct BodyLineEnd {
 };
 
 
-struct BodyMesh {
-  Body body;
-  MeshIndex index;
-  BodyMesh(Body body, MeshIndex index) : body(body), index(index) {}
-
-  bool operator==(const BodyMesh &arg) const
-  {
-    return body==arg.body && index==arg.index;
-  }
-};
-
-
-struct BodyMeshPositions {
-  BodyMesh body_mesh;
-
-  bool operator==(const BodyMeshPositions &arg) const
-  {
-    return body_mesh == arg.body_mesh;
-  }
-};
-
-
 struct BodyMeshScale {
   BodyMesh body_mesh;
 };
@@ -165,18 +226,6 @@ struct BodyMeshCenter {
 };
 
 
-template <typename Array, typename Index>
-struct ArrayElement {
-  Array array;
-  Index index;
-
-  bool operator==(const ArrayElement &arg) const
-  {
-    return array == arg.array && index == arg.index;
-  }
-};
-
-using BodyMeshPosition = ArrayElement<BodyMeshPositions, MeshPositionIndex>;
 using BodyMeshPositionComponent = ElementXYZComponent<BodyMeshPosition>;
 using BodyMeshScaleComponent = ElementXYZComponent<BodyMeshScale>;
 using BodyMeshCenterComponent = ElementXYZComponent<BodyMeshCenter>;

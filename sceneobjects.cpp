@@ -1006,14 +1006,14 @@ void removeExistingManipulator(SceneHandles &scene_handles, Scene &scene)
 
     scene_handles.maybe_translate_manipulator.reset();
 
-    if (scene_handles.maybe_manipulated_body_index) {
-      scene_handles.maybe_manipulated_body_index.reset();
+    if (scene_handles.maybe_manipulated_element.maybe_body_index) {
+      scene_handles.maybe_manipulated_element.maybe_body_index.reset();
     }
-    else if (scene_handles.maybe_manipulated_marker_index) {
-      scene_handles.maybe_manipulated_marker_index.reset();
+    else if (scene_handles.maybe_manipulated_element.maybe_marker_index) {
+      scene_handles.maybe_manipulated_element.maybe_marker_index.reset();
     }
-    else if (scene_handles.maybe_manipulated_body_mesh_position) {
-      scene_handles.maybe_manipulated_body_mesh_position.reset();
+    else if (scene_handles.maybe_manipulated_element.maybe_body_mesh_position) {
+      scene_handles.maybe_manipulated_element.maybe_body_mesh_position.reset();
     }
     else {
       assert(false); // not implemented
@@ -1027,8 +1027,8 @@ void removeExistingManipulator(SceneHandles &scene_handles, Scene &scene)
 
     scene_handles.maybe_rotate_manipulator.reset();
 
-    if (scene_handles.maybe_manipulated_body_index) {
-      scene_handles.maybe_manipulated_body_index.reset();
+    if (scene_handles.maybe_manipulated_element.maybe_body_index) {
+      scene_handles.maybe_manipulated_element.maybe_body_index.reset();
     }
     else {
       assert(false); // not implemented
@@ -1039,11 +1039,11 @@ void removeExistingManipulator(SceneHandles &scene_handles, Scene &scene)
   else if (scene_handles.maybe_scale_manipulator) {
     GeometryHandle manipulator = *scene_handles.maybe_scale_manipulator;
 
-    if (scene_handles.maybe_manipulated_body_box) {
-      scene_handles.maybe_manipulated_body_box.reset();
+    if (scene_handles.maybe_manipulated_element.maybe_body_box) {
+      scene_handles.maybe_manipulated_element.maybe_body_box.reset();
     }
-    else if (scene_handles.maybe_manipulated_body_mesh) {
-      scene_handles.maybe_manipulated_body_mesh.reset();
+    else if (scene_handles.maybe_manipulated_element.maybe_body_mesh) {
+      scene_handles.maybe_manipulated_element.maybe_body_mesh.reset();
     }
     else {
       assert(false); // not implemented
@@ -1051,6 +1051,16 @@ void removeExistingManipulator(SceneHandles &scene_handles, Scene &scene)
 
     scene_handles.maybe_scale_manipulator.reset();
     scene.destroyGeometry(manipulator);
+  }
+  else if (scene_handles.maybe_points_manipulator) {
+    const vector<Scene::GeometryHandle> &handles =
+      *scene_handles.maybe_points_manipulator;
+
+    for (auto handle : handles) {
+      scene.destroyGeometry(handle);
+    }
+
+    scene_handles.maybe_points_manipulator.reset();
   }
 }
 
@@ -1286,9 +1296,9 @@ updateManipulatorsInScene(
   const SceneHandles &scene_handles
 )
 {
-  if (scene_handles.maybe_manipulated_body_box) {
+  if (scene_handles.maybe_manipulated_element.maybe_body_box) {
     if (scene_handles.maybe_scale_manipulator) {
-      BodyBox body_box = *scene_handles.maybe_manipulated_body_box;
+      BodyBox body_box = *scene_handles.maybe_manipulated_element.maybe_body_box;
       GeometryHandle manipulator = *scene_handles.maybe_scale_manipulator;
       BodyIndex body_index = body_box.body.index;
       BoxIndex box_index = body_box.index;
@@ -1303,8 +1313,8 @@ updateManipulatorsInScene(
       );
     }
   }
-  else if (scene_handles.maybe_manipulated_body_mesh) {
-    BodyMesh body_mesh = *scene_handles.maybe_manipulated_body_mesh;
+  else if (scene_handles.maybe_manipulated_element.maybe_body_mesh) {
+    BodyMesh body_mesh = *scene_handles.maybe_manipulated_element.maybe_body_mesh;
     BodyIndex body_index = body_mesh.body.index;
     MeshIndex mesh_index = body_mesh.index;
     GeometryHandle manipulator = *scene_handles.maybe_scale_manipulator;
@@ -1314,8 +1324,8 @@ updateManipulatorsInScene(
 
     updateBodyMeshScaleManipulator(scene, mesh_handle, manipulator);
   }
-  else if (scene_handles.maybe_manipulated_marker_index) {
-    MarkerIndex marker_index = *scene_handles.maybe_manipulated_marker_index;
+  else if (scene_handles.maybe_manipulated_element.maybe_marker_index) {
+    MarkerIndex marker_index = *scene_handles.maybe_manipulated_element.maybe_marker_index;
 
     if (scene_handles.maybe_translate_manipulator) {
       TransformHandle manipulator = *scene_handles.maybe_translate_manipulator;
@@ -1333,8 +1343,8 @@ updateManipulatorsInScene(
       );
     }
   }
-  else if (scene_handles.maybe_manipulated_body_index) {
-    BodyIndex body_index = *scene_handles.maybe_manipulated_body_index;
+  else if (scene_handles.maybe_manipulated_element.maybe_body_index) {
+    BodyIndex body_index = *scene_handles.maybe_manipulated_element.maybe_body_index;
 
     if (scene_handles.maybe_translate_manipulator) {
       TransformHandle manipulator = *scene_handles.maybe_translate_manipulator;
@@ -1395,12 +1405,10 @@ updateBodyMeshPositionInScene(
 }
 
 
-void
-updateBodyMeshPositionManipulator(
-  TransformHandle manipulator,
+Vec3
+bodyMeshPositionRelativeToBody(
   BodyMeshPosition body_mesh_position,
-  const SceneState &scene_state,
-  Scene &scene
+  const SceneState &scene_state
 )
 {
   BodyIndex body_index = body_mesh_position.array.body_mesh.body.index;
@@ -1422,6 +1430,21 @@ updateBodyMeshPositionManipulator(
       center.y + position.y * scale.y,
       center.z + position.z * scale.z
     );
+
+  return scaled_position;
+}
+
+
+void
+updateBodyMeshPositionManipulator(
+  TransformHandle manipulator,
+  BodyMeshPosition body_mesh_position,
+  const SceneState &scene_state,
+  Scene &scene
+)
+{
+  Vec3 scaled_position =
+    bodyMeshPositionRelativeToBody(body_mesh_position, scene_state);
 
   scene.setTranslation(manipulator, scaled_position);
 }

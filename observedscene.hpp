@@ -8,6 +8,14 @@
 #include "sceneelementdescription.hpp"
 
 
+enum class ManipulationType {
+  translate,
+  rotate,
+  translate_and_scale,
+  points
+};
+
+
 struct Clipboard {
   Optional<BodyIndex> maybe_cut_body_index;
   Optional<BodyIndex> maybe_cut_marker_index;
@@ -103,8 +111,7 @@ struct ObservedScene {
   static void
   createBodyInScene(BodyIndex body_index, ObservedScene &observed_scene);
 
-  Optional<Scene::ManipulatorType> properManipulatorForSelectedObject() const;
-
+  Optional<ManipulationType> properManipulationForSelectedObject() const;
   const bool *solveStatePtr(const TreePath &) const;
   bool *solveStatePtr(const TreePath &);
   void setSolveFlags(const SceneElementDescription &item, bool state);
@@ -112,6 +119,7 @@ struct ObservedScene {
   void updateSceneStateFromSceneObjects();
 
   void handleSceneStateChanged();
+  void handleBodyMeshPositionStateChanged(BodyMeshPosition);
   void handleTreeSelectionChanged();
   void handleSceneSelectionChanged();
   void handleTreeExpressionChanged(const TreePath &, const std::string &);
