@@ -2974,12 +2974,12 @@ channelExpressionPathPtr(
 
 namespace {
 struct GeometryDescriber {
-  using ItemType = TreeItemDescription::Type;
+  using ItemType = SceneElementDescription::Type;
 
   bool &found_description;
   const TreePaths::Body &body_paths;
   const TreePath &path;
-  TreeItemDescription &description;
+  SceneElementDescription &description;
 
   void visitBox(BoxIndex box_index) const
   {
@@ -3044,7 +3044,7 @@ struct GeometryDescriber {
 
       if (startsWith(path, mesh_paths.positions.path)) {
         if (path == mesh_paths.positions.path) {
-          description.type = TreeItemDescription::Type::mesh_positions;
+          description.type = SceneElementDescription::Type::mesh_positions;
         }
         else {
           for (auto i : indicesOf(mesh_paths.positions.elements)) {
@@ -3069,14 +3069,14 @@ struct GeometryDescriber {
 }
 
 
-TreeItemDescription
+SceneElementDescription
 describeTreePath(
   const TreePath &path,
   const TreePaths &tree_paths
 )
 {
-  TreeItemDescription description;
-  using ItemType = TreeItemDescription::Type;
+  SceneElementDescription description;
+  using ItemType = SceneElementDescription::Type;
 
   if (path == tree_paths.path) {
     description.type = ItemType::scene;

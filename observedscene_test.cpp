@@ -610,7 +610,7 @@ static void testAddingAndRemovingAVariable()
 
   assert(
     observed_scene.describePath(variable_path).type
-    == TreeItemDescription::Type::variable
+    == SceneElementDescription::Type::variable
   );
 
   MarkerIndex marker_index = observed_scene.addMarker();
@@ -1218,14 +1218,14 @@ static void testSetSolveFlags()
   ObservedScene &observed_scene = tester.observed_scene;
   observed_scene.replaceSceneStateWith(initial_state);
   {
-    TreeItemDescription item;
-    item.type = TreeItemDescription::Type::translation;
+    SceneElementDescription item;
+    item.type = SceneElementDescription::Type::translation;
     item.maybe_body_index = body_index;
     observed_scene.setSolveFlags(item, true);
   }
   {
-    TreeItemDescription item;
-    item.type = TreeItemDescription::Type::rotation;
+    SceneElementDescription item;
+    item.type = SceneElementDescription::Type::rotation;
     item.maybe_body_index = body_index;
     observed_scene.setSolveFlags(item, true);
   }

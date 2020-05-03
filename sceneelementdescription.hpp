@@ -1,5 +1,5 @@
-#ifndef TREEITEMDESCRIPTION_HPP_
-#define TREEITEMDESCRIPTION_HPP_
+#ifndef SCENEELEMENTDESCRIPTION_HPP_
+#define SCENEELEMENTDESCRIPTION_HPP_
 
 #include "optional.hpp"
 #include "bodyindex.hpp"
@@ -11,7 +11,7 @@
 #include "markerindex.hpp"
 
 
-struct TreeItemDescription {
+struct SceneElementDescription {
   enum class Type {
     scene,
     body,
@@ -43,4 +43,4 @@ struct TreeItemDescription {
 };
 
 
-#endif /* TREEITEMDESCRIPTION_HPP_ */
+#endif /* SCENEELEMENTDESCRIPTION_HPP_ */

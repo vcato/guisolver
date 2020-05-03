@@ -185,7 +185,7 @@ struct MainWindowController::Impl {
   static void
     solveAllPressed(
       ObservedScene &,
-      const TreeItemDescription &,
+      const SceneElementDescription &,
       bool state
     );
 
@@ -541,7 +541,7 @@ MainWindowController::Impl::pasteGlobalPressed(
 void
 MainWindowController::Impl::solveAllPressed(
   ObservedScene &observed_scene,
-  const TreeItemDescription &item,
+  const SceneElementDescription &item,
   bool state
 )
 {
@@ -711,8 +711,8 @@ MainWindowController::Impl::contextMenuItemsForPath(
   ObservedScene &observed_scene = observedScene(controller);
   TreeWidget::MenuItems menu_items;
   const TreePaths &tree_paths = observed_scene.tree_paths;
-  TreeItemDescription item = observed_scene.describePath(path);
-  using ItemType = TreeItemDescription::Type;
+  SceneElementDescription item = observed_scene.describePath(path);
+  using ItemType = SceneElementDescription::Type;
   const ItemType item_type = item.type;
 
   auto add_marker_function =

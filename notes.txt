@@ -273,4 +273,4 @@ So the separation is somewhat necessary:
 ---
 We have two ways of describing things in the scene:
 * TreeItemDescription
-* SceneElement
+* scene elements

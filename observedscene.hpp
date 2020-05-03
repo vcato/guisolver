@@ -5,7 +5,7 @@
 #include "treepaths.hpp"
 #include "markernamemap.hpp"
 #include "stringvalue.hpp"
-#include "treeitemdescription.hpp"
+#include "sceneelementdescription.hpp"
 
 
 struct Clipboard {
@@ -75,7 +75,7 @@ struct ObservedScene {
   BodyIndex duplicateBodyWithDistanceErrors(BodyIndex);
   MarkerIndex duplicateMarker(MarkerIndex);
   MarkerIndex duplicateMarkerWithDistanceError(MarkerIndex);
-  TreeItemDescription describePath(const TreePath &path) const;
+  SceneElementDescription describePath(const TreePath &path) const;
 
   static BodyIndex
     duplicateBody(BodyIndex, MarkerNameMap &, ObservedScene &);
@@ -107,7 +107,7 @@ struct ObservedScene {
 
   const bool *solveStatePtr(const TreePath &) const;
   bool *solveStatePtr(const TreePath &);
-  void setSolveFlags(const TreeItemDescription &item, bool state);
+  void setSolveFlags(const SceneElementDescription &item, bool state);
   bool pathSupportsExpressions(const TreePath &) const;
   void updateSceneStateFromSceneObjects();
 

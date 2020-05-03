@@ -519,7 +519,7 @@ struct ObservedScene::Impl {
   static SceneObject selectedSceneObject(const Scene &);
 
   static Optional<ManipulatorType>
-    properManipulatorForSceneObject(const TreeItemDescription &);
+    properManipulatorForSceneObject(const SceneElementDescription &);
 };
 
 
@@ -940,7 +940,7 @@ void ObservedScene::cutMarker(MarkerIndex marker_index)
 
 Optional<ManipulatorType>
 ObservedScene::Impl::properManipulatorForSceneObject(
-  const TreeItemDescription &item
+  const SceneElementDescription &item
 )
 {
   if (item.maybe_mesh_position_index) {
@@ -960,7 +960,7 @@ ObservedScene::Impl::properManipulatorForSceneObject(
     return ManipulatorType::scale;
   }
   else if (item.maybe_mesh_index) {
-    if (item.type == TreeItemDescription::Type::mesh_positions) {
+    if (item.type == SceneElementDescription::Type::mesh_positions) {
       return {};
     }
     else {
@@ -986,7 +986,7 @@ ObservedScene::properManipulatorForSelectedObject() const
   Scene &scene = observed_scene.scene;
   SceneObject scene_object = Impl::selectedSceneObject(scene);
 
-  TreeItemDescription item =
+  SceneElementDescription item =
     observed_scene.describePath(*tree_widget.selectedItem());
 
   return Impl::properManipulatorForSceneObject(item);
@@ -1251,7 +1251,7 @@ addBodyMeshScaleManipulator(
 static void
 addManipulator(
   ManipulatorType manipulator_type,
-  const TreeItemDescription &item,
+  const SceneElementDescription &item,
   Scene &scene,
   SceneHandles &scene_handles,
   const SceneState &scene_state
@@ -1340,7 +1340,7 @@ ObservedScene::Impl::attachProperDraggerToSelectedObject(
   const TreeWidget &tree_widget = observed_scene.tree_widget;
   SceneHandles &scene_handles = observed_scene.scene_handles;
 
-  TreeItemDescription item =
+  SceneElementDescription item =
     observed_scene.describePath(*tree_widget.selectedItem());
 
   Optional<ManipulatorType> maybe_manipulator_type =
@@ -2321,7 +2321,7 @@ ObservedScene::handleTreeNumericValueChanged(
       }
     }
 
-    TreeItemDescription description = describePath(path);
+    SceneElementDescription description = describePath(path);
 
     if (description.maybe_mesh_position_index) {
       // To save time, handleSceneStateChanged() doesn't update every position
@@ -2477,9 +2477,10 @@ updateXYZSolveFlags(
 }
 
 
-void ObservedScene::setSolveFlags(const TreeItemDescription &item, bool state)
+void
+ObservedScene::setSolveFlags(const SceneElementDescription &item, bool state)
 {
-  using ItemType = TreeItemDescription::Type;
+  using ItemType = SceneElementDescription::Type;
   BodyIndex body_index = *item.maybe_body_index;
 
   SceneState::TransformSolveFlags &transform_solve_flags =
@@ -2511,7 +2512,7 @@ void ObservedScene::setSolveFlags(const TreeItemDescription &item, bool state)
 
 auto
 ObservedScene::describePath(const TreePath &path) const
--> TreeItemDescription
+-> SceneElementDescription
 {
   return ::describeTreePath(path, tree_paths);
 }
