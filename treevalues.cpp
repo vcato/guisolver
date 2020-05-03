@@ -2988,7 +2988,7 @@ struct GeometryDescriber {
 
       if (startsWith(path, box_paths.path)) {
         if (path == box_paths.path) {
-          description.type = ItemType::box;
+          description.type = ItemType::box_geometry;
         }
 
         description.maybe_box_index = box_index;
@@ -3011,7 +3011,7 @@ struct GeometryDescriber {
 
       if (startsWith(path, line_paths.path)) {
         if (path == line_paths.path) {
-          description.type = ItemType::line;
+          description.type = ItemType::line_geometry;
         }
 
         description.maybe_line_index = line_index;
@@ -3039,7 +3039,7 @@ struct GeometryDescriber {
       description.maybe_mesh_index = mesh_index;
 
       if (path == mesh_paths.path) {
-        description.type = ItemType::mesh;
+        description.type = ItemType::mesh_geometry;
       }
 
       if (startsWith(path, mesh_paths.positions.path)) {

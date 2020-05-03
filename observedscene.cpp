@@ -1198,6 +1198,28 @@ addBodyBoxScaleManipulator(
 }
 
 
+#if ADD_POINTS_MANIPULATOR
+static void addBodyMeshPointsManipulator()
+{
+#if 1
+  cerr << "addBodyMeshPointsManipulator()\n";
+#else
+  for (int i=0; i!=n_positions; ++i) {
+    TransformHandle parent_transform =
+      scene.parentTransform(box_geometry_handle);
+
+    GeometryHandle handle = scene.createSphere(parent_transform);
+    scene.setGeometryCenter(handle, adjusted_position);
+    handles.push_back(handle);
+  }
+
+  assert(!scene_handles.maybe_points_manipulator);
+  scene_handles.maybe_points_manipulator = handles;
+#endif
+}
+#endif
+
+
 static void
 addBodyMeshScaleManipulator(
   SceneHandles &scene_handles,
@@ -1292,6 +1314,19 @@ addManipulator(
       }
 
       break;
+#if ADD_POINTS_MANIPULATOR
+    case ManipulatorType::points:
+      if (item.maybe_mesh_index) {
+        addBodyMeshPointsManipulator(
+          scene_handles, body_index, mesh_index, scene
+        );
+      }
+      else {
+        assert(false); // not implemented
+      }
+
+      break;
+#endif
   }
 }
 

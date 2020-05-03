@@ -15,9 +15,9 @@ struct TreeItemDescription {
   enum class Type {
     scene,
     body,
-    box,
-    mesh,
-    line,
+    box_geometry,
+    mesh_geometry,
+    line_geometry,
     marker,
     distance_error,
     translation,

@@ -355,8 +355,7 @@ MainWindowController::Impl::handleSceneChanging(
     observed_scene.properManipulatorForSelectedObject();
 
   forEachSolveFlagAffectingHandle(
-    transform_handle, scene_handles, state,
-    maybe_manipulator_type,
+    transform_handle, scene_handles, state, maybe_manipulator_type,
     [&](bool &arg){
       old_flags.push_back(arg);
       arg = false;
@@ -835,7 +834,7 @@ MainWindowController::Impl::contextMenuItemsForPath(
     }
   }
 
-  if (item_type == ItemType::box) {
+  if (item_type == ItemType::box_geometry) {
     BodyIndex body_index = *item.maybe_body_index;
     size_t box_index = *item.maybe_box_index;
 
@@ -858,7 +857,7 @@ MainWindowController::Impl::contextMenuItemsForPath(
     });
   }
 
-  if (item_type == ItemType::line) {
+  if (item_type == ItemType::line_geometry) {
     BodyIndex body_index = *item.maybe_body_index;
     LineIndex line_index = *item.maybe_line_index;
 
@@ -872,7 +871,7 @@ MainWindowController::Impl::contextMenuItemsForPath(
     });
   }
 
-  if (item_type == ItemType::mesh) {
+  if (item_type == ItemType::mesh_geometry) {
     BodyIndex body_index = *item.maybe_body_index;
     MeshIndex mesh_index = *item.maybe_mesh_index;
 
