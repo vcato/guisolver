@@ -226,6 +226,22 @@ a vertex, and then we go somewhere else and have a "Set to marked" operation.
 
 * Right-click on a vertex in the tree, choose "Mark".
 * Right-click on a distance error start, then choose "Set to Mark".
+
+The relationship between "markers" and "marks" is interesting.  We could
+think of a marker as a visual mark.
+
+* Select a mesh position
+* Right-click "Add Mark"
+* Select another mesh position
+* Right-click "Add Mark"
+* Marks Menu: "Add Distance Error Between Marks"
+
 ---
 If you select the position of a mesh in the tree, the mesh should become
-unselected.
+unselected in the scene.
+---
+If you select the "positions" child of a Mesh, it should make it where you
+can select individual vertices.
+
+We could create a sphere for each vertex, so that we have somthing to click on.
+The set of spheres seems similar to a manipulator.

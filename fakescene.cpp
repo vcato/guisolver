@@ -166,16 +166,6 @@ FakeScene::setGeometryCenter(
 }
 
 
-#if !CHANGE_MANIPULATORS
-void FakeScene::attachManipulatorToSelectedNode(ManipulatorType dragger_type)
-{
-  maybe_dragger_index = maybe_selected_object_index;
-  maybe_dragger_type = dragger_type;
-}
-#endif
-
-
-#if CHANGE_MANIPULATORS
 TransformHandle
 FakeScene::createTranslateManipulator(TransformHandle parent)
 {
@@ -184,22 +174,17 @@ FakeScene::createTranslateManipulator(TransformHandle parent)
   maybe_dragger_index = result.index;
   return result;
 }
-#endif
 
 
-#if CHANGE_MANIPULATORS
 TransformHandle
 FakeScene::createRotateManipulator(TransformHandle /*parent*/)
 {
   assert(false); // not implemented
 }
-#endif
 
 
-#if CHANGE_MANIPULATORS
 GeometryHandle
 FakeScene::createScaleManipulator(TransformHandle /*parent*/)
 {
   assert(false); // not implemented
 }
-#endif

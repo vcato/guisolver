@@ -30,9 +30,6 @@ struct RotateDragger;
 
 using std::cerr;
 using std::string;
-#if !CHANGE_MANIPULATORS
-using DraggerType = Scene::ManipulatorType;
-#endif
 using GeodePtr = osg::ref_ptr<osg::Geode>;
 using ViewPtr = osg::ref_ptr<osgViewer::View>;
 using GroupPtr = osg::ref_ptr<osg::Group>;
@@ -233,77 +230,22 @@ struct MeshDataBuilder {
 }
 
 
-#if !CHANGE_MANIPULATORS
-namespace {
-struct Range {
-  float min = FLT_MAX, max = -FLT_MAX;
-};
-}
-#endif
-
-
-#if !CHANGE_MANIPULATORS
-static void expand(Range &range, float value)
-{
-  if (value < range.min) {
-    range.min = value;
-  }
-
-  if (value > range.max) {
-    range.max = value;
-  }
-}
-#endif
-
-
-#if !CHANGE_MANIPULATORS
-static osg::Vec3f calculateSize(const ::Mesh &mesh)
-{
-  Range x_range;
-  Range y_range;
-  Range z_range;
-
-  for (auto &position : mesh.positions) {
-    expand(x_range, position.x);
-    expand(y_range, position.y);
-    expand(z_range, position.z);
-  }
-
-  float x = std::max(-x_range.min, x_range.max);
-  float y = std::max(-y_range.min, y_range.max);
-  float z = std::max(-z_range.min, z_range.max);
-
-  return {x,y,z};
-}
-#endif
-
-
 namespace {
 struct MeshDrawable : osg::Geometry {
   osg::Vec3f color = osg::Vec3(1,1,1);
-#if !CHANGE_MANIPULATORS
-  osg::Vec3f size = {1,1,1};
-#endif
   Mesh mesh;
 
   void setup()
   {
     MeshDrawable &self = *this;
     removeAllPrimativeSets(self);
-#if !CHANGE_MANIPULATORS
-    self.size = calculateSize(mesh);
-#endif
-
     osg::ref_ptr<osg::Vec3Array> points_ptr = new osg::Vec3Array;
     osg::ref_ptr<osg::Vec3Array> normals_ptr = new osg::Vec3Array;
     osg::ref_ptr<osg::Vec3Array> colors_ptr = new osg::Vec3Array;
-
     colors_ptr->push_back(color);
-
     self.setVertexArray(points_ptr.get());
     self.setNormalArray(normals_ptr.get(), osg::Array::BIND_PER_VERTEX);
     self.setColorArray(colors_ptr.get(), osg::Array::BIND_OVERALL);
-
     MeshDataBuilder builder(mesh, *points_ptr, *normals_ptr);
     vector<unsigned short> indices;
 
@@ -332,10 +274,6 @@ class OSGScene::SelectionHandler final : public OSGSelectionHandler {
     void changeSelectedGeodeTo(osg::Geode *);
     void changeSelectedTransformTo(osg::MatrixTransform *);
     void clearSelection();
-#if !CHANGE_MANIPULATORS
-    void attachDragger(DraggerType);
-    void updateDraggerPosition();
-#endif
     osg::Geode *selectedGeodePtr() const { return _selected_geode_ptr; }
 
     osg::MatrixTransform *selectedTransformPtr() const
@@ -346,36 +284,9 @@ class OSGScene::SelectionHandler final : public OSGSelectionHandler {
   private:
     osg::Geode *_selected_geode_ptr = nullptr;
     osg::MatrixTransform *_selected_transform_ptr = nullptr;
-#if !CHANGE_MANIPULATORS
-    osg::Geode *_translate_dragger_geode_ptr = nullptr;
-    osg::MatrixTransform *_translate_dragger_transform_ptr = nullptr;
-    osg::Geode *_rotate_dragger_geode_ptr = nullptr;
-    osg::MatrixTransform *_rotate_dragger_transform_ptr = nullptr;
-    osg::Geode *_scale_dragger_geode_ptr = nullptr;
-    osgManipulator::Dragger *_scale_dragger_ptr = nullptr;
-#endif
-
     osg::Vec3 _old_color;
 
     void nodeClicked(osg::Node *) override;
-#if !CHANGE_MANIPULATORS
-    void removeExistingDraggers();
-    void attachDragger(osg::Geode &, DraggerType);
-    void attachDragger(osg::MatrixTransform &, DraggerType);
-    void attachTranslateDraggerToGeode(osg::Geode &);
-    void attachTranslateDraggerToTransform(osg::MatrixTransform &);
-
-    void
-      attachDraggerTo(
-        osg::MatrixTransform &,
-        DraggerType,
-        const osg::Vec3 &shape_size
-      );
-
-    void attachRotateDraggerToGeode(osg::Geode &);
-    void attachRotateDraggerToTransform(osg::MatrixTransform &);
-    void attachScaleDraggerTo(osg::Geode &);
-#endif
 };
 
 
@@ -418,16 +329,6 @@ parentTransform(const osg::MatrixTransform &t)
   assert(matrix2_transform_ptr);
   return *matrix2_transform_ptr;
 }
-
-
-#if !CHANGE_MANIPULATORS
-static osg::MatrixTransform &parentTransform(osg::MatrixTransform &t)
-{
-  const osg::MatrixTransform &const_t = t;
-  const osg::MatrixTransform &const_result = parentTransform(const_t);
-  return const_cast<osg::MatrixTransform&>(const_result);
-}
-#endif
 
 
 struct OSGScene::Impl {
@@ -739,50 +640,12 @@ static osg::MatrixTransform &geometryTransformOf(osg::Geode &geode)
 }
 
 
-#if !CHANGE_MANIPULATORS
-static osg::MatrixTransform &bodyTransformOf(osg::Geode &geode)
-{
-  return parentTransform(geometryTransformOf(geode));
-}
-#endif
-
-
 static osg::Group &parentOf(osg::Node &t)
 {
   osg::Group *group_ptr = t.getParent(0);
   assert(group_ptr);
   return *group_ptr;
 }
-
-
-#if !CHANGE_MANIPULATORS
-static void
-replaceDraggerGroupWithTransform(osg::MatrixTransform &body_transform)
-{
-  MatrixTransformPtr transform_ptr = &body_transform;
-    // This owns the transform after it is removed from the parent.
-    // This prevents the transform from being deleted.
-
-  // * parent               * parent
-  //   * group                * body transform
-  //     * body transform   ->
-  //     * dragger
-  osg::Group &group = parentOf(body_transform);
-  osg::Group &parent = parentOf(group);
-  assert(group.getNumChildren()==2);
-  group.removeChild(0,2);
-  parent.removeChild(&group);
-  parent.addChild(transform_ptr);
-}
-#endif
-
-
-#if !CHANGE_MANIPULATORS
-static osg::ref_ptr<osg::Group> createGroup()
-{
-  return new osg::Group();
-}
-#endif
 
 
 static void scaleAxisXY(osg::Node *axis_node_ptr,float scale_factor)
@@ -820,43 +683,6 @@ struct OSGScene::Impl::DraggerCallback : osgManipulator::DraggerCallback {
 };
 
 
-#if !CHANGE_MANIPULATORS
-// Dragger that maintains its size relative to the screen
-static TranslateDraggerPtr
-  createScreenRelativeTranslateDragger(
-    MatrixTransformPtr transform_ptr,
-    osgManipulator::DraggerCallback &
-  )
-{
-  TranslateDraggerPtr parent_dragger_ptr(new TranslateDragger);
-  TranslateDraggerPtr dragger_ptr = new TranslateDragger();
-  dragger_ptr->setParentDragger(parent_dragger_ptr);
-  dragger_ptr->setupDefaultGeometry();
-  assert(dragger_ptr->getNumChildren()==3);
-  float thickness = 4;
-  scaleAxisXY(dragger_ptr->getChild(0), thickness);
-  scaleAxisXY(dragger_ptr->getChild(1), thickness);
-  scaleAxisXY(dragger_ptr->getChild(2), thickness);
-  dragger_ptr->setHandleEvents(true);
-  assert(isDragger(dragger_ptr));
-  dragger_ptr->setParentDragger(parent_dragger_ptr);
-  AutoTransformPtr mid_transform_ptr(new osg::AutoTransform);
-  mid_transform_ptr->setAutoScaleToScreen(true);
-  osg::Vec3d translation;
-  osg::Quat rotation;
-  osg::Vec3d scale;
-  osg::Quat scale_orient;
-  transform_ptr->getMatrix().decompose(translation,rotation,scale,scale_orient);
-  mid_transform_ptr->setPosition(translation);
-  parent_dragger_ptr->addChild(mid_transform_ptr);
-  mid_transform_ptr->addChild(dragger_ptr);
-  parent_dragger_ptr->addTransformUpdating(transform_ptr);
-  dragger_ptr->setMatrix(osg::Matrix::scale(100,100,100));
-  return parent_dragger_ptr;
-}
-#endif
-
-
 static void
 setScale(osg::MatrixTransform &transform,float x,float y,float z)
 {
@@ -883,41 +709,6 @@ static osg::Matrix defaultDraggerScale()
 }
 
 
-#if !CHANGE_MANIPULATORS
-static osg::Matrix
-draggerMatrix(
-  osg::MatrixTransform &transform_updating,
-  DraggerType dragger_type,
-  osg::Vec3 shape_size
-)
-{
-  osg::Matrix matrix = transform_updating.getMatrix();
-
-  if (dragger_type == DraggerType::scale) {
-    osg::Vec3d translation;
-    osg::Quat rotation;
-    osg::Vec3d scale;
-    osg::Quat scale_orient;
-    matrix.decompose(translation, rotation, scale, scale_orient);
-    scale.x() *= shape_size.x()*2;
-    scale.y() *= shape_size.y()*2;
-    scale.z() *= shape_size.z()*2;
-
-    scale.x() += 0.1;
-    scale.y() += 0.1;
-    scale.z() += 0.1;
-
-    matrix = compose(translation, rotation, scale, scale_orient);
-  }
-  else {
-    matrix = defaultDraggerScale()*matrix;
-  }
-
-  return matrix;
-}
-#endif
-
-
 static void setupDraggerEvents(osgManipulator::Dragger &dragger)
 {
   dragger.setActivationMouseButtonMask(
@@ -937,166 +728,6 @@ static void setupTranslateDraggerGeometry(TranslateDragger &translate_dragger)
   scaleAxisXY(translate_dragger.getChild(1),thickness);
   scaleAxisXY(translate_dragger.getChild(2),thickness);
 }
-
-
-#if !CHANGE_MANIPULATORS
-static DraggerPtr
-createObjectRelativeDragger(
-  osg::MatrixTransform &transform_updating,
-  DraggerType dragger_type,
-  osgManipulator::DraggerCallback &dragger_callback,
-  const osg::Vec3 &shape_size
-)
-{
-  DraggerPtr dragger_ptr;
-
-  using HandleCommandMask =
-    osgManipulator::DraggerTransformCallback::HandleCommandMask;
-
-  HandleCommandMask
-    handle_command_mask = HandleCommandMask::HANDLE_ALL;
-
-  switch (dragger_type) {
-    case DraggerType::translate:
-      {
-        TranslateDraggerPtr translate_dragger_ptr = new TranslateDragger;
-        setupTranslateDraggerGeometry(*translate_dragger_ptr);
-        dragger_ptr = translate_dragger_ptr;
-      }
-      break;
-    case DraggerType::rotate:
-      {
-        RotateDraggerPtr rotate_dragger_ptr = new RotateDragger;
-        rotate_dragger_ptr->setupDefaultGeometry();
-        dragger_ptr = rotate_dragger_ptr;
-      }
-      break;
-    case DraggerType::scale:
-      {
-        ScaleDraggerPtr scale_dragger_ptr = new ScaleDragger;
-        scale_dragger_ptr->setupDefaultGeometry();
-        dragger_ptr = scale_dragger_ptr;
-      }
-      break;
-  }
-
-  assert(isDragger(dragger_ptr));
-
-  {
-    osgManipulator::Dragger &dragger = *dragger_ptr;
-    setupDraggerEvents(dragger);
-    dragger.addTransformUpdating(&transform_updating, handle_command_mask);
-
-    dragger.setMatrix(
-      draggerMatrix(transform_updating, dragger_type, shape_size)
-    );
-
-    dragger.addDraggerCallback(&dragger_callback);
-  }
-
-  return dragger_ptr;
-}
-#endif
-
-
-#if !CHANGE_MANIPULATORS
-static DraggerPtr
-createDragger(
-  osg::MatrixTransform& transform,
-  bool screen_relative,
-  DraggerType dragger_type,
-  osgManipulator::DraggerCallback &dragger_callback,
-  const osg::Vec3 &shape_size
-)
-{
-  switch (dragger_type) {
-    case DraggerType::translate:
-      if (screen_relative) {
-        return
-          createScreenRelativeTranslateDragger(&transform,dragger_callback);
-      }
-      else {
-        return
-          createObjectRelativeDragger(
-            transform,
-            DraggerType::translate,
-            dragger_callback,
-            shape_size
-          );
-      }
-    case DraggerType::rotate:
-      if (screen_relative) {
-        assert(false); // not implemented
-      }
-      else {
-        return
-          createObjectRelativeDragger(
-            transform,
-            DraggerType::rotate,
-            dragger_callback,
-            shape_size
-          );
-      }
-    case DraggerType::scale:
-      if (screen_relative) {
-        assert(false);
-      }
-      else {
-        return
-          createObjectRelativeDragger(
-            transform,
-            DraggerType::scale,
-            dragger_callback,
-            shape_size
-          );
-      }
-  }
-
-  assert(false); // shouldn't happen
-  return nullptr;
-}
-#endif
-
-
-#if !CHANGE_MANIPULATORS
-static void
-  replaceTransformWithDraggerGroup(
-    osg::MatrixTransform& body_transform,
-    bool screen_relative,
-    DraggerType dragger_type,
-    osgManipulator::DraggerCallback &dragger_callback,
-    const osg::Vec3 &shape_size
-  )
-{
-  // The hierarchy is changed like this:
-  //
-  // * parent                 * parent
-  //   * body transform  ->     * group
-  //                              * body transform
-  //                              * dragger
-
-  MatrixTransformPtr matrix_transform_ptr = &body_transform;
-    // This pointer owns the transform while we remove it from the parent.
-    // This avoids the transform being deleted.
-
-  osg::Group &parent_body_transform = parentOf(body_transform);
-  parent_body_transform.removeChild(&body_transform);
-  GroupPtr group_ptr = createGroup();
-  parent_body_transform.addChild(group_ptr);
-
-  DraggerPtr dragger_ptr =
-    createDragger(
-      body_transform,
-      screen_relative,
-      dragger_type,
-      dragger_callback,
-      shape_size
-    );
-
-  group_ptr->addChild(&body_transform);
-  group_ptr->addChild(dragger_ptr);
-}
-#endif
 
 
 OSGScene::SelectionHandler::SelectionHandler(OSGScene &scene_arg)
@@ -1206,7 +837,6 @@ TransformHandle OSGScene::parentTransform(GeometryHandle geometry_handle) const
 }
 
 
-#if CHANGE_MANIPULATORS
 TransformHandle OSGScene::parentTransform(TransformHandle handle) const
 {
   const osg::MatrixTransform &transform =
@@ -1220,7 +850,6 @@ TransformHandle OSGScene::parentTransform(TransformHandle handle) const
   assert(maybe_transform_index);
   return TransformHandle{*maybe_transform_index};
 }
-#endif
 
 
 static osg::Vec3 selectionColor()
@@ -1337,9 +966,6 @@ void OSGScene::SelectionHandler::clearSelection()
   }
 
   _selected_transform_ptr = nullptr;
-#if !CHANGE_MANIPULATORS
-  removeExistingDraggers();
-#endif
 }
 
 
@@ -1366,179 +992,6 @@ OSGScene::SelectionHandler::changeSelectedTransformTo(
   clearSelection();
   _selected_transform_ptr = new_selected_node_ptr;
 }
-
-
-#if !CHANGE_MANIPULATORS
-void OSGScene::SelectionHandler::removeExistingDraggers()
-{
-  if (_translate_dragger_geode_ptr) {
-    osg::MatrixTransform &body_transform =
-      bodyTransformOf(*_translate_dragger_geode_ptr);
-
-    replaceDraggerGroupWithTransform(body_transform);
-    _translate_dragger_geode_ptr = 0;
-  }
-
-  if (_translate_dragger_transform_ptr) {
-    replaceDraggerGroupWithTransform(*_translate_dragger_transform_ptr);
-    _translate_dragger_transform_ptr = 0;
-  }
-
-  if (_rotate_dragger_geode_ptr) {
-    osg::MatrixTransform &body_transform =
-      bodyTransformOf(*_rotate_dragger_geode_ptr);
-
-    replaceDraggerGroupWithTransform(body_transform);
-    _rotate_dragger_geode_ptr = 0;
-  }
-
-  if (_rotate_dragger_transform_ptr) {
-    replaceDraggerGroupWithTransform(*_rotate_dragger_transform_ptr);
-    _rotate_dragger_transform_ptr = 0;
-  }
-
-  if (_scale_dragger_geode_ptr) {
-    osg::MatrixTransform &geometry_transform =
-      geometryTransformOf(*_scale_dragger_geode_ptr);
-
-    osg::MatrixTransform &transform = ::parentTransform(geometry_transform);
-
-    transform.removeChild(_scale_dragger_ptr);
-    _scale_dragger_geode_ptr = 0;
-    _scale_dragger_ptr = 0;
-  }
-}
-#endif
-
-
-#if !CHANGE_MANIPULATORS
-void
-OSGScene::SelectionHandler::attachDraggerTo(
-  osg::MatrixTransform &transform,
-  DraggerType dragger_type,
-  const osg::Vec3 &shape_size
-)
-{
-  osg::ref_ptr<osgManipulator::DraggerCallback> dc =
-    new Impl::DraggerCallback(scene);
-
-  replaceTransformWithDraggerGroup(
-    transform,
-    use_screen_relative_dragger,
-    dragger_type,
-    *dc,
-    shape_size
-  );
-}
-#endif
-
-
-#if !CHANGE_MANIPULATORS
-static osg::Vec3 shapeSize(const osg::Geode &geode)
-{
-  const osg::Drawable *drawable_ptr = geode.getDrawable(0);
-  assert(drawable_ptr);
-
-  if (auto *mesh_drawable_ptr = maybeMeshDrawable(*drawable_ptr)) {
-    return mesh_drawable_ptr->size;
-  }
-
-  return {0.5, 0.5, 0.5};
-}
-#endif
-
-
-#if !CHANGE_MANIPULATORS
-void
-OSGScene::SelectionHandler::attachTranslateDraggerToGeode(
-  osg::Geode &new_selected_node
-)
-{
-  assert(!_translate_dragger_geode_ptr);
-  _translate_dragger_geode_ptr = &new_selected_node;
-
-  osg::MatrixTransform &transform =
-    bodyTransformOf(*_translate_dragger_geode_ptr);
-
-  attachDraggerTo(
-    transform, DraggerType::translate, shapeSize(new_selected_node)
-  );
-}
-#endif
-
-
-#if !CHANGE_MANIPULATORS
-void
-OSGScene::SelectionHandler::attachTranslateDraggerToTransform(
-  osg::MatrixTransform &transform
-)
-{
-  assert(!_translate_dragger_transform_ptr);
-  _translate_dragger_transform_ptr = &transform;
-  attachDraggerTo(transform, DraggerType::translate, /*shape_size*/{1,1,1});
-}
-#endif
-
-
-#if !CHANGE_MANIPULATORS
-void
-OSGScene::SelectionHandler::attachRotateDraggerToGeode(
-  osg::Geode &new_selected_node
-)
-{
-  assert(!_rotate_dragger_geode_ptr);
-  _rotate_dragger_geode_ptr = &new_selected_node;
-
-  osg::MatrixTransform &transform =
-    bodyTransformOf(*_rotate_dragger_geode_ptr);
-
-  attachDraggerTo(transform, DraggerType::rotate, /*shape_size*/{1,1,1});
-}
-#endif
-
-
-#if !CHANGE_MANIPULATORS
-void
-OSGScene::SelectionHandler::attachRotateDraggerToTransform(
-  osg::MatrixTransform &transform
-)
-{
-  assert(!_rotate_dragger_transform_ptr);
-  _rotate_dragger_transform_ptr = &transform;
-  attachDraggerTo(transform, DraggerType::rotate, /*shape_size*/{1,1,1});
-}
-#endif
-
-
-#if !CHANGE_MANIPULATORS
-void
-OSGScene::SelectionHandler::attachScaleDraggerTo(
-  osg::Geode &new_selected_node
-)
-{
-  assert(!_scale_dragger_geode_ptr);
-  _scale_dragger_geode_ptr = &new_selected_node;
-
-  osg::ref_ptr<osgManipulator::DraggerCallback> dc =
-    new Impl::DraggerCallback(scene);
-
-  osg::MatrixTransform &geometry_transform =
-    geometryTransformOf(*_scale_dragger_geode_ptr);
-
-  DraggerPtr dragger_ptr =
-    createDragger(
-      geometry_transform,
-      use_screen_relative_dragger,
-      DraggerType::scale,
-      *dc,
-      shapeSize(new_selected_node)
-    );
-
-  ::parentTransform(geometry_transform).addChild(dragger_ptr);
-  assert(!_scale_dragger_ptr);
-  _scale_dragger_ptr = dragger_ptr;
-}
-#endif
 
 
 static void setColor(osg::MatrixTransform &node,const osg::Vec3f &vec)
@@ -1616,15 +1069,6 @@ void OSGScene::SelectionHandler::nodeClicked(osg::Node *new_selected_node_ptr)
 }
 
 
-#if !CHANGE_MANIPULATORS
-void OSGScene::attachManipulatorToSelectedNode(DraggerType dragger_type)
-{
-  selectionHandler().attachDragger(dragger_type);
-}
-#endif
-
-
-#if CHANGE_MANIPULATORS
 TransformHandle
 OSGScene::createTranslateManipulator(TransformHandle parent)
 {
@@ -1652,10 +1096,8 @@ OSGScene::createTranslateManipulator(TransformHandle parent)
 
   return transform_handle;
 }
-#endif
 
 
-#if CHANGE_MANIPULATORS
 TransformHandle
 OSGScene::createRotateManipulator(TransformHandle parent)
 {
@@ -1701,10 +1143,8 @@ OSGScene::createRotateManipulator(TransformHandle parent)
 
   return transform_handle;
 }
-#endif
 
 
-#if CHANGE_MANIPULATORS
 GeometryHandle
 OSGScene::createScaleManipulator(TransformHandle parent)
 {
@@ -1727,7 +1167,6 @@ OSGScene::createScaleManipulator(TransformHandle parent)
 
   return geometry_handle;
 }
-#endif
 
 
 Optional<LineHandle> OSGScene::maybeLine(GeometryHandle handle) const
@@ -2184,12 +1623,6 @@ void OSGScene::setGeometryScale(GeometryHandle handle,const Vec3 &v)
     Impl::geometryTransformForHandle(*this, handle);
 
   ::setScale(geometry_transform, x, y, z);
-
-#if !CHANGE_MANIPULATORS
-  if (selectedGeometry() == handle) {
-    selectionHandler().updateDraggerPosition();
-  }
-#endif
 }
 
 
@@ -2199,12 +1632,6 @@ void OSGScene::setGeometryCenter(GeometryHandle handle,const Point &v)
     Impl::geometryTransformForHandle(*this, handle);
 
   ::setTranslation(geometry_transform, v);
-
-#if !CHANGE_MANIPULATORS
-  if (selectedGeometry() == handle) {
-    selectionHandler().updateDraggerPosition();
-  }
-#endif
 }
 
 
@@ -2374,175 +1801,6 @@ auto OSGScene::top() const -> TransformHandle
 }
 
 
-#if !CHANGE_MANIPULATORS
-void
-OSGScene::SelectionHandler::attachDragger(
-  osg::Geode &dragger_node,
-  DraggerType dragger_type
-)
-{
-  switch (dragger_type) {
-    case DraggerType::translate:
-      attachTranslateDraggerToGeode(dragger_node);
-      break;
-    case DraggerType::rotate:
-      attachRotateDraggerToGeode(dragger_node);
-      break;
-    case DraggerType::scale:
-      attachScaleDraggerTo(dragger_node);
-      break;
-  }
-}
-#endif
-
-
-#if !CHANGE_MANIPULATORS
-void
-OSGScene::SelectionHandler::attachDragger(
-  osg::MatrixTransform &dragger_node,
-  DraggerType dragger_type
-)
-{
-  switch (dragger_type) {
-    case DraggerType::translate:
-      attachTranslateDraggerToTransform(dragger_node);
-      break;
-    case DraggerType::rotate:
-      attachRotateDraggerToTransform(dragger_node);
-      break;
-    case DraggerType::scale:
-      cerr << "need scene\n";
-      break;
-  }
-}
-#endif
-
-
-#if !CHANGE_MANIPULATORS
-void OSGScene::SelectionHandler::attachDragger(DraggerType dragger_type)
-{
-  removeExistingDraggers();
-
-  if (_selected_geode_ptr) {
-    attachDragger(*_selected_geode_ptr, dragger_type);
-  }
-  else {
-    assert(_selected_transform_ptr);
-    attachDragger(*_selected_transform_ptr, dragger_type);
-  }
-}
-#endif
-
-
-#if !CHANGE_MANIPULATORS
-static void
-matchPose(
-  osg::MatrixTransform &dragger,
-  const osg::MatrixTransform &dragged_transform_node
-)
-{
-  osg::Matrix dragged_transform = dragged_transform_node.getMatrix();
-  osg::Matrix dragger_transform = dragger.getMatrix();
-
-  osg::Vec3f dragged_translation;
-  osg::Quat dragged_rotation;
-  osg::Vec3f dragged_scale;
-  osg::Quat dragged_so;
-
-  dragged_transform.decompose(
-    dragged_translation, dragged_rotation, dragged_scale, dragged_so
-  );
-
-  osg::Vec3f dragger_translation;
-  osg::Quat dragger_rotation;
-  osg::Vec3f dragger_scale;
-  osg::Quat dragger_so;
-
-  dragger_transform.decompose(
-    dragger_translation, dragger_rotation, dragger_scale, dragger_so
-  );
-
-  dragger_translation = dragged_translation;
-  dragger_rotation = dragged_rotation;
-
-  dragger_transform =
-    compose(dragger_translation, dragger_rotation, dragger_scale, dragger_so);
-
-  dragger.setMatrix(dragger_transform);
-}
-#endif
-
-
-#if !CHANGE_MANIPULATORS
-static void updateDraggerMatrix(osg::MatrixTransform &transform)
-{
-  // * parent               * parent
-  //   * group                * transform
-  //     * transform   ->
-  //     * dragger
-  osg::Group &group = parentOf(transform);
-  assert(group.getNumChildren()==2);
-  NodePtr dragger_node_ptr = group.getChild(1);
-  using Dragger = osgManipulator::Dragger;
-  auto dragger_ptr = dynamic_cast<Dragger *>(dragger_node_ptr.get());
-  assert(dragger_ptr);
-  NodePtr dragged_node_ptr = group.getChild(0);
-
-  auto dragged_transform_node_ptr =
-    dynamic_cast<osg::MatrixTransform *>(dragged_node_ptr.get());
-
-  assert(dragged_transform_node_ptr);
-
-  osg::MatrixTransform &dragged_transform_node = *dragged_transform_node_ptr;
-  osg::MatrixTransform &dragger = *dragger_ptr;
-
-  matchPose(dragger, dragged_transform_node);
-}
-#endif
-
-
-#if !CHANGE_MANIPULATORS
-static void updateDraggerMatrix(osg::Geode &dragged_geode)
-{
-  osg::MatrixTransform &transform = bodyTransformOf(dragged_geode);
-  updateDraggerMatrix(transform);
-}
-#endif
-
-
-#if !CHANGE_MANIPULATORS
-void OSGScene::SelectionHandler::updateDraggerPosition()
-{
-  if (_translate_dragger_geode_ptr) {
-    updateDraggerMatrix(*_translate_dragger_geode_ptr);
-  }
-  else if (_translate_dragger_transform_ptr) {
-    updateDraggerMatrix(*_translate_dragger_transform_ptr);
-  }
-  else if (_rotate_dragger_geode_ptr) {
-    updateDraggerMatrix(*_rotate_dragger_geode_ptr);
-  }
-  else if (_rotate_dragger_transform_ptr) {
-    updateDraggerMatrix(*_rotate_dragger_transform_ptr);
-  }
-  else if (_scale_dragger_geode_ptr) {
-    assert(_scale_dragger_ptr);
-
-    _scale_dragger_ptr->setMatrix(
-      draggerMatrix(
-        geometryTransformOf(*_scale_dragger_geode_ptr),
-        DraggerType::scale,
-        shapeSize(*_scale_dragger_geode_ptr)
-      )
-    );
-  }
-  else {
-    cerr << "updateDraggerPosition: no dragger\n";
-  }
-}
-#endif
-
-
 void OSGScene::selectGeometry(GeometryHandle handle)
 {
   osg::Geode &geode = Impl::geodeForHandle(*this,handle);
@@ -2597,12 +1855,6 @@ void OSGScene::setTranslation(TransformHandle handle, Point p)
     Impl::transformForHandle(*this, handle);
 
   ::setTranslation(transform, p);
-
-#if !CHANGE_MANIPULATORS
-  if (Impl::isTransformOfSelection(handle, *this)) {
-    selectionHandler().updateDraggerPosition();
-  }
-#endif
 }
 
 
@@ -2616,12 +1868,6 @@ OSGScene::setCoordinateAxes(
   osg::Vec3f y = osgVec(axes.y);
   osg::Vec3f z = osgVec(axes.z);
   ::setCoordinateAxes(Impl::transformForHandle(*this, handle),x,y,z);
-
-#if !CHANGE_MANIPULATORS
-  if (Impl::isTransformOfSelection(handle, *this)) {
-    selectionHandler().updateDraggerPosition();
-  }
-#endif
 }
 
 

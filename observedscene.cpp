@@ -519,9 +519,7 @@ struct ObservedScene::Impl {
   static SceneObject selectedSceneObject(const Scene &);
 
   static Optional<ManipulatorType>
-    properManpiulatorForSceneObject(
-      const TreeItemDescription &item
-    );
+    properManipulatorForSceneObject(const TreeItemDescription &);
 };
 
 
@@ -624,11 +622,9 @@ ObservedScene::removingMarker(
   SceneHandles &scene_handles = observed_scene.scene_handles;
   Scene &scene = observed_scene.scene;
 
-#if CHANGE_MANIPULATORS
   if (scene_handles.maybe_manipulated_marker_index == marker_index) {
     removeExistingManipulator(scene_handles, scene);
   }
-#endif
 
   removeMarkerFromTree(marker_index, sceneTree(observed_scene));
   removeMarkerFromScene(scene, scene_handles, marker_index);
@@ -644,11 +640,9 @@ ObservedScene::removingBody(
   SceneHandles &scene_handles = observed_scene.scene_handles;
   SceneState &scene_state = observed_scene.scene_state;
 
-#if CHANGE_MANIPULATORS
   if (scene_handles.maybe_manipulated_body_index == body_index) {
     removeExistingManipulator(scene_handles, scene);
   }
-#endif
 
   removeBodyFromScene(scene, scene_handles, scene_state, body_index);
   removeBodyFromTree(sceneTree(observed_scene), scene_state, body_index);
@@ -945,7 +939,7 @@ void ObservedScene::cutMarker(MarkerIndex marker_index)
 
 
 Optional<ManipulatorType>
-ObservedScene::Impl::properManpiulatorForSceneObject(
+ObservedScene::Impl::properManipulatorForSceneObject(
   const TreeItemDescription &item
 )
 {
@@ -966,7 +960,12 @@ ObservedScene::Impl::properManpiulatorForSceneObject(
     return ManipulatorType::scale;
   }
   else if (item.maybe_mesh_index) {
-    return ManipulatorType::scale;
+    if (item.type == TreeItemDescription::Type::mesh_positions) {
+      return {};
+    }
+    else {
+      return ManipulatorType::scale;
+    }
   }
   else if (item.maybe_body_index) {
     return ManipulatorType::translate;
@@ -981,7 +980,7 @@ ObservedScene::Impl::properManpiulatorForSceneObject(
 
 
 Optional<ManipulatorType>
-ObservedScene::properManpiulatorForSelectedObject() const
+ObservedScene::properManipulatorForSelectedObject() const
 {
   const ObservedScene &observed_scene = *this;
   Scene &scene = observed_scene.scene;
@@ -990,7 +989,7 @@ ObservedScene::properManpiulatorForSelectedObject() const
   TreeItemDescription item =
     observed_scene.describePath(*tree_widget.selectedItem());
 
-  return Impl::properManpiulatorForSceneObject(item);
+  return Impl::properManipulatorForSceneObject(item);
 }
 
 
@@ -1008,7 +1007,6 @@ SceneObject ObservedScene::Impl::selectedSceneObject(const Scene &scene)
 
 
 #if 0
-#if CHANGE_MANIPULATORS
 static Scene::TransformHandle
 transformFor(const SceneObject &scene_object, const Scene &scene)
 {
@@ -1020,11 +1018,9 @@ transformFor(const SceneObject &scene_object, const Scene &scene)
   return scene.parentTransform(*scene_object.maybe_geometry_handle);
 }
 #endif
-#endif
 
 
 #if 0
-#if CHANGE_MANIPULATORS
 static Optional<BodyIndex>
 maybeBodyIndexForTransform(
   TransformHandle handle,
@@ -1041,7 +1037,6 @@ maybeBodyIndexForTransform(
 
   return {};
 }
-#endif
 #endif
 
 
@@ -1231,7 +1226,6 @@ addBodyMeshScaleManipulator(
 }
 
 
-#if CHANGE_MANIPULATORS
 static void
 addManipulator(
   ManipulatorType manipulator_type,
@@ -1300,7 +1294,6 @@ addManipulator(
       break;
   }
 }
-#endif
 
 
 void
@@ -1310,27 +1303,20 @@ ObservedScene::Impl::attachProperDraggerToSelectedObject(
 {
   Scene &scene = observed_scene.scene;
   const TreeWidget &tree_widget = observed_scene.tree_widget;
-#if CHANGE_MANIPULATORS
   SceneHandles &scene_handles = observed_scene.scene_handles;
-#endif
 
   TreeItemDescription item =
     observed_scene.describePath(*tree_widget.selectedItem());
 
   Optional<ManipulatorType> maybe_manipulator_type =
-    Impl::properManpiulatorForSceneObject(item);
+    Impl::properManipulatorForSceneObject(item);
 
-#if CHANGE_MANIPULATORS
   removeExistingManipulator(scene_handles, scene);
-#endif
 
   if (!maybe_manipulator_type) {
     return;
   }
 
-#if !CHANGE_MANIPULATORS
-  scene.attachManipulatorToSelectedNode(*maybe_manipulator_type);
-#else
   addManipulator(
     *maybe_manipulator_type,
     item,
@@ -1338,7 +1324,6 @@ ObservedScene::Impl::attachProperDraggerToSelectedObject(
     scene_handles,
     observed_scene.scene_state
   );
-#endif
 }
 
 
@@ -1389,9 +1374,7 @@ void ObservedScene::handleSceneSelectionChanged()
 
   if (!maybe_selected_geometry) {
     cerr << "No object selected in the scene.\n";
-#if CHANGE_MANIPULATORS
     removeExistingManipulator(scene_handles, scene);
-#endif
     return;
   }
 
@@ -1950,9 +1933,7 @@ bool ObservedScene::canPasteTo(Optional<BodyIndex> maybe_body_index)
 
 void ObservedScene::replaceSceneStateWith(const SceneState &new_state)
 {
-#if CHANGE_MANIPULATORS
   removeExistingManipulator(scene_handles, scene);
-#endif
   destroySceneObjects(scene, scene_state, scene_handles);
   clearTree(tree_widget, tree_paths);
   clipboard.maybe_cut_body_index.reset();

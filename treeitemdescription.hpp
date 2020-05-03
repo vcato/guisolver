@@ -24,6 +24,7 @@ struct TreeItemDescription {
     rotation,
     scale,
     variable,
+    mesh_positions,
     other
   };
 

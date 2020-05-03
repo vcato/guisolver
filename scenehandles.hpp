@@ -8,6 +8,8 @@
 #include "matchconst.hpp"
 #include "sceneelements.hpp"
 
+#define ADD_POINTS_MANIPULATOR 0
+
 
 struct SceneHandles {
   struct Marker;
@@ -82,16 +84,17 @@ struct SceneHandles {
     Scene::LineHandle line_handle;
   };
 
-#if CHANGE_MANIPULATORS
   Optional<TransformHandle> maybe_translate_manipulator;
   Optional<TransformHandle> maybe_rotate_manipulator;
   Optional<GeometryHandle> maybe_scale_manipulator;
+#if ADD_POINTS_MANIPULATOR
+  Optional<vector<GeomtryHandle> > maybe_points_manipulator;
+#endif
   Optional<BodyIndex> maybe_manipulated_body_index;
   Optional<MarkerIndex> maybe_manipulated_marker_index;
   Optional<BodyBox> maybe_manipulated_body_box;
   Optional<BodyMesh> maybe_manipulated_body_mesh;
   Optional<BodyMeshPosition> maybe_manipulated_body_mesh_position;
-#endif
 
   vector<Optional<Body>> bodies;
   Markers markers;

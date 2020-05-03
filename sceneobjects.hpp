@@ -4,10 +4,7 @@
 
 
 extern SceneHandles createSceneObjects(const SceneState &state, Scene &scene);
-
-#if CHANGE_MANIPULATORS
 extern void removeExistingManipulator(SceneHandles &, Scene &);
-#endif
 
 extern void
   destroySceneObjects(
@@ -215,24 +212,20 @@ extern void
     Scene &
   );
 
-#if CHANGE_MANIPULATORS
 extern void
   updateBodyMeshScaleManipulator(
     Scene &,
     Scene::MeshHandle,
     Scene::GeometryHandle manipulator
   );
-#endif
 
 
-#if CHANGE_MANIPULATORS
 extern void
   updateBodyMeshFromScaleManipulator(
     Scene::MeshHandle mesh_handle,
     Scene::GeometryHandle manipulator,
     Scene &scene
   );
-#endif
 
 
 extern void

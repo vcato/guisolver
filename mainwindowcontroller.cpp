@@ -248,7 +248,6 @@ MainWindowController::Impl::handleSceneChanging(
   Scene &scene = observed_scene.scene;
   SceneState &state = observed_scene.scene_state;
 
-#if CHANGE_MANIPULATORS
   if (scene_handles.maybe_translate_manipulator) {
     TransformHandle translate_manipulator =
       *scene_handles.maybe_translate_manipulator;
@@ -335,7 +334,6 @@ MainWindowController::Impl::handleSceneChanging(
     cerr << "handleSceneChanging: Unknown manipulator\n";
     return;
   }
-#endif
 
   // The mouse button is down.  The scene is being changed, but we don't
   // consider this change complete.
@@ -354,7 +352,7 @@ MainWindowController::Impl::handleSceneChanging(
   // old state.
 
   Optional<ManipulatorType> maybe_manipulator_type =
-    observed_scene.properManpiulatorForSelectedObject();
+    observed_scene.properManipulatorForSelectedObject();
 
   forEachSolveFlagAffectingHandle(
     transform_handle, scene_handles, state,

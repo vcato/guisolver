@@ -998,7 +998,6 @@ destroyBodyAndChildren(
 }
 
 
-#if CHANGE_MANIPULATORS
 void removeExistingManipulator(SceneHandles &scene_handles, Scene &scene)
 {
   if (scene_handles.maybe_translate_manipulator) {
@@ -1054,7 +1053,6 @@ void removeExistingManipulator(SceneHandles &scene_handles, Scene &scene)
     scene.destroyGeometry(manipulator);
   }
 }
-#endif
 
 
 void
@@ -1169,7 +1167,6 @@ struct Range {
 }
 
 
-#if CHANGE_MANIPULATORS
 static void expand(Range &range, float value)
 {
   if (value < range.min) {
@@ -1180,10 +1177,8 @@ static void expand(Range &range, float value)
     range.max = value;
   }
 }
-#endif
 
 
-#if CHANGE_MANIPULATORS
 static Vec3 meshSize(const ::Mesh &mesh)
 {
   Range x_range;
@@ -1202,10 +1197,8 @@ static Vec3 meshSize(const ::Mesh &mesh)
 
   return {x,y,z};
 }
-#endif
 
 
-#if CHANGE_MANIPULATORS
 void
 updateBodyMeshScaleManipulator(
   Scene &scene,
@@ -1223,10 +1216,8 @@ updateBodyMeshScaleManipulator(
   size.z *= mesh_size.z*2;
   scene.setGeometryScale(manipulator, size);
 }
-#endif
 
 
-#if CHANGE_MANIPULATORS
 void
 updateBodyMeshFromScaleManipulator(
   Scene::MeshHandle mesh_handle,
@@ -1244,7 +1235,6 @@ updateBodyMeshFromScaleManipulator(
   scene.setGeometryCenter(mesh_handle, center);
   scene.setGeometryScale(mesh_handle, scale);
 }
-#endif
 
 
 static void
@@ -1290,7 +1280,6 @@ updateBodiesInScene(
 }
 
 
-#if CHANGE_MANIPULATORS
 static void
 updateManipulatorsInScene(
   Scene &scene,
@@ -1370,7 +1359,6 @@ updateManipulatorsInScene(
     }
   }
 }
-#endif
 
 
 void
@@ -1383,9 +1371,7 @@ void
   updateBodiesInScene(scene, state, scene_handles);
   updateMarkersInScene(scene, scene_handles, state);
   updateDistanceErrorsInScene(scene, scene_handles, state);
-#if CHANGE_MANIPULATORS
   updateManipulatorsInScene(scene, scene_handles);
-#endif
 }
 
 

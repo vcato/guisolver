@@ -353,10 +353,6 @@ assertBodyHasTranslateManipulator(Tester &tester, BodyIndex body_index)
   const SceneHandles &scene_handles = observed_scene.scene_handles;
   SceneHandles::Body body_handles = scene_handles.body(body_index);
 
-#if !CHANGE_MANIPULATORS
-  assert(tester.scene.maybe_dragger_type == Scene::ManipulatorType::translate);
-  assert(scene.maybe_dragger_index == body_handles.transform_handle.index);
-#else
   assert(scene_handles.maybe_translate_manipulator);
 
   Scene::TransformHandle manipulator_handle =
@@ -371,17 +367,13 @@ assertBodyHasTranslateManipulator(Tester &tester, BodyIndex body_index)
     scene.parentTransform(body_transform_handle);
 
   assert(manipulator_parent == body_parent);
-#if CHANGE_MANIPULATORS
   auto manipulator_position = scene.translation(manipulator_handle);
   auto body_position = scene.translation(body_transform_handle);
   assert(manipulator_position == body_position);
   assert(scene_handles.maybe_manipulated_body_index == body_index);
-#endif
-#endif
 }
 
 
-#if CHANGE_MANIPULATORS
 static void
 assertMarkerHasTranslateManipulator(Tester &tester, MarkerIndex marker_index)
 {
@@ -408,7 +400,6 @@ assertMarkerHasTranslateManipulator(Tester &tester, MarkerIndex marker_index)
   assert(manipulator_position == marker_position);
   assert(scene_handles.maybe_manipulated_marker_index == marker_index);
 }
-#endif
 
 
 static void testUserSelectingABodyInTheTree()
@@ -470,27 +461,16 @@ static void testChangingSelectedMarker()
   MarkerIndex marker2_index = initial_scene_state.createMarker();
   BodyIndex body_index = initial_scene_state.createBody();
   observed_scene.replaceSceneStateWith(initial_scene_state);
-
   userSelectsMarker(marker1_index, tester);
-
-#if CHANGE_MANIPULATORS
   assertMarkerHasTranslateManipulator(tester, marker1_index);
-#endif
-
   userSelectsMarker(marker2_index, tester);
 
-#if CHANGE_MANIPULATORS
   // Check that a manipulator is on the second marker and not on the first.
   assertMarkerHasTranslateManipulator(tester, marker2_index);
-#endif
-
   userSelectsBody(body_index, tester);
   assertBodyHasTranslateManipulator(tester, body_index);
-
   userSelectsMarker(marker1_index, tester);
-#if CHANGE_MANIPULATORS
   assertMarkerHasTranslateManipulator(tester, marker1_index);
-#endif
 }
 
 

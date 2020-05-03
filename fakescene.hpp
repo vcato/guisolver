@@ -2,160 +2,152 @@
 #include "scene.hpp"
 
 
-struct FakeScene : Scene {
-  struct Object;
-  using TransformIndex = TransformHandle::Index;
-  using Objects = std::map<TransformIndex, Object>;
+class FakeScene : public Scene {
+  public:
+    struct Object;
+    using TransformIndex = TransformHandle::Index;
+    using Objects = std::map<TransformIndex, Object>;
 
-  struct Object {
-    TransformIndex parent_index;
-    Optional<Point> maybe_geometry_center;
-    Optional<Point> maybe_geometry_scale;
-    Optional<Point> maybe_transform_translation;
-    bool is_line = false;
-  };
+    struct Object {
+      TransformIndex parent_index;
+      Optional<Point> maybe_geometry_center;
+      Optional<Point> maybe_geometry_scale;
+      Optional<Point> maybe_transform_translation;
+      bool is_line = false;
+    };
 
-  TransformHandle top_handle = {0};
-  Objects objects;
-  Optional<size_t> maybe_selected_object_index;
-  Optional<size_t> maybe_dragger_index;
-#if !CHANGE_MANIPULATORS
-  Optional<ManipulatorType> maybe_dragger_type;
-#endif
+    TransformHandle top_handle = {0};
+    Objects objects;
+    Optional<size_t> maybe_selected_object_index;
+    Optional<size_t> maybe_dragger_index;
 
-  bool indexIsUsed(TransformIndex i) const
-  {
-    return objects.count(i) != 0;
-  }
-
-  TransformIndex firstUnusedIndex() const
-  {
-    TransformIndex i = 1;
-
-    while (indexIsUsed(i)) {
-      ++i;
+    bool indexIsUsed(TransformIndex i) const
+    {
+      return objects.count(i) != 0;
     }
 
-    return i;
-  }
+    TransformIndex firstUnusedIndex() const
+    {
+      TransformIndex i = 1;
 
-  TransformHandle top() const override
-  {
-    return top_handle;
-  }
+      while (indexIsUsed(i)) {
+        ++i;
+      }
 
-  GeometryHandle createBox(TransformHandle parent) override;
-  LineHandle createLine(TransformHandle parent) override;
-  GeometryHandle createSphere(TransformHandle parent) override;
-  MeshHandle createMesh(TransformHandle parent, const Mesh &) override;
-  TransformHandle createTransform(TransformHandle parent) override;
-  TransformHandle parentTransform(GeometryHandle) const override;
-  void destroyGeometry(GeometryHandle) override;
-  void destroyTransform(TransformHandle) override;
-  void setGeometryScale(GeometryHandle,const Vec3 &) override;
+      return i;
+    }
 
-  void
-  setGeometryCenter(
-    GeometryHandle geometry_handle,const Point &center
-  ) override;
+    TransformHandle top() const override
+    {
+      return top_handle;
+    }
 
-  Vec3 geometryScale(GeometryHandle) const override;
-  Point geometryCenter(GeometryHandle) const override;
+    GeometryHandle createBox(TransformHandle parent) override;
+    LineHandle createLine(TransformHandle parent) override;
+    GeometryHandle createSphere(TransformHandle parent) override;
+    MeshHandle createMesh(TransformHandle parent, const Mesh &) override;
+    TransformHandle createTransform(TransformHandle parent) override;
+    TransformHandle parentTransform(GeometryHandle) const override;
+    void destroyGeometry(GeometryHandle) override;
+    void destroyTransform(TransformHandle) override;
+    void setGeometryScale(GeometryHandle,const Vec3 &) override;
 
-  void setCoordinateAxes(TransformHandle,const CoordinateAxes &) override
-  {
-  }
+    void
+    setGeometryCenter(
+      GeometryHandle geometry_handle,const Point &center
+    ) override;
 
-  CoordinateAxes coordinateAxes(TransformHandle) const override;
+    Vec3 geometryScale(GeometryHandle) const override;
+    Point geometryCenter(GeometryHandle) const override;
 
-  void setTranslation(TransformHandle,Point) override;
-  Point translation(TransformHandle) const override;
+    void setCoordinateAxes(TransformHandle,const CoordinateAxes &) override
+    {
+    }
 
-  void setGeometryColor(GeometryHandle,const Color &) override
-  {
-  }
+    CoordinateAxes coordinateAxes(TransformHandle) const override;
 
-  void setMesh(MeshHandle, Mesh) override
-  {
-    assert(false); // not implemented
-  }
+    void setTranslation(TransformHandle,Point) override;
+    Point translation(TransformHandle) const override;
 
-  const Mesh& mesh(MeshHandle) const override
-  {
-    assert(false); // not implemented
-  }
+    void setGeometryColor(GeometryHandle,const Color &) override
+    {
+    }
 
-  void setLineStartPoint(LineHandle, Point) override
-  {
-  }
+    void setMesh(MeshHandle, Mesh) override
+    {
+      assert(false); // not implemented
+    }
 
-  void setLineEndPoint(LineHandle, Point) override
-  {
-  }
+    const Mesh& mesh(MeshHandle) const override
+    {
+      assert(false); // not implemented
+    }
 
-  template <typename Objects>
-  static auto &elementOf(Objects &objects, size_t index)
-  {
-    auto iter = objects.find(index);
-    assert(iter != objects.end());
-    return iter->second;
-  }
+    void setLineStartPoint(LineHandle, Point) override
+    {
+    }
 
-  bool objectIsGeometry(size_t index) const
-  {
-    return elementOf(objects, index).maybe_geometry_center.hasValue();
-  }
+    void setLineEndPoint(LineHandle, Point) override
+    {
+    }
 
-  Optional<GeometryHandle> selectedGeometry() const override
-  {
-    if (!maybe_selected_object_index) {
-      // Nothing is selected
+    template <typename Objects>
+    static auto &elementOf(Objects &objects, size_t index)
+    {
+      auto iter = objects.find(index);
+      assert(iter != objects.end());
+      return iter->second;
+    }
+
+    bool objectIsGeometry(size_t index) const
+    {
+      return elementOf(objects, index).maybe_geometry_center.hasValue();
+    }
+
+    Optional<GeometryHandle> selectedGeometry() const override
+    {
+      if (!maybe_selected_object_index) {
+        // Nothing is selected
+        assert(false); // not needed
+      }
+
+      if (!objectIsGeometry(*maybe_selected_object_index)) {
+        // The selected object isn't geometry.
+        return {};
+      }
+
+      return GeometryHandle{*maybe_selected_object_index};
+    }
+
+    Optional<TransformHandle> selectedTransform() const override
+    {
+      if (!maybe_selected_object_index) {
+        // Nothing is selected
+        assert(false); // not needed
+      }
+
+      if (objectIsGeometry(*maybe_selected_object_index)) {
+        assert(false); // not needed
+      }
+
+      return TransformHandle{*maybe_selected_object_index};
+    }
+
+    void selectGeometry(GeometryHandle) override
+    {
       assert(false); // not needed
     }
 
-    if (!objectIsGeometry(*maybe_selected_object_index)) {
-      // The selected object isn't geometry.
-      return {};
+    void selectTransform(TransformHandle transform_handle) override
+    {
+      maybe_selected_object_index = transform_handle.index;
     }
 
-    return GeometryHandle{*maybe_selected_object_index};
-  }
-
-  Optional<TransformHandle> selectedTransform() const override
-  {
-    if (!maybe_selected_object_index) {
-      // Nothing is selected
-      assert(false); // not needed
-    }
-
-    if (objectIsGeometry(*maybe_selected_object_index)) {
-      assert(false); // not needed
-    }
-
-    return TransformHandle{*maybe_selected_object_index};
-  }
-
-  void selectGeometry(GeometryHandle) override
-  {
-    assert(false); // not needed
-  }
-
-  void selectTransform(TransformHandle transform_handle) override
-  {
-    maybe_selected_object_index = transform_handle.index;
-  }
-
-  Optional<LineHandle> maybeLine(GeometryHandle) const override;
-
-  TransformHandle parentTransform(TransformHandle parent_handle) const;
-
-#if !CHANGE_MANIPULATORS
-  void attachManipulatorToSelectedNode(ManipulatorType dragger_type) override;
-#else
-  TransformHandle createTranslateManipulator(TransformHandle parent) override;
-  TransformHandle createRotateManipulator(TransformHandle parent) override;
-  GeometryHandle createScaleManipulator(TransformHandle parent) override;
-#endif
+    Optional<LineHandle> maybeLine(GeometryHandle) const override;
+    TransformHandle parentTransform(TransformHandle parent_handle) const;
+    TransformHandle createTranslateManipulator(TransformHandle parent) override;
+    TransformHandle createRotateManipulator(TransformHandle parent) override;
+    GeometryHandle createScaleManipulator(TransformHandle parent) override;
 
   private:
     GeometryHandle createGeometry(TransformHandle parent);

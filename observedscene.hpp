@@ -103,7 +103,7 @@ struct ObservedScene {
   static void
   createBodyInScene(BodyIndex body_index, ObservedScene &observed_scene);
 
-  Optional<Scene::ManipulatorType> properManpiulatorForSelectedObject() const;
+  Optional<Scene::ManipulatorType> properManipulatorForSelectedObject() const;
 
   const bool *solveStatePtr(const TreePath &) const;
   bool *solveStatePtr(const TreePath &);

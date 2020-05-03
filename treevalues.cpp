@@ -3029,26 +3029,33 @@ struct GeometryDescriber {
 
   void visitMesh(MeshIndex mesh_index) const
   {
-    if (!found_description) {
-      const TreePaths::Mesh &mesh_paths = body_paths.meshes[mesh_index];
+    if (found_description) {
+      return;
+    }
 
-      if (startsWith(path, mesh_paths.path)) {
-        description.maybe_mesh_index = mesh_index;
+    const TreePaths::Mesh &mesh_paths = body_paths.meshes[mesh_index];
 
-        if (path == mesh_paths.path) {
-          description.type = ItemType::mesh;
+    if (startsWith(path, mesh_paths.path)) {
+      description.maybe_mesh_index = mesh_index;
+
+      if (path == mesh_paths.path) {
+        description.type = ItemType::mesh;
+      }
+
+      if (startsWith(path, mesh_paths.positions.path)) {
+        if (path == mesh_paths.positions.path) {
+          description.type = TreeItemDescription::Type::mesh_positions;
         }
-
-        if (startsWith(path, mesh_paths.positions.path)) {
+        else {
           for (auto i : indicesOf(mesh_paths.positions.elements)) {
             if (startsWith(path, mesh_paths.positions.elements[i].path)) {
               description.maybe_mesh_position_index = i;
             }
           }
         }
-
-        found_description = true;
       }
+
+      found_description = true;
     }
   }
 
