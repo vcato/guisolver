@@ -462,6 +462,10 @@ sceneObjectForTreeItem(
   TreePath matching_path;
   SceneObject scene_object;
 
+  if (describeTreePath(item_path, tree_paths).type == SceneElementDescription::Type::mesh_position) {
+    return SceneObject();
+  }
+
   forEachSceneObjectPath(
     [&](const SceneObject &object, const TreePath &object_path){
       const Optional<GeometryHandle> &maybe_geometry_handle =
@@ -1447,15 +1451,16 @@ void ObservedScene::handleTreeSelectionChanged()
 
   if (scene_object.maybe_geometry_handle) {
     scene.selectGeometry(*scene_object.maybe_geometry_handle);
-    Impl::attachProperDraggerToSelectedObject(observed_scene);
   }
   else if (scene_object.maybe_transform_handle) {
     scene.selectTransform(*scene_object.maybe_transform_handle);
-    Impl::attachProperDraggerToSelectedObject(observed_scene);
   }
   else {
     cerr << "handleTreeSelectionChanged: No scene object found\n";
+    scene.selectTransform(scene.top());
   }
+
+  Impl::attachProperDraggerToSelectedObject(observed_scene);
 }
 
 

@@ -25,6 +25,7 @@ struct SceneElementDescription {
     scale,
     variable,
     mesh_positions,
+    mesh_position,
     other
   };
 

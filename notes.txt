@@ -235,26 +235,13 @@ think of a marker as a visual mark.
 * Select another mesh position
 * Right-click "Add Mark"
 * Marks Menu: "Add Distance Error Between Marks"
-
 ---
-If you select the position of a mesh in the tree, the mesh should become
-unselected in the scene.
----
-Need to figure out how to make accessing state/handles/paths easier using
-scene elements.
+I don't think it's quite right to treat the points as a manipulator.
+It's more like we have scene geometry for the mesh vertices, but they are
+normally hidden.
 
-We should be able to do:
-scene_state[Body(body_index).mesh(mesh_index).position(position_index)]
+Maybe we show the vertex geometry if we are in that branch.  So it is visible
+if we have the positions selected, or any one of the positions selected.
 
-seems like we'll have to have a template
-
-template <typename First, typename Rest>>
-auto SceneState::operator[](const Link<First,Rest> &element)
-{
-  return (*this)[element.first][element.rest];
-}
-
-SceneState::Body &operator[](::Body body)
-{
-  return this->body(body.index);
-}
+SceneHandles::Mesh could have an optional vector of handles for the mesh.
+If we select a different branch of the tree, we'd want to clear these handles.
