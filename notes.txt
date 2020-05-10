@@ -235,13 +235,3 @@ think of a marker as a visual mark.
 * Select another mesh position
 * Right-click "Add Mark"
 * Marks Menu: "Add Distance Error Between Marks"
----
-I don't think it's quite right to treat the points as a manipulator.
-It's more like we have scene geometry for the mesh vertices, but they are
-normally hidden.
-
-Maybe we show the vertex geometry if we are in that branch.  So it is visible
-if we have the positions selected, or any one of the positions selected.
-
-SceneHandles::Mesh could have an optional vector of handles for the mesh.
-If we select a different branch of the tree, we'd want to clear these handles.

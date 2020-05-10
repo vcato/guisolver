@@ -95,7 +95,7 @@ struct SceneHandles {
   Optional<TransformHandle> maybe_translate_manipulator;
   Optional<TransformHandle> maybe_rotate_manipulator;
   Optional<GeometryHandle> maybe_scale_manipulator;
-  Optional<vector<GeometryHandle>> maybe_points_manipulator;
+  Optional<vector<GeometryHandle>> maybe_points;
   OptionalManipulatedElement maybe_manipulated_element;
 
   vector<Optional<Body>> bodies;

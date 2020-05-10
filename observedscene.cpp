@@ -422,9 +422,9 @@ forEachSceneObjectPath(
     );
   }
 
-  if (scene_handles.maybe_points_manipulator) {
+  if (scene_handles.maybe_points) {
     const vector<Scene::GeometryHandle> &point_sphere_handles =
-      *scene_handles.maybe_points_manipulator;
+      *scene_handles.maybe_points;
 
     const BodyMesh &body_mesh =
       scene_handles
@@ -1242,7 +1242,39 @@ addBodyBoxScaleManipulator(
 
 
 static void
-addBodyMeshPointsManipulator(
+updateMeshPointsGeometry(
+  BodyMeshPositions body_mesh_positions,
+  const SceneState &scene_state,
+  const SceneHandles &scene_handles,
+  Scene &scene
+)
+{
+  const vector<GeometryHandle> &sphere_handles = *scene_handles.maybe_points;
+  BodyMesh body_mesh = body_mesh_positions.body_mesh;
+  BodyIndex body_index = body_mesh.body.index;
+  MeshIndex mesh_index = body_mesh.index;
+
+  const SceneState::MeshShape::Positions &positions =
+    scene_state.body(body_index).meshes[mesh_index].shape.positions;
+
+  int n_positions = positions.size();
+
+  for (int i=0; i!=n_positions; ++i) {
+    Vec3 adjusted_position =
+      bodyMeshPositionRelativeToBody(
+        Body(body_index).mesh(mesh_index).position(i),
+        scene_state
+      );
+
+    GeometryHandle handle = sphere_handles[i];
+    scene.setGeometryCenter(handle, adjusted_position);
+    scene.setGeometryScale(handle, Vec3(0.1, 0.1, 0.1));
+  }
+}
+
+
+static void
+addBodyMeshPointsGeometry(
   SceneHandles &scene_handles,
   BodyIndex body_index,
   MeshIndex mesh_index,
@@ -1265,22 +1297,21 @@ addBodyMeshPointsManipulator(
 
     GeometryHandle handle = scene.createSphere(parent_transform);
 
-    Vec3 adjusted_position =
-      bodyMeshPositionRelativeToBody(
-        Body(body_index).mesh(mesh_index).position(i),
-        scene_state
-      );
-
-    scene.setGeometryCenter(handle, adjusted_position);
-    scene.setGeometryScale(handle, Vec3(0.1, 0.1, 0.1));
     sphere_handles.push_back(handle);
   }
 
-  assert(!scene_handles.maybe_points_manipulator);
-  scene_handles.maybe_points_manipulator = sphere_handles;
+  assert(!scene_handles.maybe_points);
+  scene_handles.maybe_points = sphere_handles;
 
   scene_handles.maybe_manipulated_element.maybe_body_mesh_positions =
     Body(body_index).mesh(mesh_index).positions();
+
+  updateMeshPointsGeometry(
+    Body(body_index).mesh(mesh_index).positions(),
+    scene_state,
+    scene_handles,
+    scene
+  );
 }
 
 
@@ -1330,6 +1361,10 @@ addManipulator(
           MeshIndex mesh_index = *item.maybe_mesh_index;
           MeshPositionIndex position_index = *item.maybe_mesh_position_index;
 
+          addBodyMeshPointsGeometry(
+            scene_handles, body_index, mesh_index, scene, scene_state
+          );
+
           addBodyMeshPositionManipulator(
             body_index, mesh_index, position_index, scene_state, scene,
             scene_handles
@@ -1344,7 +1379,7 @@ addManipulator(
         addMarkerTranslateManipulator(marker_index, scene_handles, scene);
       }
       else {
-        cerr << "attachProperDraggerToSelectedObject:\n";
+        cerr << "addManipulator:\n";
         cerr << "  Translating unknown object\n";
       }
 
@@ -1383,7 +1418,7 @@ addManipulator(
         MeshIndex mesh_index = *item.maybe_mesh_index;
         BodyIndex body_index = *item.maybe_body_index;
 
-        addBodyMeshPointsManipulator(
+        addBodyMeshPointsGeometry(
           scene_handles, body_index, mesh_index, scene, scene_state
         );
       }
@@ -2289,6 +2324,20 @@ ObservedScene::handleBodyMeshPositionStateChanged(
   updateTreeBodyMeshPosition(
     tree_widget, tree_paths, scene_state, body_mesh_position
   );
+
+  if (scene_handles.maybe_points) {
+    Optional<BodyMeshPositions> &maybe_body_mesh_positions =
+      scene_handles.maybe_manipulated_element.maybe_body_mesh_positions;
+
+    if (maybe_body_mesh_positions) {
+      updateMeshPointsGeometry(
+        *maybe_body_mesh_positions,
+        scene_state,
+        scene_handles,
+        scene
+      );
+    }
+  }
 }
 
 

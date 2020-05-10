@@ -1052,15 +1052,16 @@ void removeExistingManipulator(SceneHandles &scene_handles, Scene &scene)
     scene_handles.maybe_scale_manipulator.reset();
     scene.destroyGeometry(manipulator);
   }
-  else if (scene_handles.maybe_points_manipulator) {
+
+  if (scene_handles.maybe_points) {
     const vector<Scene::GeometryHandle> &handles =
-      *scene_handles.maybe_points_manipulator;
+      *scene_handles.maybe_points;
 
     for (auto handle : handles) {
       scene.destroyGeometry(handle);
     }
 
-    scene_handles.maybe_points_manipulator.reset();
+    scene_handles.maybe_points.reset();
   }
 }
 
