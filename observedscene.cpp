@@ -551,6 +551,8 @@ struct ObservedScene::Impl {
 
   static Optional<ManipulationType>
     properManipulationForSceneObject(const SceneElementDescription &);
+
+  static void updateTreeBodyMeshPosition(BodyMeshPosition, ObservedScene &);
 };
 
 
@@ -969,6 +971,32 @@ void ObservedScene::cutMarker(MarkerIndex marker_index)
   );
 
   clipboard.maybe_cut_marker_index = marker_index;
+}
+
+
+void
+ObservedScene::Impl::updateTreeBodyMeshPosition(
+  BodyMeshPosition arg,
+  ObservedScene &observed_scene
+)
+{
+  TreeWidget &tree_widget = observed_scene.tree_widget;
+  TreePaths &tree_paths = observed_scene.tree_paths;
+  SceneState &scene_state = observed_scene.scene_state;
+  ::updateTreeBodyMeshPosition(tree_widget, tree_paths, scene_state, arg);
+}
+
+
+void ObservedScene::markMeshPosition(BodyMeshPosition arg)
+{
+  if (scene_state.maybe_marked_body_mesh_position) {
+    BodyMeshPosition old_mark = *scene_state.maybe_marked_body_mesh_position;
+    scene_state.maybe_marked_body_mesh_position.reset();
+    Impl::updateTreeBodyMeshPosition(old_mark, *this);
+  }
+
+  scene_state.maybe_marked_body_mesh_position = arg;
+  Impl::updateTreeBodyMeshPosition(arg, *this);
 }
 
 

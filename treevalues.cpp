@@ -1262,6 +1262,17 @@ static string str(int index)
 }
 
 
+static string meshPositionLabel(MeshPositionIndex i, bool is_marked)
+{
+  if (!is_marked) {
+    return str(i) + ": []";
+  }
+  else {
+    return str(i) + ": []" + " (marked)";
+  }
+}
+
+
 static TreePaths::Positions
 addPositions(
   ItemAdder &adder,
@@ -1274,7 +1285,7 @@ addPositions(
   ItemAdder child_adder{result.path, adder.tree_widget};
 
   for (auto i : indicesOf(mesh_shape.positions)) {
-    string label = str(i) + ": []";
+    string label = meshPositionLabel(i, /*is_marked*/false);
     auto &position = mesh_shape.positions[i];
     TreePaths::XYZ xyz_paths = addXYZ(child_adder, label, position);
     emplaceInto(result.elements, i, xyz_paths);
@@ -1419,7 +1430,11 @@ struct GeometryCreator {
     emplaceInto(
       body_paths.meshes,
       i,
-      createMeshItem(mesh_path, tree_widget, body_state.meshes[i])
+      createMeshItem(
+        mesh_path,
+        tree_widget,
+        body_state.meshes[i]
+      )
     );
 
     ++adder.n_children;
@@ -1544,7 +1559,11 @@ createMeshInTree(
   body_paths.meshes.emplace_back();
 
   body_paths.meshes[mesh_index] =
-    createMeshItem(mesh_path, tree_widget, body_state.meshes[mesh_index]);
+    createMeshItem(
+      mesh_path,
+      tree_widget,
+      body_state.meshes[mesh_index]
+    );
 }
 
 
@@ -1880,12 +1899,20 @@ updateTreeBodyMeshPosition(
   MeshIndex mesh_index = body_mesh.index;
   MeshPositionIndex position_index = body_mesh_position.index;
 
+  bool is_marked =
+    (scene_state.maybe_marked_body_mesh_position == body_mesh_position);
+
   const TreePaths::XYZ &mesh_position_paths =
     tree_paths
     .body(body_index)
     .meshes[mesh_index]
     .positions
     .elements[position_index];
+
+  tree_widget.setItemLabel(
+    mesh_position_paths.path,
+    meshPositionLabel(position_index, is_marked)
+  );
 
   const SceneState::XYZ &mesh_position_state =
     scene_state

@@ -233,6 +233,7 @@ class SceneState {
     DistanceErrors distance_errors;
     Variables variables;
     Float total_error = 0;
+    Optional<BodyMeshPosition> maybe_marked_body_mesh_position;
 
     SceneState();
 

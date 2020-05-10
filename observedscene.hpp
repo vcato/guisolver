@@ -64,6 +64,8 @@ struct ObservedScene {
   void cutBody(BodyIndex);
   void cutMarker(MarkerIndex);
 
+  void markMeshPosition(BodyMeshPosition);
+
   BodyIndex
     pasteBodyGlobal(Optional<BodyIndex> maybe_new_parent_body_index);
 

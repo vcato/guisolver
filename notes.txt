@@ -231,7 +231,17 @@ The relationship between "markers" and "marks" is interesting.  We could
 think of a marker as a visual mark.
 
 * Select a mesh position
-* Right-click "Add Mark"
+* Right-click "Set Mark"
 * Select another mesh position
 * Right-click "Add Mark"
 * Marks Menu: "Add Distance Error Between Marks"
+---
+* Add a distance error
+* Select a mesh position
+* Right-click "Set Mark"
+* Select the "start" of the distance error
+* Right-click "Set to Mark"
+* Select another mesh position
+* Right-click "Set Mark"
+* Select the "end" of the distance error
+* Right-click "Set to Mark"

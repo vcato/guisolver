@@ -941,13 +941,32 @@ MainWindowController::Impl::contextMenuItemsForPath(
   }
 
   if (item_type == ItemType::variable) {
+    VariableIndex variable_index = *item.maybe_variable_index;
+
     auto remove_variable_function =
-      [&observed_scene, &item]{
-        observed_scene.removeVariable(*item.maybe_variable_index);
+      [&observed_scene, variable_index]{
+        observed_scene.removeVariable(variable_index);
       };
 
     appendTo(menu_items, {
       {"Remove", remove_variable_function}
+    });
+  }
+
+  if (item_type == ItemType::mesh_position) {
+    BodyIndex body_index = *item.maybe_body_index;
+    MeshIndex mesh_index = *item.maybe_mesh_index;
+    MeshPositionIndex position_index = *item.maybe_mesh_position_index;
+
+    BodyMeshPosition body_mesh_position =
+      Body(body_index).mesh(mesh_index).position(position_index);
+
+    auto mark_function = [&observed_scene, body_mesh_position]{
+      observed_scene.markMeshPosition(body_mesh_position);
+    };
+
+    appendTo(menu_items, {
+      {"Mark", mark_function}
     });
   }
 
