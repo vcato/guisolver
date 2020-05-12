@@ -751,15 +751,20 @@ bool GraphicsWindowQt::makeCurrentImplementation()
     if (_widget->getNumDeferredEvents() > 0)
         _widget->processDeferredEvents();
 
-    _widget->makeCurrent();
+    if (_widget->isValid()) {
+      _widget->makeCurrent();
+    }
 
     return true;
 }
 
 bool GraphicsWindowQt::releaseContextImplementation()
 {
+  if (_widget->isValid()) {
     _widget->doneCurrent();
-    return true;
+  }
+
+  return true;
 }
 
 void GraphicsWindowQt::swapBuffersImplementation()

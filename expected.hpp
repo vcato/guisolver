@@ -6,6 +6,7 @@
 #include "noinittag.hpp"
 #include "basicvariant.hpp"
 
+
 struct Error {
   std::string message;
 };

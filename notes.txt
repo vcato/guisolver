@@ -245,3 +245,14 @@ think of a marker as a visual mark.
 * Right-click "Set Mark"
 * Select the "end" of the distance error
 * Right-click "Set to Mark"
+---
+Maybe replace Optional<::Marker> with Optional<PointLink>.
+A PointLink can be either a Marker or a position in a mesh.  It could be
+many other things in the future.
+
+struct PointLink {
+  PointLink(Marker);
+  PointLink(BodyMeshPosition);
+  const Marker *markerPtr() const;
+  const BodyMeshPosition *bodyMeshPositionPtr() const;
+};
