@@ -272,11 +272,13 @@ void SceneState::removeMarker(MarkerIndex index_to_remove)
 
   for (auto &distance_error : distance_errors) {
     _handleMarkerRemoved(
-      distance_error.optional_start_marker_index, index_to_remove
+      distance_error.optional_start_marker,
+      index_to_remove
     );
 
     _handleMarkerRemoved(
-      distance_error.optional_end_marker_index, index_to_remove
+      distance_error.optional_end_marker,
+      index_to_remove
     );
   }
 }

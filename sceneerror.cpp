@@ -55,8 +55,8 @@ static void
   )
 {
   bool have_both_markers =
-    distance_error.optional_start_marker_index &&
-    distance_error.optional_end_marker_index;
+    distance_error.optional_start_marker &&
+    distance_error.optional_end_marker;
 
   if (!have_both_markers) {
     distance_error.maybe_distance = {};
@@ -65,8 +65,8 @@ static void
     return;
   }
 
-  MarkerIndex start_marker_index = *distance_error.optional_start_marker_index;
-  MarkerIndex end_marker_index = *distance_error.optional_end_marker_index;
+  MarkerIndex start_marker_index = distance_error.optional_start_marker->index;
+  MarkerIndex end_marker_index = distance_error.optional_end_marker->index;
   Point start_predicted = markerPredicted(scene_state, start_marker_index);
   Point end_predicted = markerPredicted(scene_state, end_marker_index);
   float distance = distanceBetween(start_predicted, end_predicted);

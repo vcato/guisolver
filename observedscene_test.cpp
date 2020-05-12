@@ -190,11 +190,13 @@ static void testDuplicateBody()
     scene_state.distance_errors[distance_error1_index];
 
   assert(
-    distance_error1_state.optional_start_marker_index == global_marker_index
+    makeMarkerIndex(distance_error1_state.optional_start_marker)
+    == global_marker_index
   );
 
   assert(
-    distance_error1_state.optional_end_marker_index == local2_marker_index
+    makeMarkerIndex(distance_error1_state.optional_end_marker)
+    == local2_marker_index
   );
 
   DistanceErrorIndex distance_error2_index =
@@ -204,11 +206,13 @@ static void testDuplicateBody()
     scene_state.distance_errors[distance_error2_index];
 
   assert(
-    distance_error2_state.optional_end_marker_index == global_marker_index
+    makeMarkerIndex(distance_error2_state.optional_end_marker)
+    == global_marker_index
   );
 
   assert(
-    distance_error2_state.optional_start_marker_index == local2_marker_index
+    makeMarkerIndex(distance_error2_state.optional_start_marker)
+    == local2_marker_index
   );
 
   const TreePath &distance_error2_tree_path =
@@ -337,8 +341,12 @@ static void testDuplicateBodyWithDistanceErrors()
   const SceneState::DistanceError &distance_error_state =
     scene_state.distance_errors[0];
 
-  assert(distance_error_state.optional_start_marker_index == marker_index);
-  assert(distance_error_state.optional_end_marker_index.hasValue());
+  assert(
+    makeMarkerIndex(distance_error_state.optional_start_marker)
+    == marker_index
+  );
+
+  assert(distance_error_state.optional_end_marker.hasValue());
   assert(scene_state.bodies().size() == 2);
   assert(new_body_index != body_index);
   checkTree(tester);

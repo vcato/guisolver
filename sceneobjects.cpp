@@ -302,18 +302,18 @@ updateDistanceErrorInScene(
     scene_state.distance_errors[distance_error_index];
 
   bool have_both_markers =
-    distance_error_state.optional_start_marker_index &&
-    distance_error_state.optional_end_marker_index;
+    distance_error_state.optional_start_marker &&
+    distance_error_state.optional_end_marker;
 
   Point start = {0,0,0};
   Point end = {0,0,0};
 
   if (have_both_markers) {
     MarkerIndex start_marker_index =
-      *distance_error_state.optional_start_marker_index;
+      distance_error_state.optional_start_marker->index;
 
     MarkerIndex end_marker_index =
-      *distance_error_state.optional_end_marker_index;
+      distance_error_state.optional_end_marker->index;
 
     start = markerPredicted(scene_state, start_marker_index);
     end = markerPredicted(scene_state, end_marker_index);

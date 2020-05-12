@@ -1887,13 +1887,13 @@ static void
     auto &state_distance_error = scene_state.distance_errors[i];
 
     if (path == distance_error_paths.start) {
-      state_distance_error.optional_start_marker_index =
-        markerIndexFromEnumerationValue(value);
+      state_distance_error.optional_start_marker =
+        makeMarker(markerIndexFromEnumerationValue(value));
     }
 
     if (path == distance_error_paths.end) {
-      state_distance_error.optional_end_marker_index =
-        markerIndexFromEnumerationValue(value);
+      state_distance_error.optional_end_marker =
+        makeMarker(markerIndexFromEnumerationValue(value));
     }
   }
 }
@@ -2308,8 +2308,12 @@ ObservedScene::addDistanceError(
   SceneState::DistanceError &distance_error =
     scene_state.distance_errors[index];
 
-  distance_error.optional_start_marker_index = optional_start_marker_index;
-  distance_error.optional_end_marker_index = optional_end_marker_index;
+  distance_error.optional_start_marker
+    = makeMarker(optional_start_marker_index);
+
+  distance_error.optional_end_marker
+    = makeMarker(optional_end_marker_index);
+
   observed_scene.update_errors_function(scene_state);
   createDistanceErrorInScene(scene, scene_handles, scene_state, index);
 

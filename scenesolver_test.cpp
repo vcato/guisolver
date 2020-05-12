@@ -82,8 +82,8 @@ struct Example {
     SceneState::DistanceError &new_distance_error =
       createDistanceError(scene_state);
 
-    new_distance_error.optional_start_marker_index = local_marker_index;
-    new_distance_error.optional_end_marker_index = global_marker_index;
+    new_distance_error.optional_start_marker = Marker(local_marker_index);
+    new_distance_error.optional_end_marker = Marker(global_marker_index);
   }
 };
 }
@@ -178,8 +178,8 @@ static void testWithTwoBodies()
   SceneState::DistanceError &distance_error_state =
     createDistanceError(scene_state);
 
-  distance_error_state.optional_start_marker_index = global_marker_index;
-  distance_error_state.optional_end_marker_index = local_marker_index;
+  distance_error_state.optional_start_marker = Marker(global_marker_index);
+  distance_error_state.optional_end_marker = Marker(local_marker_index);
 
   scene_state.marker(local_marker_index).maybe_body_index = body2_index;
 
@@ -235,11 +235,11 @@ static void testSolvingScale()
 
   scene_state
     .distance_errors[distance_error_index]
-    .optional_start_marker_index = local_marker_index;
+    .optional_start_marker = Marker(local_marker_index);
 
   scene_state
     .distance_errors[distance_error_index]
-    .optional_end_marker_index = global_marker_index;
+    .optional_end_marker = Marker(global_marker_index);
 
   updateErrorsInState(scene_state);
   float old_scene_error = sceneError(scene_state);

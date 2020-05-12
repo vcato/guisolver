@@ -12,8 +12,8 @@ createDistanceError(
 {
   DistanceErrorIndex index = state.createDistanceError();
   SceneState::DistanceError &new_distance_error = state.distance_errors[index];
-  new_distance_error.optional_start_marker_index = local_marker_index;
-  new_distance_error.optional_end_marker_index = global_marker_index;
+  new_distance_error.optional_start_marker = Marker(local_marker_index);
+  new_distance_error.optional_end_marker = Marker(global_marker_index);
 }
 
 

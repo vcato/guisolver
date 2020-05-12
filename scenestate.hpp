@@ -215,8 +215,8 @@ class SceneState {
     };
 
     struct DistanceError {
-      Optional<MarkerIndex> optional_start_marker_index;
-      Optional<MarkerIndex> optional_end_marker_index;
+      Optional<::Marker> optional_start_marker;
+      Optional<::Marker> optional_end_marker;
       Optional<BodyIndex> maybe_body_index;
       Optional<Float> maybe_distance;
       Float desired_distance = 0;
@@ -287,16 +287,15 @@ class SceneState {
 
     void
       _handleMarkerRemoved(
-        Optional<MarkerIndex> &optional_marker_index,
+        Optional<::Marker> &optional_marker,
         MarkerIndex index_to_remove
       )
     {
-      if (!optional_marker_index) return;
-
-      MarkerIndex &marker_index = *optional_marker_index;
+      if (!optional_marker) return;
+      MarkerIndex &marker_index = optional_marker->index;
 
       if (marker_index == index_to_remove) {
-        optional_marker_index.reset();
+        optional_marker.reset();
       }
       else if (marker_index > index_to_remove) {
         --marker_index;

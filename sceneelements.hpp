@@ -167,6 +167,27 @@ struct Marker {
 };
 
 
+inline Optional<MarkerIndex> makeMarkerIndex(Optional<Marker> maybe_marker)
+{
+  if (!maybe_marker) {
+    return {};
+  }
+
+  return maybe_marker->index;
+}
+
+
+inline Optional<Marker> makeMarker(Optional<MarkerIndex> arg)
+{
+  if (arg) {
+    return Marker(*arg);
+  }
+  else {
+    return {};
+  }
+}
+
+
 struct MarkerPosition {
   Marker marker;
 };

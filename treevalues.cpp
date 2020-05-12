@@ -493,10 +493,10 @@ distanceErrorLabel(
   string label = "[DistanceError]";
 
   Optional<MarkerIndex> optional_start_index =
-    distance_error_state.optional_start_marker_index;
+    makeMarkerIndex(distance_error_state.optional_start_marker);
 
   Optional<MarkerIndex> optional_end_index =
-    distance_error_state.optional_end_marker_index;
+    makeMarkerIndex(distance_error_state.optional_end_marker);
 
   string start_marker_name = markerName(optional_start_index, marker_states);
   string end_marker_name = markerName(optional_end_index, marker_states);
@@ -555,10 +555,10 @@ createDistanceErrorInTree1(
 )
 {
   Optional<MarkerIndex> optional_start_index =
-    distance_error_state.optional_start_marker_index;
+    makeMarkerIndex(distance_error_state.optional_start_marker);
 
   Optional<MarkerIndex> optional_end_index =
-    distance_error_state.optional_end_marker_index;
+    makeMarkerIndex(distance_error_state.optional_end_marker);
 
   string label = distanceErrorLabel(distance_error_state, marker_states);
 
@@ -2008,10 +2008,10 @@ void
     const TreePath &end_path = distance_error_paths.end;
 
     Optional<MarkerIndex> optional_start_marker_index =
-      distance_error_state.optional_start_marker_index;
+      makeMarkerIndex(distance_error_state.optional_start_marker);
 
     Optional<MarkerIndex> optional_end_marker_index =
-      distance_error_state.optional_end_marker_index;
+      makeMarkerIndex(distance_error_state.optional_end_marker);
 
     int start_value =
       enumerationValueFromMarkerIndex(optional_start_marker_index);
