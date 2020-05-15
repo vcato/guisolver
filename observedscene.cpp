@@ -2678,3 +2678,17 @@ void ObservedScene::updateSceneStateFromSceneObjects()
 {
   ::updateSceneStateFromSceneObjects(scene_state, scene, scene_handles);
 }
+
+
+#if 0
+void
+ObservedScene::setDistanceErrorStartToMark(
+  DistanceError distance_error
+)
+{
+  if (scene_state.maybe_marked_body_mesh_position) {
+    scene_state[distance_error].optional_start =
+      *scene_state.maybe_marked_body_mesh_position;
+  }
+}
+#endif

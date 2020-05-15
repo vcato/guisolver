@@ -3246,10 +3246,21 @@ describeTreePath(
   }
 
   for (auto i : indicesOf(tree_paths.distance_errors)) {
-    if (path == tree_paths.distance_errors[i].path) {
-      description.type = ItemType::distance_error;
-      description.maybe_distance_error_index = i;
-      return description;
+    const TreePaths::DistanceError &distance_error_paths =
+      tree_paths.distance_errors[i];
+
+    if (startsWith(path, distance_error_paths.path)) {
+      if (path == distance_error_paths.path) {
+        description.type = ItemType::distance_error;
+        description.maybe_distance_error_index = i;
+        return description;
+      }
+
+      if (path == distance_error_paths.start) {
+        description.type = ItemType::distance_error_start;
+        description.maybe_distance_error_index = i;
+        return description;
+      }
     }
   }
 

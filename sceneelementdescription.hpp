@@ -20,6 +20,7 @@ struct SceneElementDescription {
     line_geometry,
     marker,
     distance_error,
+    distance_error_start,
     translation,
     rotation,
     scale,

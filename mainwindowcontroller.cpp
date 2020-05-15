@@ -15,6 +15,8 @@
 #include "readobj.hpp"
 #include "objmesh.hpp"
 
+#define ADD_MARKS 0
+
 using View = MainWindowView;
 using std::cerr;
 using std::string;
@@ -937,6 +939,20 @@ MainWindowController::Impl::contextMenuItemsForPath(
 
     appendTo(menu_items,{
       {"Remove", remove_distance_error_function}
+    });
+  }
+
+  if (item_type == ItemType::distance_error_start) {
+#if ADD_MARKS
+    auto set_to_mark_function = []{
+      observed_scene.setDistanceErrorStartToMark();
+    };
+#endif
+
+    appendTo(menu_items,{
+#if ADD_MARKS
+      {"Set To Mark", set_to_mark_function}
+#endif
     });
   }
 
