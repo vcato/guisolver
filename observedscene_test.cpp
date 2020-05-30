@@ -136,6 +136,24 @@ static void testTransferringAMarker()
 }
 
 
+static bool
+startIsMarker(
+  const SceneState::DistanceError &distance_error, MarkerIndex marker_index
+)
+{
+  return distance_error.optional_start->marker.index == marker_index;
+}
+
+
+static bool
+endIsMarker(
+  const SceneState::DistanceError &distance_error, MarkerIndex marker_index
+)
+{
+  return distance_error.optional_end->marker.index == marker_index;
+}
+
+
 static void testDuplicateBody()
 {
   // Create a body that has a distance error
@@ -189,15 +207,8 @@ static void testDuplicateBody()
   SceneState::DistanceError &distance_error1_state =
     scene_state.distance_errors[distance_error1_index];
 
-  assert(
-    makeMarkerIndex(distance_error1_state.optional_start_marker)
-    == global_marker_index
-  );
-
-  assert(
-    makeMarkerIndex(distance_error1_state.optional_end_marker)
-    == local2_marker_index
-  );
+  assert(startIsMarker(distance_error1_state, global_marker_index));
+  assert(endIsMarker(distance_error1_state, local2_marker_index));
 
   DistanceErrorIndex distance_error2_index =
     distanceErrorsOnBody(body2_index, scene_state)[1];
@@ -205,15 +216,8 @@ static void testDuplicateBody()
   SceneState::DistanceError &distance_error2_state =
     scene_state.distance_errors[distance_error2_index];
 
-  assert(
-    makeMarkerIndex(distance_error2_state.optional_end_marker)
-    == global_marker_index
-  );
-
-  assert(
-    makeMarkerIndex(distance_error2_state.optional_start_marker)
-    == local2_marker_index
-  );
+  assert(endIsMarker(distance_error2_state, global_marker_index));
+  assert(startIsMarker(distance_error2_state, local2_marker_index));
 
   const TreePath &distance_error2_tree_path =
     tree_paths.distance_errors[distance_error1_index].path;
@@ -341,12 +345,8 @@ static void testDuplicateBodyWithDistanceErrors()
   const SceneState::DistanceError &distance_error_state =
     scene_state.distance_errors[0];
 
-  assert(
-    makeMarkerIndex(distance_error_state.optional_start_marker)
-    == marker_index
-  );
-
-  assert(distance_error_state.optional_end_marker.hasValue());
+  assert(startIsMarker(distance_error_state, marker_index));
+  assert(distance_error_state.hasEnd());
   assert(scene_state.bodies().size() == 2);
   assert(new_body_index != body_index);
   checkTree(tester);

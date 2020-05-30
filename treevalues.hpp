@@ -29,8 +29,8 @@ extern void
     bool new_state
   );
 
-extern Optional<MarkerIndex>
-  markerIndexFromEnumerationValue(int enumeration_value);
+extern Optional<Marker>
+  markerFromEnumerationValue(int enumeration_value);
 
 extern void
   createDistanceErrorInTree(DistanceErrorIndex,

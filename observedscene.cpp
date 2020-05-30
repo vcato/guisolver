@@ -15,6 +15,7 @@
 #include "meshstate.hpp"
 #include "emplaceinto.hpp"
 #include "vec3state.hpp"
+#include "pointlink.hpp"
 
 using std::string;
 using std::ostringstream;
@@ -1887,13 +1888,11 @@ static void
     auto &state_distance_error = scene_state.distance_errors[i];
 
     if (path == distance_error_paths.start) {
-      state_distance_error.optional_start_marker =
-        makeMarker(markerIndexFromEnumerationValue(value));
+      state_distance_error.setStart(markerFromEnumerationValue(value));
     }
 
     if (path == distance_error_paths.end) {
-      state_distance_error.optional_end_marker =
-        makeMarker(markerIndexFromEnumerationValue(value));
+      state_distance_error.setEnd(markerFromEnumerationValue(value));
     }
   }
 }
@@ -2308,11 +2307,8 @@ ObservedScene::addDistanceError(
   SceneState::DistanceError &distance_error =
     scene_state.distance_errors[index];
 
-  distance_error.optional_start_marker
-    = makeMarker(optional_start_marker_index);
-
-  distance_error.optional_end_marker
-    = makeMarker(optional_end_marker_index);
+  distance_error.setStart(makeMarker(optional_start_marker_index));
+  distance_error.setEnd(makeMarker(optional_end_marker_index));
 
   observed_scene.update_errors_function(scene_state);
   createDistanceErrorInScene(scene, scene_handles, scene_state, index);

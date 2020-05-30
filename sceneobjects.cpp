@@ -287,6 +287,13 @@ static SceneHandles::DistanceError createDistanceError(Scene &scene)
 }
 
 
+static Point
+pointPredicted(PointLink point_link, const SceneState &scene_state)
+{
+  return markerPredicted(scene_state, point_link.marker.index);
+}
+
+
 static void
 updateDistanceErrorInScene(
   Scene &scene,
@@ -302,21 +309,15 @@ updateDistanceErrorInScene(
     scene_state.distance_errors[distance_error_index];
 
   bool have_both_markers =
-    distance_error_state.optional_start_marker &&
-    distance_error_state.optional_end_marker;
+    distance_error_state.hasStart() &&
+    distance_error_state.hasEnd();
 
   Point start = {0,0,0};
   Point end = {0,0,0};
 
   if (have_both_markers) {
-    MarkerIndex start_marker_index =
-      distance_error_state.optional_start_marker->index;
-
-    MarkerIndex end_marker_index =
-      distance_error_state.optional_end_marker->index;
-
-    start = markerPredicted(scene_state, start_marker_index);
-    end = markerPredicted(scene_state, end_marker_index);
+    start = pointPredicted(*distance_error_state.optional_start, scene_state);
+    end = pointPredicted(*distance_error_state.optional_end, scene_state);
   }
 
   scene.setLineStartPoint(

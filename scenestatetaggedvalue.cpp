@@ -5,6 +5,7 @@
 #include "contains.hpp"
 #include "nextunusedname.hpp"
 #include "taggedvalueio.hpp"
+#include "pointlink.hpp"
 
 using std::string;
 using std::cerr;
@@ -581,8 +582,9 @@ createDistanceErrorFromTaggedValue(
       StringValue mapped_marker_name =
         mappedMarkerName(*maybe_start_marker_name, marker_name_map);
 
-      distance_error_state.optional_start_marker =
-        makeMarker(findMarkerWithName(result, mapped_marker_name));
+      distance_error_state.setStart(
+        makeMarker(findMarkerWithName(result, mapped_marker_name))
+      );
     }
   }
 
@@ -594,8 +596,9 @@ createDistanceErrorFromTaggedValue(
       StringValue mapped_marker_name =
         mappedMarkerName(*maybe_end_marker_name, marker_name_map);
 
-      distance_error_state.optional_end_marker =
-        makeMarker(findMarkerWithName(result, mapped_marker_name));
+      distance_error_state.setEnd(
+        makeMarker(findMarkerWithName(result, mapped_marker_name))
+      );
     }
   }
 
@@ -1243,17 +1246,17 @@ static void
   {
     auto &parent = distance_error;
 
-    if (distance_error_state.optional_start_marker) {
+    if (distance_error_state.hasStart()) {
       MarkerIndex start_marker_index =
-        distance_error_state.optional_start_marker->index;
+        distance_error_state.optional_start->marker.index;
 
       auto &start_marker_name = scene_state.marker(start_marker_index).name;
       create(parent, "start", start_marker_name);
     }
 
-    if (distance_error_state.optional_end_marker) {
+    if (distance_error_state.hasEnd()) {
       MarkerIndex end_marker_index =
-        distance_error_state.optional_end_marker->index;
+        distance_error_state.optional_end->marker.index;
 
       auto &end_marker_name = scene_state.marker(end_marker_index).name;
       create(parent, "end", end_marker_name);

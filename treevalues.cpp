@@ -13,6 +13,7 @@
 #include "xyzcomponent.hpp"
 #include "channel.hpp"
 #include "emplaceinto.hpp"
+#include "pointlink.hpp"
 
 using std::cerr;
 using std::string;
@@ -446,13 +447,13 @@ static TreeWidget::EnumerationOptions
 }
 
 
-Optional<MarkerIndex> markerIndexFromEnumerationValue(int enumeration_value)
+Optional<Marker> markerFromEnumerationValue(int enumeration_value)
 {
   if (enumeration_value == 0) {
     return {};
   }
   else {
-    return enumeration_value - 1;
+    return Marker(enumeration_value - 1);
   }
 }
 
@@ -485,6 +486,21 @@ markerName(
 
 
 static string
+pointName(
+  const Optional<PointLink> &maybe_point,
+  const SceneState::Markers &marker_states
+)
+{
+  if (!maybe_point) {
+    return "";
+  }
+
+  MarkerIndex marker_index = maybe_point->marker.index;
+  return markerName(marker_index, marker_states);
+}
+
+
+static string
 distanceErrorLabel(
   const SceneState::DistanceError &distance_error_state,
   const SceneState::Markers &marker_states
@@ -492,23 +508,20 @@ distanceErrorLabel(
 {
   string label = "[DistanceError]";
 
-  Optional<MarkerIndex> optional_start_index =
-    makeMarkerIndex(distance_error_state.optional_start_marker);
+  string start_name =
+    pointName(distance_error_state.optional_start, marker_states);
 
-  Optional<MarkerIndex> optional_end_index =
-    makeMarkerIndex(distance_error_state.optional_end_marker);
+  string end_name =
+    pointName(distance_error_state.optional_end, marker_states);
 
-  string start_marker_name = markerName(optional_start_index, marker_states);
-  string end_marker_name = markerName(optional_end_index, marker_states);
-
-  if (start_marker_name != "" && end_marker_name != "") {
-    label += " " + start_marker_name + " <-> " + end_marker_name;
+  if (start_name != "" && end_name != "") {
+    label += " " + start_name + " <-> " + end_name;
   }
-  else if (start_marker_name != "") {
-    label += " " + start_marker_name;
+  else if (start_name != "") {
+    label += " " + start_name;
   }
-  else if (end_marker_name != "") {
-    label += " " + end_marker_name;
+  else if (end_name != "") {
+    label += " " + end_name;
   }
 
   return label;
@@ -555,10 +568,10 @@ createDistanceErrorInTree1(
 )
 {
   Optional<MarkerIndex> optional_start_index =
-    makeMarkerIndex(distance_error_state.optional_start_marker);
+    makeMarkerIndexFromPoint(distance_error_state.optional_start);
 
   Optional<MarkerIndex> optional_end_index =
-    makeMarkerIndex(distance_error_state.optional_end_marker);
+    makeMarkerIndexFromPoint(distance_error_state.optional_end);
 
   string label = distanceErrorLabel(distance_error_state, marker_states);
 
@@ -2008,10 +2021,10 @@ void
     const TreePath &end_path = distance_error_paths.end;
 
     Optional<MarkerIndex> optional_start_marker_index =
-      makeMarkerIndex(distance_error_state.optional_start_marker);
+      makeMarkerIndexFromPoint(distance_error_state.optional_start);
 
     Optional<MarkerIndex> optional_end_marker_index =
-      makeMarkerIndex(distance_error_state.optional_end_marker);
+      makeMarkerIndexFromPoint(distance_error_state.optional_end);
 
     int start_value =
       enumerationValueFromMarkerIndex(optional_start_marker_index);

@@ -1,19 +1,21 @@
 #include "defaultscenestate.hpp"
 
+#include "pointlink.hpp"
+
 using std::ostringstream;
 using std::cerr;
 
 static void
 createDistanceError(
   SceneState &state,
-  MarkerIndex local_marker_index,
-  MarkerIndex global_marker_index
+  Marker local_marker,
+  Marker global_marker
 )
 {
   DistanceErrorIndex index = state.createDistanceError();
   SceneState::DistanceError &new_distance_error = state.distance_errors[index];
-  new_distance_error.optional_start_marker = Marker(local_marker_index);
-  new_distance_error.optional_end_marker = Marker(global_marker_index);
+  new_distance_error.setStart(local_marker);
+  new_distance_error.setEnd(global_marker);
 }
 
 
@@ -73,8 +75,8 @@ SceneState defaultSceneState()
 
     createDistanceError(
       result,
-      local_marker_index,
-      global_marker_index
+      Marker(local_marker_index),
+      Marker(global_marker_index)
     );
   }
 

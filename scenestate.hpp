@@ -15,6 +15,7 @@
 #include "boxindex.hpp"
 #include "lineindex.hpp"
 #include "mesh.hpp"
+#include "pointlink.hpp"
 
 using Expression = std::string;
 
@@ -215,13 +216,36 @@ class SceneState {
     };
 
     struct DistanceError {
-      Optional<::Marker> optional_start_marker;
-      Optional<::Marker> optional_end_marker;
+      Optional<PointLink> optional_start;
+      Optional<PointLink> optional_end;
       Optional<BodyIndex> maybe_body_index;
       Optional<Float> maybe_distance;
       Float desired_distance = 0;
       Float weight = 1;
       Float error = 0;
+
+      void setStart(Optional<::Marker> arg)
+      {
+        if (arg) {
+          optional_start = PointLink{*arg};
+        }
+        else {
+          optional_start = {};
+        }
+      }
+
+      void setEnd(Optional<::Marker> arg)
+      {
+        if (arg) {
+          optional_end = PointLink{*arg};
+        }
+        else {
+          optional_end = {};
+        }
+      }
+
+      bool hasStart() const { return optional_start.hasValue(); }
+      bool hasEnd() const { return optional_end.hasValue(); }
     };
 
     struct Variable {
@@ -287,15 +311,15 @@ class SceneState {
 
     void
       _handleMarkerRemoved(
-        Optional<::Marker> &optional_marker,
+        Optional<PointLink> &optional_point_link,
         MarkerIndex index_to_remove
       )
     {
-      if (!optional_marker) return;
-      MarkerIndex &marker_index = optional_marker->index;
+      if (!optional_point_link) return;
+      MarkerIndex &marker_index = optional_point_link->marker.index;
 
       if (marker_index == index_to_remove) {
-        optional_marker.reset();
+        optional_point_link.reset();
       }
       else if (marker_index > index_to_remove) {
         --marker_index;
