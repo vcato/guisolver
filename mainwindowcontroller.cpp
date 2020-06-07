@@ -224,6 +224,7 @@ struct MainWindowController::Impl {
   static void duplicateMarkerPressed(ObservedScene &, MarkerIndex);
   static void cutBodyPressed(MainWindowController &, const TreePath &);
   static void cutMarkerPressed(MainWindowController &, MarkerIndex);
+  static void markMarkerPressed(MainWindowController &, MarkerIndex);
 };
 
 
@@ -699,6 +700,16 @@ MainWindowController::Impl::cutMarkerPressed(
 
 
 void
+MainWindowController::Impl::markMarkerPressed(
+  MainWindowController &controller,
+  MarkerIndex marker_index
+)
+{
+  observedScene(controller).markMarker(marker_index);
+}
+
+
+void
   MainWindowController::Impl::cutBodyPressed(
     MainWindowController &controller,
     const TreePath &path
@@ -920,10 +931,15 @@ MainWindowController::Impl::contextMenuItemsForPath(
       Impl::cutMarkerPressed(controller, index);
     };
 
+    auto mark_marker_function = [&controller,index]{
+      Impl::markMarkerPressed(controller, index);
+    };
+
     appendTo(menu_items,{
       {"Remove", remove_marker_function},
       {"Duplicate", duplicate_marker_function},
       {"Cut", cut_marker_function},
+      {"Mark", mark_marker_function},
       {"Duplicate With Distance Error",
         duplicate_marker_with_distance_error_function },
     });

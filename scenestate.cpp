@@ -11,6 +11,38 @@ using std::cerr;
 using std::ostream;
 
 
+static void
+fixMarkerIndex(MarkerIndex &marker_index, MarkerIndex index_to_remove)
+{
+  if (marker_index > index_to_remove) {
+    --marker_index;
+  }
+}
+
+
+void
+SceneState::_handleMarkerRemoved(
+  Optional<PointLink> &optional_point_link,
+  MarkerIndex index_to_remove
+)
+{
+  ::Marker *marker_ptr = markerPtrFromPointLink(optional_point_link);
+
+  if (!marker_ptr) {
+    return;
+  }
+
+  MarkerIndex &marker_index = marker_ptr->index;
+
+  if (marker_index == index_to_remove) {
+    optional_point_link.reset();
+  }
+  else {
+    fixMarkerIndex(marker_index, index_to_remove);
+  }
+}
+
+
 static SceneState::Marker::Name namePrefix(bool is_local)
 {
   if (is_local) {
@@ -274,6 +306,15 @@ void SceneState::removeMarker(MarkerIndex index_to_remove)
     _handleMarkerRemoved(distance_error.optional_start, index_to_remove);
     _handleMarkerRemoved(distance_error.optional_end, index_to_remove);
   }
+
+  if (maybe_marked_marker) {
+    if (*maybe_marked_marker == ::Marker{index_to_remove}) {
+      maybe_marked_marker.reset();
+    }
+    else {
+      fixMarkerIndex(maybe_marked_marker->index, index_to_remove);
+    }
+  }
 }
 
 
@@ -398,5 +439,3 @@ MeshIndex SceneState::Body::createMesh(const MeshShape &mesh_shape)
   meshes.back().shape = mesh_shape;
   return mesh_index;
 }
-
-

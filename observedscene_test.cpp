@@ -1425,6 +1425,45 @@ static void testAddingMesh()
 }
 
 
+static void testRemovingAMarkedMarker()
+{
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+
+  // Have a scene with two markers.
+  SceneState initial_state;
+  MarkerIndex marker1_index = initial_state.createMarker();
+  MarkerIndex marker2_index = initial_state.createMarker();
+  observed_scene.replaceSceneStateWith(initial_state);
+
+  observed_scene.markMarker(marker2_index);
+  observed_scene.removeMarker(marker2_index);
+  observed_scene.markMarker(marker1_index);
+
+  // No assertions because we're just making sure it doesn't crash.
+}
+
+
+static void testRemovingAMarkerBeforeTheMarkedMarker()
+{
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+
+  // Have a scene with three markers.
+  SceneState initial_state;
+  MarkerIndex marker1_index = initial_state.createMarker();
+  MarkerIndex marker2_index = initial_state.createMarker();
+  MarkerIndex marker3_index = initial_state.createMarker();
+  observed_scene.replaceSceneStateWith(initial_state);
+
+  observed_scene.markMarker(marker3_index);
+  observed_scene.removeMarker(marker2_index);
+  observed_scene.markMarker(marker1_index);
+
+  // No assertions because we're just making sure it doesn't crash.
+}
+
+
 int main()
 {
   testTransferringABody1();
@@ -1463,4 +1502,6 @@ int main()
   testSettingBodyTranslationExpression();
   testSettingBoxScaleExpression();
   testAddingMesh();
+  testRemovingAMarkedMarker();
+  testRemovingAMarkerBeforeTheMarkedMarker();
 }

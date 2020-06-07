@@ -34,7 +34,7 @@ static SceneState::Box &bodyBox(SceneState::Body &body)
 }
 
 
-static void testWith(const SceneState &state)
+static void testRescanWith(const SceneState &state)
 {
   std::string state_string = sceneStateString(state);
   istringstream input_stream(state_string);
@@ -61,7 +61,7 @@ static void testWithAdditionalDistanceError()
   SceneState::DistanceError &distance_error = state.distance_errors[index];
   distance_error.weight = 2.5;
   distance_error.desired_distance = 3.5;
-  testWith(state);
+  testRescanWith(state);
 }
 
 
@@ -156,7 +156,7 @@ static void testWithChildTransform()
     "}\n";
 
   assert(state_string == expected_string);
-  testWith(state);
+  testRescanWith(state);
 }
 
 
@@ -281,7 +281,7 @@ static void testWithMultipleTransforms()
   state.createDistanceError(body3_index);
   string state_string = sceneStateString(state);
   assert(state_string == expected_string);
-  testWith(state);
+  testRescanWith(state);
 }
 
 
@@ -301,7 +301,7 @@ static void testWithVariable()
   state.variables[variable_index].value = 5.5;
   string state_string = sceneStateString(state);
   assert(state_string == expected_string);
-  testWith(state);
+  testRescanWith(state);
 }
 
 
@@ -325,13 +325,13 @@ static void testWithExpression()
   MarkerIndex marker_index = state.createMarker();
   state.marker(marker_index).position_expressions.x = "1+2";
   assert(sceneStateString(state) == expected_string);
-  testWith(state);
+  testRescanWith(state);
 }
 
 
 int main()
 {
-  testWith(defaultSceneState());
+  testRescanWith(defaultSceneState());
   testWithAdditionalDistanceError();
   testWithChildTransform();
   testWithMultipleTransforms();

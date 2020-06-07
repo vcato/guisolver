@@ -334,9 +334,20 @@ createXYZChannels(
 }
 
 
-static string markerLabel(const SceneState::Marker &marker_state)
+static string
+markerLabel(
+  const SceneState::Marker &marker_state,
+  const SceneState &scene_state,
+  Marker marker
+)
 {
-  return "[Marker] " + marker_state.name;
+  string result = "[Marker] " + marker_state.name;
+
+  if (scene_state.maybe_marked_marker == marker) {
+    result += " (marked)";
+  }
+
+  return result;
 }
 
 
@@ -372,13 +383,19 @@ static MarkerPaths
 createMarker(
   TreeWidget &tree_widget,
   const TreePath &path,
-  const SceneState::Marker &marker_state
+  const SceneState::Marker &marker_state,
+  const SceneState &scene_state,
+  Marker marker
 )
 {
   MarkerPaths marker_paths;
   marker_paths.path = path;
   const string &name = marker_state.name;
-  tree_widget.createVoidItem(path,LabelProperties{markerLabel(marker_state)});
+
+  tree_widget.createVoidItem(
+    path,LabelProperties{markerLabel(marker_state, scene_state, marker)}
+  );
+
   ItemAdder adder{path, tree_widget};
   marker_paths.name = adder.addString("name:", name);
   {
@@ -559,6 +576,26 @@ distanceLabel(
 }
 
 
+static TreePath
+createPoint(
+  const string &label,
+  const Optional<PointLink> &maybe_point,
+  const TreeWidget::EnumerationOptions &marker_options,
+  ItemAdder &adder
+)
+{
+  Optional<MarkerIndex> optional_marker_index =
+    makeMarkerIndexFromPoint(maybe_point);
+
+  return
+    adder.addEnumeration(
+      label,
+      marker_options,
+      enumerationValueFromMarkerIndex(optional_marker_index)
+    );
+}
+
+
 static TreePaths::DistanceError
 createDistanceErrorInTree1(
   TreeWidget &tree_widget,
@@ -567,33 +604,21 @@ createDistanceErrorInTree1(
   const SceneState::DistanceError &distance_error_state
 )
 {
-  Optional<MarkerIndex> optional_start_index =
-    makeMarkerIndexFromPoint(distance_error_state.optional_start);
-
-  Optional<MarkerIndex> optional_end_index =
-    makeMarkerIndexFromPoint(distance_error_state.optional_end);
-
+  ItemAdder adder{path, tree_widget};
   string label = distanceErrorLabel(distance_error_state, marker_states);
-
   tree_widget.createVoidItem(path,LabelProperties{label});
 
   TreeWidget::EnumerationOptions marker_options =
     markerEnumerationOptions(marker_states);
 
-  ItemAdder adder{path, tree_widget};
-
   TreePath start_path =
-    adder.addEnumeration(
-      "start:",
-      marker_options,
-      enumerationValueFromMarkerIndex(optional_start_index)
+    createPoint(
+      "start:", distance_error_state.optional_start, marker_options, adder
     );
 
   TreePath end_path =
-    adder.addEnumeration(
-      "end:",
-      marker_options,
-      enumerationValueFromMarkerIndex(optional_end_index)
+    createPoint(
+      "end:", distance_error_state.optional_end, marker_options, adder
     );
 
   TreePath distance_path = adder.addVoid(distanceLabel(distance_error_state));
@@ -1139,7 +1164,9 @@ createMarkerItemInTree(
   handlePathInsertion(tree_paths, marker_path);
 
   tree_paths.markers[marker_index] =
-    createMarker(tree_widget, marker_path, state_marker);
+    createMarker(
+      tree_widget, marker_path, state_marker, scene_state, marker_index
+    );
 }
 
 
@@ -1777,18 +1804,33 @@ static void
 }
 
 
-static void
-  updateMarker(
-    MarkerIndex i,
-    TreeWidget &tree_widget,
-    const SceneState::Markers &markers,
-    const TreePaths &tree_paths
-  )
+void
+updateTreeMarkerItem(
+  Marker marker,
+  TreeWidget &tree_widget,
+  const TreePaths &tree_paths,
+  const SceneState &scene_state
+)
 {
+  const SceneState::Markers &markers = scene_state.markers();
+
   tree_widget.setItemLabel(
-    tree_paths.marker(i).path,
-    markerLabel(markers[i])
+    tree_paths.marker(marker.index).path,
+    markerLabel(markers[marker.index], scene_state, marker)
   );
+}
+
+
+static void
+updateMarker(
+  MarkerIndex i,
+  TreeWidget &tree_widget,
+  const TreePaths &tree_paths,
+  const SceneState &scene_state
+)
+{
+  const SceneState::Markers &markers = scene_state.markers();
+  updateTreeMarkerItem(Marker(i), tree_widget, tree_paths, scene_state);
 
   updateXYZValues(
     tree_widget,
@@ -1981,7 +2023,7 @@ void
   }
 
   for (auto i : indicesOf(state.markers())) {
-    updateMarker(i, tree_widget, state.markers(), tree_paths);
+    updateMarker(i, tree_widget, tree_paths, state);
   }
 
   for (auto i : indicesOf(tree_paths.distance_errors)) {
@@ -1999,11 +2041,11 @@ void
 
 
 void
-  updateTreeDistanceErrorMarkerOptions(
-    TreeWidget &tree_widget,
-    const TreePaths &tree_paths,
-    const SceneState &scene_state
-  )
+updateTreeDistanceErrorMarkerOptions(
+  TreeWidget &tree_widget,
+  const TreePaths &tree_paths,
+  const SceneState &scene_state
+)
 {
   const SceneState::Markers &state_markers = scene_state.markers();
 

@@ -5,7 +5,11 @@
 
 
 struct PointLink {
-  ::Marker marker;
+  Marker marker;
+
+  PointLink(Marker marker) : marker(marker) {}
+
+  Marker *markerPtr() { return &marker; }
 };
 
 
@@ -29,6 +33,16 @@ makeMarkerIndexFromPoint(Optional<PointLink> maybe_point)
   }
 
   return maybe_point->marker.index;
+}
+
+
+inline Marker *markerPtrFromPointLink(Optional<PointLink> &maybe_point_link)
+{
+  if (!maybe_point_link) {
+    return nullptr;
+  }
+
+  return maybe_point_link->markerPtr();
 }
 
 
