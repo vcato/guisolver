@@ -59,6 +59,8 @@ struct ObservedScene {
       Optional<BodyIndex>
     );
 
+  void setDistanceErrorPointToMark(DistanceError, DistanceErrorPoint);
+
   VariableIndex addVariable();
 
   void cutBody(BodyIndex);

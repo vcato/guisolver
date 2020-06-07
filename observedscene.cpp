@@ -2363,6 +2363,36 @@ ObservedScene::addDistanceError(
 }
 
 
+void
+ObservedScene::setDistanceErrorPointToMark(
+  DistanceError distance_error,
+  DistanceErrorPoint point
+)
+{
+  if (!scene_state.maybe_marked_marker) {
+    return;
+  }
+
+  Marker marked_marker = *scene_state.maybe_marked_marker;
+
+  SceneState::DistanceError &distance_error_state =
+    scene_state.distance_errors[distance_error.index];
+
+  switch (point) {
+    case DistanceErrorPoint::start:
+      distance_error_state.setStart(marked_marker);
+      break;
+    case DistanceErrorPoint::end:
+      distance_error_state.setEnd(marked_marker);
+      break;
+  }
+
+  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+  solveScene();
+  handleSceneStateChanged();
+}
+
+
 const bool *ObservedScene::solveStatePtr(const TreePath &path) const
 {
   return ::pathSolveStatePtr(scene_state, path, tree_paths);

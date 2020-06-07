@@ -204,6 +204,11 @@ struct DistanceError {
 };
 
 
+enum class DistanceErrorPoint {
+  start, end
+};
+
+
 struct DistanceErrorDesiredDistance {
   DistanceError distance_error;
 };

@@ -15,8 +15,6 @@
 #include "readobj.hpp"
 #include "objmesh.hpp"
 
-#define ADD_MARKS 0
-
 using View = MainWindowView;
 using std::cerr;
 using std::string;
@@ -729,6 +727,20 @@ static void appendTo(vector<T> &v, const vector<T> &n)
 }
 
 
+static Optional<DistanceErrorPoint>
+maybeDistanceErrorPoint(SceneElementDescription::Type type)
+{
+  if (type == SceneElementDescription::Type::distance_error_start) {
+    return DistanceErrorPoint::start;
+  }
+  else if (type == SceneElementDescription::Type::distance_error_end) {
+    return DistanceErrorPoint::end;
+  }
+
+  return {};
+}
+
+
 TreeWidget::MenuItems
 MainWindowController::Impl::contextMenuItemsForPath(
   MainWindowController &controller,
@@ -958,17 +970,19 @@ MainWindowController::Impl::contextMenuItemsForPath(
     });
   }
 
-  if (item_type == ItemType::distance_error_start) {
-#if ADD_MARKS
-    auto set_to_mark_function = []{
-      observed_scene.setDistanceErrorStartToMark();
+  if (Optional<DistanceErrorPoint> maybe_distance_error_point =
+    maybeDistanceErrorPoint(item_type)) {
+    auto index = *item.maybe_distance_error_index;
+    DistanceErrorPoint point = *maybe_distance_error_point;
+
+    auto set_to_mark_function = [&observed_scene,index,point]{
+      observed_scene.setDistanceErrorPointToMark(
+        DistanceError{index}, point
+      );
     };
-#endif
 
     appendTo(menu_items,{
-#if ADD_MARKS
       {"Set To Mark", set_to_mark_function}
-#endif
     });
   }
 

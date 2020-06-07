@@ -283,7 +283,4 @@ updateTreeDistanceErrorMarkerOptions
 * This is presuming that you pick the start/end of a distance error from a list
   of marker names, but what if the start/end is some other point?
   * Seems like we have to get rid of this.
-  * The start/end should just be labels, and you use marks to change it.
-  * Seems like there are two steps:
-    * Make it where you can use "set to mark" to change the start/end.
-    * Make it where the start/end are labels.
+  * Make it where the start/end are labels.
