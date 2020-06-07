@@ -562,6 +562,70 @@ mappedMarkerName(
 
 
 static void
+setDistanceErrorMarkerMember(
+  SceneState::DistanceError &distance_error_state,
+  void (SceneState::DistanceError::* member_ptr)(Optional<Marker>),
+  const StringValue &marker_name,
+  const MarkerNameMap &marker_name_map,
+  SceneState &result
+)
+{
+  StringValue mapped_marker_name =
+    mappedMarkerName(marker_name, marker_name_map);
+
+  (distance_error_state.*member_ptr)(
+    makeMarker(findMarkerWithName(result, mapped_marker_name))
+  );
+}
+
+
+static void
+scanPointRef(
+  const std::string &tag,
+  SceneState::DistanceError &distance_error_state,
+  void (SceneState::DistanceError::* member_ptr)(Optional<Marker>),
+  const TaggedValue &tagged_value,
+  const MarkerNameMap &marker_name_map,
+  SceneState &result
+)
+{
+  const TaggedValue::Tag &child_name = tag;
+  const TaggedValue *child_ptr = findChild(tagged_value, child_name);
+
+  if (!child_ptr) {
+    return;
+  }
+
+  const TaggedValue &child = *child_ptr;
+  const PrimaryValue &value = child.value;
+
+  if (const StringValue *string_ptr = value.maybeString()) {
+    const StringValue &marker_name = *string_ptr;
+
+    setDistanceErrorMarkerMember(
+      distance_error_state, member_ptr, marker_name, marker_name_map, result
+    );
+  }
+  else if (const EnumerationValue *enum_ptr = value.maybeEnumeration()) {
+    if (enum_ptr->name == "MarkerRef") {
+      Optional<StringValue> maybe_marker_name =
+        findStringValue(child, "marker_name");
+
+      if (maybe_marker_name) {
+        setDistanceErrorMarkerMember(
+          distance_error_state,
+          member_ptr,
+          *maybe_marker_name,
+          marker_name_map,
+          result
+        );
+      }
+    }
+  }
+}
+
+
+static void
 createDistanceErrorFromTaggedValue(
   SceneState &result,
   const Optional<BodyIndex> maybe_body_index,
@@ -574,33 +638,23 @@ createDistanceErrorFromTaggedValue(
   SceneState::DistanceError &distance_error_state =
     result.distance_errors[index];
 
-  {
-    Optional<StringValue> maybe_start_marker_name =
-      findStringValue(tagged_value, "start");
+  scanPointRef(
+    "start",
+    distance_error_state,
+    &SceneState::DistanceError::setStart,
+    tagged_value,
+    marker_name_map,
+    result
+  );
 
-    if (maybe_start_marker_name) {
-      StringValue mapped_marker_name =
-        mappedMarkerName(*maybe_start_marker_name, marker_name_map);
-
-      distance_error_state.setStart(
-        makeMarker(findMarkerWithName(result, mapped_marker_name))
-      );
-    }
-  }
-
-  {
-    Optional<StringValue> maybe_end_marker_name =
-      findStringValue(tagged_value, "end");
-
-    if (maybe_end_marker_name) {
-      StringValue mapped_marker_name =
-        mappedMarkerName(*maybe_end_marker_name, marker_name_map);
-
-      distance_error_state.setEnd(
-        makeMarker(findMarkerWithName(result, mapped_marker_name))
-      );
-    }
-  }
+  scanPointRef(
+    "end",
+    distance_error_state,
+    &SceneState::DistanceError::setEnd,
+    tagged_value,
+    marker_name_map,
+    result
+  );
 
   {
     auto tag = "desired_distance";
@@ -1236,30 +1290,66 @@ createVariableInTaggedValue(
 
 
 static void
-  createDistanceErrorInTaggedValue(
-    TaggedValue &parent,
-    const SceneState::DistanceError &distance_error_state,
-    const SceneState &scene_state
-  )
+createMarkerRef(
+  TaggedValue &parent, const string &tag, const string &marker_name
+)
+{
+  parent.children.push_back(TaggedValue(tag));
+  TaggedValue &result = parent.children.back();
+  result.value = EnumerationValue{"MarkerRef"};
+  create(result, "marker_name", marker_name);
+}
+
+
+static void
+createPointLink(
+  const PointLink &point_link,
+  const string &tag,
+  const SceneState &scene_state,
+  TaggedValue &parent
+)
+{
+#if ADD_BODY_MESH_POSITION_TO_POINT_LINK
+  if (point_link.maybe_marker) {
+    assert(false); // not tested
+    MarkerIndex marker_index = point_link.maybe_marker->index;
+    auto &marker_name = scene_state.marker(marker_index).name;
+    createMarkerRef(parent, tag, marker_name);
+  }
+  else {
+    assert(false); // not implemented
+  }
+#else
+  MarkerIndex marker_index = point_link.marker.index;
+  auto &marker_name = scene_state.marker(marker_index).name;
+  createMarkerRef(parent, tag, marker_name);
+#endif
+}
+
+
+static void
+createDistanceErrorInTaggedValue(
+  TaggedValue &parent,
+  const SceneState::DistanceError &distance_error_state,
+  const SceneState &scene_state
+)
 {
   auto &distance_error = create(parent, "DistanceError");
   {
     auto &parent = distance_error;
 
     if (distance_error_state.hasStart()) {
-      MarkerIndex start_marker_index =
-        distance_error_state.optional_start->marker.index;
+      const PointLink &point_link =
+        *distance_error_state.optional_start;
 
-      auto &start_marker_name = scene_state.marker(start_marker_index).name;
-      create(parent, "start", start_marker_name);
+      createPointLink(point_link, "start", scene_state, parent);
     }
 
     if (distance_error_state.hasEnd()) {
-      MarkerIndex end_marker_index =
-        distance_error_state.optional_end->marker.index;
+      const PointLink &point_link =
+        *distance_error_state.optional_end;
 
-      auto &end_marker_name = scene_state.marker(end_marker_index).name;
-      create(parent, "end", end_marker_name);
+      createPointLink(point_link, "end", scene_state, parent);
     }
 
     create(parent, "desired_distance", distance_error_state.desired_distance);

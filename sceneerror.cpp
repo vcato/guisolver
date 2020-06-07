@@ -48,6 +48,28 @@ static float distanceBetween(const Point &a,const Point &b)
 }
 
 
+static Point
+pointPredicted(
+  const PointLink &point,
+  SceneState &scene_state
+)
+{
+#if ADD_BODY_MESH_POSITION_TO_POINT_LINK
+  if (point.maybe_marker) {
+    assert(false); // not tested
+    MarkerIndex marker_index = point.maybe_marker->index;
+    return markerPredicted(scene_state, marker_index);
+  }
+  else {
+    assert(false); // not implemented
+  }
+#else
+  MarkerIndex marker_index = point.marker.index;
+  return markerPredicted(scene_state, marker_index);
+#endif
+}
+
+
 static void
   updateDistanceErrorInState(
     SceneState::DistanceError &distance_error,
@@ -63,10 +85,12 @@ static void
     return;
   }
 
-  MarkerIndex start_marker_index = distance_error.optional_start->marker.index;
-  MarkerIndex end_marker_index = distance_error.optional_end->marker.index;
-  Point start_predicted = markerPredicted(scene_state, start_marker_index);
-  Point end_predicted = markerPredicted(scene_state, end_marker_index);
+  const PointLink &start_point = *distance_error.optional_start;
+  Point start_predicted = pointPredicted(start_point, scene_state);
+
+  const PointLink &end_point = *distance_error.optional_end;
+  Point end_predicted = pointPredicted(end_point, scene_state);
+
   float distance = distanceBetween(start_predicted, end_predicted);
   float desired_distance = distance_error.desired_distance;
   float weight = distance_error.weight;

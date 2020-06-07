@@ -256,3 +256,35 @@ struct PointLink {
   const Marker *markerPtr() const;
   const BodyMeshPosition *bodyMeshPositionPtr() const;
 };
+---
+We'll need to be more explicit about what the start and end points are
+with a distance error:
+
+DistanceError {
+  start: MarkerRef {
+    marker_name: "local1"
+  }
+  end: BodyMeshPositionRef {
+    body_name: "body1"
+    mesh_index: 5
+    mesh_position_index: 3
+  }
+  desired_distance: 0
+  weight: 1
+}
+
+If a string value is used when we are reading a file, we can assume it is
+a marker name for backward compatibility.
+
+Where does this change take place?
+  scenestatetaggedvalue.cpp: createDistanceErrorInTaggedValue()
+
+updateTreeDistanceErrorMarkerOptions
+* This is presuming that you pick the start/end of a distance error from a list
+  of marker names, but what if the start/end is some other point?
+  * Seems like we have to get rid of this.
+  * The start/end should just be labels, and you use marks to change it.
+  * Seems like there are two steps:
+    * Make it where you can use "set to mark" to change the start/end.
+      * Allow marking markers.
+    * Make it where the start/end are labels.

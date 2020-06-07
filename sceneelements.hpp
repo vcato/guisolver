@@ -164,6 +164,11 @@ using BodyBoxScaleComponent = ElementXYZComponent<BodyBoxScale>;
 struct Marker {
   MarkerIndex index;
   Marker(MarkerIndex index) : index(index) {}
+
+  bool operator==(const Marker &arg) const
+  {
+    return index == arg.index;
+  }
 };
 
 

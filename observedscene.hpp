@@ -63,6 +63,7 @@ struct ObservedScene {
 
   void cutBody(BodyIndex);
   void cutMarker(MarkerIndex);
+  void markMarker(Marker);
 
   void markMeshPosition(BodyMeshPosition);
 

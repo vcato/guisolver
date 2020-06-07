@@ -217,3 +217,11 @@ extern void
     const SceneState &scene_state,
     BodyMeshPosition body_mesh_position
   );
+
+void
+  updateTreeMarkerItem(
+    Marker,
+    TreeWidget &,
+    const TreePaths &,
+    const SceneState &
+  );

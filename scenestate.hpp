@@ -258,6 +258,7 @@ class SceneState {
     Variables variables;
     Float total_error = 0;
     Optional<BodyMeshPosition> maybe_marked_body_mesh_position;
+    Optional<::Marker> maybe_marked_marker;
 
     SceneState();
 
@@ -313,18 +314,7 @@ class SceneState {
       _handleMarkerRemoved(
         Optional<PointLink> &optional_point_link,
         MarkerIndex index_to_remove
-      )
-    {
-      if (!optional_point_link) return;
-      MarkerIndex &marker_index = optional_point_link->marker.index;
-
-      if (marker_index == index_to_remove) {
-        optional_point_link.reset();
-      }
-      else if (marker_index > index_to_remove) {
-        --marker_index;
-      }
-    }
+      );
 };
 
 

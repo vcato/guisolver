@@ -554,6 +554,8 @@ struct ObservedScene::Impl {
     properManipulationForSceneObject(const SceneElementDescription &);
 
   static void updateTreeBodyMeshPosition(BodyMeshPosition, ObservedScene &);
+  static void updateTreeMarkerItem(Marker, ObservedScene &);
+  static void clearMark(ObservedScene &);
 };
 
 
@@ -988,16 +990,52 @@ ObservedScene::Impl::updateTreeBodyMeshPosition(
 }
 
 
-void ObservedScene::markMeshPosition(BodyMeshPosition arg)
+void
+ObservedScene::Impl::updateTreeMarkerItem(
+  Marker marker,
+  ObservedScene &observed_scene
+)
 {
+  ::updateTreeMarkerItem(
+    marker,
+    observed_scene.tree_widget,
+    observed_scene.tree_paths,
+    observed_scene.scene_state
+  );
+}
+
+
+void ObservedScene::Impl::clearMark(ObservedScene &observed_scene)
+{
+  SceneState &scene_state = observed_scene.scene_state;
+
   if (scene_state.maybe_marked_body_mesh_position) {
     BodyMeshPosition old_mark = *scene_state.maybe_marked_body_mesh_position;
     scene_state.maybe_marked_body_mesh_position.reset();
-    Impl::updateTreeBodyMeshPosition(old_mark, *this);
+    Impl::updateTreeBodyMeshPosition(old_mark, observed_scene);
   }
 
+  if (scene_state.maybe_marked_marker) {
+    Marker old_mark = *scene_state.maybe_marked_marker;
+    scene_state.maybe_marked_marker.reset();
+    updateTreeMarkerItem(old_mark, observed_scene);
+  }
+}
+
+
+void ObservedScene::markMeshPosition(BodyMeshPosition arg)
+{
+  Impl::clearMark(*this);
   scene_state.maybe_marked_body_mesh_position = arg;
   Impl::updateTreeBodyMeshPosition(arg, *this);
+}
+
+
+void ObservedScene::markMarker(Marker arg)
+{
+  Impl::clearMark(*this);
+  scene_state.maybe_marked_marker = arg;
+  updateTreeMarkerItem(arg, tree_widget, tree_paths, scene_state);
 }
 
 
