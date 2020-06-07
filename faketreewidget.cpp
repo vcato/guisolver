@@ -1,11 +1,13 @@
 #include "faketreewidget.hpp"
 
 #include <sstream>
+#include <iostream>
 #include "isequal.hpp"
 #include "vectorio.hpp"
 #include "removeindexfrom.hpp"
 
 using std::ostringstream;
+using std::cerr;
 using LabelText = FakeTreeItem::LabelText;
 
 
@@ -71,4 +73,24 @@ void FakeTreeWidget::removeItem(const TreePath &path)
 bool FakeTreeWidget::operator==(const FakeTreeWidget &arg) const
 {
   return isEqual(*this, arg);
+}
+
+
+void
+FakeTreeWidget::setItemStringValue(
+  const TreePath &path, const StringValue &value
+)
+{
+  item(path).value_string = stringValueText(value);
+}
+
+
+void
+FakeTreeWidget::createStringItem(
+  const TreePath &new_item_path,
+  const LabelProperties &label_properties,
+  const std::string &value
+)
+{
+  createItem(new_item_path, label_properties, stringValueText(value));
 }

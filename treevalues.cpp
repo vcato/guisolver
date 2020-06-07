@@ -587,12 +587,9 @@ createPoint(
   Optional<MarkerIndex> optional_marker_index =
     makeMarkerIndexFromPoint(maybe_point);
 
-  return
-    adder.addEnumeration(
-      label,
-      marker_options,
-      enumerationValueFromMarkerIndex(optional_marker_index)
-    );
+  int enum_value = enumerationValueFromMarkerIndex(optional_marker_index);
+  StringValue value = marker_options[enum_value];
+  return adder.addString(label, value);
 }
 
 
@@ -2076,12 +2073,12 @@ updateTreeDistanceError(
   int end_value =
     enumerationValueFromMarkerIndex(optional_end_marker_index);
 
-  tree_widget.setItemEnumerationValue(
-    start_path, start_value, marker_options
+  tree_widget.setItemStringValue(
+    start_path, marker_options[start_value]
   );
 
-  tree_widget.setItemEnumerationValue(
-    end_path, end_value, marker_options
+  tree_widget.setItemStringValue(
+    end_path, marker_options[end_value]
   );
 
   tree_widget.setItemLabel(

@@ -33,7 +33,8 @@ extern Optional<Marker>
   markerFromEnumerationValue(int enumeration_value);
 
 extern void
-  createDistanceErrorInTree(DistanceErrorIndex,
+  createDistanceErrorInTree(
+    DistanceErrorIndex,
     SceneTreeRef,
     const SceneState &
   );

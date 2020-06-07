@@ -82,10 +82,7 @@ struct FakeTreeWidget : TreeWidget {
   }
 
   void
-  setItemStringValue(const TreePath &path, const StringValue &value) override
-  {
-    item(path).value_string = stringValueText(value);
-  }
+  setItemStringValue(const TreePath &path, const StringValue &value) override;
 
   void setItemInput(const TreePath &path, const Input &arg) override
   {
@@ -194,14 +191,8 @@ private:
       const TreePath &new_item_path,
       const LabelProperties &label_properties,
       const std::string &value
-    ) override
-  {
-    createItem(
-      new_item_path,
-      label_properties,
-      stringValueText(value)
-    );
-  }
+    ) override;
+
 
   void setItemLabel(const TreePath &path,const std::string &label) override
   {
