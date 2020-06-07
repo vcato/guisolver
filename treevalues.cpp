@@ -512,8 +512,19 @@ pointName(
     return "";
   }
 
+#if ADD_BODY_MESH_POSITION_TO_POINT_LINK
+  if (maybe_point->maybe_marker) {
+    assert(false); // not tested
+    MarkerIndex marker_index = maybe_point->maybe_marker->index;
+    return markerName(marker_index, marker_states);
+  }
+  else {
+    assert(false); // not implemented
+  }
+#else
   MarkerIndex marker_index = maybe_point->marker.index;
   return markerName(marker_index, marker_states);
+#endif
 }
 
 
@@ -584,15 +595,28 @@ createPoint(
   ItemAdder &adder
 )
 {
+#if ADD_BODY_MESH_POSITION_TO_POINT_LINK
+  if (maybe_point->maybe_marker) {
+    MarkerIndex marker_index = maybe_point->maybe_marker->index;
+
+    return
+      adder.addEnumeration(
+        label,
+        marker_options,
+        enumerationValueFromMarkerIndex(marker_index)
+      );
+  }
+  else {
+    assert(false); // not implemented
+  }
+#else
   Optional<MarkerIndex> optional_marker_index =
     makeMarkerIndexFromPoint(maybe_point);
 
-  return
-    adder.addEnumeration(
-      label,
-      marker_options,
-      enumerationValueFromMarkerIndex(optional_marker_index)
-    );
+  int enum_value = enumerationValueFromMarkerIndex(optional_marker_index);
+  StringValue value = marker_options[enum_value];
+  return adder.addString(label, value);
+#endif
 }
 
 
@@ -2076,12 +2100,12 @@ updateTreeDistanceError(
   int end_value =
     enumerationValueFromMarkerIndex(optional_end_marker_index);
 
-  tree_widget.setItemEnumerationValue(
-    start_path, start_value, marker_options
+  tree_widget.setItemStringValue(
+    start_path, marker_options[start_value]
   );
 
-  tree_widget.setItemEnumerationValue(
-    end_path, end_value, marker_options
+  tree_widget.setItemStringValue(
+    end_path, marker_options[end_value]
   );
 
   tree_widget.setItemLabel(
