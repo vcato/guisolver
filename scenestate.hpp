@@ -234,6 +234,18 @@ class SceneState {
         }
       }
 
+#if ADD_BODY_MESH_POSITION_TO_POINT_LINK
+      void setStart(Optional<BodyMeshPosition> arg)
+      {
+        if (arg) {
+          optional_start = PointLink(*arg);
+        }
+        else {
+          optional_start = {};
+        }
+      }
+#endif
+
       void setEnd(Optional<::Marker> arg)
       {
         if (arg) {
@@ -243,6 +255,18 @@ class SceneState {
           optional_end = {};
         }
       }
+
+#if ADD_BODY_MESH_POSITION_TO_POINT_LINK
+      void setEnd(Optional<BodyMeshPosition> arg)
+      {
+        if (arg) {
+          optional_end = PointLink(*arg);
+        }
+        else {
+          optional_end = {};
+        }
+      }
+#endif
 
       bool hasStart() const { return optional_start.hasValue(); }
       bool hasEnd() const { return optional_end.hasValue(); }

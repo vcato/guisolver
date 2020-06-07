@@ -290,7 +290,23 @@ static SceneHandles::DistanceError createDistanceError(Scene &scene)
 static Point
 pointPredicted(PointLink point_link, const SceneState &scene_state)
 {
+#if ADD_BODY_MESH_POSITION_TO_POINT_LINK
+  if (point_link.maybe_marker) {
+    return markerPredicted(scene_state, point_link.maybe_marker->index);
+  }
+  else if (point_link.maybe_body_mesh_position) {
+    return
+      bodyMeshPositionPredicted(
+        scene_state,
+        *point_link.maybe_body_mesh_position
+      );
+  }
+  else {
+    assert(false); // shouldn't happen
+  }
+#else
   return markerPredicted(scene_state, point_link.marker.index);
+#endif
 }
 
 

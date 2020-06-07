@@ -1309,9 +1309,20 @@ createPointLink(
   TaggedValue &parent
 )
 {
+#if ADD_BODY_MESH_POSITION_TO_POINT_LINK
+  if (point_link.maybe_marker) {
+    MarkerIndex marker_index = point_link.maybe_marker->index;
+    auto &marker_name = scene_state.marker(marker_index).name;
+    createMarkerRef(parent, tag, marker_name);
+  }
+  else {
+    assert(false); // not implemented
+  }
+#else
   MarkerIndex marker_index = point_link.marker.index;
   auto &marker_name = scene_state.marker(marker_index).name;
   createMarkerRef(parent, tag, marker_name);
+#endif
 }
 
 

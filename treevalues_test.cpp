@@ -155,7 +155,7 @@ static void testAddingMarker()
     ).maybe_numeric_value == 1.5
   );
 
-  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, state);
+  updateTreeDistanceErrors(tree_widget, tree_paths, state);
   checkTree(tree_widget, tree_paths, state);
 }
 
@@ -183,7 +183,7 @@ static void testRemovingMarker(const string &name)
   MarkerIndex marker_index = findIndex(markerNames(state), name);
   state.removeMarker(marker_index);
   removeMarkerFromTree(marker_index, {tree_widget, tree_paths});
-  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, state);
+  updateTreeDistanceErrors(tree_widget, tree_paths, state);
   checkTree(tree_widget, tree_paths, state);
 }
 

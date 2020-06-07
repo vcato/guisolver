@@ -59,7 +59,8 @@ SCENEOBJECTS=sceneobjects.o maketransform.o settransform.o $(SCENESTATE) \
 
 OPTIMIZE=optimize.o
 
-SCENESTATETRANSFORM=scenestatetransform.o globaltransform.o
+GLOBALTRANSFORM=globaltransform.o $(SCENEOBJECTS)
+SCENESTATETRANSFORM=scenestatetransform.o $(GLOBALTRANSFORM)
 
 OBSERVEDSCENE=observedscene.o \
   treevalues.o $(SCENESTATETRANSFORM) \
@@ -112,7 +113,7 @@ expressionparser_test: expressionparser_test.o expressionparser.o
 evaluateexpression_test: evaluateexpression_test.o $(EVALUATEEXPRESSION)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
-globaltransform_test: globaltransform_test.o globaltransform.o \
+globaltransform_test: globaltransform_test.o $(GLOBALTRANSFORM) \
   $(SCENESTATE) maketransform.o \
   assertnearfloat.o transformstate.o $(RANDOMTRANSFORM) $(RANDOMPOINT)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
@@ -128,7 +129,7 @@ scenestateio_test: scenestateio_test.o $(SCENESTATE) \
 scenesolver_test: scenesolver_test.o \
   scenesolver.o maketransform.o $(RANDOMTRANSFORM) $(RANDOMPOINT) \
   assertnearfloat.o randomtransform3.o randompoint3.o transform3util.o \
-  transformstate.o globaltransform.o \
+  transformstate.o $(GLOBALTRANSFORM) \
   $(SCENEERROR) $(OPTIMIZE)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
@@ -140,7 +141,7 @@ treevalues_test: treevalues_test.o faketreewidget.o \
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 sceneobjects_test: sceneobjects_test.o \
-  $(SCENEOBJECTS) fakescene.o globaltransform.o
+  $(SCENEOBJECTS) fakescene.o $(GLOBALTRANSFORM)
 	$(CXX) $(LDFLAGS) -o $@ $^ `pkg-config --libs $(PACKAGES)`
 
 observedscene_test: observedscene_test.o $(OBSERVEDSCENE) faketreewidget.o \

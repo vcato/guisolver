@@ -716,7 +716,7 @@ void ObservedScene::removeBody(BodyIndex body_index)
   Visitor visitor{observed_scene};
 
   removeBodyFromSceneState(body_index, scene_state, visitor);
-  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+  updateTreeDistanceErrors(tree_widget, tree_paths, scene_state);
   updateSceneObjects(scene, scene_handles, scene_state);
   handleTreeSelectionChanged();
 }
@@ -728,7 +728,7 @@ void ObservedScene::removeMarker(MarkerIndex marker_index)
   ObservedScene::removingMarker(*this, marker_index);
   scene_state.removeMarker(marker_index);
   updateSceneObjects(scene, scene_handles, scene_state);
-  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+  updateTreeDistanceErrors(tree_widget, tree_paths, scene_state);
   handleTreeSelectionChanged();
 }
 
@@ -2075,7 +2075,7 @@ MarkerIndex ObservedScene::addMarker(Optional<BodyIndex> maybe_body_index)
   MarkerIndex marker_index = scene_state.createMarker(maybe_body_index);
   createMarkerInScene(marker_index, observed_scene);
   createMarkerInTree(marker_index, observed_scene);
-  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+  updateTreeDistanceErrors(tree_widget, tree_paths, scene_state);
   return marker_index;
 }
 
@@ -2289,8 +2289,7 @@ MarkerIndex ObservedScene::duplicateMarker(MarkerIndex source_marker_index)
 
   createMarkerInTree(new_marker_index, *this);
   createMarkerInScene(new_marker_index, *this);
-
-  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+  updateTreeDistanceErrors(tree_widget, tree_paths, scene_state);
   return new_marker_index;
 }
 
@@ -2369,25 +2368,42 @@ ObservedScene::setDistanceErrorPointToMark(
   DistanceErrorPoint point
 )
 {
-  if (!scene_state.maybe_marked_marker) {
-    return;
-  }
-
-  Marker marked_marker = *scene_state.maybe_marked_marker;
-
   SceneState::DistanceError &distance_error_state =
     scene_state.distance_errors[distance_error.index];
 
-  switch (point) {
-    case DistanceErrorPoint::start:
-      distance_error_state.setStart(marked_marker);
-      break;
-    case DistanceErrorPoint::end:
-      distance_error_state.setEnd(marked_marker);
-      break;
+#if ADD_BODY_MESH_POSITION_TO_POINT_LINK
+  if (scene_state.maybe_marked_body_mesh_position) {
+    BodyMeshPosition marked_body_mesh_position =
+      *scene_state.maybe_marked_body_mesh_position;
+
+    switch (point) {
+      case DistanceErrorPoint::start:
+        distance_error_state.setStart(marked_body_mesh_position);
+        break;
+      case DistanceErrorPoint::end:
+        distance_error_state.setEnd(marked_body_mesh_position);
+        break;
+    }
+  }
+  else
+#endif
+  if (scene_state.maybe_marked_marker) {
+    Marker marked_marker = *scene_state.maybe_marked_marker;
+
+    switch (point) {
+      case DistanceErrorPoint::start:
+        distance_error_state.setStart(marked_marker);
+        break;
+      case DistanceErrorPoint::end:
+        distance_error_state.setEnd(marked_marker);
+        break;
+    }
+  }
+  else {
+    return;
   }
 
-  updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+  updateTreeDistanceErrors(tree_widget, tree_paths, scene_state);
   solveScene();
   handleSceneStateChanged();
 }
@@ -2614,7 +2630,7 @@ ObservedScene::handleTreeStringValueChanged(
 
   if (value_was_changed) {
     updateTreeValues(tree_widget, tree_paths, scene_state);
-    updateTreeDistanceErrorMarkerOptions(tree_widget, tree_paths, scene_state);
+    updateTreeDistanceErrors(tree_widget, tree_paths, scene_state);
   }
   else {
     cerr << "handleTreeStringValueChanged: no match\n";

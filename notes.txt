@@ -282,5 +282,6 @@ Where does this change take place?
 updateTreeDistanceErrorMarkerOptions
 * This is presuming that you pick the start/end of a distance error from a list
   of marker names, but what if the start/end is some other point?
-  * Seems like we have to get rid of this.
-  * Make it where the start/end are labels.
+
+Need to implement pointPredicted() for PointLinks which are body mesh
+positions.

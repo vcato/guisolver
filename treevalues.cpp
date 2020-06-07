@@ -503,33 +503,85 @@ markerName(
 
 
 static string
-pointName(
+pointName(const PointLink &point_link, const SceneState &scene_state)
+{
+#if ADD_BODY_MESH_POSITION_TO_POINT_LINK
+  if (point_link.maybe_marker) {
+    const SceneState::Markers &state_markers = scene_state.markers();
+    MarkerIndex marker_index = point_link.maybe_marker->index;
+    return markerName(marker_index, state_markers);
+  }
+  else if (point_link.maybe_body_mesh_position) {
+    const BodyMeshPosition &body_mesh_position =
+      *point_link.maybe_body_mesh_position;
+
+    std::ostringstream stream;
+    MeshPositionIndex position_index = body_mesh_position.index;
+    MeshIndex mesh_index = body_mesh_position.array.body_mesh.index;
+    BodyIndex body_index = body_mesh_position.array.body_mesh.body.index;
+    string body_name = scene_state.body(body_index).name;
+
+    stream << body_name <<
+      ".mesh(" << mesh_index << ")"
+      ".positions[" << position_index << "]";
+
+    return stream.str();
+  }
+  else {
+    assert(false); // shouldn't happen
+  }
+#else
+  const SceneState::Markers &state_markers = scene_state.markers();
+  MarkerIndex marker_index = point_link.marker.index;
+  return markerName(marker_index, state_markers);
+#endif
+}
+
+
+static string
+optionalPointName(
   const Optional<PointLink> &maybe_point,
-  const SceneState::Markers &marker_states
+  const SceneState &scene_state
 )
 {
   if (!maybe_point) {
     return "";
   }
 
-  MarkerIndex marker_index = maybe_point->marker.index;
-  return markerName(marker_index, marker_states);
+  return pointName(*maybe_point, scene_state);
+}
+
+
+static string
+optionalPointLinkText(
+  const Optional<PointLink> &maybe_point_link,
+  const SceneState &scene_state
+)
+{
+  if (maybe_point_link) {
+    const PointLink &point_link = *maybe_point_link;
+    return pointName(point_link, scene_state);
+  }
+  else {
+    return "None";
+  }
 }
 
 
 static string
 distanceErrorLabel(
   const SceneState::DistanceError &distance_error_state,
-  const SceneState::Markers &marker_states
+  const SceneState::Markers &/*marker_states*/,
+  const SceneState &scene_state
 )
 {
   string label = "[DistanceError]";
 
   string start_name =
-    pointName(distance_error_state.optional_start, marker_states);
+    optionalPointName(distance_error_state.optional_start, scene_state);
 
   string end_name =
-    pointName(distance_error_state.optional_end, marker_states);
+    optionalPointName(distance_error_state.optional_end, scene_state);
 
   if (start_name != "" && end_name != "") {
     label += " " + start_name + " <-> " + end_name;
@@ -584,12 +636,31 @@ createPoint(
   ItemAdder &adder
 )
 {
+#if ADD_BODY_MESH_POSITION_TO_POINT_LINK
+  if (maybe_point) {
+    if (maybe_point->maybe_marker) {
+      MarkerIndex marker_index = maybe_point->maybe_marker->index;
+      int enum_value = enumerationValueFromMarkerIndex(marker_index);
+      StringValue value = marker_options[enum_value];
+      return adder.addString(label, value);
+    }
+    else {
+      assert(false); // not implemented
+    }
+  }
+  else {
+    int enum_value = enumerationValueFromMarkerIndex({});
+    StringValue value = marker_options[enum_value];
+    return adder.addString(label, value);
+  }
+#else
   Optional<MarkerIndex> optional_marker_index =
     makeMarkerIndexFromPoint(maybe_point);
 
   int enum_value = enumerationValueFromMarkerIndex(optional_marker_index);
   StringValue value = marker_options[enum_value];
   return adder.addString(label, value);
+#endif
 }
 
 
@@ -598,11 +669,15 @@ createDistanceErrorInTree1(
   TreeWidget &tree_widget,
   const TreePath &path,
   const SceneState::Markers &marker_states,
-  const SceneState::DistanceError &distance_error_state
+  const SceneState::DistanceError &distance_error_state,
+  const SceneState &scene_state
 )
 {
   ItemAdder adder{path, tree_widget};
-  string label = distanceErrorLabel(distance_error_state, marker_states);
+
+  string label =
+    distanceErrorLabel(distance_error_state, marker_states, scene_state);
+
   tree_widget.createVoidItem(path,LabelProperties{label});
 
   TreeWidget::EnumerationOptions marker_options =
@@ -1026,7 +1101,8 @@ void
       tree_widget,
       distance_error_path,
       scene_state.markers(),
-      distance_error_state
+      distance_error_state,
+      scene_state
     )
   );
 }
@@ -1121,7 +1197,7 @@ updateDistanceError(
 
   tree_widget.setItemLabel(
     distance_error_paths.path,
-    distanceErrorLabel(distance_error_state, scene_state.markers())
+    distanceErrorLabel(distance_error_state, scene_state.markers(), scene_state)
   );
 
   {
@@ -2061,35 +2137,24 @@ updateTreeDistanceError(
   const TreePath &start_path = distance_error_paths.start;
   const TreePath &end_path = distance_error_paths.end;
 
-  Optional<MarkerIndex> optional_start_marker_index =
-    makeMarkerIndexFromPoint(distance_error_state.optional_start);
+  string start_text =
+    optionalPointLinkText(distance_error_state.optional_start, scene_state);
 
-  Optional<MarkerIndex> optional_end_marker_index =
-    makeMarkerIndexFromPoint(distance_error_state.optional_end);
+  string end_text =
+    optionalPointLinkText(distance_error_state.optional_end, scene_state);
 
-  int start_value =
-    enumerationValueFromMarkerIndex(optional_start_marker_index);
-
-  int end_value =
-    enumerationValueFromMarkerIndex(optional_end_marker_index);
-
-  tree_widget.setItemStringValue(
-    start_path, marker_options[start_value]
-  );
-
-  tree_widget.setItemStringValue(
-    end_path, marker_options[end_value]
-  );
+  tree_widget.setItemStringValue(start_path, start_text);
+  tree_widget.setItemStringValue(end_path, end_text);
 
   tree_widget.setItemLabel(
     distance_error_paths.path,
-    distanceErrorLabel(distance_error_state, scene_state.markers())
+    distanceErrorLabel(distance_error_state, scene_state.markers(), scene_state)
   );
 }
 
 
 void
-updateTreeDistanceErrorMarkerOptions(
+updateTreeDistanceErrors(
   TreeWidget &tree_widget,
   const TreePaths &tree_paths,
   const SceneState &scene_state
