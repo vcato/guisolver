@@ -2371,7 +2371,6 @@ ObservedScene::setDistanceErrorPointToMark(
   SceneState::DistanceError &distance_error_state =
     scene_state.distance_errors[distance_error.index];
 
-#if ADD_BODY_MESH_POSITION_TO_POINT_LINK
   if (scene_state.maybe_marked_body_mesh_position) {
     BodyMeshPosition marked_body_mesh_position =
       *scene_state.maybe_marked_body_mesh_position;
@@ -2385,9 +2384,7 @@ ObservedScene::setDistanceErrorPointToMark(
         break;
     }
   }
-  else
-#endif
-  if (scene_state.maybe_marked_marker) {
+  else if (scene_state.maybe_marked_marker) {
     Marker marked_marker = *scene_state.maybe_marked_marker;
 
     switch (point) {

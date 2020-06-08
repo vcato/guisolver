@@ -9,7 +9,6 @@ using std::cerr;
 using std::string;
 
 
-
 static BodyIndex
 createBodyInState(SceneState &state, Optional<BodyIndex> maybe_parent_index)
 {
@@ -329,6 +328,22 @@ static void testWithExpression()
 }
 
 
+static void testWithBodyMeshPositionRef()
+{
+  SceneState state;
+  BodyIndex body_index = state.createBody();
+  SceneState::MeshShape shape;
+  MeshIndex mesh_index = state.body(body_index).createMesh(shape);
+  DistanceErrorIndex distance_error_index = state.createDistanceError();
+  MeshPositionIndex mesh_position_index = 0;
+
+  state.distance_errors[distance_error_index]
+    .setStart(Body(body_index).mesh(mesh_index).position(mesh_position_index));
+
+  testRescanWith(state);
+}
+
+
 int main()
 {
   testRescanWith(defaultSceneState());
@@ -337,4 +352,5 @@ int main()
   testWithMultipleTransforms();
   testWithVariable();
   testWithExpression();
+  testWithBodyMeshPositionRef();
 }

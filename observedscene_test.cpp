@@ -141,11 +141,7 @@ startIsMarker(
   const SceneState::DistanceError &distance_error, MarkerIndex marker_index
 )
 {
-#if ADD_BODY_MESH_POSITION_TO_POINT_LINK
   return (distance_error.optional_start->maybe_marker == Marker(marker_index));
-#else
-  return distance_error.optional_start->marker.index == marker_index;
-#endif
 }
 
 
@@ -154,11 +150,7 @@ endIsMarker(
   const SceneState::DistanceError &distance_error, MarkerIndex marker_index
 )
 {
-#if ADD_BODY_MESH_POSITION_TO_POINT_LINK
   return (distance_error.optional_end->maybe_marker == Marker(marker_index));
-#else
-  return distance_error.optional_end->marker.index == marker_index;
-#endif
 }
 
 

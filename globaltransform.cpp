@@ -83,7 +83,6 @@ markerPredicted(const SceneState &scene_state, MarkerIndex marker_index)
 }
 
 
-#if ADD_BODY_MESH_POSITION_TO_POINT_LINK
 Point
 bodyMeshPositionPredicted(
   const SceneState &scene_state,
@@ -104,4 +103,3 @@ bodyMeshPositionPredicted(
       scene_state
     );
 }
-#endif

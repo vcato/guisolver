@@ -54,18 +54,17 @@ pointPredicted(
   SceneState &scene_state
 )
 {
-#if ADD_BODY_MESH_POSITION_TO_POINT_LINK
   if (point.maybe_marker) {
     MarkerIndex marker_index = point.maybe_marker->index;
     return markerPredicted(scene_state, marker_index);
   }
+  else if (point.maybe_body_mesh_position) {
+    return
+      bodyMeshPositionPredicted(scene_state, *point.maybe_body_mesh_position);
+  }
   else {
     assert(false); // not implemented
   }
-#else
-  MarkerIndex marker_index = point.marker.index;
-  return markerPredicted(scene_state, marker_index);
-#endif
 }
 
 

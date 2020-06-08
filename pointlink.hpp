@@ -3,17 +3,8 @@
 
 #include "sceneelements.hpp"
 
-#define ADD_BODY_MESH_POSITION_TO_POINT_LINK 0
-
 
 struct PointLink {
-#if !ADD_BODY_MESH_POSITION_TO_POINT_LINK
-  Marker marker;
-
-  PointLink(Marker marker) : marker(marker) {}
-
-  Marker *markerPtr() { return &marker; }
-#else
   Optional<Marker> maybe_marker;
   Optional<BodyMeshPosition> maybe_body_mesh_position;
 
@@ -32,7 +23,6 @@ struct PointLink {
 
     return nullptr;
   }
-#endif
 };
 
 
@@ -46,19 +36,6 @@ makePointLink(const Optional<Marker> &maybe_marker)
     return PointLink{*maybe_marker};
   }
 }
-
-
-#if !ADD_BODY_MESH_POSITION_TO_POINT_LINK
-inline Optional<MarkerIndex>
-makeMarkerIndexFromPoint(Optional<PointLink> maybe_point)
-{
-  if (!maybe_point) {
-    return {};
-  }
-
-  return maybe_point->marker.index;
-}
-#endif
 
 
 inline Marker *markerPtrFromPointLink(Optional<PointLink> &maybe_point_link)

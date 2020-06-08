@@ -564,12 +564,23 @@ mappedMarkerName(
 static void
 setDistanceErrorMarkerMember(
   SceneState::DistanceError &distance_error_state,
-  void (SceneState::DistanceError::* member_ptr)(Optional<Marker>),
+  DistanceErrorPoint point,
   const StringValue &marker_name,
   const MarkerNameMap &marker_name_map,
   SceneState &result
 )
 {
+  void (SceneState::DistanceError::* member_ptr)(Optional<Marker>) = 0;
+
+  switch (point) {
+    case DistanceErrorPoint::start:
+      member_ptr = &SceneState::DistanceError::setStart;
+      break;
+    case DistanceErrorPoint::end:
+      member_ptr = &SceneState::DistanceError::setEnd;
+      break;
+  }
+
   StringValue mapped_marker_name =
     mappedMarkerName(marker_name, marker_name_map);
 
@@ -583,10 +594,10 @@ static void
 scanPointRef(
   const std::string &tag,
   SceneState::DistanceError &distance_error_state,
-  void (SceneState::DistanceError::* member_ptr)(Optional<Marker>),
+  DistanceErrorPoint point,
   const TaggedValue &tagged_value,
   const MarkerNameMap &marker_name_map,
-  SceneState &result
+  SceneState &result // rename this
 )
 {
   const TaggedValue::Tag &child_name = tag;
@@ -601,9 +612,8 @@ scanPointRef(
 
   if (const StringValue *string_ptr = value.maybeString()) {
     const StringValue &marker_name = *string_ptr;
-
     setDistanceErrorMarkerMember(
-      distance_error_state, member_ptr, marker_name, marker_name_map, result
+      distance_error_state, point, marker_name, marker_name_map, result
     );
   }
   else if (const EnumerationValue *enum_ptr = value.maybeEnumeration()) {
@@ -614,11 +624,45 @@ scanPointRef(
       if (maybe_marker_name) {
         setDistanceErrorMarkerMember(
           distance_error_state,
-          member_ptr,
+          point,
           *maybe_marker_name,
           marker_name_map,
           result
         );
+      }
+    }
+    else if (enum_ptr->name == "BodyMeshPositionRef") {
+      Optional<StringValue> maybe_body_name =
+        findStringValue(child, "body_name");
+
+      Optional<NumericValue> maybe_mesh_index =
+        findNumericValue(child, "mesh_index");
+
+      Optional<NumericValue> maybe_position_index =
+        findNumericValue(child, "position_index");
+
+      if (maybe_body_name && maybe_mesh_index && maybe_position_index) {
+        Optional<BodyIndex> maybe_body_index =
+          findBodyWithName(result, *maybe_body_name);
+
+        if (maybe_body_index) {
+          switch (point) {
+            case DistanceErrorPoint::start:
+              distance_error_state.setStart(
+                Body(*maybe_body_index)
+                .mesh(*maybe_mesh_index)
+                .position(*maybe_position_index)
+              );
+              break;
+            case DistanceErrorPoint::end:
+              distance_error_state.setEnd(
+                Body(*maybe_body_index)
+                .mesh(*maybe_mesh_index)
+                .position(*maybe_position_index)
+              );
+              break;
+          }
+        }
       }
     }
   }
@@ -641,7 +685,7 @@ createDistanceErrorFromTaggedValue(
   scanPointRef(
     "start",
     distance_error_state,
-    &SceneState::DistanceError::setStart,
+    DistanceErrorPoint::start,
     tagged_value,
     marker_name_map,
     result
@@ -650,7 +694,7 @@ createDistanceErrorFromTaggedValue(
   scanPointRef(
     "end",
     distance_error_state,
-    &SceneState::DistanceError::setEnd,
+    DistanceErrorPoint::end,
     tagged_value,
     marker_name_map,
     result
@@ -1302,6 +1346,27 @@ createMarkerRef(
 
 
 static void
+createBodyMeshPositionRef(
+  TaggedValue &parent,
+  const string &tag,
+  BodyMeshPosition body_mesh_position,
+  const SceneState &scene_state
+)
+{
+  parent.children.push_back(TaggedValue(tag));
+  TaggedValue &result = parent.children.back();
+  result.value = EnumerationValue{"BodyMeshPositionRef"};
+  BodyIndex body_index = body_mesh_position.array.body_mesh.body.index;
+  MeshIndex mesh_index = body_mesh_position.array.body_mesh.index;
+  MeshPositionIndex position_index = body_mesh_position.index;
+  string body_name = scene_state.body(body_index).name;
+  create(result, "body_name", body_name);
+  create(result, "mesh_index", NumericValue(mesh_index));
+  create(result, "position_index", NumericValue(position_index));
+}
+
+
+static void
 createPointLink(
   const PointLink &point_link,
   const string &tag,
@@ -1309,20 +1374,19 @@ createPointLink(
   TaggedValue &parent
 )
 {
-#if ADD_BODY_MESH_POSITION_TO_POINT_LINK
   if (point_link.maybe_marker) {
     MarkerIndex marker_index = point_link.maybe_marker->index;
     auto &marker_name = scene_state.marker(marker_index).name;
     createMarkerRef(parent, tag, marker_name);
   }
-  else {
-    assert(false); // not implemented
+  else if (point_link.maybe_body_mesh_position) {
+    createBodyMeshPositionRef(
+      parent, tag, *point_link.maybe_body_mesh_position, scene_state
+    );
   }
-#else
-  MarkerIndex marker_index = point_link.marker.index;
-  auto &marker_name = scene_state.marker(marker_index).name;
-  createMarkerRef(parent, tag, marker_name);
-#endif
+  else {
+    assert(false); // shouldn't happen
+  }
 }
 
 

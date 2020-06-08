@@ -505,7 +505,6 @@ markerName(
 static string
 pointName(const PointLink &point_link, const SceneState &scene_state)
 {
-#if ADD_BODY_MESH_POSITION_TO_POINT_LINK
   if (point_link.maybe_marker) {
     const SceneState::Markers &state_markers = scene_state.markers();
     MarkerIndex marker_index = point_link.maybe_marker->index;
@@ -530,11 +529,6 @@ pointName(const PointLink &point_link, const SceneState &scene_state)
   else {
     assert(false); // shouldn't happen
   }
-#else
-  const SceneState::Markers &state_markers = scene_state.markers();
-  MarkerIndex marker_index = point_link.marker.index;
-  return markerName(marker_index, state_markers);
-#endif
 }
 
 
@@ -632,35 +626,12 @@ static TreePath
 createPoint(
   const string &label,
   const Optional<PointLink> &maybe_point,
-  const TreeWidget::EnumerationOptions &marker_options,
-  ItemAdder &adder
+  ItemAdder &adder,
+  const SceneState &scene_state
 )
 {
-#if ADD_BODY_MESH_POSITION_TO_POINT_LINK
-  if (maybe_point) {
-    if (maybe_point->maybe_marker) {
-      MarkerIndex marker_index = maybe_point->maybe_marker->index;
-      int enum_value = enumerationValueFromMarkerIndex(marker_index);
-      StringValue value = marker_options[enum_value];
-      return adder.addString(label, value);
-    }
-    else {
-      assert(false); // not implemented
-    }
-  }
-  else {
-    int enum_value = enumerationValueFromMarkerIndex({});
-    StringValue value = marker_options[enum_value];
-    return adder.addString(label, value);
-  }
-#else
-  Optional<MarkerIndex> optional_marker_index =
-    makeMarkerIndexFromPoint(maybe_point);
-
-  int enum_value = enumerationValueFromMarkerIndex(optional_marker_index);
-  StringValue value = marker_options[enum_value];
+  StringValue value = optionalPointLinkText(maybe_point, scene_state);
   return adder.addString(label, value);
-#endif
 }
 
 
@@ -685,12 +656,18 @@ createDistanceErrorInTree1(
 
   TreePath start_path =
     createPoint(
-      "start:", distance_error_state.optional_start, marker_options, adder
+      "start:",
+      distance_error_state.optional_start,
+      adder,
+      scene_state
     );
 
   TreePath end_path =
     createPoint(
-      "end:", distance_error_state.optional_end, marker_options, adder
+      "end:",
+      distance_error_state.optional_end,
+      adder,
+      scene_state
     );
 
   TreePath distance_path = adder.addVoid(distanceLabel(distance_error_state));
