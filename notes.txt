@@ -202,86 +202,11 @@ Function {
   }
 }
 ---
-One thing that could be neat is being able to double-click on a mesh, and
-have that put us into a mode where we can select faces and vertices.
----
-I'd like to be able to take a box and have a distance error between certain
-vertices and certain global positions.
+I want to have solve flags for mesh scaling.
+* example:
+  * Add distance errors for two mesh positions going to global markers.
+  * Turn on the solve flags for mesh scaling.
+  * Drag the markers around and watch the scale of the mesh change to fit the
+    markers as best as possible.
 
-* Select a vertex position.
-* Add a marker to the vertex position.
-* Add a distance error between that marker and the other one.
-
-It seems like markers may just become names for things.  Maybe instead of
-markers we just have points, and then we can give those points names.  We
-could then give vertex positions names as well, or give body translations
-names.
-
-Seems like the main problem we're trying to solve is how to reference things.
-In a lot of cases, we may not care about giving something a name as long
-as we have a way to reference it.
-
-Cutting is similar to marking. Maybe we could do something like marking
-a vertex, and then we go somewhere else and have a "Set to marked" operation.
-
-* Right-click on a vertex in the tree, choose "Mark".
-* Right-click on a distance error start, then choose "Set to Mark".
-
-The relationship between "markers" and "marks" is interesting.  We could
-think of a marker as a visual mark.
-
-* Select a mesh position
-* Right-click "Set Mark"
-* Select another mesh position
-* Right-click "Add Mark"
-* Marks Menu: "Add Distance Error Between Marks"
----
-* Add a distance error
-* Select a mesh position
-* Right-click "Set Mark"
-* Select the "start" of the distance error
-* Right-click "Set to Mark"
-* Select another mesh position
-* Right-click "Set Mark"
-* Select the "end" of the distance error
-* Right-click "Set to Mark"
----
-Maybe replace Optional<::Marker> with Optional<PointLink>.
-A PointLink can be either a Marker or a position in a mesh.  It could be
-many other things in the future.
-
-struct PointLink {
-  PointLink(Marker);
-  PointLink(BodyMeshPosition);
-  const Marker *markerPtr() const;
-  const BodyMeshPosition *bodyMeshPositionPtr() const;
-};
----
-We'll need to be more explicit about what the start and end points are
-with a distance error:
-
-DistanceError {
-  start: MarkerRef {
-    marker_name: "local1"
-  }
-  end: BodyMeshPositionRef {
-    body_name: "body1"
-    mesh_index: 5
-    mesh_position_index: 3
-  }
-  desired_distance: 0
-  weight: 1
-}
-
-If a string value is used when we are reading a file, we can assume it is
-a marker name for backward compatibility.
-
-Where does this change take place?
-  scenestatetaggedvalue.cpp: createDistanceErrorInTaggedValue()
-
-updateTreeDistanceErrorMarkerOptions
-* This is presuming that you pick the start/end of a distance error from a list
-  of marker names, but what if the start/end is some other point?
-
-Need to implement pointPredicted() for PointLinks which are body mesh
-positions.
+Need to be able to have solve flags for mesh scaling.
