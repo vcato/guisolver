@@ -177,7 +177,7 @@ struct TreePaths {
 
   struct Mesh {
     TreePath path;
-    XYZ scale;
+    XYZChannels scale;
     XYZ center;
     Positions positions;
 

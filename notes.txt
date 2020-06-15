@@ -202,11 +202,5 @@ Function {
   }
 }
 ---
-I want to have solve flags for mesh scaling.
-* example:
-  * Add distance errors for two mesh positions going to global markers.
-  * Turn on the solve flags for mesh scaling.
-  * Drag the markers around and watch the scale of the mesh change to fit the
-    markers as best as possible.
-
-Need to be able to have solve flags for mesh scaling.
+* If the value for a mesh scale component goes negative, it draws strangely.
+  * It seems to flip between a negative and positive value.

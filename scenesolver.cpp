@@ -137,12 +137,36 @@ forEachTransformValue(
 }
 
 
+template <typename BodyState, typename F>
+static void
+forEachBodyValue(BodyState &body_state, const F &f)
+{
+  forEachTransformValue(body_state.transform, body_state.solve_flags, f);
+
+  for (auto mesh_index : indicesOf(body_state.meshes)) {
+    auto &mesh_state = body_state.meshes[mesh_index];
+
+    forEachXYZComponent(
+      [&](XYZComponent component){
+        visitSolvableComponent(
+          mesh_state.scale,
+          mesh_state.scale_solve_flags,
+          component,
+          [&](auto &value, bool solve_flag){
+            f(value, solve_flag, /*scale*/1.0);
+          }
+        );
+      }
+    );
+  }
+}
+
+
 template <typename SceneState, typename F>
 static void forEachSceneValue(SceneState &scene_state, const F &f)
 {
   for (auto body_index : indicesOf(scene_state.bodies())) {
-    auto &body_state = scene_state.body(body_index);
-    forEachTransformValue(body_state.transform, body_state.solve_flags, f);
+    forEachBodyValue(scene_state.body(body_index), f);
   }
 }
 

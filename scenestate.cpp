@@ -418,6 +418,20 @@ expression(const MarkerPositionComponent &element, SceneState &scene_state)
 }
 
 
+static Expression &
+expression(const BodyMeshScaleComponent &element, SceneState &scene_state)
+{
+  return
+    xyzExpressionsComponent(
+      scene_state
+      .body(bodyOf(element).index)
+      .meshes[element.parent.body_mesh.index]
+      .scale_expressions,
+      element.component
+    );
+}
+
+
 SceneState::Expression &
 channelExpression(const Channel &channel, SceneState &scene_state)
 {

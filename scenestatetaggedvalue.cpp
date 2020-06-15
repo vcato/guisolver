@@ -192,7 +192,8 @@ makeTransformFromTaggedValue(const TaggedValue &tagged_value)
 static bool
 solveFlagFor(
   const TaggedValue &xyz_tagged_value,
-  const string &child_name
+  const string &child_name,
+  bool default_value
 )
 {
   const TaggedValue *child_ptr = findChild(xyz_tagged_value, child_name);
@@ -201,29 +202,45 @@ solveFlagFor(
     assert(false); // not implemented
   }
 
-  return childBoolValueOr(*child_ptr, "solve", true);
+  return childBoolValueOr(*child_ptr, "solve", default_value);
+}
+
+
+static SceneState::XYZSolveFlags
+makeXYZSolveFlagsFromChildTaggedValue(
+  const TaggedValue &child, bool default_value
+)
+{
+  SceneState::XYZSolveFlags flags;
+
+  flags.x = solveFlagFor(child, "x", default_value);
+  flags.y = solveFlagFor(child, "y", default_value);
+  flags.z = solveFlagFor(child, "z", default_value);
+
+  return flags;
+}
+
+
+static SceneState::XYZSolveFlags
+childXYZSolveFlagsOr(const TaggedValue *scale_ptr, bool default_value)
+{
+  if (scale_ptr) {
+    return makeXYZSolveFlagsFromChildTaggedValue(*scale_ptr, default_value);
+  }
+  else {
+    return {default_value, default_value, default_value};
+  }
 }
 
 
 static SceneState::XYZSolveFlags
   makeXYZSolveFlagsFromTaggedValue(
     const TaggedValue &tagged_value,
-    const string &child_name
+    const string &tag,
+    bool default_value
   )
 {
-  const TaggedValue *child_ptr = findChild(tagged_value, child_name);
-
-  if (!child_ptr) {
-    assert(false); // not implemented
-  }
-
-  SceneState::XYZSolveFlags flags;
-
-  flags.x = solveFlagFor(*child_ptr, "x");
-  flags.y = solveFlagFor(*child_ptr, "y");
-  flags.z = solveFlagFor(*child_ptr, "z");
-
-  return flags;
+  return childXYZSolveFlagsOr(findChild(tagged_value, tag), default_value);
 }
 
 
@@ -249,10 +266,14 @@ static TransformSolveFlags
   TransformSolveFlags result;
 
   result.translation =
-    makeXYZSolveFlagsFromTaggedValue(tagged_value, "translation");
+    makeXYZSolveFlagsFromTaggedValue(
+      tagged_value, "translation", /*default_value*/true
+    );
 
   result.rotation =
-    makeXYZSolveFlagsFromTaggedValue(tagged_value, "rotation");
+    makeXYZSolveFlagsFromTaggedValue(
+      tagged_value, "rotation", /*default_value*/true
+    );
 
   return result;
 }
@@ -394,21 +415,28 @@ createMarkersFromTaggedValues(
 }
 
 
-// This one
 static SceneState::XYZ
 childXYZValueOr(
-  const TaggedValue &tagged_value,
-  const string &tag,
+  const TaggedValue *child_ptr,
   const SceneState::XYZ &default_value
 )
 {
-  const TaggedValue *child_ptr = findChild(tagged_value, tag);
-
   if (child_ptr) {
     return xyzValueOr(*child_ptr, default_value);
   }
 
   return default_value;
+}
+
+
+static SceneState::XYZ
+tagXYZValueOr(
+  const TaggedValue &tagged_value,
+  const string &tag,
+  const SceneState::XYZ &default_value
+)
+{
+  return childXYZValueOr(findChild(tagged_value, tag), default_value);
 }
 
 
@@ -444,7 +472,7 @@ fillBoxStateFromTaggedValue(
     }
   }
 
-  box_state.center = childXYZValueOr(box_tagged_value, "center", {0,0,0});
+  box_state.center = tagXYZValueOr(box_tagged_value, "center", {0,0,0});
 
   box_state.center_expressions =
     makeXYZExpressionsFromTaggedValue(box_tagged_value, "center");
@@ -457,8 +485,8 @@ fillLineStateFromTaggedValue(
   const TaggedValue &line_tagged_value
 )
 {
-  line_state.start = childXYZValueOr(line_tagged_value, "start", {0,0,0});
-  line_state.end = childXYZValueOr(line_tagged_value, "end", {1,0,0});
+  line_state.start = tagXYZValueOr(line_tagged_value, "start", {0,0,0});
+  line_state.end = tagXYZValueOr(line_tagged_value, "end", {1,0,0});
 }
 
 
@@ -496,10 +524,10 @@ fillMeshStateFromTaggedValue(
   const TaggedValue &mesh_tagged_value
 )
 {
-  //printTaggedValueOn(cerr, mesh_tagged_value);
-  mesh_state.scale = childXYZValueOr(mesh_tagged_value, "scale", {1,1,1});
-  mesh_state.center = childXYZValueOr(mesh_tagged_value, "center", {0,0,0});
-
+  const TaggedValue *scale_ptr = findChild(mesh_tagged_value, "scale");
+  mesh_state.scale = childXYZValueOr(scale_ptr, {1,1,1});
+  mesh_state.scale_solve_flags = childXYZSolveFlagsOr(scale_ptr, false);
+  mesh_state.center = tagXYZValueOr(mesh_tagged_value, "center", {0,0,0});
   const TaggedValue *positions_ptr = findChild(mesh_tagged_value, "positions");
   auto &positions_state = mesh_state.shape.positions;
 
@@ -1284,7 +1312,13 @@ createMeshInTaggedValue(
 {
   auto &mesh_tagged_value = create(parent, "Mesh");
 
-  create(mesh_tagged_value, "scale", mesh_state.scale);
+  createXYZChildren(
+    create(mesh_tagged_value, "scale"),
+    mesh_state.scale,
+    &mesh_state.scale_solve_flags,
+    /*expressions_ptr*/nullptr
+  );
+
   create(mesh_tagged_value, "center", mesh_state.center);
 
   auto &positions_tagged_value = create(mesh_tagged_value, "positions");

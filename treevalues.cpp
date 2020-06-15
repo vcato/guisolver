@@ -1396,7 +1396,18 @@ createMeshItem(
   tree_widget.createVoidItem(mesh_path, LabelProperties("[Mesh]"));
   mesh_paths.path = mesh_path;
   ItemAdder adder{mesh_path, tree_widget};
-  mesh_paths.scale = addXYZ(adder, "scale: []", mesh_state.scale);
+  TreePath scale_path = adder.addVoid("scale: []");
+
+  mesh_paths.scale =
+    createXYZChannels(
+      tree_widget,
+      scale_path,
+      mesh_state.scale,
+      mesh_state.scale_solve_flags,
+      mesh_state.scale_expressions,
+      defaultDigitsOfPrecision()
+    );
+
   mesh_paths.center = addXYZ(adder, "center: []", mesh_state.center);
   mesh_paths.positions = addPositions(adder, "positions: []", mesh_state.shape);
   return mesh_paths;
@@ -1976,7 +1987,7 @@ struct TreeGeometryUpdater {
     const MeshPaths &mesh_paths = body_paths.meshes[i];
     const SceneState::Mesh &mesh_state = body_state.meshes[i];
     {
-      const TreePaths::XYZ &scale_paths = mesh_paths.scale;
+      const TreePaths::XYZChannels &scale_paths = mesh_paths.scale;
       const SceneState::XYZ &scale = mesh_state.scale;
       updateXYZValues(tree_widget, scale_paths, vec3FromXYZState(scale));
     }
@@ -2826,7 +2837,7 @@ struct PathMatcher {
   void visitBodyMesh(BodyMesh body_mesh, const MeshPaths &mesh_paths)
   {
     if (startsWith(path, mesh_paths.scale.path)) {
-      const TreePaths::XYZ &xyz_path = mesh_paths.scale;
+      const TreePaths::XYZChannels &xyz_path = mesh_paths.scale;
       XYZComponent component = matchingComponent(path, xyz_path);
       visitor.visitBodyMeshScaleComponent(body_mesh, component);
       return;
@@ -3031,6 +3042,14 @@ struct SolvableScenePathVisitor : SceneElementVisitor {
   {
     value_visitor.visit(BodyScale{body.index});
   }
+
+  void
+  visitBodyMeshScaleComponent(
+    BodyMesh body_mesh, XYZComponent component
+  ) override
+  {
+    value_visitor.visit(BodyMeshScaleComponent{body_mesh, component});
+  }
 };
 }
 
@@ -3111,6 +3130,16 @@ channelPaths(
         &markerPositionComponentChannelPaths(
           markerOf(channel).index, channel.component, tree_paths
         );
+    }
+
+    virtual void visit(const BodyMeshScaleChannel &channel) const
+    {
+      channel_paths_ptr =
+        &tree_paths
+        .body(bodyOf(channel).index)
+        .meshes[bodyMeshOf(channel).index]
+        .scale
+        .component(channel.component);
     }
   };
 

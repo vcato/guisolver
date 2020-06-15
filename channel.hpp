@@ -186,6 +186,7 @@ using BodyScaleChannel = BasicChannel<BodyScale>;
 using BodyBoxScaleChannel = BasicChannel<BodyBoxScaleComponent>;
 using BodyBoxCenterChannel = BasicChannel<BodyBoxCenterComponent>;
 using MarkerPositionChannel = BasicChannel<MarkerPositionComponent>;
+using BodyMeshScaleChannel = BasicChannel<BodyMeshScaleComponent>;
 
 
 struct Channel {
@@ -196,6 +197,7 @@ struct Channel {
     virtual void visit(const BodyBoxScaleChannel &) const = 0;
     virtual void visit(const BodyBoxCenterChannel &) const = 0;
     virtual void visit(const MarkerPositionChannel &) const = 0;
+    virtual void visit(const BodyMeshScaleChannel &) const = 0;
   };
 
   virtual void accept(const Visitor &) const = 0;
@@ -235,6 +237,11 @@ struct Channel {
     }
 
     void visit(const MarkerPositionChannel &arg) const override
+    {
+      function(arg);
+    }
+
+    void visit(const BodyMeshScaleChannel &arg) const override
     {
       function(arg);
     }

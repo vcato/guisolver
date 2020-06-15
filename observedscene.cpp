@@ -136,6 +136,25 @@ solveStatePtr(
 
 
 template <typename SceneState>
+static auto *
+solveStatePtr(
+  const BodyMeshScaleComponent &element,
+  SceneState &scene_state
+)
+{
+  auto &body_state = scene_state.body(bodyOf(element).index);
+  MeshIndex mesh_index = element.parent.body_mesh.index;
+  auto &mesh_state = body_state.meshes[mesh_index];
+
+  return
+    xyzSolveStateComponentPtr(
+      mesh_state.scale_solve_flags,
+      element.component
+    );
+}
+
+
+template <typename SceneState>
 static auto*
 basicPathSolveStatePtr(
   SceneState &scene_state,
@@ -160,28 +179,6 @@ solvePath(const TreePath &path, const TreePaths &tree_paths)
 {
   const TreePath *tree_path_ptr = nullptr;
 
-  struct BodyValueVisitor {
-    const TreePaths::Body &body_paths;
-    const TreePath *&tree_path_ptr;
-
-    void visitTranslationComponent(XYZComponent component)
-    {
-      tree_path_ptr =
-        &*body_paths.translation.component(component).maybe_solve_path;
-    }
-
-    void visitRotationComponent(XYZComponent component)
-    {
-      tree_path_ptr =
-        &*body_paths.rotation.component(component).maybe_solve_path;
-    }
-
-    void visitScale()
-    {
-      tree_path_ptr = &*body_paths.scale.maybe_solve_path;
-    }
-  };
-
   struct ValueVisitor : SolvableSceneElementVisitor {
     const TreePaths &tree_paths;
     const TreePath *&tree_path_ptr;
@@ -198,22 +195,36 @@ solvePath(const TreePath &path, const TreePaths &tree_paths)
     void visit(const BodyTranslationComponent &element) const override
     {
       auto &body_paths = tree_paths.body(bodyOf(element).index);
-      BodyValueVisitor body_visitor{body_paths, tree_path_ptr};
-      body_visitor.visitTranslationComponent(element.component);
+
+      tree_path_ptr =
+        &*body_paths.translation.component(element.component).maybe_solve_path;
     }
 
     void visit(const BodyRotationComponent &element) const override
     {
       auto &body_paths = tree_paths.body(bodyOf(element).index);
-      BodyValueVisitor body_visitor{body_paths, tree_path_ptr};
-      body_visitor.visitRotationComponent(element.component);
+
+      tree_path_ptr =
+        &*body_paths.rotation.component(element.component).maybe_solve_path;
     }
 
     void visit(const BodyScale &element) const override
     {
       auto &body_paths = tree_paths.body(element.body.index);
-      BodyValueVisitor body_visitor{body_paths, tree_path_ptr};
-      body_visitor.visitScale();
+      tree_path_ptr = &*body_paths.scale.maybe_solve_path;
+    }
+
+    void visit(const BodyMeshScaleComponent &element) const override
+    {
+      BodyMesh body_mesh = element.parent.body_mesh;
+      auto &body_paths = tree_paths.body(body_mesh.body.index);
+
+      tree_path_ptr =
+        &*body_paths
+        .meshes[body_mesh.index]
+        .scale
+        .component(element.component)
+        .maybe_solve_path;
     }
   };
 
@@ -1768,6 +1779,16 @@ channelValue(
           .marker(markerOf(channel).index)
           .position
           .component(channel.component);
+    }
+
+    void visit(const BodyMeshScaleChannel &channel) const override
+    {
+      value_ptr = &
+        scene_state
+        .body(bodyOf(channel).index)
+        .meshes[bodyMeshOf(channel).index]
+        .scale
+        .component(channel.component);
     }
   };
 

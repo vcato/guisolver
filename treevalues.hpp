@@ -145,6 +145,7 @@ struct SolvableSceneElementVisitor {
   virtual void visit(const BodyTranslationComponent &) const = 0;
   virtual void visit(const BodyRotationComponent &) const = 0;
   virtual void visit(const BodyScale &) const = 0;
+  virtual void visit(const BodyMeshScaleComponent &) const = 0;
 };
 
 
@@ -175,6 +176,11 @@ struct SolvableSceneElementVisitorWrapper : SolvableSceneElementVisitor {
   }
 
   void visit(const BodyScale &element) const override
+  {
+    f(element);
+  }
+
+  void visit(const BodyMeshScaleComponent &element) const override
   {
     f(element);
   }

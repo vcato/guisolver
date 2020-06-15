@@ -183,6 +183,8 @@ class SceneState {
       MeshShape shape;
       XYZ scale = {1,1,1};
       Position center = {0,0,0};
+      XYZSolveFlags scale_solve_flags;
+      XYZExpressions scale_expressions;
     };
 
     struct Body {

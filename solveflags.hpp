@@ -28,11 +28,11 @@ template <typename Visitor>
 void forEachSolvableTransformElement(const Visitor &v)
 {
   forEachXYZComponent(
-    [&](XYZComponent component){v.visitTranslationComponent(component);}
+    [&](XYZComponent component){ v.visitTranslationComponent(component); }
   );
 
   forEachXYZComponent(
-    [&](XYZComponent component){v.visitRotationComponent(component);}
+    [&](XYZComponent component){ v.visitRotationComponent(component); }
   );
 
   v.visitScale();
