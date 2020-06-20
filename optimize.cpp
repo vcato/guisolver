@@ -7,6 +7,7 @@
 
 using std::cerr;
 using std::string;
+using std::ostream;
 
 const float min_step = 0.001;
 
