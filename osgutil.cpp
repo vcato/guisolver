@@ -11,6 +11,7 @@
 #include "osgcameramanipulator.hpp"
 
 using std::cerr;
+using std::ostream;
 typedef osg::ref_ptr<osg::Geode> GeodePtr;
 
 
@@ -76,6 +77,16 @@ osg::Matrix
   result.preMultScale(scale);
   result.preMultRotate(so.conj());
   return result;
+}
+
+
+ostream& operator<<(ostream &stream, const osg::Vec3f &new_scale)
+{
+  float x = new_scale.x();
+  float y = new_scale.y();
+  float z = new_scale.z();
+  stream << "Vec3f(" << x << "," << y << "," << z << ")";
+  return stream;
 }
 
 

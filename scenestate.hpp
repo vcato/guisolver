@@ -609,4 +609,7 @@ forEachBodyGeometry(
 }
 
 
+extern SceneState::Float
+  bodyGlobalScale(BodyIndex body_index, const SceneState &scene_state);
+
 #endif /* SCENESTATE_HPP_ */

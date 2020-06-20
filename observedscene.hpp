@@ -132,6 +132,8 @@ struct ObservedScene {
   void handleTreeNumericValueChanged(const TreePath &path, NumericValue value);
   void handleTreeStringValueChanged(const TreePath &, const StringValue &);
   void handleTreeBoolValueChanged(const TreePath &, bool);
+  void handleSceneChanging();
+  void handleSceneChanged();
 
   static void
   createMarkerInScene(MarkerIndex marker_index, ObservedScene &observed_scene);

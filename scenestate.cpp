@@ -453,3 +453,23 @@ MeshIndex SceneState::Body::createMesh(const MeshShape &mesh_shape)
   meshes.back().shape = mesh_shape;
   return mesh_index;
 }
+
+
+SceneState::Float
+bodyGlobalScale(BodyIndex body_index, const SceneState &scene_state)
+{
+  SceneState::Float scale = 1;
+
+  for (;;) {
+    const SceneState::Body &body_state = scene_state.body(body_index);
+    scale *= body_state.transform.scale;
+
+    if (!body_state.maybe_parent_index) {
+      break;
+    }
+
+    body_index = *body_state.maybe_parent_index;
+  }
+
+  return scale;
+}

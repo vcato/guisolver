@@ -2,7 +2,6 @@
 #include "scenestate.hpp"
 #include "scene.hpp"
 
-
 extern SceneHandles createSceneObjects(const SceneState &state, Scene &scene);
 extern void removeExistingManipulator(SceneHandles &, Scene &);
 
@@ -220,11 +219,23 @@ extern void
   );
 
 extern void
-  updateBodyMeshFromScaleManipulator(
-    Scene::MeshHandle mesh_handle,
+  updateBodyMeshStateFromScaleManipulator(
+    SceneState::Mesh &mesh_state,
     Scene::GeometryHandle manipulator,
-    Scene &scene
+    Scene::MeshHandle mesh_handle,
+    Scene &scene,
+    float body_global_scale
   );
+
+
+extern void
+  updateMeshInScene(
+    Scene &scene,
+    const SceneState::Mesh &mesh_state,
+    const SceneHandles::Mesh &mesh_handles,
+    SceneState::Float body_global_scale
+  );
+
 
 extern Vec3
   bodyMeshPositionRelativeToBody(

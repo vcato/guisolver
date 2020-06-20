@@ -33,6 +33,8 @@ extern osg::Matrix
 extern void setScale(osg::Matrix &m,const osg::Vec3f &new_scale);
 extern void setNoRotScale(osg::Matrix &m, const osg::Vec3f &new_scale);
 
+extern std::ostream& operator<<(std::ostream &stream, const osg::Vec3f &);
+
 extern void
   setCoordinateAxesOf(
     osg::Matrix &m,

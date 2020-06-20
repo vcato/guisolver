@@ -18,31 +18,10 @@ using LineHandle = Scene::LineHandle;
 using GeometryHandle = Scene::GeometryHandle;
 using BodyState = SceneState::Body;
 
-
 static Point
   localTranslation(Scene::TransformHandle transform_id,const Scene &scene)
 {
   return makePointFromScenePoint(scene.translation(transform_id));
-}
-
-
-static SceneState::Float
-bodyGlobalScale(BodyIndex body_index, const SceneState &scene_state)
-{
-  SceneState::Float scale = 1;
-
-  for (;;) {
-    const BodyState &body_state = scene_state.body(body_index);
-    scale *= body_state.transform.scale;
-
-    if (!body_state.maybe_parent_index) {
-      break;
-    }
-
-    body_index = *body_state.maybe_parent_index;
-  }
-
-  return scale;
 }
 
 
@@ -135,8 +114,11 @@ struct GeometryStateUpdater {
       scene.geometryScale(mesh_handle) *
       (1 / body_global_scale);
 
+    Vec3 new_mesh_center =
+      scene.geometryCenter(mesh_handle) * (1 / body_global_scale);
+
     mesh_state.scale = xyzStateFromVec3(new_mesh_scale);
-    mesh_state.center = xyzStateFromVec3(scene.geometryCenter(mesh_handle));
+    mesh_state.center = xyzStateFromVec3(new_mesh_center);
   }
 };
 }
@@ -564,7 +546,7 @@ updateLineInScene(
 }
 
 
-static void
+void
 updateMeshInScene(
   Scene &scene,
   const SceneState::Mesh &mesh_state,
@@ -1242,22 +1224,33 @@ updateBodyMeshScaleManipulator(
 }
 
 
+static float sign(float x)
+{
+  if (x < 0) return -1;
+  if (x > 0) return 1;
+  return 0;
+}
+
+
 void
-updateBodyMeshFromScaleManipulator(
-  Scene::MeshHandle mesh_handle,
+updateBodyMeshStateFromScaleManipulator(
+  SceneState::Mesh &mesh_state,
   GeometryHandle manipulator,
-  Scene &scene
+  Scene::MeshHandle mesh_handle,
+  Scene &scene,
+  float body_global_scale
 )
 {
   Scene::Point center = scene.geometryCenter(manipulator);
   Vec3 scale = scene.geometryScale(manipulator);
   const Mesh &mesh = scene.mesh(mesh_handle);
   Vec3 mesh_size = meshSize(mesh);
-  scale.x /= mesh_size.x*2;
-  scale.y /= mesh_size.y*2;
-  scale.z /= mesh_size.z*2;
-  scene.setGeometryCenter(mesh_handle, center);
-  scene.setGeometryScale(mesh_handle, scale);
+  auto &mesh_scale = mesh_state.scale;
+  scale.x /= mesh_size.x*2*body_global_scale*sign(mesh_scale.x);
+  scale.y /= mesh_size.y*2*body_global_scale*sign(mesh_scale.y);
+  scale.z /= mesh_size.z*2*body_global_scale*sign(mesh_scale.z);
+  mesh_state.center = xyzStateFromVec3(center);
+  mesh_state.scale = xyzStateFromVec3(scale);
 }
 
 
@@ -1460,6 +1453,12 @@ updateBodyMeshPositionManipulator(
   Vec3 scaled_position =
     bodyMeshPositionRelativeToBody(body_mesh_position, scene_state);
 
+  BodyIndex body_index = body_mesh_position.array.body_mesh.body.index;
+  float global_scale = bodyGlobalScale(body_index, scene_state);
+  scaled_position.x *= global_scale;
+  scaled_position.y *= global_scale;
+  scaled_position.z *= global_scale;
+
   scene.setTranslation(manipulator, scaled_position);
 }
 
@@ -1476,7 +1475,6 @@ updateBodyMeshPositionFromManipulator(
   BodyIndex body_index = body_mesh_position.array.body_mesh.body.index;
   MeshIndex mesh_index = body_mesh_position.array.body_mesh.index;
   MeshPositionIndex position_index = body_mesh_position.index;
-
   Vec3 scaled_position = scene.translation(manipulator);
 
   SceneState::Mesh &mesh_state =
@@ -1485,10 +1483,12 @@ updateBodyMeshPositionFromManipulator(
   Vec3 scale = vec3FromXYZState(mesh_state.scale);
   Vec3 center = vec3FromXYZState(mesh_state.center);
 
+  float global_scale = bodyGlobalScale(body_index, scene_state);
+
   Vec3 position = {
-    (scaled_position.x - center.x)/scale.x,
-    (scaled_position.y - center.y)/scale.y,
-    (scaled_position.z - center.z)/scale.z
+    (scaled_position.x/global_scale - center.x)/scale.x,
+    (scaled_position.y/global_scale - center.y)/scale.y,
+    (scaled_position.z/global_scale - center.z)/scale.z
   };
 
   mesh_state.shape.positions[position_index] = xyzStateFromVec3(position);

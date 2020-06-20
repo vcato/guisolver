@@ -201,6 +201,3 @@ Function {
     expression: "x*2 + (5*3)"
   }
 }
----
-Using a scale manipulator on a mesh with negative scale factors makes the
-scale factors no longer be negative.

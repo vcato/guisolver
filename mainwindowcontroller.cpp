@@ -32,69 +32,6 @@ static bool anyFlagsAreSet(const F &for_each_function)
 }
 
 
-template <typename SceneState, typename F>
-static void
-  forEachSolveFlagAffectingBody(
-    BodyIndex body_index,
-    SceneState &state,
-    const F &f,
-    const typename SceneState::TransformSolveFlags &visit
-  )
-{
-  forEachSolveFlagInTransform(state.body(body_index).solve_flags, f, visit);
-
-  Optional<BodyIndex> maybe_parent_index =
-    state.body(body_index).maybe_parent_index;
-
-  if (!maybe_parent_index) {
-    return;
-  }
-
-  return forEachSolveFlagAffectingBody(*maybe_parent_index, state, f, visit);
-}
-
-
-template <typename SceneState, typename F>
-static void
-forEachSolveFlagAffectingHandle(
-  TransformHandle handle,
-  const SceneHandles &scene_handles,
-  SceneState &state,
-  Optional<ManipulationType> maybe_manipulation_type,
-  const F &f
-)
-{
-  // If the handle is for a body that is a child of the box, then it
-  // is going to be affected by the solve.
-  for (auto i : indicesOf(state.bodies())) {
-    if (handle == scene_handles.body(i).transformHandle()) {
-      typename SceneState::TransformSolveFlags visit;
-      setAll(visit, true);
-
-      if (maybe_manipulation_type == ManipulationType::translate) {
-        // If we're using a translation manipulator, the rotations don't
-        // affect it.
-        setAll(visit.rotation, false);
-      }
-
-      forEachSolveFlagAffectingBody(i, state, f, visit);
-    }
-  }
-
-  for (auto i : indicesOf(state.markers())) {
-    if (handle == scene_handles.marker(i).transformHandle()) {
-      typename SceneState::TransformSolveFlags visit;
-      setAll(visit, true);
-      Optional<BodyIndex> maybe_body_index = state.marker(i).maybe_body_index;
-
-      if (maybe_body_index) {
-        forEachSolveFlagAffectingBody(*maybe_body_index, state, f, visit);
-      }
-    }
-  }
-}
-
-
 struct MainWindowController::Impl {
   struct Data {
     View &view;
@@ -226,19 +163,6 @@ struct MainWindowController::Impl {
 };
 
 
-static Optional<TransformHandle> selectedObjectTransform(const Scene &scene)
-{
-  Optional<GeometryHandle>
-    maybe_selected_geometry = scene.selectedGeometry();
-
-  if (!maybe_selected_geometry) {
-    return scene.selectedTransform();
-  }
-
-  return scene.parentTransform(*maybe_selected_geometry);
-}
-
-
 void
 MainWindowController::Impl::handleSceneChanging(
   MainWindowController &controller
@@ -247,154 +171,7 @@ MainWindowController::Impl::handleSceneChanging(
   // The mouse button is down.  The scene is being changed, but we don't
   // consider this change complete.
 
-  ObservedScene &observed_scene = Impl::observedScene(controller);
-  SceneHandles &scene_handles = observed_scene.scene_handles;
-  Scene &scene = observed_scene.scene;
-  SceneState &state = observed_scene.scene_state;
-
-  if (scene_handles.maybe_translate_manipulator) {
-    TransformHandle translate_manipulator =
-      *scene_handles.maybe_translate_manipulator;
-
-    if (scene_handles.maybe_manipulated_element.maybe_body_index) {
-      BodyIndex body_index =
-        *scene_handles.maybe_manipulated_element.maybe_body_index;
-
-      TransformHandle body_transform_handle =
-        scene_handles.body(body_index).transform_handle;
-
-      Scene::Point manipulator_position =
-        scene.translation(translate_manipulator);
-
-      scene.setTranslation(body_transform_handle, manipulator_position);
-    }
-    else if (scene_handles.maybe_manipulated_element.maybe_marker_index) {
-      MarkerIndex marker_index =
-        *scene_handles.maybe_manipulated_element.maybe_marker_index;
-
-      TransformHandle marker_transform_handle =
-        scene_handles.marker(marker_index).transformHandle();
-
-      Scene::Point manipulator_position =
-        scene.translation(translate_manipulator);
-
-      scene.setTranslation(marker_transform_handle, manipulator_position);
-    }
-    else if (scene_handles.maybe_manipulated_element.maybe_body_mesh_position) {
-      BodyMeshPosition body_mesh_position =
-        *scene_handles.maybe_manipulated_element.maybe_body_mesh_position;
-
-      updateBodyMeshPositionFromManipulator(
-        translate_manipulator,
-        body_mesh_position,
-        state,
-        scene,
-        scene_handles
-      );
-
-      observed_scene.handleBodyMeshPositionStateChanged(body_mesh_position);
-      return;
-    }
-    else {
-      cerr << "handleSceneChanging: Unknown translate manipulator\n";
-      return;
-    }
-  }
-  else if (scene_handles.maybe_rotate_manipulator) {
-    TransformHandle rotate_manipulator =
-      *scene_handles.maybe_rotate_manipulator;
-
-    if (scene_handles.maybe_manipulated_element.maybe_body_index) {
-      BodyIndex body_index =
-        *scene_handles.maybe_manipulated_element.maybe_body_index;
-
-      TransformHandle body_transform_handle =
-        scene_handles.body(body_index).transform_handle;
-
-      CoordinateAxes manipulator_position =
-        scene.coordinateAxes(rotate_manipulator);
-
-      scene.setCoordinateAxes(body_transform_handle, manipulator_position);
-    }
-    else {
-      cerr << "handleSceneChanging: Unknown rotate manipulator\n";
-    }
-  }
-  else if (scene_handles.maybe_scale_manipulator) {
-    GeometryHandle manipulator = *scene_handles.maybe_scale_manipulator;
-
-    if (scene_handles.maybe_manipulated_element.maybe_body_box) {
-      BodyBox body_box =
-        *scene_handles.maybe_manipulated_element.maybe_body_box;
-
-      GeometryHandle box_handle =
-        scene_handles.body(body_box.body.index).boxes[body_box.index].handle;
-
-      updateBodyBoxFromScaleManipulator(box_handle, manipulator, scene);
-    }
-    else if (scene_handles.maybe_manipulated_element.maybe_body_mesh) {
-      BodyMesh body_mesh =
-        *scene_handles.maybe_manipulated_element.maybe_body_mesh;
-
-      Scene::MeshHandle mesh_handle =
-        scene_handles.body(body_mesh.body.index).meshes[body_mesh.index].handle;
-
-      updateBodyMeshFromScaleManipulator(mesh_handle, manipulator, scene);
-    }
-    else {
-      cerr << "handleSceneChanging: Unknown scale manipulator\n";
-    }
-  }
-  else {
-    cerr << "handleSceneChanging: Unknown manipulator\n";
-    return;
-  }
-
-  Optional<TransformHandle> maybe_transform_handle =
-    selectedObjectTransform(scene);
-
-  assert(maybe_transform_handle);
-    // How could the scene be changing if nothing was selected?
-
-  TransformHandle transform_handle = *maybe_transform_handle;
-  observed_scene.updateSceneStateFromSceneObjects();
-  vector<bool> old_flags;
-
-  // Disable any transforms that would move the handle and remember the
-  // old state.
-
-  Optional<ManipulationType> maybe_manipulation_type =
-    observed_scene.properManipulationForSelectedObject();
-
-  forEachSolveFlagAffectingHandle(
-    transform_handle,
-    scene_handles,
-    state,
-    maybe_manipulation_type,
-    [&](bool &arg){
-      old_flags.push_back(arg);
-      arg = false;
-    }
-  );
-
-  solveScene(state);
-
-  // Restore the old solve states.
-  {
-    vector<bool>::const_iterator iter = old_flags.begin();
-
-    forEachSolveFlagAffectingHandle(
-      transform_handle, scene_handles, state,
-      maybe_manipulation_type,
-      [&](bool &arg){
-        arg = *iter++;
-      }
-    );
-
-    assert(iter == old_flags.end());
-  }
-
-  observed_scene.handleSceneStateChanged();
+  Impl::observedScene(controller).handleSceneChanging();
 }
 
 
@@ -403,14 +180,7 @@ void
     MainWindowController &controller
   )
 {
-  ObservedScene &observed_scene = observedScene(controller);
-  SceneHandles &scene_handles = observed_scene.scene_handles;
-  Scene &scene = observed_scene.scene;
-  SceneState &state = observed_scene.scene_state;
-
-  updateSceneStateFromSceneObjects(state, scene, scene_handles);
-  solveScene(state);
-  observed_scene.handleSceneStateChanged();
+  observedScene(controller).handleSceneChanged();
 }
 
 

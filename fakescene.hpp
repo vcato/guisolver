@@ -21,6 +21,19 @@ class FakeScene : public Scene {
     Optional<size_t> maybe_selected_object_index;
     Optional<size_t> maybe_dragger_index;
 
+    void userSelectsGeometry(GeometryHandle handle)
+    {
+      maybe_selected_object_index = handle.index;
+    }
+
+    void
+    userTranslatesManipulator(
+      TransformHandle handle, const Vec3 &new_position
+    )
+    {
+      setTranslation(handle, new_position);
+    }
+
     bool indexIsUsed(TransformIndex i) const
     {
       return objects.count(i) != 0;
@@ -75,7 +88,6 @@ class FakeScene : public Scene {
 
     void setMesh(MeshHandle, Mesh) override
     {
-      assert(false); // not implemented
     }
 
     const Mesh& mesh(MeshHandle) const override
@@ -135,7 +147,6 @@ class FakeScene : public Scene {
 
     void selectGeometry(GeometryHandle) override
     {
-      assert(false); // not needed
     }
 
     void selectTransform(TransformHandle transform_handle) override

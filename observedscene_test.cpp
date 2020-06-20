@@ -1440,6 +1440,87 @@ static void testRemovingAMarkerBeforeTheMarkedMarker()
 }
 
 
+static void testSelectingMeshPositions()
+{
+  // Have a body with a mesh.
+  // Have a scale on the body.
+  // Select the positions of the mesh in the tree.
+  // Make sure the spheres in the scene end up at the right place.
+  Tester tester;
+  ObservedScene &observed_scene = tester.observed_scene;
+  SceneState initial_state;
+  BodyIndex body_index = initial_state.createBody();
+  SceneState::MeshShape mesh_shape;
+
+  mesh_shape.positions =
+    {
+      {1,0,0},
+      {0,1,0},
+      {0,0,1},
+    };
+
+  MeshIndex mesh_index = initial_state.body(body_index).createMesh(mesh_shape);
+  Body body(body_index);
+  initial_state.body(body.index).transform.scale = 2;
+  initial_state.body(body_index).meshes[mesh_index].center = {1,0,0};
+  observed_scene.replaceSceneStateWith(initial_state);
+  TreePaths &tree_paths = observed_scene.tree_paths;
+
+  tester.tree_widget.userSelectsItem(
+    tree_paths.body(body_index).meshes[mesh_index].positions.path
+  );
+
+  observed_scene.handleTreeSelectionChanged();
+
+  vector<Vec3> expected_positions = {
+    {4,0,0},
+    {2,2,0},
+    {2,0,2},
+  };
+
+  vector<Vec3> positions;
+
+  vector<Scene::GeometryHandle> sphere_handles =
+    *observed_scene.scene_handles.maybe_points;
+
+  for (auto handle : sphere_handles) {
+    positions.push_back(tester.scene.geometryCenter(handle));
+  }
+
+  assert(positions == expected_positions);
+  tester.scene.userSelectsGeometry(sphere_handles[0]);
+  observed_scene.handleSceneSelectionChanged();
+
+  SceneHandles::TransformHandle manipulator =
+    *observed_scene.scene_handles.maybe_translate_manipulator;
+
+  {
+    Vec3 expected_manipulator_position = {4,0,0};
+    Vec3 manipulator_position = tester.scene.translation(manipulator);
+    assert(manipulator_position == expected_manipulator_position);
+  }
+
+  tester.scene.userTranslatesManipulator(manipulator, {1,0,0});
+  observed_scene.handleSceneChanging();
+
+  {
+    Vec3 expected_sphere_position = {1,0,0};
+    Vec3 sphere_position = tester.scene.geometryCenter(sphere_handles[0]);
+    assert(sphere_position == expected_sphere_position);
+  }
+
+  observed_scene.handleSceneChanged();
+
+  SceneState::Position new_mesh_center =
+    observed_scene.scene_state.body(body_index).meshes[mesh_index].center;
+
+  SceneState::Position expected_mesh_center = {1,0,0};
+  assert(new_mesh_center.x == expected_mesh_center.x);
+  assert(new_mesh_center.y == expected_mesh_center.y);
+  assert(new_mesh_center.z == expected_mesh_center.z);
+}
+
+
 int main()
 {
   testTransferringABody1();
@@ -1480,4 +1561,5 @@ int main()
   testAddingMesh();
   testRemovingAMarkedMarker();
   testRemovingAMarkerBeforeTheMarkedMarker();
+  testSelectingMeshPositions();
 }
