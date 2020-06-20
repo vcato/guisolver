@@ -81,9 +81,9 @@ static void testSetScale()
   osg::Matrix old_mat = createRandomMatrix();
 
   osg::Vec3f old_translation;
-  osg::Quat old_rotation;
+  osg::Quat  old_rotation;
   osg::Vec3f old_scale;
-  osg::Quat old_scale_orient;
+  osg::Quat  old_scale_orient;
   old_mat.decompose(old_translation, old_rotation, old_scale, old_scale_orient);
 
   auto desired_scale = osg::Vec3f{1,2,3};
@@ -91,9 +91,9 @@ static void testSetScale()
   setScale(new_mat,desired_scale);
 
   osg::Vec3f new_translation;
-  osg::Quat new_rotation;
+  osg::Quat  new_rotation;
   osg::Vec3f new_scale;
-  osg::Quat new_scale_orient;
+  osg::Quat  new_scale_orient;
   new_mat.decompose(new_translation, new_rotation, new_scale, new_scale_orient);
   assertNear(new_rotation, old_rotation, 0);
   assertNear(new_translation, old_translation, 0);

@@ -79,8 +79,21 @@ osg::Matrix
 }
 
 
+void setNoRotScale(osg::Matrix &m, const osg::Vec3f &new_scale)
+{
+  osg::Vec3f translation;
+  osg::Quat rotation;
+  osg::Vec3f scale;
+  osg::Quat so;
+  m.decompose(translation, rotation, scale, so);
+  m = compose(translation,osg::Quat(0, osg::Vec3f{1,0,0}),new_scale,so);
+}
+
+
 void setScale(osg::Matrix &m, const osg::Vec3f &new_scale)
 {
+  // This doesn't work reliably if the old scale is negative since there
+  // are ambiguities between negative scales and rotations.
   osg::Vec3f translation;
   osg::Quat rotation;
   osg::Vec3f scale;

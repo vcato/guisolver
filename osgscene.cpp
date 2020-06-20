@@ -684,10 +684,10 @@ struct OSGScene::Impl::DraggerCallback : osgManipulator::DraggerCallback {
 
 
 static void
-setScale(osg::MatrixTransform &transform,float x,float y,float z)
+setNoRotScale(osg::MatrixTransform &transform,float x,float y,float z)
 {
   auto m = transform.getMatrix();
-  setScale(m, osg::Vec3f(x,y,z));
+  setNoRotScale(m, osg::Vec3f(x,y,z));
   transform.setMatrix(m);
 }
 
@@ -1622,7 +1622,7 @@ void OSGScene::setGeometryScale(GeometryHandle handle,const Vec3 &v)
   osg::MatrixTransform &geometry_transform =
     Impl::geometryTransformForHandle(*this, handle);
 
-  ::setScale(geometry_transform, x, y, z);
+  ::setNoRotScale(geometry_transform, x, y, z);
 }
 
 

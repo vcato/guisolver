@@ -202,5 +202,5 @@ Function {
   }
 }
 ---
-* If the value for a mesh scale component goes negative, it draws strangely.
-  * It seems to flip between a negative and positive value.
+Using a scale manipulator on a mesh with negative scale factors makes the
+scale factors no longer be negative.

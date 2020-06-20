@@ -31,6 +31,7 @@ extern osg::Matrix
   );
 
 extern void setScale(osg::Matrix &m,const osg::Vec3f &new_scale);
+extern void setNoRotScale(osg::Matrix &m, const osg::Vec3f &new_scale);
 
 extern void
   setCoordinateAxesOf(
