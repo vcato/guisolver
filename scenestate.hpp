@@ -226,44 +226,34 @@ class SceneState {
       Float weight = 1;
       Float error = 0;
 
+      void setStart(Optional<PointLink> arg)
+      {
+        optional_start = arg;
+      }
+
       void setStart(Optional<::Marker> arg)
       {
-        if (arg) {
-          optional_start = PointLink{*arg};
-        }
-        else {
-          optional_start = {};
-        }
+        setStart(maybePointLink(arg));
       }
 
       void setStart(Optional<BodyMeshPosition> arg)
       {
-        if (arg) {
-          optional_start = PointLink(*arg);
-        }
-        else {
-          optional_start = {};
-        }
+        setStart(maybePointLink(arg));
+      }
+
+      void setEnd(Optional<PointLink> arg)
+      {
+        optional_end = arg;
       }
 
       void setEnd(Optional<::Marker> arg)
       {
-        if (arg) {
-          optional_end = PointLink{*arg};
-        }
-        else {
-          optional_end = {};
-        }
+        setEnd(maybePointLink(arg));
       }
 
       void setEnd(Optional<BodyMeshPosition> arg)
       {
-        if (arg) {
-          optional_end = PointLink(*arg);
-        }
-        else {
-          optional_end = {};
-        }
+        setEnd(maybePointLink(arg));
       }
 
       bool hasStart() const { return optional_start.hasValue(); }
@@ -290,6 +280,8 @@ class SceneState {
     const Marker &marker(MarkerIndex index) const { return _markers[index]; }
     Body &body(BodyIndex index) { return _bodies[index]; }
     const Body &body(BodyIndex index) const { return _bodies[index]; }
+
+    Marker &operator[](::Marker marker) { return this->marker(marker.index); }
 
     MarkerIndex createMarker(Optional<BodyIndex> = {});
 

@@ -50,13 +50,21 @@ struct ObservedScene {
   LineIndex addLineTo(BodyIndex);
   MeshIndex addMeshTo(BodyIndex, const Mesh &);
   MeshIndex addMeshTo(BodyIndex, const SceneState::MeshShape &);
-  MarkerIndex addMarker(Optional<BodyIndex> = {});
+
+  Marker createMarker(Optional<Body> maybe_body = {});
 
   DistanceErrorIndex
     addDistanceError(
       Optional<MarkerIndex> start,
       Optional<MarkerIndex> end,
       Optional<BodyIndex>
+    );
+
+  DistanceError
+    createDistanceError(
+      Optional<PointLink> optional_start,
+      Optional<PointLink> optional_end,
+      Optional<Body>
     );
 
   void setDistanceErrorPointToMark(DistanceError, DistanceErrorPoint);
@@ -77,6 +85,7 @@ struct ObservedScene {
 
   bool clipboardContainsABody() const;
   bool clipboardContainsAMarker() const;
+  void select(Marker);
   void selectBody(BodyIndex);
   void selectMarker(MarkerIndex);
   void selectDistanceError(DistanceErrorIndex);

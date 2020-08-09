@@ -18,6 +18,15 @@ using LineHandle = Scene::LineHandle;
 using GeometryHandle = Scene::GeometryHandle;
 using BodyState = SceneState::Body;
 
+
+static float sign(float x)
+{
+  if (x < 0) return -1;
+  if (x > 0) return 1;
+  return 0;
+}
+
+
 static Point
   localTranslation(Scene::TransformHandle transform_id,const Scene &scene)
 {
@@ -109,15 +118,15 @@ struct GeometryStateUpdater {
   {
     SceneState::Mesh &mesh_state = body_state.meshes[mesh_index];
     Scene::GeometryHandle mesh_handle = body_handles.meshes[mesh_index].handle;
-
-    Vec3 new_mesh_scale =
-      scene.geometryScale(mesh_handle) *
-      (1 / body_global_scale);
+    Vec3 scene_mesh_scale = scene.geometryScale(mesh_handle);
+    Vec3 new_mesh_scale = scene_mesh_scale * (1 / body_global_scale);
 
     Vec3 new_mesh_center =
       scene.geometryCenter(mesh_handle) * (1 / body_global_scale);
 
-    mesh_state.scale = xyzStateFromVec3(new_mesh_scale);
+    mesh_state.scale.x = sign(mesh_state.scale.x)*new_mesh_scale.x;
+    mesh_state.scale.y = sign(mesh_state.scale.y)*new_mesh_scale.y;
+    mesh_state.scale.z = sign(mesh_state.scale.z)*new_mesh_scale.z;
     mesh_state.center = xyzStateFromVec3(new_mesh_center);
   }
 };
@@ -1221,14 +1230,6 @@ updateBodyMeshScaleManipulator(
   size.y *= mesh_size.y*2;
   size.z *= mesh_size.z*2;
   scene.setGeometryScale(manipulator, size);
-}
-
-
-static float sign(float x)
-{
-  if (x < 0) return -1;
-  if (x > 0) return 1;
-  return 0;
 }
 
 

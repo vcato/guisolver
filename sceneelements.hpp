@@ -75,6 +75,28 @@ using BodyMeshPositions = BodyMesh::Positions;
 using BodyMeshPosition = ArrayElement<BodyMeshPositions, MeshPositionIndex>;
 
 
+inline Optional<BodyIndex> maybeBodyIndex(Optional<Body> maybe_body)
+{
+  if (maybe_body) {
+    return maybe_body->index;
+  }
+  else {
+    return {};
+  }
+}
+
+
+inline Optional<Body> maybeBody(Optional<BodyIndex> maybe_body_index)
+{
+  if (maybe_body_index) {
+    return Body(*maybe_body_index);
+  }
+  else {
+    return {};
+  }
+}
+
+
 struct BodyMesh::Positions {
   BodyMesh body_mesh;
 
@@ -182,7 +204,7 @@ inline Optional<MarkerIndex> makeMarkerIndex(Optional<Marker> maybe_marker)
 }
 
 
-inline Optional<Marker> makeMarker(Optional<MarkerIndex> arg)
+inline Optional<Marker> maybeMarker(Optional<MarkerIndex> arg)
 {
   if (arg) {
     return Marker(*arg);

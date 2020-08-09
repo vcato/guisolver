@@ -201,3 +201,136 @@ Function {
     expression: "x*2 + (5*3)"
   }
 }
+---
+We need to make it where we don't do a general update of the the scene
+state from the scene because there are ambiguities.  We should only be
+updating the scene state from manipulators.
+---
+Let's say that the base state of our scene is represented as a graph.
+We then have functions that map this graph to other derived graphs.
+If we apply a graph rewriting operation to the base graph, we'd like
+to find the graph rewriting operation for the derived graphs, so that
+instead of recomputing the derived graphs, we can rewrite them.
+
+One approach seems to be to annotate the derived graphs, such that nodes
+in the derived graph have annotations which relate back to the original
+graph.  If we do a graph rewriting operation, we can then map from the
+old base graph to the new base graph, and map the resulting derived
+annotations back to new derived annotations.  We can then use this to
+find a graph rewriting which transforms the old derived graph to the
+new one.
+
+It seems like we can use this approach to simplify how we maintain our
+tree and scene.  We can define a function which maps an annotated
+scene state to an annotated tree.  When we perform a graph rewriting
+on the scene state graph, we map old base annotations to new base annotations,
+then use these to map annotations in the tree graph.  We map the annotations
+on the tree to new annotations using the base annotation mapping.
+
+Node Creation:
+  A new base node is created.  The base-to-derived mapping is used to
+  make a set of derived node annotations.  New nodes are created in the derived
+  graph with these annotations.
+
+Node Deletion:
+  A base node is deleted.  The base-to-derived mapping is used to
+  make a set of derived node annotations.  The corresponding nodes in the
+  derived graph are deleted.
+
+Arc Creation:
+  A new base arc is created.  The base-to-derived mapping is used to
+  make a set of derived arcs.  New arcs are created in the derived graph
+  with these annotations.
+
+Arc Deletion:
+  A base arc is deleted.  A base-to-derived mapping is used to
+  make a set of derived node annotations.  The corresponding arcs in the
+  derived graph are deleted.
+
+Node renaming.
+  A mapping from old base graph annotations to new base graph annotations
+  is created.  For each node, the base-to-derived mapping is used to
+  create old derived annotations.  The old derived annotations are mapped
+  to new derived annotations by similarity.
+
+Lets take the example of inserting a new child.  We start with this base
+graph:
+
+parent:
+  child1
+  child2
+
+We insert a new child between child1 and child2.  This involves five
+operations.
+1) Deleting the arc between child1 and child2
+2) Renaming child2 to child3
+3) Creating child2
+4) Creating an arc between child1 and child2
+5) Creating an arc between child2 and child3
+
+Let's say we have a derived graph:
+
+t-parent:
+  t-child1
+  t-child2
+
+1) Deleting the arc between child1 and child2
+  * We map the child1-child2 arc to the t-child1-t-child2 arc.
+  * We delete the t-child1-t-child2 arc in the derived graph.
+
+2) Renaming child2 to child3
+  * We map child2 to t-child2
+  * We map child3 to t-child3
+  * We match t-child2 to t-child3 through a t-* unification
+  * We rename t-child2 to t-child3 in the derived graph.
+
+3) Creating child2
+  * We map child2 to t-child2
+  * We create a t-child2 node.
+  
+4) Creating an arc between child1 and child2
+  * We map the child1-child2 arc to t-child1-t-child2.
+  * We create a t-child1-t-child2 arc in the derived graph.
+  *
+5) Creating an arc between child2 and child3
+  * We map the child2-child3 arc to t-child2-t-child3.
+  * We create a t-child2-t-child3 arc in the derived graph.
+
+So it seems like this really comes down to
+  1) Being able to map base nodes to derived nodes.
+  2) Being able to map base arcs to derived arcs.
+  3) Being able to map changes in base annotations to changes in derived
+     annotations.
+
+One additional aspect is that we will need to be able to relate these
+base operations to the actual operations.  For our tree, all we can do
+is insert and delete.  Changing an insert operation in the base graph
+to the 5 elementry operations is straightforward.  Changing the
+elemetry operations on the derived graph to the actual operations on
+the derived graph may not be.
+
+It seems important to represent our operations in terms of mappings.
+Being able to map a node in our scene state to a node in our tree should
+be a basic operation.  This means it is important to define have a way to
+use these operations simply.
+
+tree_node = treeMap(state_node)
+
+this treeMap could potentially have other operations, like mapping
+an insertion.
+
+For example:
+  stateToTreeMap(insert(state_node))
+    -> { insert(tree_node1), insert(tree_node2) }
+
+In C++, we might do this using a visitor:
+  stateToTreeMap.mapInsert(state_node, handler)
+
+  calls
+
+  handler.insert(tree_node1)
+  handler.insert(tree_node2)
+
+The map would need to be bi-directional.  For example, we would need to
+be able to map a delete operation on a tree node to a delete operation
+on the state node.

@@ -5,6 +5,7 @@
 #include "randomvec3.hpp"
 #include "randomfloat.hpp"
 #include "transformstate.hpp"
+#include "vec3state.hpp"
 
 
 static BodyIndex
@@ -57,12 +58,6 @@ assertNear(const Point &actual, const Point &expected, float tolerance)
   assertNear(actual.x(), expected.x(), tolerance);
   assertNear(actual.y(), expected.y(), tolerance);
   assertNear(actual.z(), expected.z(), tolerance);
-}
-
-
-static PositionState makePositionStateFromVec3(const Vec3 &arg)
-{
-  return {arg.x, arg.y, arg.z};
 }
 
 

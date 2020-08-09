@@ -14,6 +14,7 @@
 #include "solveflags.hpp"
 #include "readobj.hpp"
 #include "objmesh.hpp"
+#include "vec3state.hpp"
 
 using View = MainWindowView;
 using std::cerr;
@@ -280,8 +281,8 @@ void
   Optional<BodyIndex> maybe_body_index =
     maybeBodyIndexFromTreePath(path, tree_paths);;
 
-  MarkerIndex marker_index = observed_scene.addMarker(maybe_body_index);
-  observed_scene.selectMarker(marker_index);
+  Marker marker = observed_scene.createMarker(maybeBody(maybe_body_index));
+  observed_scene.selectMarker(marker.index);
 }
 
 
@@ -781,8 +782,31 @@ MainWindowController::Impl::contextMenuItemsForPath(
       observed_scene.markMeshPosition(body_mesh_position);
     };
 
+    auto add_handle_function =
+    [&observed_scene, body_mesh_position, body_index]{
+      Body body(body_index);
+      Marker marker = observed_scene.createMarker(body);
+
+      Vec3 local =
+        bodyMeshPositionRelativeToBody(
+          body_mesh_position, observed_scene.scene_state
+        );
+
+      observed_scene.scene_state[marker].position =
+        makePositionStateFromVec3(local);
+
+      observed_scene.createDistanceError(
+        PointLink(marker),
+        PointLink(body_mesh_position),
+        body
+      );
+
+      observed_scene.select(marker);
+    };
+
     appendTo(menu_items, {
-      {"Mark", mark_function}
+      {"Mark", mark_function},
+      {"Add Handle", add_handle_function}
     });
   }
 

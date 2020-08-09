@@ -27,13 +27,25 @@ struct PointLink {
 
 
 inline Optional<PointLink>
-makePointLink(const Optional<Marker> &maybe_marker)
+maybePointLink(const Optional<Marker> &maybe_marker)
 {
   if (!maybe_marker) {
     return {};
   }
   else {
     return PointLink{*maybe_marker};
+  }
+}
+
+
+inline Optional<PointLink>
+maybePointLink(const Optional<BodyMeshPosition> &arg)
+{
+  if (arg) {
+    return PointLink(*arg);
+  }
+  else {
+    return {};
   }
 }
 

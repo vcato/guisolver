@@ -12,3 +12,9 @@ inline Vec3 rotationValuesDeg(const RotationState &arg)
 {
   return vec3FromXYZState(arg);
 }
+
+
+inline PositionState makePositionStateFromVec3(const Vec3 &arg)
+{
+  return {arg.x, arg.y, arg.z};
+}

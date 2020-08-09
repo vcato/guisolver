@@ -613,7 +613,7 @@ setDistanceErrorMarkerMember(
     mappedMarkerName(marker_name, marker_name_map);
 
   (distance_error_state.*member_ptr)(
-    makeMarker(findMarkerWithName(result, mapped_marker_name))
+    maybeMarker(findMarkerWithName(result, mapped_marker_name))
   );
 }
 

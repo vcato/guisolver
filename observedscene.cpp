@@ -2093,8 +2093,9 @@ MeshIndex ObservedScene::addMeshTo(BodyIndex body_index, const Mesh &mesh)
 }
 
 
-MarkerIndex ObservedScene::addMarker(Optional<BodyIndex> maybe_body_index)
+Marker ObservedScene::createMarker(Optional<Body> maybe_body)
 {
+  Optional<BodyIndex> maybe_body_index = maybeBodyIndex(maybe_body);
   ObservedScene &observed_scene = *this;
   TreePaths &tree_paths = observed_scene.tree_paths;
   SceneState &scene_state = observed_scene.scene_state;
@@ -2103,7 +2104,7 @@ MarkerIndex ObservedScene::addMarker(Optional<BodyIndex> maybe_body_index)
   createMarkerInScene(marker_index, observed_scene);
   createMarkerInTree(marker_index, observed_scene);
   updateTreeDistanceErrors(tree_widget, tree_paths, scene_state);
-  return marker_index;
+  return Marker(marker_index);
 }
 
 
@@ -2233,45 +2234,51 @@ static void select(Element element, ObservedScene &observed_scene)
 }
 
 
+void ObservedScene::select(Marker marker)
+{
+  ::select(marker, *this);
+}
+
+
 void ObservedScene::selectBody(BodyIndex body_index)
 {
-  select(Body{body_index}, *this);
+  ::select(Body{body_index}, *this);
 }
 
 
 void ObservedScene::selectMarker(MarkerIndex marker_index)
 {
-  select(Marker{marker_index}, *this);
+  ::select(Marker{marker_index}, *this);
 }
 
 
 void ObservedScene::selectDistanceError(DistanceErrorIndex index)
 {
-  select(DistanceError{index}, *this);
+  ::select(DistanceError{index}, *this);
 }
 
 
 void ObservedScene::selectVariable(VariableIndex variable_index)
 {
-  select(Variable{variable_index}, *this);
+  ::select(Variable{variable_index}, *this);
 }
 
 
 void ObservedScene::selectBox(BodyIndex body_index, BoxIndex box_index)
 {
-  select(BodyBox{body_index, box_index}, *this);
+  ::select(BodyBox{body_index, box_index}, *this);
 }
 
 
 void ObservedScene::selectLine(BodyIndex body_index, LineIndex line_index)
 {
-  select(BodyLine{body_index, line_index}, *this);
+  ::select(BodyLine{body_index, line_index}, *this);
 }
 
 
 void ObservedScene::selectMesh(BodyIndex body_index, MeshIndex mesh_index)
 {
-  select(Body(body_index).mesh(mesh_index), *this);
+  ::select(Body(body_index).mesh(mesh_index), *this);
 }
 
 
@@ -2356,24 +2363,23 @@ ObservedScene::duplicateMarkerWithDistanceError(MarkerIndex marker_index)
 }
 
 
-DistanceErrorIndex
-ObservedScene::addDistanceError(
-  Optional<MarkerIndex> optional_start_marker_index,
-  Optional<MarkerIndex> optional_end_marker_index,
-  Optional<BodyIndex> optional_body_index
+DistanceError
+ObservedScene::createDistanceError(
+  Optional<PointLink> optional_start,
+  Optional<PointLink> optional_end,
+  Optional<Body> optional_body
 )
 {
   ObservedScene &observed_scene = *this;
 
   DistanceErrorIndex index =
-    scene_state.createDistanceError(optional_body_index);
+    scene_state.createDistanceError(maybeBodyIndex(optional_body));
 
   SceneState::DistanceError &distance_error =
     scene_state.distance_errors[index];
 
-  distance_error.setStart(makeMarker(optional_start_marker_index));
-  distance_error.setEnd(makeMarker(optional_end_marker_index));
-
+  distance_error.setStart(optional_start);
+  distance_error.setEnd(optional_end);
   observed_scene.update_errors_function(scene_state);
   createDistanceErrorInScene(scene, scene_handles, scene_state, index);
 
@@ -2385,7 +2391,26 @@ ObservedScene::addDistanceError(
 
   updateSceneObjects(scene, scene_handles, scene_state);
   updateTreeValues(tree_widget, tree_paths, scene_state);
-  return index;
+  return DistanceError(index);
+}
+
+
+DistanceErrorIndex
+ObservedScene::addDistanceError(
+  Optional<MarkerIndex> optional_start_marker_index,
+  Optional<MarkerIndex> optional_end_marker_index,
+  Optional<BodyIndex> optional_body_index
+)
+{
+  Optional<Marker> optional_start_marker =
+    maybeMarker(optional_start_marker_index);
+
+  Optional<Marker> optional_end_marker = maybeMarker(optional_end_marker_index);
+  Optional<PointLink> optional_start = maybePointLink(optional_start_marker);
+  Optional<PointLink> optional_end = maybePointLink(optional_end_marker);
+  Optional<Body> optional_body = maybeBody(optional_body_index);
+
+  return createDistanceError(optional_start, optional_end, optional_body).index;
 }
 
 

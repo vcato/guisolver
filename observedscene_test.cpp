@@ -101,7 +101,7 @@ static void testTransferringABody1()
   BodyIndex body1_index = observed_scene.addBody(/*parent*/{});
   BodyIndex body2_index = observed_scene.addBody(/*parent*/{});
 
-  observed_scene.addMarker(body2_index);
+  observed_scene.createMarker(maybeBody(body2_index));
   transferBody(body1_index, body2_index, observed_scene);
   checkTree(tester);
 }
@@ -112,7 +112,7 @@ static void testTransferringABody2()
   Tester tester;
   ObservedScene &observed_scene = tester.observed_scene;
   BodyIndex body1_index = observed_scene.addBody(/*parent*/{});
-  observed_scene.addMarker(body1_index);
+  observed_scene.createMarker(maybeBody(body1_index));
   transferBody(body1_index, {}, observed_scene);
   checkTree(tester);
 }
@@ -124,11 +124,11 @@ static void testTransferringAMarker()
   ObservedScene &observed_scene = tester.observed_scene;
   BodyIndex body1_index = observed_scene.addBody(/*parent*/{});
   BodyIndex body2_index = observed_scene.addBody(/*parent*/{});
-  MarkerIndex marker_index = observed_scene.addMarker(body1_index);
-  transferMarker(marker_index, body2_index, observed_scene);
+  Marker marker = observed_scene.createMarker(maybeBody(body1_index)).index;
+  transferMarker(marker.index, body2_index, observed_scene);
 
   assert(
-    observed_scene.scene_state.marker(marker_index).maybe_body_index
+    observed_scene.scene_state.marker(marker.index).maybe_body_index
     == body2_index
   );
 
@@ -168,20 +168,19 @@ static void testDuplicateBody()
   ObservedScene &observed_scene = tester.observed_scene;
   SceneState &scene_state = observed_scene.scene_state;
   TreePaths &tree_paths = observed_scene.tree_paths;
-
   BodyIndex body1_index = observed_scene.addBody(/*parent*/{});
-  MarkerIndex global_marker_index = observed_scene.addMarker(/*parent*/{});
-  MarkerIndex local1_marker_index = observed_scene.addMarker(body1_index);
+  Marker global_marker = observed_scene.createMarker(/*parent*/{});
+  Marker local_marker = observed_scene.createMarker(maybeBody(body1_index));
 
   observed_scene.addDistanceError(
-    global_marker_index,
-    local1_marker_index,
+    global_marker.index,
+    local_marker.index,
     body1_index
   );
 
   observed_scene.addDistanceError(
-    local1_marker_index,
-    global_marker_index,
+    local_marker.index,
+    global_marker.index,
     body1_index
   );
 
@@ -207,7 +206,7 @@ static void testDuplicateBody()
   SceneState::DistanceError &distance_error1_state =
     scene_state.distance_errors[distance_error1_index];
 
-  assert(startIsMarker(distance_error1_state, global_marker_index));
+  assert(startIsMarker(distance_error1_state, global_marker.index));
   assert(endIsMarker(distance_error1_state, local2_marker_index));
 
   DistanceErrorIndex distance_error2_index =
@@ -216,7 +215,7 @@ static void testDuplicateBody()
   SceneState::DistanceError &distance_error2_state =
     scene_state.distance_errors[distance_error2_index];
 
-  assert(endIsMarker(distance_error2_state, global_marker_index));
+  assert(endIsMarker(distance_error2_state, global_marker.index));
   assert(startIsMarker(distance_error2_state, local2_marker_index));
 
   const TreePath &distance_error2_tree_path =
@@ -334,7 +333,7 @@ static void testDuplicateBodyWithDistanceErrors()
   Tester tester;
   ObservedScene &observed_scene = tester.observed_scene;
   BodyIndex body_index = observed_scene.addBody(/*parent*/{});
-  MarkerIndex marker_index = observed_scene.addMarker(body_index);
+  Marker marker = observed_scene.createMarker(maybeBody(body_index));
   SceneState &scene_state = observed_scene.scene_state;
 
   BodyIndex new_body_index =
@@ -345,7 +344,7 @@ static void testDuplicateBodyWithDistanceErrors()
   const SceneState::DistanceError &distance_error_state =
     scene_state.distance_errors[0];
 
-  assert(startIsMarker(distance_error_state, marker_index));
+  assert(startIsMarker(distance_error_state, marker.index));
   assert(distance_error_state.hasEnd());
   assert(scene_state.bodies().size() == 2);
   assert(new_body_index != body_index);
@@ -621,12 +620,12 @@ static void testAddingAndRemovingAVariable()
     == SceneElementDescription::Type::variable
   );
 
-  MarkerIndex marker_index = observed_scene.addMarker();
+  Marker marker = observed_scene.createMarker();
   userChangesVariableValue(variable_index, 1, tester);
 
   {
     TreePath marker_position_x_path =
-      markerPositionXPath(marker_index, tree_paths);
+      markerPositionXPath(marker.index, tree_paths);
 
     userChangesTreeItemExpression(marker_position_x_path, "var1", tester);
     assert(tree_widget.item(marker_position_x_path).maybe_numeric_value == 1);
@@ -638,7 +637,7 @@ static void testAddingAndRemovingAVariable()
   // the channel value.
   {
     TreePath marker_position_x_path =
-      markerPositionXPath(marker_index, tree_paths);
+      markerPositionXPath(marker.index, tree_paths);
 
     assert(tree_widget.item(marker_position_x_path).maybe_numeric_value == 1);
   }
@@ -758,11 +757,11 @@ static void testChangingMarkerName()
   Tester tester;
   ObservedScene &observed_scene = tester.observed_scene;
   TreePaths &tree_paths = observed_scene.tree_paths;
-  MarkerIndex marker_index = observed_scene.addMarker();
+  Marker marker = observed_scene.createMarker();
   SceneState &scene_state = observed_scene.scene_state;
-  const TreePath &name_path = tree_paths.marker(marker_index).name;
+  const TreePath &name_path = tree_paths.marker(marker.index).name;
   observed_scene.handleTreeStringValueChanged(name_path, "new_name");
-  assert(scene_state.marker(marker_index).name == "new_name");
+  assert(scene_state.marker(marker.index).name == "new_name");
 }
 
 
