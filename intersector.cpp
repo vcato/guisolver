@@ -16,6 +16,7 @@
 #include <osg/TemplatePrimitiveFunctor>
 #include <osg/Geode>
 #include <osg/Geometry>
+#include <osg/Version>
 
 
 namespace {
@@ -376,7 +377,11 @@ void
 {
   if (reachedLimit()) return;
 
+#if OSG_VERSION_MAJOR > 3 || OSG_VERSION_MAJOR==3 && OSG_VERSION_MINOR>2
   osg::BoundingBox bb = drawable->getBoundingBox();
+#else
+  osg::BoundingBox bb = drawable->getBound();
+#endif
 
   if (bb.valid()) {
     bb.expandBy(

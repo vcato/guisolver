@@ -1,5 +1,5 @@
 PACKAGES=openscenegraph Qt5Gui Qt5OpenGL eigen3
-MOC=moc
+MOC=qtchooser -qt=5 -run-tool=moc
 OPTIMIZATION=-g
 #OPTIMIZATION=-O3 -DNDEBUG
 

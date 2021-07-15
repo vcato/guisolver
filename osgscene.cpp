@@ -7,6 +7,7 @@
 #include <osg/Geometry>
 #include <osg/ShapeDrawable>
 #include <osg/Material>
+#include <osg/Version>
 #include <osgManipulator/TranslateAxisDragger>
 #include <osgManipulator/TrackballDragger>
 #include <osgManipulator/TabBoxDragger>
@@ -950,7 +951,11 @@ static void setDrawableColor(osg::Drawable &drawable, const osg::Vec3f &color)
 
 static void setGeodeColor(osg::Geode &geode,const osg::Vec3f &vec)
 {
+#if OSG_VERSION_MAJOR > 3 || OSG_VERSION_MAJOR==3 && OSG_VERSION_MINOR>2
   int n_children = geode.getNumChildren();
+#else
+  int n_children = geode.getNumDrawables();
+#endif
   assert(n_children > 0);
   osg::Drawable *drawable_ptr = geode.getDrawable(0);
   assert(drawable_ptr);

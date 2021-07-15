@@ -14,6 +14,7 @@
 #include "osgQtGraphicsWindowQt.hpp"
 
 #include <osg/DeleteHandler>
+#include <osg/Version>
 #include <osgViewer/ViewerBase>
 #include <QInputEvent>
 #include <iostream>
@@ -404,6 +405,17 @@ GraphicsWindowQt::~GraphicsWindowQt()
 }
 
 
+static void
+syncWindowRectangleWithGraphicsContext(osgGA::EventQueue *event_queue_ptr)
+{
+#if OSG_VERSION_MAJOR > 3 || OSG_VERSION_MAJOR==3 && OSG_VERSION_MINOR>2
+  event_queue_ptr->syncWindowRectangleWithGraphicsContext();
+#else
+  event_queue_ptr->syncWindowRectangleWithGraphcisContext();
+#endif
+}
+
+
 bool GraphicsWindowQt::init( QWidget* parent, const QGLWidget* shareWidget, Qt::WindowFlags f )
 {
     // update _widget and parent by WindowData
@@ -471,7 +483,7 @@ bool GraphicsWindowQt::init( QWidget* parent, const QGLWidget* shareWidget, Qt::
     }
 
     // make sure the event queue has the correct window rectangle size and input range
-    getEventQueue()->syncWindowRectangleWithGraphicsContext();
+    syncWindowRectangleWithGraphicsContext(getEventQueue());
 
     return true;
 }
@@ -705,7 +717,7 @@ bool GraphicsWindowQt::realizeImplementation()
 
     // make sure the event queue has the correct window rectangle size and
     // input range
-    getEventQueue()->syncWindowRectangleWithGraphicsContext();
+    syncWindowRectangleWithGraphicsContext(getEventQueue());
 
     // make this window's context not current
     // note: this must be done as we will probably make the context current
