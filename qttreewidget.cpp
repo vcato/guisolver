@@ -260,10 +260,10 @@ static void setItemText(QTreeWidgetItem &item, const std::string &label)
 static void setItemPending(QTreeWidgetItem &item,const bool new_state)
 {
   if (new_state) {
-    item.setTextColor(/*column*/0, Qt::GlobalColor::gray);
+    item.setForeground(/*column*/0, Qt::GlobalColor::gray);
   }
   else {
-    item.setTextColor(/*column*/0, Qt::GlobalColor::black);
+    item.setForeground(/*column*/0, Qt::GlobalColor::black);
   }
 }
 

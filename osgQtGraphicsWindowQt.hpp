@@ -112,7 +112,7 @@ protected:
     GLWidget(
       QWidget* parent = NULL,
       const QGLWidget* shareWidget = NULL,
-      Qt::WindowFlags f = 0,
+      Qt::WindowFlags f = Qt::WindowFlags(),
       bool forwardKeyEvents = false
     );
 
@@ -120,7 +120,7 @@ protected:
       QGLContext* context,
       QWidget* parent = NULL,
       const QGLWidget* shareWidget = NULL,
-      Qt::WindowFlags f = 0,
+      Qt::WindowFlags f = Qt::WindowFlags(),
       bool forwardKeyEvents = false
     );
 
@@ -128,7 +128,7 @@ protected:
       const QGLFormat& format,
       QWidget* parent = NULL,
       const QGLWidget* shareWidget = NULL,
-      Qt::WindowFlags f = 0,
+      Qt::WindowFlags f = Qt::WindowFlags(),
       bool forwardKeyEvents = false
     );
 };
@@ -137,7 +137,7 @@ protected:
 class OSGQT_EXPORT GraphicsWindowQt : public osgViewer::GraphicsWindow
 {
 public:
-    GraphicsWindowQt( osg::GraphicsContext::Traits* traits, QWidget* parent = NULL, const QGLWidget* shareWidget = NULL, Qt::WindowFlags f = 0 );
+    GraphicsWindowQt( osg::GraphicsContext::Traits* traits, QWidget* parent = NULL, const QGLWidget* shareWidget = NULL, Qt::WindowFlags f = Qt::WindowFlags() );
     GraphicsWindowQt( GLWidget* widget );
     virtual ~GraphicsWindowQt();
 

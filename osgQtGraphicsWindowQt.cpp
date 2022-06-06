@@ -361,11 +361,42 @@ void GLWidget::wheelEvent( QWheelEvent* event )
 {
   setKeyboardModifiers( event );
 
+#if 1
+  const QPoint &delta = event->angleDelta();
+
+  struct Util {
+    static osgGA::GUIEventAdapter::ScrollingMotion
+    direction(const QPoint &delta)
+    {
+      if (delta.x() > 0) {
+	return osgGA::GUIEventAdapter::SCROLL_LEFT;
+      }
+      else if (delta.x() < 0) {
+	return osgGA::GUIEventAdapter::SCROLL_RIGHT;
+      }
+      else if (delta.y() > 0) {
+	return osgGA::GUIEventAdapter::SCROLL_UP;
+      }
+      else {
+	return osgGA::GUIEventAdapter::SCROLL_DOWN;
+      }
+    }
+  };
+
+  _gw->getEventQueue()->mouseScroll(Util::direction(delta));
+#else
   _gw->getEventQueue()->mouseScroll(
     event->orientation() == Qt::Vertical ?
-    (event->delta()>0 ? osgGA::GUIEventAdapter::SCROLL_UP : osgGA::GUIEventAdapter::SCROLL_DOWN) :
-    (event->delta()>0 ? osgGA::GUIEventAdapter::SCROLL_LEFT : osgGA::GUIEventAdapter::SCROLL_RIGHT)
+    (event->delta()>0 ?
+       osgGA::GUIEventAdapter::SCROLL_UP :
+       osgGA::GUIEventAdapter::SCROLL_DOWN
+    ) :
+    (event->delta()>0 ?
+       osgGA::GUIEventAdapter::SCROLL_LEFT :
+       osgGA::GUIEventAdapter::SCROLL_RIGHT
+    )
   );
+#endif
 }
 
 
@@ -390,7 +421,7 @@ GraphicsWindowQt::GraphicsWindowQt( GLWidget* widget )
 {
   _widget = widget;
   _traits = _widget ? createTraits( _widget ) : new osg::GraphicsContext::Traits;
-  init( NULL, NULL, 0 );
+  init( NULL, NULL, Qt::WindowFlags() );
 }
 
 
